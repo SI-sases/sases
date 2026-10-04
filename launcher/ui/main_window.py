@@ -57,6 +57,13 @@ class MainWindow(QMainWindow):
         self.log.appendPlainText(t.rstrip())
 
     def start(self):
+        import urllib.request
+        try:
+            urllib.request.urlopen(f"http://127.0.0.1:{self.port}/hive/info", timeout=2)
+            self.statusBar().showMessage("已运行（外部进程）")
+            return
+        except Exception:
+            pass
         try:
             urllib.request.urlopen(f'http://127.0.0.1:{self.port}/hive/info', timeout=2)
             self.statusBar().showMessage('已运行（外部进程）')
