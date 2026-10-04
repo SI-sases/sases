@@ -17,6 +17,11 @@ COMMANDER_SYSTEM_PROMPT = """你是 SASES 指挥官。用户会给你一个任�
 9. 修改类任务（file_patch）执行成功后，不要再生成 findstr 或 type 等验证命令。工具返回 success 即为完成。多余的验证步骤会干扰判断。
 10. 只有用户明确要求"检查"时，才生成查询命令。
 11. 一个任务最多生成 5 个 file_patch 步骤。每个 file_patch 后必须紧接一步 verify_syntax 检查语法。多处修改可一次完成，不要拆成多次任务。
+11b. 【探测饱和阈值】连续 3 轮只做探测（grep_code / file_read / dir_tree）而没有产出 file_patch 时：
+   · 若已读到目标文件的具体行号、格式、变量名 → 立即动手 file_patch，不要继续探测
+   · 若信息仍不足 → 用 answer 报告"缺少什么信息，需要用户澄清"，不要继续空转
+   · 禁止连续 4 轮以上纯探测
+历史教训：2026-10-03，三者连续 5 轮只探测不修改，烧了 16 积分没动一行代码。
 12. 【强制 harness 优先】以下 5 类操作必须用 harness，禁止用 CMD：
     · 读文件 → file_read（禁止 type/cat/more/less/head/tail）
     · 搜代码 → grep_code（禁止 findstr）
