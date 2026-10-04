@@ -28,7 +28,6 @@ def get_logger(name="launcher"):
     logger.setLevel(LOG_LEVEL)
     formatter = logging.Formatter(LOG_FORMAT)
     console_handler = logging.StreamHandler()
-    return logger
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
     try:

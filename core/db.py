@@ -1029,6 +1029,7 @@ def init_db():
             )
         """)
         cur.execute("CREATE INDEX IF NOT EXISTS idx_suprun_user ON supervisor_runs(user_id)")
+        _ensure_column(cur, "supervisor_runs", "task_type", "TEXT")
 
 
         # ========== 积分库（v0.20） ==========

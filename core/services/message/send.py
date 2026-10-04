@@ -28,6 +28,17 @@ from .conversations import create_conversation, get_messages, mark_conversation_
 from .model_call import call_model_with_config
 from .attachments import _enrich_attachment
 
+def _classify_task_type(goal):
+    if not goal:
+        return "unknown"
+    _g = str(goal).lower()
+    if any(_k in _g for _k in ("code", "debug", "refactor")):
+        return "coding"
+    if any(_k in _g for _k in ("search", "find", "lookup")):
+        return "research"
+    return "general"
+
+
 async def send_message(
     user_id: int,
     conversation_id: int,
