@@ -10,7 +10,7 @@ def _summary_sender(task):
 
 
 def _infer_domain(results):
-    probe_tools = ("file_read", "dir_tree", "grep_code")
+    probe_tools = ("file_read", "dir_tree", "grep_code", "structure_check")
     has_edit = False
     all_probe = True
     for r in results:
