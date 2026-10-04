@@ -250,11 +250,6 @@ Windows CMD 不支持 grep，用 findstr 代替。
     "expected_count":1
   }}
 
-【改代码前必读（v0.19）】
-1. 改任何代码文件前，必须先用 file_read 读取目标行附近内容
-2. 确认 old_snippet / anchor_pattern 的原文后再动手
-3. 禁止凭经验猜锚点或片段
-
 【锚点禁正则（v0.19）】
 file_patch 的 anchor_pattern 是纯文本匹配，禁止用正则符号：
   ^ $ backslash-d backslash-s backslash-w * + ? [ ] ( ) { } |
