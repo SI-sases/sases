@@ -5,6 +5,18 @@ from logging.handlers import RotatingFileHandler
 
 LOG_DIR = "logs"
 LOG_FILE = os.path.join(LOG_DIR, "launcher.log")
+
+
+def setup_logger(name, level=logging.INFO):
+    os.makedirs(LOG_DIR, exist_ok=True)
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+    if not logger.handlers:
+        handler = RotatingFileHandler(LOG_FILE, maxBytes=1048576, backupCount=5)
+        formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+    return logger
 LOG_FORMAT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
 LOG_LEVEL = logging.INFO
 
@@ -16,6 +28,7 @@ def get_logger(name="launcher"):
     logger.setLevel(LOG_LEVEL)
     formatter = logging.Formatter(LOG_FORMAT)
     console_handler = logging.StreamHandler()
+    return logger
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
     try:
