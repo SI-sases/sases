@@ -1,7 +1,7 @@
 """SASES 启动器主窗口。"""
 import os, sys
 import urllib.request
-import launcher.launcher_config
+import launcher_config
 
 
 def _decode_child_line(raw):
@@ -13,7 +13,6 @@ def _decode_child_line(raw):
     return raw.decode('utf-8', 'replace')
 from PyQt6.QtCore import QProcess
 from PyQt6.QtWidgets import QMainWindow, QWidget, QPushButton, QPlainTextEdit, QVBoxLayout, QHBoxLayout, QMessageBox
-from launcher.ui.config_page import ConfigurationPage
 
 # 项目根目录（launcher/ui/main_window.py -> 上溯三层）
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -58,13 +57,6 @@ class MainWindow(QMainWindow):
         self.log.appendPlainText(t.rstrip())
 
     def start(self):
-        import urllib.request
-        try:
-            urllib.request.urlopen(f"http://127.0.0.1:{self.port}/hive/info", timeout=2)
-            self.statusBar().showMessage("已运行（外部进程）")
-            return
-        except Exception:
-            pass
         try:
             urllib.request.urlopen(f'http://127.0.0.1:{self.port}/hive/info', timeout=2)
             self.statusBar().showMessage('已运行（外部进程）')
