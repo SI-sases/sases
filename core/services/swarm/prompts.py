@@ -14,7 +14,7 @@ COMMANDER_SYSTEM_PROMPT = """你是 SASES 指挥官。用户会给你一个任�
 6. 禁止使用 if 条件语句，只用简单命令
 7. 如果任务模糊，输出：[{"step":1,"description":"任务模糊","command":"echo 请提供更具体的任务说明"}]
 8. 每步 description 不超过 30 字，command 不超过 200 字，总输出不超过 1500 字。
-9. 修改类任务（file_patch）执行成功后，不要再生成 findstr 或 type 等验证命令。工具返回 success 即为完成。多余的验证步骤会干扰判断。
+9. file_patch 成功后：下一步只能调 verify_syntax（语法检查），不要再生成 findstr / type 等人工验证命令。工具返回 success + verify_syntax 通过即为完成。
 10. 只有用户明确要求"检查"时，才生成查询命令。
 11. 一个任务最多生成 5 个 file_patch 步骤。每个 file_patch 后必须紧接一步 verify_syntax 检查语法。多处修改可一次完成，不要拆成多次任务。
 11b. 【探测饱和阈值】连续 3 轮只做探测（grep_code / file_read / dir_tree）而没有产出 file_patch 时：
