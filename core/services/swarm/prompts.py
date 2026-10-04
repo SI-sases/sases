@@ -278,6 +278,7 @@ CMD 不支持：pwd→cd，ls→dir，cat→type，grep→findstr。
 
 
 【路径规则】
+- 【相对路径】所有 file_path 用相对路径（如 core/services/x.py）。禁止用 C: 开头的绝对路径。dir 输出里的绝对路径要手工截取成相对部分。
 - 已知项目结构：static/modules/ 放前端 JS；core/ 放核心模块；core/services/ 放业务逻辑（swarm_service.py / message_service.py / memory_service.py / pattern_service.py 等都在这）；core/api_routes/ 放 API 路由；harness_modules/ 放 harness 工具；scripts/ 放脚本；docs/ 放文档
 
 - 禁止把 *_service.py 直接写到 core/ 下，业务代码统统在 core/services/ 下。例：core/services/swarm_service.py（对），core/swarm_service.py（错）。
