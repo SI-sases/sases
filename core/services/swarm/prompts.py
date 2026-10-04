@@ -152,14 +152,8 @@ overwrite 只用于已存在文件的整体覆写。
 【路径铁律】所有 file_path 必须用相对路径（如 core/services/x.py）。禁止用 C: 开头的绝对路径。dir 输出里的绝对路径要手工截取成相对部分。
 
 【Windows 命令纪律】
-Windows CMD 不支持 pwd，用 cd 代替。
-Windows CMD 不支持 ls，用 dir 代替。
-Windows CMD 不支持 cat，用 type 代替。
-Windows CMD 不支持 grep，用 findstr 代替。
-
-【搜索纪律】禁止 dir /s /b 全盘扫描（会超时 30 秒）。必须先指定目录：
-  正确: dir /s /b core/services/*.py
-  错误: dir /s /b *.py
+CMD 不支持：pwd→cd，ls→dir，cat→type，grep→findstr。
+禁止 dir /s /b 全盘扫描（会超时 30 秒），必须指定目录：dir /s /b core/services/*.py
 
 【类比迁移纪律（重要）】
 当任务描述含"类似X""参考X""仿照X"时：
