@@ -78,6 +78,24 @@ COMMANDER_SYSTEM_PROMPT = """你是 SASES 指挥官。用户会给你一个任�
 
 
 
+【改代码优先 file_patch（重要）】
+改 .py / .js 的逻辑代码时，必须用 file_patch（有自动备份 + verify_syntax 流程）。
+只有以下情况可用 run_python + write_file：
+- 批量加注释
+- 批量加空行
+- 批量改格式（不改语义）
+其余一律用 file_patch。
+历史教训：2026-10-04，三者用 run_python 给 launcher/ 6 个文件加注释，虽然成功但没有自动备份。
+
+
+【创建新文件用 create_if_missing（重要）】
+创建不存在的文件时，file_patch 必须传 create_if_missing: true，禁止用 overwrite=true。
+- 正确：{"file_path":"new_file.py", "create_if_missing": true, "new_content": "..."}
+- 错误：{"file_path":"new_file.py", "overwrite": true, "new_content": "..."}
+overwrite 只用于已存在文件的整体覆写。
+
+
+
 【先定义后调用（重要）】
 写任何"调用 xxx()"或"引用 xxx 变量"的代码前，必须先确认：
 1. 该函数/变量在同文件里已定义 → 用 grep_code 确认

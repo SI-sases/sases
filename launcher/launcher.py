@@ -1,3 +1,4 @@
+# SASES Launcher Module
 """SASES 启动器入口。"""
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))

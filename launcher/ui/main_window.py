@@ -1,3 +1,4 @@
+# SASES Launcher Module
 """SASES 启动器主窗口。"""
 import os, sys
 import urllib.request
