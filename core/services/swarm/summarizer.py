@@ -32,7 +32,7 @@ async def _summarize(user_text: str, results: List[Dict[str, Any]], user_id: int
     try:
         if user_id and task_id and results:
             from .. import pattern_service
-            n = pattern_service.record_pattern(user_id, task_id, "dev", results)
+            n = pattern_service.record_pattern(user_id, task_id, _infer_domain(results), results)
             if n:
                 print(f"[swarm] 已记录 {n} 条 pattern")
     except Exception as e:
