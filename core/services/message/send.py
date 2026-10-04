@@ -170,7 +170,7 @@ async def send_message(
                                 _title_auto = _rq_auto['name']
                         _cid_auto = create_conversation(user_id, agent_id, _title_auto)
                         print(f"[supervisor] auto_run 无会话，新建 conversation_id={_cid_auto}")
-                    _run_id = supervisor_service.create_run(user_id, _cid_auto, sender_agent_id or agent_id, content)
+                    _run_id = supervisor_service.create_run(user_id, _cid_auto, sender_agent_id or agent_id, content, task_type=_classify_task_type(content))
                     print("[supervisor] 已创建 run_id=" + str(_run_id) + " goal=" + content[:50])
                     _force_swarm = True
                     _supervisor_run_id = _run_id
@@ -550,7 +550,7 @@ async def send_message(
                             import json as _j2mod
                             _dec = _j2mod.loads(_raw2[_i2:_j2+1])
                             if _dec.get('propose') and _dec.get('goal'):
-                                _rid = supervisor_service.create_proposed_run(user_id, conversation_id, sender_agent_id, _dec['goal'])
+                                _rid = supervisor_service.create_proposed_run(user_id, conversation_id, sender_agent_id, _dec['goal'], task_type=_classify_task_type(_dec['goal']))
                                 print('[supervisor] 提议执行 run_id=' + str(_rid) + ' goal=' + _dec['goal'][:50])
                                 with db_cursor(commit=True) as _c3:
                                     _c3.execute(
