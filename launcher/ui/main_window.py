@@ -20,7 +20,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 
 class MainWindow(QMainWindow):
     def __init__(self):
-        self.cfg = ensure_default_config()
+        self.cfg = launcher_config.ensure_default_config()
         self.port = self.cfg.get("port", 8001)
         self.python_path = self.cfg.get("python_path", "")
         self.script_path = self.cfg.get("script_path", "")
