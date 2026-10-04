@@ -178,10 +178,6 @@ Windows CMD 不支持 grep，用 findstr 代替。
 
 
 
-【改动后必验证】
-- 每次 file_patch 修改 .py 或 .js 文件后，必须紧接着调用 verify_syntax（type=harness, module_id=verify_syntax, params: {file_path}）
-- 如果 verify_syntax 返回 success=False，说明改动引入了语法错误
-- 此时应该用 verify_syntax 返回的 latest_backup 路径，通过 file_patch overwrite 还原，或直接放弃本次改动
 【file_patch 后必须验证（重要）】
 - 每次 file_patch 改 .py 或 .js 成功后，下一步应调 verify_syntax 验证
 - 例如：{"step":N,"type":"harness","module_id":"verify_syntax","params":{"file_path":"<刚改的文件>","auto_rollback":true}}
