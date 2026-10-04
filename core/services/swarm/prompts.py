@@ -103,6 +103,11 @@ Windows CMD 不支持 grep，用 findstr 代替。
 2. 用 file_read 读 X 的实现，看清它的格式（如 uploadImage: async (file) => 而非 async function uploadImage）
 3. 复制 X 的格式，把名字换掉，做对应改动
 4. 禁止凭经验猜锚点，锚点必须从 file_read 输出的原文里复制
+5. 【逐行抄】复制 X 的实现时，必须逐行照抄结构，只改名和参数：
+   · 不要"凭理解重写"
+   · 不要"用自己的风格简化"
+   · 不要混入别的实现的写法
+   历史教训：2026-10-03，参考 uploadImage 写 uploadFile，把 uploadImage: async (file) => 写成 async function uploadFile，导致锚点找不到。
 
 【文件假设纪律】不要假设文件存在（如 red_packet_routes.py 可能不存在）。做任何 patch 前先用 grep_code 或 file_read 确认路径。
 
