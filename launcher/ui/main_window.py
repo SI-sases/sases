@@ -13,6 +13,7 @@ def _decode_child_line(raw):
     return raw.decode('utf-8', 'replace')
 from PyQt6.QtCore import QProcess
 from PyQt6.QtWidgets import QMainWindow, QWidget, QPushButton, QPlainTextEdit, QVBoxLayout, QHBoxLayout, QMessageBox
+from launcher.ui.config_page import ConfigurationPage
 
 # 项目根目录（launcher/ui/main_window.py -> 上溯三层）
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
