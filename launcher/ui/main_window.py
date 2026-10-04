@@ -72,7 +72,7 @@ class MainWindow(QMainWindow):
         except Exception:
             pass
         try:
-            urllib.request.urlopen(f'http://127.0.0.1:{launcher_config.PORT}/hive/info', timeout=2).close()
+            urllib.request.urlopen(f'http://127.0.0.1:{self.port}/hive/info', timeout=2).close()
             _log = getattr(self, 'log', None) or getattr(self, 'log_view', None) or getattr(self, 'output', None)
             if _log is None:
                 from PyQt6.QtWidgets import QPlainTextEdit as _QPT
