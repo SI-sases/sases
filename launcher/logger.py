@@ -8,6 +8,7 @@ LOG_FILE = os.path.join(LOG_DIR, "launcher.log")
 
 
 def setup_logger(name, level=logging.INFO):
+    """创建并配置一个 logger 实例并返回。"""
     os.makedirs(LOG_DIR, exist_ok=True)
     logger = logging.getLogger(name)
     logger.setLevel(level)
