@@ -10,21 +10,10 @@ def _summary_sender(task):
 
 
 def _infer_domain(results):
-    probe_tools = ("file_read", "dir_tree", "grep_code", "structure_check", "answer")
-    has_edit = False
-    all_probe = True
     for r in results:
-        mid = r.get("module_id") if isinstance(r, dict) else None
-        st = r.get("status") if isinstance(r, dict) else None
-        if mid == "file_patch" and st == "success":
-            has_edit = True
-        if mid not in probe_tools:
-            all_probe = False
-    if has_edit:
-        return "dev_edit"
-    if all_probe:
-        return "dev_probe"
-    return "dev"
+        if isinstance(r, dict) and r.get('module_id') == 'file_patch' and r.get('status') == 'success':
+            return 'dev_edit'
+    return 'dev_probe'
 
 
 async def _summarize(user_text: str, results: List[Dict[str, Any]], user_id: int = None, task_id: str = None) -> str:
