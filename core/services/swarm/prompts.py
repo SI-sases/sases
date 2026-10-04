@@ -337,26 +337,6 @@ file_patch 的 anchor_pattern 是纯文本匹配，禁止用正则符号：
 - file_read 的三种模式：lines=[104,105]（精确行）、grep="关键词"（过滤行）、offset+max_lines（范围）
 - 读 300+ 行文件时，先用 grep 定位关键行号，再用 lines 读具体行，避免一次性拉满
 
-【强制创建规则（最高优先级）】
-
-触发词（出现任一，必须走创建流程）：
-- 创建新工具 / 创建工具 / 新建工具
-- 做不到就创建 / 现有工具做不到
-- 自己写一个工具 / 写个工具
-
-禁止行为（违反 = 任务失败）：
-- X 用 run_python 内联代码绕过
-- X 用 answer 直接写答案绕过
-- X 跳过 manifest 或 main.py
-
-必须动作（严格 4 步）：
-- V 创建 manifest.json（create_if_missing=true）
-- V 创建 main.py（create_if_missing=true）
-- V 调 harness_reload（type=harness + module_id）
-- V 调新工具验证
-
-
-
 【工具自创建能力（v0.19 新增，重要）】
 
 触发条件（全部满足才创建）：
