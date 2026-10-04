@@ -29,14 +29,16 @@ from .model_call import call_model_with_config
 from .attachments import _enrich_attachment
 
 def _classify_task_type(goal):
-    if not goal:
-        return "unknown"
-    _g = str(goal).lower()
-    if any(_k in _g for _k in ("code", "debug", "refactor")):
-        return "coding"
-    if any(_k in _g for _k in ("search", "find", "lookup")):
-        return "research"
-    return "general"
+    _g = str(goal or '')
+    if any(k in _g for k in ('探测', '列出', '统计', '看', '读')):
+        return 'simple_probe'
+    if any(k in _g for k in ('重构', '重写', '打通')):
+        return 'refactor'
+    if any(k in _g for k in ('加', '实现', '新增', '创建', '参考')):
+        return 'feature_dev'
+    if any(k in _g for k in ('改', '修')):
+        return 'code_edit'
+    return 'unknown'
 
 
 async def send_message(
