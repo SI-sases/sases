@@ -183,11 +183,6 @@ Windows CMD 不支持 grep，用 findstr 代替。
 - 例如：{"step":N,"type":"harness","module_id":"verify_syntax","params":{"file_path":"<刚改的文件>","auto_rollback":true}}
 - verify_syntax 返回 syntax_ok=false 时，会自动从 .backups/ 恢复，你只需据此重新规划
 - 若 modify 后不验证，坏语法可能在用户下次刷新时崩溃浏览器
-
-
-- 改多行代码前，必须先 file_read 读取目标区域确认行号
-- old_snippet 必须来自 file_read 的实际输出，禁止凭记忆生成
-- 遇到「原片段未找到」失败时，下一步必须 file_read，不允许再猜
 【执行纪律（重要）】
 - 一次任务中，同一步骤只做一件事。不要一次 file_patch 改多处，也不要一次生成多个 harness 调用。
 - 改 core/ 下的 .py 后，在 description 里提醒"需重启服务"；改 static/ 下的 .js 不需要重启。
