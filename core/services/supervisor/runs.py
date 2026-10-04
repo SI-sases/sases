@@ -14,7 +14,8 @@ def get_run(run_id):
 def create_proposed_run(user_id, conversation_id, supervisor_id, goal, task_type=None):
     """创建 proposed 状态的 run，等用户确认"""
     with db_cursor(commit=True) as cur:
-        cur.execute("INSERT INTO supervisor_runs (user_id, conversation_id, supervisor_id, goal, status, current_round, max_rounds, history) VALUES (?, ?, ?, ?, 'proposed', 0, ?, '[]')", (user_id, conversation_id, supervisor_id, goal, MAX_ROUNDS))
+        _tt = task_type if task_type is not None else 'unknown'
+        cur.execute("INSERT INTO supervisor_runs (user_id, conversation_id, supervisor_id, goal, status, current_round, max_rounds, history, task_type) VALUES (?, ?, ?, ?, 'proposed', 0, ?, '[]', ?)", (user_id, conversation_id, supervisor_id, goal, MAX_ROUNDS, _tt))
         return cur.lastrowid
 
 
