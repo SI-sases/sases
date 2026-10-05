@@ -93,6 +93,24 @@ class MainWindow(QMainWindow):
         self.log.appendPlainText(t.rstrip())
 
     def start(self):
+        import os, socket, urllib.request
+        port = 8001
+        while port <= 8010:
+            try:
+                urllib.request.urlopen('http://127.0.0.1:%d/hive/info' % port, timeout=1)
+                break
+            except urllib.error.URLError:
+                s = socket.socket()
+                s.settimeout(0.5)
+                try:
+                    s.connect(('127.0.0.1', port))
+                    s.close()
+                    port += 1
+                except OSError:
+                    s.close()
+                    break
+        self.port = port
+        os.environ['SASES_PORT'] = str(port)
         for _port in range(8001, 8011):
             _url = "http://127.0.0.1:%d/hive/info" % _port
             _http_ok = False
