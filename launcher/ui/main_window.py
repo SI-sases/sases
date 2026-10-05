@@ -7,6 +7,25 @@ import socket
 
 
 def _find_available_port(start_port=8001, end_port=8010):
+    import urllib.request
+    for port in range(start_port, end_port + 1):
+        try:
+            with urllib.request.urlopen(f'http://127.0.0.1:{port}/hive/info', timeout=1) as resp:
+                if resp.status == 200:
+                    continue
+        except Exception:
+            pass
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            if s.connect_ex(('127.0.0.1', port)) != 0:
+                return port
+        finally:
+            s.close()
+    return start_port
+import socket
+
+
+def _find_available_port(start_port=8001, end_port=8010):
     for p in range(start_port, end_port + 1):
         try:
             urllib.request.urlopen(f'http://127.0.0.1:{p}/hive/info', timeout=2)
@@ -74,6 +93,10 @@ class MainWindow(QMainWindow):
         self.log.appendPlainText(t.rstrip())
 
     def start(self):
+        _p = self.port
+        self.port = _find_available_port(_p, 8010)
+        os.environ['SASES_PORT'] = str(self.port)
+        print(f'SASES: 端口 {_p} 被占用，改用 {self.port}')
         _s, _p = _find_available_port(self.port, 8010)
         if _p is None:
             _p = self.port
