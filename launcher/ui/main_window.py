@@ -3,6 +3,22 @@
 import os, sys
 import urllib.request
 import launcher_config
+import socket
+
+
+def _find_available_port(start_port=8001, end_port=8010):
+    for p in range(start_port, end_port + 1):
+        try:
+            urllib.request.urlopen(f'http://127.0.0.1:{p}/hive/info', timeout=2)
+            return ('running', p)
+        except Exception:
+            pass
+        try:
+            socket.create_connection(('127.0.0.1', p), timeout=1)
+            continue
+        except Exception:
+            return ('free', p)
+    return ('none', None)
 
 
 def _decode_child_line(raw):
@@ -58,6 +74,12 @@ class MainWindow(QMainWindow):
         self.log.appendPlainText(t.rstrip())
 
     def start(self):
+        _s, _p = _find_available_port(self.port, 8010)
+        if _p is None:
+            _p = self.port
+        if _s == 'free' and _p != self.port:
+            print(f'端口 {self.port} 被占用，改用 {_p}')
+        os.environ['SASES_PORT'] = str(_p)
         try:
             urllib.request.urlopen(f'http://127.0.0.1:{self.port}/hive/info', timeout=2)
             self.statusBar().showMessage('已运行（外部进程）')

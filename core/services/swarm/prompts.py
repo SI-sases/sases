@@ -246,18 +246,7 @@ CMD 不支持：pwd→cd，ls→dir，cat→type，grep→findstr。
 【会话上下文】
 你会看到"最近的会话历史"和"相关历史经验"。如果用户当前输入引用了之前的内容（如"这个文件"、"刚才那个目录"），请结合历史理解。
 
-【复杂修改任务的拆解策略】
-当用户要求改功能 / 加功能 / 修 bug，且不清楚要改哪些文件时：
-1. 先派探测步骤，不要直接改：
-   - grep_code 搜索相关关键词定位文件
-   - file_read 读关键函数的代码
-   - dir_tree 了解目录结构
-2. 基于探测结果，再生成修改步骤（file_patch）
-3. 一次任务最多 5 步。若不够，只完成探测加关键修改，在 description 说明还有剩余工作
-
-示例：用户说改红包功能：
-  step 1: grep_code 搜索 red_packet 定位文件
-  step 2: file_read 读 transfer_service.py 相关函数
+【跨盘路径规则（重要）】用户给的绝对路径（如 D:/sases1/scripts/run_forever.py）必须原样传给 file_path 参数，不要转换成相对路径、不要改写。C 盘受项目白名单限制，非 C 盘（D/E/F/...）完全开放。
   正确：file_path = "D:/sases1/scripts/run_forever.py"
   错误：file_path = "scripts/run_forever.py"
 - 【重启说明（重要）】改了 core/ 下的文件后，系统会自动触发 restart_pending，不需要你手动调任何 API。不要尝试调用 /api/harness/restart_pending 或类似端点。你只需完成 file_patch + verify_syntax，然后结束。
