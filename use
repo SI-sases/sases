@@ -1,0 +1,1 @@
+modified launcher/ui/main_window.py: start() now probes ports 8001-8010 via HTTP /hive/info (running - else socket check (open - port, closed - this port)

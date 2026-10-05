@@ -93,11 +93,39 @@ class MainWindow(QMainWindow):
         self.log.appendPlainText(t.rstrip())
 
     def start(self):
+        for _port in range(8001, 8011):
+            _url = "http://127.0.0.1:%d/hive/info" % _port
+            _http_ok = False
+            try:
+                with urllib.request.urlopen(_url, timeout=2) as _resp:
+                    if getattr(_resp, "status", 200) == 200:
+                        _http_ok = True
+            except Exception:
+                _http_ok = False
+            if _http_ok:
+                self.port = _port
+                break
+            _sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            _sock.settimeout(1)
+            _sock_ok = False
+            try:
+                _sock.connect(("127.0.0.1", _port))
+                _sock_ok = True
+            except Exception:
+                _sock_ok = False
+            finally:
+                _sock.close()
+            if not _sock_ok:
+                self.port = _port
+                break
+
         _p = self.port
         self.port = _find_available_port(_p, 8010)
         os.environ['SASES_PORT'] = str(self.port)
         print(f'SASES: 端口 {_p} 被占用，改用 {self.port}')
         _s, _p = _find_available_port(self.port, 8010)
+        if _p != self.port:
+            logger.info("端口 %s 被占用，改用 %s", self.port, _p)
         if _p is None:
             _p = self.port
         if _s == 'free' and _p != self.port:
