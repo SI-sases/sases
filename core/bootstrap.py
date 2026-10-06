@@ -76,6 +76,20 @@ async def periodic_summary_task():
 
         await asyncio.sleep(6 * 3600)
 
+async def periodic_anchor_task():
+    """每小时写一次积分锚定快照（蜂群 P0 自证）。"""
+    from .services import anchor_service as _anchor_svc
+    await asyncio.sleep(120)  # 启动后 2 分钟首次执行
+    while True:
+        try:
+            h, count = _anchor_svc.write_anchor()
+            print(f'[anchor] {h[:16]}... count={count}')
+        except Exception as e:
+            print(f'[anchor] error: {e}')
+        await asyncio.sleep(3600)
+
+
+
 async def periodic_git_push():
     """每小时把本地提交推送到 GitHub"""
     import subprocess
