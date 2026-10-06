@@ -331,6 +331,7 @@ async def lifespan(app: FastAPI):
     _background_tasks.append(asyncio.create_task(periodic_git_push()))
     _background_tasks.append(asyncio.create_task(periodic_task_repush()))
 
+    _background_tasks.append(asyncio.create_task(periodic_anchor_task()))
     # 【日级】
     _background_tasks.append(asyncio.create_task(backup_service.periodic_backup_task()))
     _background_tasks.append(asyncio.create_task(cleanup_service.periodic_cleanup(interval_hours=24)))

@@ -11,7 +11,7 @@ def signal_restart(run_id, reason=''):
         import time
         content = f"run_id={run_id}|reason={reason}|at={int(time.time())}"
         import os as _os_r
-        _root = _os_r.path.dirname(_os_r.path.dirname(_os_r.path.dirname(_os_r.path.abspath(__file__))))
+        _root = _os_r.path.dirname(_os_r.path.dirname(_os_r.path.dirname(_os_r.path.dirname(_os_r.path.abspath(__file__)))))
         _fp = _os_r.path.join(_root, 'restart_signal.txt')
         with open(_fp, 'w', encoding='utf-8') as f:
             f.write(content)
