@@ -2,42 +2,10 @@
 """SASES 启动器主窗口。"""
 import os, sys
 import urllib.request
+import urllib.error
+import webbrowser
+import socket
 import launcher_config
-import socket
-
-
-def _find_available_port(start_port=8001, end_port=8010):
-    import urllib.request
-    for port in range(start_port, end_port + 1):
-        try:
-            with urllib.request.urlopen(f'http://127.0.0.1:{port}/hive/info', timeout=1) as resp:
-                if resp.status == 200:
-                    continue
-        except Exception:
-            pass
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        try:
-            if s.connect_ex(('127.0.0.1', port)) != 0:
-                return port
-        finally:
-            s.close()
-    return start_port
-import socket
-
-
-def _find_available_port(start_port=8001, end_port=8010):
-    for p in range(start_port, end_port + 1):
-        try:
-            urllib.request.urlopen(f'http://127.0.0.1:{p}/hive/info', timeout=2)
-            return ('running', p)
-        except Exception:
-            pass
-        try:
-            socket.create_connection(('127.0.0.1', p), timeout=1)
-            continue
-        except Exception:
-            return ('free', p)
-    return ('none', None)
 
 
 def _decode_child_line(raw):
@@ -47,26 +15,30 @@ def _decode_child_line(raw):
         except (UnicodeDecodeError, LookupError):
             continue
     return raw.decode('utf-8', 'replace')
-from PyQt6.QtCore import QProcess
-from PyQt6.QtWidgets import QMainWindow, QWidget, QPushButton, QPlainTextEdit, QVBoxLayout, QHBoxLayout, QMessageBox
 
-# 项目根目录（launcher/ui/main_window.py -> 上溯三层）
+
+from PyQt6.QtCore import QProcess, QProcessEnvironment, QTimer
+from PyQt6.QtGui import QAction, QIcon
+from PyQt6.QtWidgets import (
+    QMainWindow, QWidget, QPushButton, QPlainTextEdit,
+    QVBoxLayout, QHBoxLayout, QMessageBox,
+    QSystemTrayIcon, QMenu, QStyle,
+)
+
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
         self.cfg = launcher_config.ensure_default_config()
-        self.port = self.cfg.get("port", 8001)
-        self.python_path = self.cfg.get("python_path", "")
-        self.script_path = self.cfg.get("script_path", "")
-        self.work_dir = self.cfg.get("work_dir", "")
-        self.port = self.cfg.get("port", 8001)
+        self.port = int(self.cfg.get("port", 8001))
         self.python_path = self.cfg.get("python_path", "")
         self.script_path = self.cfg.get("script_path", "")
         self.work_dir = self.cfg.get("work_dir", "")
         super().__init__()
         self.proc = None
+        self._chosen_port = self.port
+        self._allow_close = False          # 托盘退出时才置 True
         self.setWindowTitle('SASES 启动器')
         self.resize(900, 600)
         self.btn_start = QPushButton('启动')
@@ -88,118 +60,136 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(w)
         self.statusBar().showMessage('未运行')
         self.btn_stop.setEnabled(False)
+        self._setup_tray()
 
+    # ---------- 托盘 ----------
+    def _setup_tray(self):
+        self.tray = QSystemTrayIcon(self)
+        self.tray.setIcon(
+            self.style().standardIcon(QStyle.StandardPixmap.SP_ComputerIcon)
+        )
+        self.tray.setToolTip('SASES 启动器')
+        menu = QMenu()
+        act_show = QAction('显示窗口', self)
+        act_show.triggered.connect(self._show_window)
+        act_start = QAction('启动服务', self)
+        act_start.triggered.connect(self.start)
+        act_stop = QAction('停止服务', self)
+        act_stop.triggered.connect(self.stop)
+        act_quit = QAction('退出', self)
+        act_quit.triggered.connect(self._real_quit)
+        menu.addAction(act_show)
+        menu.addSeparator()
+        menu.addAction(act_start)
+        menu.addAction(act_stop)
+        menu.addSeparator()
+        menu.addAction(act_quit)
+        self.tray.setContextMenu(menu)
+        self.tray.activated.connect(self._on_tray_clicked)
+        self.tray.show()
+
+    def _on_tray_clicked(self, reason):
+        if reason == QSystemTrayIcon.ActivationReason.Trigger:
+            self._show_window()
+
+    def _show_window(self):
+        self.showNormal()
+        self.activateWindow()
+        self.raise_()
+
+    def _real_quit(self):
+        self._allow_close = True
+        self.close()
+
+    # ---------- 工具 ----------
     def out(self, t):
         self.log.appendPlainText(t.rstrip())
 
-    def start(self):
-        import os, socket, urllib.request
-        port = 8001
-        while port <= 8010:
-            try:
-                urllib.request.urlopen('http://127.0.0.1:%d/hive/info' % port, timeout=1)
-                break
-            except urllib.error.URLError:
-                s = socket.socket()
-                s.settimeout(0.5)
-                try:
-                    s.connect(('127.0.0.1', port))
-                    s.close()
-                    port += 1
-                except OSError:
-                    s.close()
-                    break
-        self.port = port
-        os.environ['SASES_PORT'] = str(port)
-        for _port in range(8001, 8011):
-            _url = "http://127.0.0.1:%d/hive/info" % _port
-            _http_ok = False
-            try:
-                with urllib.request.urlopen(_url, timeout=2) as _resp:
-                    if getattr(_resp, "status", 200) == 200:
-                        _http_ok = True
-            except Exception:
-                _http_ok = False
-            if _http_ok:
-                self.port = _port
-                break
-            _sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            _sock.settimeout(1)
-            _sock_ok = False
-            try:
-                _sock.connect(("127.0.0.1", _port))
-                _sock_ok = True
-            except Exception:
-                _sock_ok = False
-            finally:
-                _sock.close()
-            if not _sock_ok:
-                self.port = _port
-                break
+    def _check_running(self, port):
+        try:
+            urllib.request.urlopen(
+                f'http://127.0.0.1:{port}/hive/info', timeout=2
+            ).close()
+            return True
+        except Exception:
+            return False
 
-        _p = self.port
-        self.port = _find_available_port(_p, 8010)
-        os.environ['SASES_PORT'] = str(self.port)
-        print(f'SASES: 端口 {_p} 被占用，改用 {self.port}')
-        _s, _p = _find_available_port(self.port, 8010)
-        if _p != self.port:
-            logger.info("端口 %s 被占用，改用 %s", self.port, _p)
-        if _p is None:
-            _p = self.port
-        if _s == 'free' and _p != self.port:
-            print(f'端口 {self.port} 被占用，改用 {_p}')
-        os.environ['SASES_PORT'] = str(_p)
+    def _port_busy(self, p):
+        """用 connect 判占用（避开 Windows SO_REUSEADDR 陷阱）。"""
+        for family, host in (
+            (socket.AF_INET,  '127.0.0.1'),
+            (socket.AF_INET6, '::1'),
+        ):
+            try:
+                with socket.socket(family, socket.SOCK_STREAM) as s:
+                    s.settimeout(0.3)
+                    if s.connect_ex((host, p)) == 0:
+                        return True
+            except Exception:
+                continue
+        return False
+
+    def _find_free_port(self, start, span=20):
+        for p in range(start, start + span):
+            if not self._port_busy(p):
+                return p
+        return start
+
+    def _open_browser(self, port):
+        url = f'http://127.0.0.1:{port}/static/index.html'
+        self.out(f'[启动器] 打开浏览器 {url}')
         try:
-            urllib.request.urlopen(f'http://127.0.0.1:{self.port}/hive/info', timeout=2)
+            webbrowser.open(url)
+        except Exception as e:
+            self.out(f'[启动器] 打开浏览器失败: {e}')
+
+    # ---------- 生命周期 ----------
+    def start(self):
+        if self._check_running(self.port):
             self.statusBar().showMessage('已运行（外部进程）')
-            self.log('检测到外部进程，跳过启动')
+            self.out('检测到外部进程，跳过启动')
+            self._open_browser(self.port)
             return
-        except Exception:
-            pass
-        import urllib.request
-        try:
-            urllib.request.urlopen(f'http://127.0.0.1:{port}/hive/info', timeout=2)
-            self.log.appendPlainText('检查到外部服务已运行')
-            return
-        except Exception:
-            pass
-        try:
-            urllib.request.urlopen(f'http://127.0.0.1:{self.port}/hive/info', timeout=2).close()
-            _log = getattr(self, 'log', None) or getattr(self, 'log_view', None) or getattr(self, 'output', None)
-            if _log is None:
-                from PyQt6.QtWidgets import QPlainTextEdit as _QPT
-                _logs = self.findChildren(_QPT)
-                _log = _logs[0] if _logs else None
-            if _log is not None:
-                if hasattr(_log, 'appendPlainText'):
-                    _log.appendPlainText('检查到外部服务已运行')
-                elif hasattr(_log, 'append'):
-                    _log.append('检查到外部服务已运行')
-            _status = getattr(self, 'status', None) or getattr(self, 'status_label', None) or getattr(self, 'label_status', None)
-            if _status is None:
-                from PyQt6.QtWidgets import QLabel as _QL
-                _labels = self.findChildren(_QL)
-                _status = _labels[0] if _labels else None
-            if _status is not None and hasattr(_status, 'setText'):
-                _status.setText('已运行（外部进程）')
-            return
-        except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError):
-            pass
+
+        chosen = self._find_free_port(self.port)
+        if chosen != self.port:
+            self.out(f'[启动器] 端口 {self.port} 被占用，改用 {chosen}')
+        self._chosen_port = chosen
+
         if self.proc:
             return
+
         p = QProcess(self)
         p.setWorkingDirectory(ROOT)
+        env = QProcessEnvironment.systemEnvironment()
+        env.insert('SASES_PORT', str(chosen))
+        p.setProcessEnvironment(env)
         p.readyReadStandardOutput.connect(self.read)
         p.readyReadStandardError.connect(self.read)
         p.finished.connect(self.done)
         p.start(sys.executable, ['scripts/run_forever.py'])
+
         self.proc = p
         self.btn_start.setEnabled(False)
         self.btn_stop.setEnabled(True)
-        self.statusBar().showMessage('运行中')
-        self.out('[启动器] 已启动 SASES 服务')
+        self.statusBar().showMessage(f'运行中 :{chosen}')
+        self.out(f'[启动器] 已启动 SASES 服务 :{chosen}')
+
+        QTimer.singleShot(2000, lambda: self._poll_ready(chosen, 15))
+
+    def _poll_ready(self, port, attempts):
+        if self._check_running(port):
+            self.out(f'[启动器] 服务已就绪 :{port}')
+            self._open_browser(port)
+            return
+        if attempts <= 0:
+            self.out(f'[启动器] 服务未在预期时间内就绪 :{port}')
+            return
+        QTimer.singleShot(2000, lambda: self._poll_ready(port, attempts - 1))
 
     def read(self):
+        if not self.proc:
+            return
         b = self.proc.readAllStandardOutput() + self.proc.readAllStandardError()
         for line in _decode_child_line(bytes(b)).splitlines():
             self.out(line)
@@ -218,11 +208,21 @@ class MainWindow(QMainWindow):
         QProcess.startDetached('taskkill', ['/F', '/T', '/PID', str(pid)])
         self.out('[启动器] 已停止 pid=%s' % pid)
 
+    # ---------- 托盘行为 ----------
     def closeEvent(self, e):
-        if self.proc:
-            r = QMessageBox.question(self, '确认', '服务还在运行，确定退出？')
-            if r != QMessageBox.StandardButton.Yes:
-                e.ignore()
-                return
-            self.stop()
-        e.accept()
+        if self._allow_close:
+            # 真正退出
+            if self.proc:
+                self.stop()
+            e.accept()
+            return
+        # 关闭 = 最小化到托盘
+        e.ignore()
+        self.hide()
+        try:
+            self.tray.showMessage(
+                'SASES 启动器', '已最小化到托盘，双击图标恢复',
+                QSystemTrayIcon.MessageIcon.Information, 2000
+            )
+        except Exception:
+            pass
