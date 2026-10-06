@@ -121,6 +121,8 @@ def init_db():
         _ensure_column(cur, "contribution_log", "detail", "TEXT")
         _ensure_column(cur, "contribution_log", "created_at", "TEXT DEFAULT CURRENT_TIMESTAMP")
 
+        _ensure_column(cur, "contribution_log", "origin_node", "TEXT DEFAULT 'node-A'")
+
         # ========== 模型配置表 ==========
         cur.execute("""
             CREATE TABLE IF NOT EXISTS model_configs (
