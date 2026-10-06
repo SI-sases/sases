@@ -13,6 +13,8 @@ MODEL_NAME = os.environ.get("MODEL_NAME", "deepseek-v4-flash")
 # ========== 蜂群/节点标识 ==========
 NODE_ID = os.environ.get("SASES_NODE_ID", "node-A")
 
+# anchor-check: restart-signal-path-fix
+
 # ========== Embedding 配置（用于知识库语义检索） ==========
 # 优先用专用 Embedding API，未配置时回退到 DeepSeek 配置
 EMBEDDING_API_KEY = os.environ.get("EMBEDDING_API_KEY", DEEPSEEK_API_KEY)
