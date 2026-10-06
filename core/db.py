@@ -530,6 +530,8 @@ def init_db():
         _ensure_column(cur, "transactions", "expires_at", "TEXT")
         _ensure_column(cur, "transactions", "claimed_at", "TEXT")
 
+        _ensure_column(cur, "transactions", "origin_node", "TEXT DEFAULT 'node-A'")
+
 
         # ========== 积分锚定表（蜂群预留） ==========
         cur.execute("""
