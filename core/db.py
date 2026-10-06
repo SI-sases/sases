@@ -530,6 +530,20 @@ def init_db():
         _ensure_column(cur, "transactions", "expires_at", "TEXT")
         _ensure_column(cur, "transactions", "claimed_at", "TEXT")
 
+
+        # ========== 积分锚定表（蜂群预留） ==========
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS credit_anchors (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                node_id TEXT NOT NULL,
+                ts TEXT NOT NULL,
+                anchor_hash TEXT NOT NULL,
+                record_count INTEGER DEFAULT 0,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_credit_anchors_node_ts ON credit_anchors(node_id, ts)")
+
         # ========== 种子任务表 ==========
         cur.execute("""
             CREATE TABLE IF NOT EXISTS seed_tasks (
