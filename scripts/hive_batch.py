@@ -1,5 +1,7 @@
-"""批量启动 hive_sim.py 节点
-用法: python scripts/hive_batch.py --count 10 --port-base 9001
+"""批量启动蜂巢轻量节点。
+
+用法：
+    python scripts/hive_batch.py --count 9 --port-base 9001 --master http://127.0.0.1:8001
 """
 import argparse
 import subprocess
