@@ -76,17 +76,6 @@ async def periodic_summary_task():
 
         await asyncio.sleep(6 * 3600)
 
-async def periodic_anchor_task():
-    """每小时写一次积分锚定快照（蜂群 P0 自证）。"""
-    from .services import anchor_service as _anchor_svc
-    await asyncio.sleep(120)  # 启动后 2 分钟首次执行
-    while True:
-        try:
-            h, count = _anchor_svc.write_anchor()
-            print(f'[anchor] {h[:16]}... count={count}')
-        except Exception as e:
-            print(f'[anchor] error: {e}')
-        await asyncio.sleep(3600)
 
 
 
@@ -337,8 +326,6 @@ async def lifespan(app: FastAPI):
     _background_tasks.append(asyncio.create_task(periodic_pattern_finalize()))
     _background_tasks.append(asyncio.create_task(periodic_git_push()))
     _background_tasks.append(asyncio.create_task(periodic_task_repush()))
-
-    _background_tasks.append(asyncio.create_task(periodic_anchor_task()))
     # 【日级】
     _background_tasks.append(asyncio.create_task(backup_service.periodic_backup_task()))
     _background_tasks.append(asyncio.create_task(cleanup_service.periodic_cleanup(interval_hours=24)))
