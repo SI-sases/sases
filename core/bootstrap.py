@@ -345,6 +345,14 @@ async def lifespan(app: FastAPI):
     _background_tasks.append(asyncio.create_task(_state_svc.periodic_state_sync(interval_hours=24)))
     _background_tasks.append(asyncio.create_task(periodic_airdrop()))
 
+
+    # 【hive 蜂巢任务】
+    try:
+        from core.hive.service import start_background_tasks as _hive_tasks
+        _background_tasks.extend(_hive_tasks())
+    except Exception as _hive_e:
+        print(f'[hive] tasks failed: {_hive_e}')
+
     print(f"[bootstrap] 已启动 {len(_background_tasks)} 个后台任务")
 
 
