@@ -3,7 +3,8 @@ import sqlite3
 import os
 from contextlib import contextmanager
 
-DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'users.db')
+_env_db = os.environ.get("SASES_DB_PATH")
+DB_PATH = os.path.abspath(_env_db) if _env_db else os.path.join(os.path.dirname(__file__), '..', 'users.db')
 
 def get_connection():
     conn = sqlite3.connect(DB_PATH)
