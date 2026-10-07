@@ -312,6 +312,13 @@ async def lifespan(app: FastAPI):
 
     from .services import state_service as _state_svc
 
+    # 蜂巢模块（环境变量控制）
+    try:
+        from core.hive.service import register_routes as _hive_register
+        _hive_register(app)
+    except Exception as _hive_e:
+        print(f'[hive] register failed: {_hive_e}')
+
     # 分组启动所有后台任务
     _background_tasks = []
 
