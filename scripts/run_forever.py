@@ -1,4 +1,8 @@
 import subprocess, sys, time, os
+try:
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+except Exception:
+    pass
 
 R = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _PORT = os.environ.get("SASES_PORT", "8001")
