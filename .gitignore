@@ -127,4 +127,5 @@ data/tool_usage.jsonl
 
 # ========== Launcher ==========
 launcher_config.json
-launcher.lock
+launcher.lockusers.db.bak* 
+*.db.bak* 
