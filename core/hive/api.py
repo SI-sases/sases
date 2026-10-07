@@ -8,11 +8,6 @@ from core.hive.anchor import get_latest_anchor
 router = APIRouter(prefix="/hive", tags=["hive"])
 
 
-@router.get("/info")
-def hive_info():
-    return {"node_id": NODE_ID, "role": HIVE_ROLE, "peers": HIVE_PEERS}
-
-
 @router.get("/hash")
 def hive_hash():
     h, count, _ = compute_ledger_hash()
