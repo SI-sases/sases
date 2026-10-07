@@ -36,6 +36,7 @@ def main():
         env['SASES_PORT'] = str(port)
         env['SASES_NODE_ID'] = node_id
         env['HIVE_MASTER'] = master
+        env['SASES_DISABLE_FK'] = 'true'
 
         cmd = [sys.executable, '-m', 'core.hive.standalone']
         p = subprocess.Popen(cmd, stdout=log_f, stderr=subprocess.STDOUT, cwd=os.getcwd(), env=env)
