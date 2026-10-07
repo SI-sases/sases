@@ -26,6 +26,6 @@ HIVE_MODE = os.environ.get("HIVE_MODE", "alert").lower()
 
 # 各任务周期（秒）
 ANCHOR_INTERVAL = int(os.environ.get("HIVE_ANCHOR_INTERVAL", "3600"))
-HEARTBEAT_INTERVAL = int(os.environ.get("HIVE_HEARTBEAT_INTERVAL", "15"))
+HEARTBEAT_INTERVAL = int(os.environ.get("HIVE_HEARTBEAT_INTERVAL", "60"))
 VOTE_INTERVAL = int(os.environ.get("HIVE_VOTE_INTERVAL", "20"))
 SYNC_INTERVAL = int(os.environ.get("HIVE_SYNC_INTERVAL", "30"))
