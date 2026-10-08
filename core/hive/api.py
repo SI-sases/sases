@@ -1,5 +1,5 @@
 """core/hive/api.py —— /hive/* 路由。"""
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, Header, HTTPException
 
 from core.hive.config import NODE_ID, HIVE_ROLE, HIVE_PEERS
 from core.hive.ledger import compute_ledger_hash, get_full_ledger
