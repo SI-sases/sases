@@ -67,6 +67,18 @@ def hive_anchors(limit: int = 20):
         conn.close()
 
 
+@router.get("/status")
+def hive_status():
+    from core.hive.sync import get_sync_health
+    return {
+        "node_id": NODE_ID,
+        "role": HIVE_ROLE,
+        "sync": get_sync_health(),
+        "latest_anchor": get_latest_anchor(NODE_ID),
+    }
+
+
+
 @router.get("/ledger")
 def hive_ledger():
     """返回全量账本（供 slave 同步用）。"""
