@@ -21,9 +21,18 @@ async def sync_from_master():
     await asyncio.sleep(10)
     while True:
         try:
+            from core.hive.config import HIVE_MASTERS
+            ledger = {}
             async with httpx.AsyncClient(timeout=10, trust_env=False) as client:
-                r = await client.get(f"{HIVE_MASTER}/hive/ledger")
-                ledger = r.json().get("ledger", {})
+                for m in HIVE_MASTERS:
+                    try:
+                        r = await client.get(f"{m}/hive/ledger")
+                        data = r.json().get("ledger", {})
+                        if data:
+                            ledger = data
+                            break
+                    except Exception:
+                        continue
         except Exception as e:
             print(f"[hive-sync] fetch failed: {e}")
             await asyncio.sleep(SYNC_INTERVAL)
