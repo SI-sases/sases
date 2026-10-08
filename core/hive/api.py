@@ -79,6 +79,31 @@ def hive_status():
 
 
 
+@router.get("/config")
+def hive_config():
+    """返回当前节点的生效配置（合并后）。"""
+    from core.hive import config as _c
+    return {
+        "node_id": _c.NODE_ID,
+        "role": _c.HIVE_ROLE,
+        "enable_hive": _c.ENABLE_HIVE,
+        "masters": _c.HIVE_MASTERS,
+        "peers": _c.HIVE_PEERS,
+        "mode": _c.HIVE_MODE,
+        "token_set": bool(_c.HIVE_TOKEN),
+        "degrade_threshold": _c.DEGRADE_THRESHOLD,
+        "intervals": {
+            "anchor": _c.ANCHOR_INTERVAL,
+            "heartbeat": _c.HEARTBEAT_INTERVAL,
+            "vote": _c.VOTE_INTERVAL,
+            "sync": _c.SYNC_INTERVAL,
+        },
+        "config_file": _c._JSON_CONFIG_PATH,
+        "config_file_exists": __import__('os').path.exists(_c._JSON_CONFIG_PATH),
+    }
+
+
+
 @router.get("/ledger")
 def hive_ledger():
     """返回全量账本（供 slave 同步用）。"""
