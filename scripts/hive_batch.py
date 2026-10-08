@@ -35,7 +35,7 @@ def main():
         env['ENABLE_HIVE'] = 'true'
         env['SASES_PORT'] = str(port)
         env['SASES_NODE_ID'] = node_id
-        env['HIVE_MASTER'] = master
+        env['HIVE_MASTERS'] = 'http://127.0.0.1:8001,http://127.0.0.1:8002,http://127.0.0.1:8003'
         env['SASES_DISABLE_FK'] = 'true'
 
         cmd = [sys.executable, '-m', 'core.hive.standalone']
