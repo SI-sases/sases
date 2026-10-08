@@ -5,7 +5,19 @@ from core.hive.config import NODE_ID, HIVE_ROLE, HIVE_PEERS
 from core.hive.ledger import compute_ledger_hash, get_full_ledger
 from core.hive.anchor import get_latest_anchor
 
-router = APIRouter(prefix="/hive", tags=["hive"])
+def _check_hive_token(authorization: str = Header("")):
+    from core.hive.config import HIVE_TOKEN
+    if not HIVE_TOKEN:
+        return
+    if authorization != f"Bearer {HIVE_TOKEN}":
+        raise HTTPException(status_code=401, detail="invalid hive token")
+
+
+router = APIRouter(
+    prefix="/hive",
+    tags=["hive"],
+    dependencies=[Depends(_check_hive_token)],
+)
 
 
 @router.get("/hash")
