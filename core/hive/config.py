@@ -22,7 +22,7 @@ _JSON_CONFIG_PATH = os.path.join("hive-nodes", _NODE_ID, "config.json")
 def _load_json_config():
     if os.path.exists(_JSON_CONFIG_PATH):
         try:
-            with open(_JSON_CONFIG_PATH, encoding="utf-8") as f:
+            with open(_JSON_CONFIG_PATH, encoding="utf-8-sig") as f:
                 return json.load(f)
         except Exception as e:
             print(f"[hive-config] failed to load {_JSON_CONFIG_PATH}: {e}")
