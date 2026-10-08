@@ -352,6 +352,8 @@ def init_db():
 
         _ensure_column(cur, "groups", "announcement", "TEXT")
 
+        _ensure_column(cur, "groups", "logical_clock", "INTEGER DEFAULT 0")
+
         # ========== 蜂群模式：group_messages 扩展字段 ==========
         _ensure_column(cur, "group_messages", "message_type", "TEXT DEFAULT 'text'")
         _ensure_column(cur, "group_messages", "related_id", "INTEGER")
