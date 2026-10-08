@@ -43,6 +43,7 @@ async def _lifespan(app: FastAPI):
         asyncio.create_task(periodic_anchor_task()),
         asyncio.create_task(heartbeat_check()),
         asyncio.create_task(majority_vote_check()),
+        asyncio.create_task(periodic_register_task()),
     ]
     authority = os.environ.get('HIVE_AUTHORITY', '')
     if authority:
