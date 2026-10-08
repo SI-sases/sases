@@ -129,3 +129,5 @@ data/tool_usage.jsonl
 launcher_config.json
 launcher.lockusers.db.bak* 
 *.db.bak* 
+hive-nodes/*/key.pem 
+hive-nodes/*/*.key 
