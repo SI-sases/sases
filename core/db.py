@@ -359,6 +359,8 @@ def init_db():
         _ensure_column(cur, "group_messages", "related_id", "INTEGER")
         _ensure_column(cur, "group_messages", "extra_data", "TEXT")
 
+        _ensure_column(cur, "group_messages", "logical_clock", "INTEGER DEFAULT 0")
+
 
         # ========== 统一知识库文档表（群知识库/工具手册/项目文档） ==========
         cur.execute("""
