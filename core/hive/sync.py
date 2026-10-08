@@ -60,10 +60,12 @@ async def sync_from_master():
                         continue
         except Exception as e:
             print(f"[hive-sync] fetch failed: {e}")
+            _mark_sync_fail("fetch")
             await asyncio.sleep(SYNC_INTERVAL)
             continue
 
         if not ledger:
+            _mark_sync_fail("empty ledger")
             await asyncio.sleep(SYNC_INTERVAL)
             continue
 
@@ -121,8 +123,10 @@ async def sync_from_authority(authority_url):
                             )
                 total = sum(len(v) for v in ledger.values())
                 print(f'[hive-master-sync] synced from authority, {total} rows')
+                _mark_sync_ok()
         except Exception as e:
             print(f'[hive-master-sync] error: {e}')
+            _mark_sync_fail("authority")
         await asyncio.sleep(SYNC_INTERVAL)
 
 
