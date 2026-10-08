@@ -14,7 +14,7 @@ from core.hive.ledger import LEDGER_TABLES
 
 async def sync_from_master():
     """slave 模式：从主节点拉取账本，写入本地。"""
-    if HIVE_ROLE != "slave" or not HIVE_MASTER:
+    if HIVE_ROLE != "slave" or not HIVE_MASTERS:
         return
     import httpx
 
