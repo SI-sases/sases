@@ -13,6 +13,31 @@ from core.hive.config import (
 from core.hive.ledger import LEDGER_TABLES
 
 
+_health = {"last_sync_at": None, "last_sync_ok": None, "consecutive_failures": 0, "degraded": False}
+
+
+def get_sync_health():
+    return dict(_health)
+
+
+def _mark_sync_ok():
+    from datetime import datetime
+    _health["last_sync_at"] = datetime.utcnow().isoformat()
+    _health["last_sync_ok"] = True
+    _health["consecutive_failures"] = 0
+    _health["degraded"] = False
+
+
+def _mark_sync_fail(reason=""):
+    from datetime import datetime
+    from core.hive.config import DEGRADE_THRESHOLD
+    _health["last_sync_at"] = datetime.utcnow().isoformat()
+    _health["last_sync_ok"] = False
+    _health["consecutive_failures"] += 1
+    if _health["consecutive_failures"] >= DEGRADE_THRESHOLD:
+        _health["degraded"] = True
+
+
 async def sync_from_master():
     """slave 模式：从主节点拉取账本，写入本地。"""
     if HIVE_ROLE != "slave" or not HIVE_MASTERS:
@@ -59,8 +84,10 @@ async def sync_from_master():
                             tuple(row),
                         )
             print(f"[hive-sync] synced from master, {sum(len(v) for v in ledger.values())} rows")
+            _mark_sync_ok()
         except Exception as e:
             print(f"[hive-sync] write failed: {e}")
+            _mark_sync_fail("write")
 
         await asyncio.sleep(SYNC_INTERVAL)
 
