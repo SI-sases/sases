@@ -37,6 +37,7 @@ async def _lifespan(app: FastAPI):
     from core.hive.heartbeat import heartbeat_check
     from core.hive.majority import majority_vote_check
     from core.hive.sync import sync_from_authority
+    from core.hive.register_client import periodic_register_task
 
     tasks = [
         asyncio.create_task(periodic_anchor_task()),
