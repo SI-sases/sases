@@ -40,7 +40,7 @@ def main():
         anchor = data.get('latest_anchor') or {}
         h = (anchor.get('anchor_hash') or '')[:16]
         sync_str = f"ok={last_ok} fails={fails}"
-        print(f"{node_id:<12} {role:<8} {h:<18} {sync_str:<16} {degraded:<10}")
+        print(f"{node_id:<12} {role:<8} {h:<18} {sync_str:<16} {str(degraded):<10}")
 
 
 if __name__ == '__main__':
