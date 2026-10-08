@@ -9,7 +9,7 @@ import json
 # 账本表定义：(表名, 参与 hash 的字段)
 LEDGER_TABLES = [
     ("transactions",     ["id", "sender_id", "receiver_id", "amount", "tx_type", "status"]),
-    ("contribution_log", ["id", "user_id", "points"]),
+    ("contribution_log", ["id", "user_id", "event_type", "points"]),
     ("groups",           ["id", "name", "owner_id"]),
     ("group_messages",   ["id", "group_id", "sender_id", "content"]),
 ]
