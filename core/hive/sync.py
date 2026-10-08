@@ -21,7 +21,6 @@ async def sync_from_master():
     await asyncio.sleep(10)
     while True:
         try:
-            from core.hive.config import HIVE_MASTERS
             ledger = {}
             async with httpx.AsyncClient(timeout=10, trust_env=False) as client:
                 for m in HIVE_MASTERS:
