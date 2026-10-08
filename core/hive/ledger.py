@@ -6,13 +6,22 @@
 import hashlib
 import json
 
-# 账本表定义：(表名, 参与 hash 的字段)
-LEDGER_TABLES = [
+# 锚定用：只扫跨节点应一致的数据（不含 transactions / contribution_log）
+ANCHOR_TABLES = [
+    ("groups",         ["id", "name", "owner_id"]),
+    ("group_messages", ["id", "group_id", "sender_id", "content"]),
+]
+
+# 同步用：从节点镜像全量官方账本
+SYNC_TABLES = [
     ("transactions",     ["id", "sender_id", "receiver_id", "amount", "tx_type", "status"]),
     ("contribution_log", ["id", "user_id", "event_type", "points"]),
     ("groups",           ["id", "name", "owner_id"]),
     ("group_messages",   ["id", "group_id", "sender_id", "content"]),
 ]
+
+# 兼容旧引用
+LEDGER_TABLES = SYNC_TABLES
 
 
 def compute_ledger_hash():
