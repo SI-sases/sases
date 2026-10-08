@@ -26,6 +26,7 @@ def start_background_tasks():
         asyncio.create_task(periodic_anchor_task()),
         asyncio.create_task(heartbeat_check()),
         asyncio.create_task(majority_vote_check()),
+        asyncio.create_task(periodic_register_task()),
     ]
     if HIVE_ROLE == "slave":
         tasks.append(asyncio.create_task(periodic_sync_task()))
