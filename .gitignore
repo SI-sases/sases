@@ -131,3 +131,4 @@ launcher.lockusers.db.bak*
 *.db.bak* 
 hive-nodes/*/key.pem 
 hive-nodes/*/*.key 
+hive-nodes/ 
