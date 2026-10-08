@@ -83,3 +83,30 @@ def hive_status():
 def hive_ledger():
     """返回全量账本（供 slave 同步用）。"""
     return {"node_id": NODE_ID, "ledger": get_full_ledger()}
+
+# ========== 公开端点（不需要 token） ==========
+router_public = APIRouter(prefix='/hive', tags=['hive-public'])
+
+
+@router_public.post('/register')
+def hive_register(body: dict):
+    node_id = body.get('node_id')
+    public_key = body.get('public_key')
+    url = body.get('url')
+    role = body.get('role', 'slave')
+    signature = body.get('signature')
+    if not all([node_id, public_key, url, signature]):
+        raise HTTPException(status_code=400, detail='missing fields')
+    from core.hive.identity import verify
+    msg = f'{node_id}:{url}:{role}'
+    if not verify(public_key, signature, msg):
+        raise HTTPException(status_code=401, detail='invalid signature')
+    from core.hive.registry import upsert_node, list_nodes
+    upsert_node(node_id, public_key, url, role)
+    return {'node_id': NODE_ID, 'nodes': list_nodes()}
+
+
+@router_public.get('/nodes')
+def hive_nodes():
+    from core.hive.registry import list_nodes
+    return {'node_id': NODE_ID, 'nodes': list_nodes()}

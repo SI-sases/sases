@@ -7,8 +7,9 @@ from core.hive.config import ENABLE_HIVE, HIVE_ROLE
 def register_routes(app):
     if not ENABLE_HIVE:
         return
-    from core.hive.api import router
+    from core.hive.api import router, router_public
     app.include_router(router)
+    app.include_router(router_public)
     print(f"[hive] routes registered (node={__import__('core.hive.config', fromlist=['NODE_ID']).NODE_ID}, role={HIVE_ROLE})")
 
 
