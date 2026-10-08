@@ -4,6 +4,7 @@
   - slave 角色时：从 master 拉
   - peer 角色时：双向对比 + 合并
 """
+from core.hive.client import hive_headers
 import asyncio
 
 from core.hive.config import (
@@ -22,7 +23,7 @@ async def sync_from_master():
     while True:
         try:
             ledger = {}
-            async with httpx.AsyncClient(timeout=10, trust_env=False) as client:
+            async with httpx.AsyncClient(timeout=10, trust_env=False, headers=hive_headers()) as client:
                 for m in HIVE_MASTERS:
                     try:
                         r = await client.get(f"{m}/hive/ledger")
@@ -73,7 +74,7 @@ async def sync_from_authority(authority_url):
     await asyncio.sleep(15)
     while True:
         try:
-            async with httpx.AsyncClient(timeout=10, trust_env=False) as client:
+            async with httpx.AsyncClient(timeout=10, trust_env=False, headers=hive_headers()) as client:
                 r = await client.get(f'{authority_url}/hive/ledger')
                 ledger = r.json().get('ledger', {})
             if ledger:

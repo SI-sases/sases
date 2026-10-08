@@ -1,4 +1,5 @@
 """core/hive/heartbeat.py —— 心跳对比 + 告警去重。"""
+from core.hive.client import hive_headers
 import asyncio
 from datetime import datetime
 
@@ -18,7 +19,7 @@ async def heartbeat_check():
         try:
             my_hash, _, _ = compute_ledger_hash()
             mismatches = []
-            async with httpx.AsyncClient(timeout=5, trust_env=False) as client:
+            async with httpx.AsyncClient(timeout=5, trust_env=False, headers=hive_headers()) as client:
                 for peer in HIVE_PEERS:
                     try:
                         r = await client.get(f"{peer}/hive/anchor")

@@ -31,6 +31,7 @@ HIVE_PEERS = [
 # 运行模式：off 只跑锚定 / alert 告警 / enforce 锁定
 HIVE_MODE = os.environ.get("HIVE_MODE", "alert").lower()
 HIVE_TOKEN = os.environ.get("HIVE_TOKEN", "")
+DEGRADE_THRESHOLD = int(os.environ.get("HIVE_DEGRADE_THRESHOLD", "3"))
 
 # 各任务周期（秒）
 ANCHOR_INTERVAL = int(os.environ.get("HIVE_ANCHOR_INTERVAL", "3600"))

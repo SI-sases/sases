@@ -1,4 +1,5 @@
 """core/hive/majority.py —— 多数决：收集所有节点 hash，判定异常。"""
+from core.hive.client import hive_headers
 import asyncio
 from collections import Counter
 
@@ -14,7 +15,7 @@ async def majority_vote_check():
     while True:
         try:
             hashes = [(NODE_ID, compute_ledger_hash()[0])]
-            async with httpx.AsyncClient(timeout=5, trust_env=False) as client:
+            async with httpx.AsyncClient(timeout=5, trust_env=False, headers=hive_headers()) as client:
                 for peer in HIVE_PEERS:
                     try:
                         r = await client.get(f"{peer}/hive/anchor")
