@@ -32,7 +32,7 @@ def compute_ledger_hash():
         cur = conn.cursor()
         snapshot = {}
         total = 0
-        for table, cols in LEDGER_TABLES:
+        for table, cols in ANCHOR_TABLES:
             try:
                 cur.execute(f"SELECT {','.join(cols)} FROM {table} ORDER BY id")
                 rows = [tuple(r) for r in cur.fetchall()]
