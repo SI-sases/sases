@@ -56,6 +56,41 @@ async def sync_from_master():
         await asyncio.sleep(SYNC_INTERVAL)
 
 
+async def sync_from_authority(authority_url):
+    """轻量主节点专用：从权威节点同步账本（保持镜像一致）。"""
+    import httpx
+    from core.hive.ledger import LEDGER_TABLES
+    from core.hive.config import SYNC_INTERVAL
+
+    await asyncio.sleep(15)
+    while True:
+        try:
+            async with httpx.AsyncClient(timeout=10, trust_env=False) as client:
+                r = await client.get(f'{authority_url}/hive/ledger')
+                ledger = r.json().get('ledger', {})
+            if ledger:
+                from core.db import db_cursor
+                with db_cursor(commit=True) as cur:
+                    for table, cols in LEDGER_TABLES:
+                        rows = ledger.get(table, [])
+                        if not rows:
+                            continue
+                        cur.execute(f'DELETE FROM {table}')
+                        placeholders = ','.join(['?'] * len(cols))
+                        col_list = ','.join(cols)
+                        for row in rows:
+                            cur.execute(
+                                f'INSERT INTO {table} ({col_list}) VALUES ({placeholders})',
+                                tuple(row),
+                            )
+                total = sum(len(v) for v in ledger.values())
+                print(f'[hive-master-sync] synced from authority, {total} rows')
+        except Exception as e:
+            print(f'[hive-master-sync] error: {e}')
+        await asyncio.sleep(SYNC_INTERVAL)
+
+
+
 async def periodic_sync_task():
     """启动同步任务（仅 slave 生效）。"""
     if HIVE_ROLE == "slave":
