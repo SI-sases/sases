@@ -7,7 +7,7 @@
 import asyncio
 
 from core.hive.config import (
-    HIVE_ROLE, HIVE_MASTER, NODE_ID, SYNC_INTERVAL,
+    HIVE_ROLE, HIVE_MASTERS, NODE_ID, SYNC_INTERVAL,
 )
 from core.hive.ledger import LEDGER_TABLES
 
