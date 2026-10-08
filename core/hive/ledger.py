@@ -48,6 +48,19 @@ def compute_ledger_hash():
 
 
 def get_full_ledger():
-    """返回完整账本数据（供 slave 同步用）。"""
-    _, _, snapshot = compute_ledger_hash()
-    return snapshot
+    """返回完整账本数据（供 slave 同步用）——用 SYNC_TABLES。"""
+    from core.db import get_connection
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        snapshot = {}
+        for table, cols in SYNC_TABLES:
+            try:
+                cur.execute(f"SELECT {','.join(cols)} FROM {table} ORDER BY id")
+                rows = [tuple(r) for r in cur.fetchall()]
+            except Exception:
+                rows = []
+            snapshot[table] = rows
+        return snapshot
+    finally:
+        conn.close()
