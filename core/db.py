@@ -554,6 +554,21 @@ def init_db():
         """)
 
 
+# ========== 节点注册表（B 阶段） ==========
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS node_registry (
+                node_id TEXT PRIMARY KEY,
+                public_key TEXT,
+                url TEXT,
+                role TEXT,
+                status TEXT DEFAULT 'active',
+                first_seen TEXT DEFAULT CURRENT_TIMESTAMP,
+                last_seen TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+
+        
         # ========== 积分锚定表（蜂群预留） ==========
         cur.execute("""
             CREATE TABLE IF NOT EXISTS credit_anchors (
