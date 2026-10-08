@@ -542,6 +542,17 @@ def init_db():
 
         _ensure_column(cur, "transactions", "origin_node", "TEXT DEFAULT 'node-A'")
 
+        _ensure_column(cur, "transactions", "logical_clock", "INTEGER DEFAULT 0")
+
+        # ========== 账本版本表（B 阶段预留） ==========
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS ledger_versions (
+                node_id TEXT PRIMARY KEY,
+                version INTEGER DEFAULT 0,
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
 
         # ========== 积分锚定表（蜂群预留） ==========
         cur.execute("""
