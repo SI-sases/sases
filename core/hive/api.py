@@ -113,6 +113,14 @@ def hive_replica_export():
 
 
 
+@router.get("/forward/stats")
+def hive_forward_stats():
+    """转发统计（副本调用）。"""
+    from core.hive.forwarder import get_forward_stats
+    return {"node_id": NODE_ID, "stats": get_forward_stats()}
+
+
+
 @router.get("/ledger")
 def hive_ledger():
     """返回全量账本（供 slave 同步用）。"""
