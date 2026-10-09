@@ -62,6 +62,7 @@ def pick_master_urls():
     import os
     my_port = os.environ.get('SASES_PORT', '8001')
     urls = [u for u in urls if f':{my_port}' not in u]
+    urls = [u for u in urls if not _is_circuit_open(u)]
     return urls
 
 
