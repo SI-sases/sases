@@ -57,13 +57,21 @@ def apply_replica(tables_data):
                 results[table] = 0
                 continue
             try:
+                cur.execute(f"PRAGMA table_info({table})")
+                local_cols = [r[1] for r in cur.fetchall()]
+                common = [c for c in cols if c in local_cols]
+                if not common:
+                    results[table] = 'no common cols'
+                    continue
+                col_idx = [cols.index(c) for c in common]
                 cur.execute(f"DELETE FROM {table}")
-                placeholders = ",".join(["?"] * len(cols))
-                col_list = ",".join(cols)
+                placeholders = ",".join(["?"] * len(common))
+                col_list = ",".join(common)
                 for row in rows:
+                    vals = [row[i] for i in col_idx]
                     cur.execute(
                         f"INSERT INTO {table} ({col_list}) VALUES ({placeholders})",
-                        tuple(row),
+                        tuple(vals),
                     )
                 results[table] = len(rows)
             except Exception as e:
