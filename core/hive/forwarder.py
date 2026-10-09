@@ -72,7 +72,10 @@ async def forward_request(method, path, body, headers, query=''):
         return None, None
     targets = pick_master_urls()
     if not targets:
-        return 503, {'error': 'no master available'}
+        return 503, {'error': 'no master available (all circuit open or none registered)'}
+
+    _stats["total"] += 1
+    start = time.time()
 
     request_id = str(uuid.uuid4())
     msg = f"{NODE_ID}:{request_id}:{path}"
@@ -90,20 +93,26 @@ async def forward_request(method, path, body, headers, query=''):
     forward_headers['X-Hive-Sign-Message'] = msg
 
     import httpx
-    async with httpx.AsyncClient(timeout=10, trust_env=False, headers=hive_headers()) as client:
+    async with httpx.AsyncClient(timeout=5, trust_env=False, headers=hive_headers()) as client:
         for target in targets:
             try:
                 url = f"{target}{path}"
                 if query:
                     url = f"{url}?{query}"
                 r = await client.request(method, url, content=body, headers=forward_headers)
+                elapsed_ms = int((time.time() - start) * 1000)
+                _stats["total_latency_ms"] += elapsed_ms
+                _stats["success"] += 1
+                _mark_url_success(target)
                 ct = r.headers.get('content-type', '')
                 if ct.startswith('application/json'):
                     return r.status_code, r.json()
                 return r.status_code, {'raw': r.text[:500]}
             except Exception as e:
                 print(f"[forwarder] {target} failed: {e}")
+                _mark_url_fail(target)
                 continue
+    _stats["failed"] += 1
     return 503, {'error': 'all masters unreachable'}
 
 
