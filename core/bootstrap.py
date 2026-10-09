@@ -403,6 +403,25 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    @app.middleware("http")
+    async def _replica_read_only_middleware(request, call_next):
+        """副本模式：拦截写操作，只允许白名单路径。"""
+        from core.hive.config import REPLICA_MODE
+        if not REPLICA_MODE:
+            return await call_next(request)
+        if request.method in ("POST", "PUT", "PATCH", "DELETE"):
+            path = request.url.path
+            # 白名单：认证、hive 端点
+            if not (path.startswith("/token")
+                    or path.startswith("/auth")
+                    or path.startswith("/hive")):
+                from fastapi.responses import JSONResponse
+                return JSONResponse(
+                    {"error": "read-only replica", "message": "本节点为只读副本，写操作请到主节点", "code": 403},
+                    status_code=403,
+                )
+        return await call_next(request)
+
     app.include_router(auth_routes.router)
     app.include_router(seed_routes.router)
     app.include_router(credit_routes.router)
