@@ -54,6 +54,7 @@ def init_db():
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP
             )
         """)
+        _ensure_column(cur, "users", "email", "TEXT")
         _ensure_column(cur, "users", "sases_id", "TEXT")
         _ensure_column(cur, "users", "credits", "REAL DEFAULT 0")
         _ensure_column(cur, "users", "gender", "TEXT")
