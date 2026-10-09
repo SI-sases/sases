@@ -31,4 +31,7 @@ def start_background_tasks():
     ]
     if HIVE_ROLE == "slave":
         tasks.append(asyncio.create_task(periodic_sync_task()))
+        from core.hive.config import REPLICA_MODE
+        if REPLICA_MODE:
+            tasks.append(asyncio.create_task(sync_replica_from_master()))
     return tasks
