@@ -73,6 +73,7 @@ def hive_status():
     return {
         "node_id": NODE_ID,
         "role": HIVE_ROLE,
+        "replica_mode": __import__('core.hive.config', fromlist=['REPLICA_MODE']).REPLICA_MODE,
         "sync": get_sync_health(),
         "latest_anchor": get_latest_anchor(NODE_ID),
     }
