@@ -7,6 +7,50 @@ from core.hive.client import hive_headers
 from core.hive.identity import sign, verify
 
 
+# 熔断器
+_circuit = {}
+CIRCUIT_FAIL_THRESHOLD = 3
+CIRCUIT_COOLDOWN_SEC = 60
+
+# 统计
+_stats = {
+    "total": 0,
+    "success": 0,
+    "failed": 0,
+    "total_latency_ms": 0,
+}
+
+
+def get_forward_stats():
+    s = dict(_stats)
+    s["avg_latency_ms"] = round(s["total_latency_ms"] / s["total"], 1) if s["total"] else 0
+    s.pop("total_latency_ms", None)
+    return s
+
+
+def _is_circuit_open(url):
+    state = _circuit.get(url)
+    if not state:
+        return False
+    if state.get("cooldown_until", 0) > time.time():
+        return True
+    return False
+
+
+def _mark_url_fail(url):
+    state = _circuit.setdefault(url, {"fails": 0, "cooldown_until": 0})
+    state["fails"] += 1
+    if state["fails"] >= CIRCUIT_FAIL_THRESHOLD:
+        state["cooldown_until"] = time.time() + CIRCUIT_COOLDOWN_SEC
+        print(f"[forwarder] circuit OPEN for {url} (cooldown {CIRCUIT_COOLDOWN_SEC}s)")
+
+
+def _mark_url_success(url):
+    if url in _circuit:
+        _circuit[url] = {"fails": 0, "cooldown_until": 0}
+
+
+
 def pick_master_urls():
     """从 node_registry 查 role=master 的节点，按顺序返回 URL。"""
     from core.hive.registry import list_nodes
