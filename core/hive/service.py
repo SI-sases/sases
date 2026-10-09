@@ -21,6 +21,7 @@ def start_background_tasks():
     from core.hive.majority import majority_vote_check
     from core.hive.sync import periodic_sync_task
     from core.hive.register_client import periodic_register_task
+    from core.hive.replica import sync_replica_from_master
 
     tasks = [
         asyncio.create_task(periodic_anchor_task()),
