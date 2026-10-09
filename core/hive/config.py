@@ -93,6 +93,7 @@ HIVE_PEERS = _get_list("peers", "HIVE_PEERS")
 HIVE_MODE = str(_get("mode", "HIVE_MODE", "alert")).lower()
 HIVE_TOKEN = str(_get("token", "HIVE_TOKEN", ""))
 DEGRADE_THRESHOLD = _get_int("degrade_threshold", "HIVE_DEGRADE_THRESHOLD", 3)
+REPLICA_MODE = _get_bool("replica_mode", "REPLICA_MODE", False)
 
 # ========== 各任务周期（秒） ==========
 ANCHOR_INTERVAL = _get_int("anchor_interval", "HIVE_ANCHOR_INTERVAL", 3600)
