@@ -79,6 +79,33 @@
 - 全量覆盖（每次 DELETE + INSERT）
 - 数据量大时性能会下降（当前 1712 条消息可接受）
 
+## B1.2-A 扩展：多副本（2026-10-09）
+
+8003 加入副本模式：
+
+| 参数 | 8002 | 8003 |
+|------|------|------|
+| SASES_PORT | 8002 | 8003 |
+| SASES_NODE_ID | node-B | node-C |
+| SASES_DB_PATH | hive-nodes/node-B/replica.db | hive-nodes/node-C/replica.db |
+
+验证：
+- node-B 与 node-C 行数完全一致（users 8, conversations 8, messages 1749, groups 2）
+
+启动命令（8003）：
+```
+set SASES_PORT=8003
+set SASES_NODE_ID=node-C
+set HIVE_ROLE=slave
+set HIVE_MASTERS=http://127.0.0.1:8001
+set REPLICA_MODE=true
+set SASES_DB_PATH=hive-nodes/node-C/replica.db
+set SASES_DISABLE_FK=true
+python -m uvicorn app_full:app --port 8003
+```
+
+
+
 ## 下一步 B1.2-B
 
 - 副本支持读+写（本地写入）
