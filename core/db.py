@@ -574,6 +574,18 @@ def init_db():
 
 
         
+# ========== 转发请求去重表（B1.2-B） ==========
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS forwarded_requests (
+                request_id TEXT PRIMARY KEY,
+                node_id TEXT,
+                result_json TEXT,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+
+        
         # ========== 空间节点表（SpaceService） ==========
         cur.execute("""
             CREATE TABLE IF NOT EXISTS space_nodes (
