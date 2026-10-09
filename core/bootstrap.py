@@ -405,19 +405,43 @@ def create_app() -> FastAPI:
 
     @app.middleware("http")
     async def _replica_read_only_middleware(request, call_next):
-        """副本模式：拦截写操作，只允许白名单路径。"""
-        from core.hive.config import REPLICA_MODE
+        """副本拦截 + 主节点验签。"""
+        from core.hive.config import REPLICA_MODE, FORWARD_MODE, HIVE_ROLE
+        from fastapi.responses import JSONResponse
+
+        # ========== 主节点：转发请求验证 ==========
+        if HIVE_ROLE == "master" and request.headers.get("X-Hive-Forwarded") == "true":
+            from core.hive.forwarder import verify_forward_signature, check_and_record_request
+            ok, err = verify_forward_signature(request.headers)
+            if not ok:
+                return JSONResponse({"error": "forward verification failed", "reason": err}, status_code=401)
+            request_id = request.headers.get("X-Hive-Request-Id")
+            node_id = request.headers.get("X-Hive-From-Node")
+            if request_id and check_and_record_request(request_id, node_id):
+                return JSONResponse({"error": "duplicate request"}, status_code=409)
+            return await call_next(request)
+
+        # ========== 副本：拦截写操作并转发 ==========
         if not REPLICA_MODE:
             return await call_next(request)
         if request.method in ("POST", "PUT", "PATCH", "DELETE"):
             path = request.url.path
-            # 白名单：认证、hive 端点
             if not (path.startswith("/token")
                     or path.startswith("/auth")
                     or path.startswith("/hive")):
-                from fastapi.responses import JSONResponse
+                if FORWARD_MODE == "auto":
+                    from core.hive.forwarder import forward_request
+                    body = await request.body()
+                    status, resp = await forward_request(
+                        request.method, path, body,
+                        dict(request.headers), request.url.query
+                    )
+                    if status is not None:
+                        return JSONResponse(resp, status_code=status)
                 return JSONResponse(
-                    {"error": "read-only replica", "message": "本节点为只读副本，写操作请到主节点", "code": 403},
+                    {"error": "read-only replica",
+                     "message": "本节点为只读副本，写操作请到主节点",
+                     "code": 403},
                     status_code=403,
                 )
         return await call_next(request)
