@@ -33,6 +33,8 @@ def main():
         data = fetch_status(url)
         node_id = data.get('node_id', n.get('node_id', '?'))
         role = data.get('role', n.get('role', '?'))
+        if data.get('replica_mode'):
+            role = role + '/replica'
         sync = data.get('sync') or {}
         last_ok = sync.get('last_sync_ok')
         fails = sync.get('consecutive_failures', '?')

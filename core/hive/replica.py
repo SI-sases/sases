@@ -85,6 +85,7 @@ async def sync_replica_from_master():
         return
     import httpx
 
+    consecutive_fails = 0
     await asyncio.sleep(15)
     while True:
         try:
@@ -103,8 +104,12 @@ async def sync_replica_from_master():
                 results = apply_replica(data)
                 total = sum(v for v in results.values() if isinstance(v, int))
                 print(f"[replica] synced {total} rows from master")
+                consecutive_fails = 0
             else:
-                print("[replica] no data from master")
+                consecutive_fails += 1
+                print(f"[replica] no data from master (fails={consecutive_fails})")
         except Exception as e:
-            print(f"[replica] error: {e}")
-        await asyncio.sleep(SYNC_INTERVAL)
+            consecutive_fails += 1
+            print(f"[replica] error (fails={consecutive_fails}): {e}")
+        backoff = min(SYNC_INTERVAL * (2 ** min(consecutive_fails, 4)), 600)
+        await asyncio.sleep(backoff)
