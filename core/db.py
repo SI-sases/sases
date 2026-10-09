@@ -54,6 +54,10 @@ def init_db():
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP
             )
         """)
+        _ensure_column(cur, "users", "state_hash", "TEXT")
+        _ensure_column(cur, "users", "tampered_flag", "INTEGER DEFAULT 0")
+        _ensure_column(cur, "users", "auto_pollinate_enabled", "INTEGER DEFAULT 1")
+        _ensure_column(cur, "users", "is_admin", "INTEGER DEFAULT 0")
         _ensure_column(cur, "users", "email", "TEXT")
         _ensure_column(cur, "users", "sases_id", "TEXT")
         _ensure_column(cur, "users", "credits", "REAL DEFAULT 0")
