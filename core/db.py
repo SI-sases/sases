@@ -569,6 +569,27 @@ def init_db():
 
 
         
+        # ========== 空间节点表（SpaceService） ==========
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS space_nodes (
+                node_id TEXT PRIMARY KEY,
+                name TEXT,
+                description TEXT,
+                node_type TEXT DEFAULT 'harness',
+                capabilities TEXT,
+                endpoint TEXT,
+                icon TEXT,
+                owner_id TEXT DEFAULT 'system',
+                registered_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                reputation REAL DEFAULT 1.0,
+                success_count INTEGER DEFAULT 0,
+                total_count INTEGER DEFAULT 0,
+                status TEXT DEFAULT 'unknown'
+            )
+        """)
+
+
+
         # ========== 积分锚定表（蜂群预留） ==========
         cur.execute("""
             CREATE TABLE IF NOT EXISTS credit_anchors (
