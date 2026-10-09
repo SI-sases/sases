@@ -104,6 +104,14 @@ def hive_config():
 
 
 
+@router.get("/replica/export")
+def hive_replica_export():
+    """主节点：导出核心业务表（供副本拉取）。"""
+    from core.hive.replica import export_replica
+    return {"node_id": NODE_ID, "tables": export_replica()}
+
+
+
 @router.get("/ledger")
 def hive_ledger():
     """返回全量账本（供 slave 同步用）。"""
