@@ -1,4 +1,5 @@
 """core/hive/forwarder.py —— 副本写代理转发 + 主节点验签。"""
+import time
 import uuid
 
 from core.hive.config import NODE_ID, HIVE_MASTERS, FORWARD_MODE
