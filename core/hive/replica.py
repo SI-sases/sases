@@ -117,28 +117,12 @@ async def sync_replica_from_master():
     consecutive_fails = 0
     await asyncio.sleep(15)
     while True:
-        try:
-            data = None
-            async with httpx.AsyncClient(timeout=30, trust_env=False, headers=hive_headers()) as client:
-                for m in HIVE_MASTERS:
-                    try:
-                        r = await client.get(f"{m}/hive/replica/export")
-                        if r.status_code == 200:
-                            data = r.json().get("tables", {})
-                            if data:
-                                break
-                    except Exception:
-                        continue
-            if data:
-                results = apply_replica(data)
-                total = sum(v for v in results.values() if isinstance(v, int))
-                print(f"[replica] synced {total} rows from master")
-                consecutive_fails = 0
-            else:
-                consecutive_fails += 1
-                print(f"[replica] no data from master (fails={consecutive_fails})")
-        except Exception as e:
+        ok, total = await do_one_sync()
+        if ok:
+            print(f"[replica] synced {total} rows from master")
+            consecutive_fails = 0
+        else:
             consecutive_fails += 1
-            print(f"[replica] error (fails={consecutive_fails}): {e}")
+            print(f"[replica] no data from master (fails={consecutive_fails})")
         backoff = min(SYNC_INTERVAL * (2 ** min(consecutive_fails, 4)), 600)
         await asyncio.sleep(backoff)
