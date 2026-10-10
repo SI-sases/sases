@@ -409,6 +409,15 @@ def create_app() -> FastAPI:
         from core.hive.config import REPLICA_MODE, FORWARD_MODE, HIVE_ROLE
         from fastapi.responses import JSONResponse
 
+
+        # 动态判断当前角色（选举后可能已变更）
+        try:
+            from core.node.election import get_election_state
+            _current_role = get_election_state().get("my_role", "slave")
+        except Exception:
+            from core.hive.config import HIVE_ROLE as _hr
+            _current_role = _hr
+
         # ========== 主节点：转发请求验证 ==========
         if HIVE_ROLE == "master" and request.headers.get("X-Hive-Forwarded") == "true":
             from core.node.forwarder import verify_forward_signature, check_and_record_request
