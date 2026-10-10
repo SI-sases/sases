@@ -121,6 +121,28 @@ def hive_forward_stats():
 
 
 
+@router.get("/health")
+def hive_health():
+    """健康检查端点（用于选举检测）。"""
+    return {"ok": True, "node_id": NODE_ID, "role": HIVE_ROLE}
+
+
+@router.post("/election/vote")
+def hive_election_vote(body: dict):
+    """处理选举投票请求。"""
+    from core.node.election import handle_vote_request
+    vote, reason = handle_vote_request(body)
+    return {"vote": vote, "reason": reason, "voter_id": NODE_ID}
+
+
+@router.get("/election/state")
+def hive_election_state():
+    """查看当前选举状态。"""
+    from core.node.election import get_election_state
+    return {"node_id": NODE_ID, **get_election_state()}
+
+
+
 @router.get("/ledger")
 def hive_ledger():
     """返回全量账本（供 slave 同步用）。"""
