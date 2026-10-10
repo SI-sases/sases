@@ -79,6 +79,35 @@ def apply_replica(tables_data):
     return results
 
 
+async def do_one_sync():
+    """单次同步核心表。返回 (success: bool, total_rows: int)。"""
+    if HIVE_ROLE != "slave" or not HIVE_MASTERS:
+        return False, 0
+    import httpx
+
+    try:
+        data = None
+        async with httpx.AsyncClient(timeout=30, trust_env=False, headers=hive_headers()) as client:
+            for m in HIVE_MASTERS:
+                try:
+                    r = await client.get(f"{m}/hive/replica/export")
+                    if r.status_code == 200:
+                        data = r.json().get("tables", {})
+                        if data:
+                            break
+                except Exception:
+                    continue
+        if data:
+            results = apply_replica(data)
+            total = sum(v for v in results.values() if isinstance(v, int))
+            return True, total
+        return False, 0
+    except Exception as e:
+        print(f"[replica] do_one_sync error: {e}")
+        return False, 0
+
+
+
 async def sync_replica_from_master():
     """副本节点：从主节点拉取核心表。"""
     if HIVE_ROLE != "slave" or not HIVE_MASTERS:
