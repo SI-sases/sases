@@ -1,0 +1,1 @@
+# core/node/election.py -- 简化选举协议。
