@@ -21,6 +21,7 @@ def start_background_tasks():
     from core.node.majority import majority_vote_check
     from core.ledger.sync import periodic_sync_task
     from core.node.register_client import periodic_register_task
+    from core.node.election import periodic_election_check
     from core.ledger.replica import sync_replica_from_master
 
     tasks = [
@@ -28,6 +29,7 @@ def start_background_tasks():
         asyncio.create_task(heartbeat_check()),
         asyncio.create_task(majority_vote_check()),
         asyncio.create_task(periodic_register_task()),
+        asyncio.create_task(periodic_election_check()),
     ]
     if HIVE_ROLE == "slave":
         tasks.append(asyncio.create_task(periodic_sync_task()))

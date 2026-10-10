@@ -13,7 +13,6 @@ from core.node.identity import sign, verify
 from core.node.client import hive_headers
 
 
-# 本地状态
 _election_state = {
     "current_epoch": 0,
     "my_role": "slave",
@@ -31,6 +30,21 @@ def set_my_priority(p):
     _election_state["my_priority"] = p
 
 
+def init_priority():
+    """根据 NODE_ID 设置初始优先级（小数字优先）。"""
+    mapping = {
+        "node-A": 10,
+        "node-B": 20,
+        "node-C": 30,
+    }
+    p = mapping.get(NODE_ID, 100)
+    _election_state["my_priority"] = p
+    if NODE_ID == "node-A":
+        _election_state["my_role"] = "master"
+    print(f"[election] init: node={NODE_ID}, priority={p}, role={_election_state['my_role']}")
+
+
+
 def set_my_role(role):
     _election_state["my_role"] = role
     print(f"[election] my role changed to: {role}")
@@ -40,10 +54,9 @@ async def check_master_health(master_url):
     """检查主节点是否存活。返回 True/False。"""
     import httpx
     try:
-        r = await httpx.AsyncClient(timeout=3, trust_env=False, headers=hive_headers()).get(
-            f"{master_url}/hive/health"
-        )
-        return r.status_code == 200
+        async with httpx.AsyncClient(timeout=3, trust_env=False, headers=hive_headers()) as client:
+            r = await client.get(f"{master_url}/hive/health")
+            return r.status_code == 200
     except Exception:
         return False
 
@@ -69,7 +82,7 @@ async def propose_election():
 
     import httpx
     votes = 0
-    total = len(HIVE_PEERS) + 1  # 自己 + peers
+    total = len(HIVE_PEERS) + 1
     needed = total // 2 + 1
 
     async with httpx.AsyncClient(timeout=5, trust_env=False, headers=hive_headers()) as client:
