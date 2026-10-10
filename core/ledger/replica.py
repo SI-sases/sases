@@ -124,5 +124,27 @@ async def sync_replica_from_master():
         else:
             consecutive_fails += 1
             print(f"[replica] no data from master (fails={consecutive_fails})")
+            # 连续失败 3 次后，尝试从 registry 重新找 master
+            if consecutive_fails >= 3:
+                await _refresh_master_from_registry()
         backoff = min(SYNC_INTERVAL * (2 ** min(consecutive_fails, 4)), 600)
         await asyncio.sleep(backoff)
+
+
+async def _refresh_master_from_registry():
+    """从 node_registry 查找活跃 master，更新 HIVE_MASTERS。"""
+    try:
+        from core.node.registry import list_nodes
+        import core.hive.config as _cfg
+        nodes = list_nodes()
+        masters = [n for n in nodes if n.get('role') == 'master' and n.get('status') == 'active']
+        new_masters = [m['url'] for m in masters if m.get('url')]
+        # 排除自己
+        import os
+        my_port = os.environ.get('SASES_PORT', '8001')
+        new_masters = [u for u in new_masters if f':{my_port}' not in u]
+        if new_masters and new_masters != _cfg.HIVE_MASTERS:
+            print(f"[replica] switching masters: {_cfg.HIVE_MASTERS} -> {new_masters}")
+            _cfg.HIVE_MASTERS = new_masters
+    except Exception as e:
+        print(f"[replica] refresh master failed: {e}")
