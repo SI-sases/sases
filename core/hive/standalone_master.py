@@ -33,11 +33,11 @@ def _prepare_env(node_id):
 @asynccontextmanager
 async def _lifespan(app: FastAPI):
     import asyncio
-    from core.hive.anchor import periodic_anchor_task
-    from core.hive.heartbeat import heartbeat_check
-    from core.hive.majority import majority_vote_check
-    from core.hive.sync import sync_from_authority
-    from core.hive.register_client import periodic_register_task
+    from core.ledger.anchor import periodic_anchor_task
+    from core.node.heartbeat import heartbeat_check
+    from core.node.majority import majority_vote_check
+    from core.ledger.sync import sync_from_authority
+    from core.node.register_client import periodic_register_task
 
     tasks = [
         asyncio.create_task(periodic_anchor_task()),

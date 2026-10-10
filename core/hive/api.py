@@ -2,8 +2,8 @@
 from fastapi import APIRouter, Depends, Header, HTTPException
 
 from core.hive.config import NODE_ID, HIVE_ROLE, HIVE_PEERS
-from core.hive.ledger import compute_ledger_hash, get_full_ledger
-from core.hive.anchor import get_latest_anchor
+from core.ledger.ledger import compute_ledger_hash, get_full_ledger
+from core.ledger.anchor import get_latest_anchor
 
 def _check_hive_token(authorization: str = Header("")):
     from core.hive.config import HIVE_TOKEN
@@ -69,7 +69,7 @@ def hive_anchors(limit: int = 20):
 
 @router.get("/status")
 def hive_status():
-    from core.hive.sync import get_sync_health
+    from core.ledger.sync import get_sync_health
     return {
         "node_id": NODE_ID,
         "role": HIVE_ROLE,
@@ -108,7 +108,7 @@ def hive_config():
 @router.get("/replica/export")
 def hive_replica_export():
     """主节点：导出核心业务表（供副本拉取）。"""
-    from core.hive.replica import export_replica
+    from core.ledger.replica import export_replica
     return {"node_id": NODE_ID, "tables": export_replica()}
 
 
@@ -116,7 +116,7 @@ def hive_replica_export():
 @router.get("/forward/stats")
 def hive_forward_stats():
     """转发统计（副本调用）。"""
-    from core.hive.forwarder import get_forward_stats
+    from core.node.forwarder import get_forward_stats
     return {"node_id": NODE_ID, "stats": get_forward_stats()}
 
 
@@ -139,16 +139,16 @@ def hive_register(body: dict):
     signature = body.get('signature')
     if not all([node_id, public_key, url, signature]):
         raise HTTPException(status_code=400, detail='missing fields')
-    from core.hive.identity import verify
+    from core.node.identity import verify
     msg = f'{node_id}:{url}:{role}'
     if not verify(public_key, signature, msg):
         raise HTTPException(status_code=401, detail='invalid signature')
-    from core.hive.registry import upsert_node, list_nodes
+    from core.node.registry import upsert_node, list_nodes
     upsert_node(node_id, public_key, url, role)
     return {'node_id': NODE_ID, 'nodes': list_nodes()}
 
 
 @router_public.get('/nodes')
 def hive_nodes():
-    from core.hive.registry import list_nodes
+    from core.node.registry import list_nodes
     return {'node_id': NODE_ID, 'nodes': list_nodes()}

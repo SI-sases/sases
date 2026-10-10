@@ -16,12 +16,12 @@ def register_routes(app):
 def start_background_tasks():
     if not ENABLE_HIVE:
         return []
-    from core.hive.anchor import periodic_anchor_task
-    from core.hive.heartbeat import heartbeat_check
-    from core.hive.majority import majority_vote_check
-    from core.hive.sync import periodic_sync_task
-    from core.hive.register_client import periodic_register_task
-    from core.hive.replica import sync_replica_from_master
+    from core.ledger.anchor import periodic_anchor_task
+    from core.node.heartbeat import heartbeat_check
+    from core.node.majority import majority_vote_check
+    from core.ledger.sync import periodic_sync_task
+    from core.node.register_client import periodic_register_task
+    from core.ledger.replica import sync_replica_from_master
 
     tasks = [
         asyncio.create_task(periodic_anchor_task()),
