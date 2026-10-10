@@ -100,6 +100,9 @@ async def propose_election():
         _election_state["current_epoch"] = new_epoch
         set_my_role("master")
         print(f"[election] WON: epoch={new_epoch}, votes={votes + 1}/{total}")
+        # 当选后清空 masters（自己是主，不需要从别人同步）
+        import core.hive.config as _cfg
+        _cfg.HIVE_MASTERS = []
         return True
     else:
         print(f"[election] LOST: votes={votes + 1}/{total}")
