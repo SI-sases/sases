@@ -411,7 +411,7 @@ def create_app() -> FastAPI:
 
         # ========== 主节点：转发请求验证 ==========
         if HIVE_ROLE == "master" and request.headers.get("X-Hive-Forwarded") == "true":
-            from core.hive.forwarder import verify_forward_signature, check_and_record_request
+            from core.node.forwarder import verify_forward_signature, check_and_record_request
             ok, err = verify_forward_signature(request.headers)
             if not ok:
                 return JSONResponse({"error": "forward verification failed", "reason": err}, status_code=401)
@@ -430,7 +430,7 @@ def create_app() -> FastAPI:
                     or path.startswith("/auth")
                     or path.startswith("/hive")):
                 if FORWARD_MODE == "auto":
-                    from core.hive.forwarder import forward_request
+                    from core.node.forwarder import forward_request
                     body = await request.body()
                     status, resp = await forward_request(
                         request.method, path, body,
