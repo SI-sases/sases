@@ -419,7 +419,7 @@ def create_app() -> FastAPI:
             _current_role = _hr
 
         # ========== 主节点：转发请求验证 ==========
-        if HIVE_ROLE == "master" and request.headers.get("X-Hive-Forwarded") == "true":
+        if _current_role == "master" and request.headers.get("X-Hive-Forwarded") == "true":
             from core.node.forwarder import verify_forward_signature, check_and_record_request
             ok, err = verify_forward_signature(request.headers)
             if not ok:
