@@ -116,6 +116,14 @@ async def forward_request(method, path, body, headers, query=''):
                 _stats["total_latency_ms"] += elapsed_ms
                 _stats["success"] += 1
                 _mark_url_success(target)
+                if 200 <= r.status_code < 300:
+                    try:
+                        import asyncio as _aio
+                        from core.hive.config import REPLICA_MODE
+                        if REPLICA_MODE:
+                            _aio.create_task(_trigger_replica_sync())
+                    except Exception:
+                        pass
                 ct = r.headers.get('content-type', '')
                 if ct.startswith('application/json'):
                     return r.status_code, r.json()
