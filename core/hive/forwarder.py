@@ -66,6 +66,18 @@ def pick_master_urls():
     return urls
 
 
+async def _trigger_replica_sync():
+    """副本转发成功后，异步触发一次同步（不阻塞响应）。"""
+    try:
+        from core.hive.replica import do_one_sync
+        ok, total = await do_one_sync()
+        if ok:
+            print(f"[forwarder] triggered sync: {total} rows")
+    except Exception as e:
+        print(f"[forwarder] trigger sync failed: {e}")
+
+
+
 async def forward_request(method, path, body, headers, query=''):
     """转发请求给主节点。返回 (status_code, response_dict) 或 (None, None)。"""
     if FORWARD_MODE != 'auto':
