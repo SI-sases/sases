@@ -4,13 +4,13 @@
   - slave 角色时：从 master 拉
   - peer 角色时：双向对比 + 合并
 """
-from core.hive.client import hive_headers
+from core.node.client import hive_headers
 import asyncio
 
 from core.hive.config import (
     HIVE_ROLE, HIVE_MASTERS, NODE_ID, SYNC_INTERVAL,
 )
-from core.hive.ledger import LEDGER_TABLES
+from core.ledger.ledger import LEDGER_TABLES
 
 
 _health = {"last_sync_at": None, "last_sync_ok": None, "consecutive_failures": 0, "degraded": False}
@@ -97,7 +97,7 @@ async def sync_from_master():
 async def sync_from_authority(authority_url):
     """轻量主节点专用：从权威节点同步账本（保持镜像一致）。"""
     import httpx
-    from core.hive.ledger import LEDGER_TABLES
+    from core.ledger.ledger import LEDGER_TABLES
     from core.hive.config import SYNC_INTERVAL
 
     await asyncio.sleep(15)

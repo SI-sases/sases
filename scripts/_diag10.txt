@@ -1,7 +1,0 @@
-163: def _enrich_attachment(content):
-164:     """[IMAGE]:/[FILE]: 消息 → 附加内容描述，供模型理解"""
-175:     if content.startswith('[FILE]:'):
-180:             return content + ' (读文件失败: ' + str(_e) + ')'
-232:     # 附件消息（[IMAGE]: / [FILE]:）直接入库，不调模型
-233:     if isinstance(content, str) and (content.startswith('[IMAGE]:') or content.startswith('[FILE]:')):
-248:             content = _enrich_attachment(content)

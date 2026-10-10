@@ -1,1 +1,0 @@
-"        r = subprocess.run([sys.executable, tmp], capture_output=True, text=True, timeout=TIMEOUT, encoding='utf-8', errors='replace', cwd=REPO_ROOT, env=_env)"

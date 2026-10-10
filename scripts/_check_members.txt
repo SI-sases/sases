@@ -1,5 +1,0 @@
-===A===
-(13, 13, 2, 'owner', 0.0, 0.0, 0.0, None, None, None, None)
-(15, 13, 3, 'member', 0.0, 0.0, 0.0, None, None, None, None)
-===B===
-===C===

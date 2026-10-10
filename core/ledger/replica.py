@@ -6,7 +6,7 @@
 """
 import asyncio
 
-from core.hive.client import hive_headers
+from core.node.client import hive_headers
 from core.hive.config import HIVE_ROLE, HIVE_MASTERS, SYNC_INTERVAL
 
 # 核心业务表（B1.2-A 只同步这些）

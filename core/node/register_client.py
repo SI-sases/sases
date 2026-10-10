@@ -5,8 +5,8 @@
 import asyncio
 
 from core.hive.config import NODE_ID, HIVE_ROLE, HIVE_PEERS, HIVE_MASTERS, HIVE_TOKEN
-from core.hive.client import hive_headers
-from core.hive.identity import get_public_key_b64, sign
+from core.node.client import hive_headers
+from core.node.identity import get_public_key_b64, sign
 
 
 def _my_url(port_env='SASES_PORT'):
@@ -45,7 +45,7 @@ async def register_with_peers():
         'signature': sig,
     }
 
-    from core.hive.registry import upsert_node
+    from core.node.registry import upsert_node
 
     async with httpx.AsyncClient(timeout=10, trust_env=False) as client:
         for target in targets:

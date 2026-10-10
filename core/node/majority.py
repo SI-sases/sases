@@ -1,10 +1,10 @@
 """core/hive/majority.py —— 多数决：收集所有节点 hash，判定异常。"""
-from core.hive.client import hive_headers
+from core.node.client import hive_headers
 import asyncio
 from collections import Counter
 
 from core.hive.config import NODE_ID, HIVE_PEERS, VOTE_INTERVAL
-from core.hive.ledger import compute_ledger_hash
+from core.ledger.ledger import compute_ledger_hash
 
 
 async def majority_vote_check():

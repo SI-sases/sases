@@ -1,10 +1,10 @@
 """core/hive/heartbeat.py —— 心跳对比 + 告警去重。"""
-from core.hive.client import hive_headers
+from core.node.client import hive_headers
 import asyncio
 from datetime import datetime
 
 from core.hive.config import NODE_ID, HIVE_PEERS, HEARTBEAT_INTERVAL, HIVE_MODE
-from core.hive.ledger import compute_ledger_hash
+from core.ledger.ledger import compute_ledger_hash
 
 _last_state = None
 

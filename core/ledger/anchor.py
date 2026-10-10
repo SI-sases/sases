@@ -3,7 +3,7 @@ import asyncio
 from datetime import datetime, timezone
 
 from core.hive.config import NODE_ID, ANCHOR_INTERVAL
-from core.hive.ledger import compute_ledger_hash
+from core.ledger.ledger import compute_ledger_hash
 
 
 def write_ledger_anchor():

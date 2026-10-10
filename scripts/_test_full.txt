@@ -1,9 +1,0 @@
-=== node-A ===
-  群 id=15 gid=node-A:g-0cec03422c38
-    成员 role=owner sases=sases_f79o2ym7 name=666666
-=== node-B ===
-  群 id=15 gid=node-A:g-0cec03422c38
-    成员 role=owner sases=sases_f79o2ym7 name=666666
-=== node-C ===
-  群 id=14 gid=node-A:g-0cec03422c38
-    成员 role=owner sases=sases_f79o2ym7 name=666666
