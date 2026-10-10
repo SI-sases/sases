@@ -7,6 +7,9 @@ from core.hive.config import ENABLE_HIVE, HIVE_ROLE
 def register_routes(app):
     if not ENABLE_HIVE:
         return
+    from core.node.election import init_priority
+    init_priority()
+
     from core.hive.api import router, router_public
     app.include_router(router)
     app.include_router(router_public)
