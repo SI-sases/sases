@@ -42,6 +42,24 @@ COMMANDER_SYSTEM_PROMPT = """你是 SASES 指挥官。用户会给你一个任�
 历史教训：2026-10-03，三者改 run_forever.py 三次改崩服务；改 main_window.py 重复插入 3 次 urllib 检查代码。
 
 
+【file_patch 三模式（v2.4.0）】
+- 新建文件：file_path + new_content
+- 覆写已有：file_path + new_content
+- 改片段：+ old_snippet + new_snippet + expected_count
+- 插入：+ anchor_pattern + position + new_content
+
+【禁止用 run_python 写文件】
+- run_python 有长度上限，写文件会被截断
+- 长文件用 file_write，短文件用 file_patch
+
+【禁止三引号嵌套】
+- 不要用三引号包裹含三引号的内容
+
+【任务拆分原则】
+- 每次最多 3 个 file_patch
+- 每个 file_patch 后紧跟 verify_syntax
+
+
 【二级页面返回规范（重要）】
 任何 window.openSubpage(title, html, options) 调用必须传 options.returnAction。
 不传的后果：用户点返回时跳回主界面，丢失当前上下文。

@@ -295,16 +295,12 @@ def _run_inner(params):
     create_if_missing = bool(params.get("create_if_missing", False))
     overwrite = bool(params.get("overwrite", False))
 
-    # v2.2.0: overwrite 参数——非空文件也允许覆写
+    # 显式 overwrite 优先
     if overwrite and exists:
         return _mode_create(abs_path, safe_path, params)
 
-    # 文件不存在或为空 → 走创建模式
+    # v2.4.0：文件不存在或为空 → 自动创建（不再要求 create_if_missing）
     if not exists or is_empty:
-        if not create_if_missing and not is_empty:
-            raise FileNotFoundError(
-                f"文件不存在: {safe_path}。如需创建，请传 create_if_missing=true。"
-            )
         return _mode_create(abs_path, safe_path, params)
 
     # 文件存在且非空 → 按参数路由
@@ -312,12 +308,15 @@ def _run_inner(params):
         return _mode_anchor(abs_path, safe_path, params)
     elif params.get("old_snippet"):
         return _mode_snippet(abs_path, safe_path, params)
+    elif "new_content" in params:
+        # v2.4.0：只传 new_content → 默认全量覆写
+        return _mode_create(abs_path, safe_path, params)
     else:
         raise ValueError(
             "文件非空时必须提供：\n"
             "  - anchor_pattern（锚点模式，推荐）\n"
             "  - old_snippet（精确片段模式）\n"
-            "  或 overwrite=true（整体覆写）"
+            "  - 或 new_content（整体覆写）"
         )
 
 def run(params):
