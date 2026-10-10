@@ -1,444 +1,173 @@
-\# SASES 架构总览
+# SASES 架构总览
 
+版本：v0.26.4（2026-10-10）
+状态：整合第 3 批完成
 
+## 一、三层结构
 
-\## 一、三架构分层
+```
+core/
+├── node/         节点基础设施（身份、注册、转发、心跳、多数决）
+├── ledger/       账本（锚定、副本、同步）
+├── broadcast/    广播（WS 连接池 + 广播接口）
+├── hive/         入口壳（挂载上述模块，提供 HTTP 端点）
+├── swarm/        蜂巢资源层（未来：算力、存储、模型）
+├── services/     业务逻辑（用户、消息、群、宠物...）
+├── api_routes/   HTTP 路由层
+└── db.py         数据库初始化
+```
 
-┌────────────────────────────────────────────┐
+## 二、模块职责
 
-│ 根脉络架构（Root-Vein） │
+### core/node/ —— 节点基础设施
 
-│ 多模型协作 · 控制库 · 外部 IO · 设备接口 │
-
-├────────────────────────────────────────────┤
-
-│ 种子架构（Seed） │
-
-│ 发芽 → 生长 → 验证 → 回溯 → 知识库入库 │
-
-├────────────────────────────────────────────┤
-
-│ 阿波罗架构（Apollo） │
-
-│ 天时节律 · 逐日安全 · 除虫 · 挑坏果子 │
-
-└────────────────────────────────────────────┘
-
-
-
-text
-
-
-
-\## 二、三角色协同
-
-用户输入
-
-↓
-
-意图识别（intent\_service）
-
-↓ is\_task?
-
-调度员（supervisor\_service）
-
-↓ 生成 run
-
-指挥官（swarm/commander.py）→ 拆解为步骤 JSON
-
-↓ 写 pending 表
-
-执行员（executor\_service.py）→ 每 3 秒扫描执行
-
-↓ \[STEP\_DONE]
-
-审核员（swarm/reviewer.py）→ pass / retry
-
-↓
-
-汇总 → 写记忆 → 更新知识库
-
-
-
-text
-
-
-
-\## 三、核心目录结构
-
-sases/
-
-├── app\_full.py # FastAPI 入口
-
-├── core/
-
-│ ├── bootstrap.py # 应用创建、路由注册、后台任务
-
-│ ├── db.py # 数据库初始化与迁移
-
-│ ├── config.py # 配置加载
-
-│ ├── security.py # JWT/加密/签名
-
-│ ├── auth\_service.py # 用户认证
-
-│ ├── harness\_\*.py # Harness 工具运行时
-
-│ ├── services/ # 业务逻辑层
-
-│ │ ├── swarm/ # 指挥官 + 审核员（已拆分）
-
-│ │ ├── supervisor/ # 调度员（已拆分）
-
-│ │ ├── message/ # 消息处理（已拆分）
-
-│ │ ├── group\_service.py # 群聊核心
-
-│ │ ├── group\_task\_service.py # 群任务
-
-│ │ ├── group\_red\_packet\_service.py # 群红包
-
-│ │ ├── airdrop\_service.py # 空投
-
-│ │ ├── credit\_service.py # 积分
-
-│ │ ├── memory\_service.py # 记忆库
-
-│ │ └── ... # 其他业务
-
-│ └── api\_routes/ # HTTP 路由层（39 个文件，190 接口）
-
-├── harness\_modules/ # Harness 工具实现
-
-├── static/
-
-│ ├── index.html # 单页应用入口
-
-│ ├── css/ # 拆分后的样式
-
-│ └── modules/ # 前端 JS 模块
-
-├── scripts/ # 运维/诊断脚本
-
-├── docs/ # 架构/API/数据库文档
-
-├── tests/ # 测试
-
-└── users.db # SQLite 主库
-
-
-
-text
-
-
-
-\## 四、数据库分层
-
-
-
-| 层 | 表 | 说明 |
-
-|----|----|----|
-
-| \*\*用户层\*\* | users, api\_keys, model\_configs | 账户与配置 |
-
-| \*\*会话层\*\* | conversations, messages | 单聊 |
-
-| \*\*群聊层\*\* | groups, group\_members, group\_messages | 群基础 |
-
-| \*\*群业务层\*\* | group\_tasks, group\_red\_packets, group\_stakes, group\_airdrop\_log | 蜂群模式 |
-
-| \*\*知识层\*\* | knowledge\_base, project\_docs, execution\_notes, safety\_memory, interaction\_patterns | 认知资产 |
-
-| \*\*调度层\*\* | swarm\_pending\_tasks, swarm\_reviews, supervisor\_runs | 三者执行 |
-
-| \*\*工作层\*\* | work\_logs, quality\_issues, rescue\_tasks | 指令模式 |
-
-| \*\*游戏层\*\* | pets, base\_facilities, game\_resources, yunchong\_tasks | 云宠战役 |
-
-| \*\*交易层\*\* | transactions, credit\_pool, contribution\_log | 积分经济 |
-
-
-
-\## 五、关键数据流
-
-
-
-\### 5.1 任务执行流
-
-用户 → /messages/send → intent\_service 判 is\_task
-
-→ 是 → swarm.plan\_task → LLM 拆解 → pending 表
-
-→ executor 扫描 → 执行 harness → \[STEP\_DONE]
-
-→ reviewer 审核 → pass / retry
-
-→ 全 pass → 写记忆 → 写知识库 → 汇总返回
-
-
-
-text
-
-
-
-\### 5.2 群任务流
-
-群成员 → /group/{id}/tasks/publish → 扣质押 + 插 \[TASK\_CARD] 消息
-
-→ 群成员提交 → /group/tasks/{id}/submit
-
-→ 发布者选择 → /group/tasks/{id}/select
-
-→ 95% 给提交者 + 5% 进群池
-
-
-
-text
-
-
-
-\### 5.3 群红包流
-
-用户 → /group/{id}/red-packets/create
-
-→ 扣个人积分（或群池）→ 插 \[RED\_PACKET] 消息
-
-→ 群成员抢 → claim\_packet → 二倍均值法随机分配
-
-→ 24h 过期 → expire\_packets → 退款
-
-
-
-text
-
-
-
-\## 六、后台定时任务
-
-
-
-| 任务 | 频率 | 说明 |
-
-|------|------|------|
-
-| periodic\_summary\_task | 6 小时 | 总结工作日志 |
-
-| periodic\_git\_push | 1 小时 | 推送代码 |
-
-| periodic\_pattern\_finalize | 1 小时 | 经验固化 |
-
-| periodic\_syntax\_check | 1 分钟 | 语法扫描 |
-
-| periodic\_rescue\_maintenance | 5 分钟 | 超时任务回收 |
-
-| periodic\_airdrop | 每天 0:30 | 空投 |
-
-| periodic\_group\_red\_packet | 1 分钟 | 群福利定时发 |
-
-| periodic\_red\_packet\_expire | 1 小时 | 红包过期退款 |
-
-| periodic\_cleanup | 24 小时 | 数据清理 |
-
-| periodic\_state\_sync | 24 小时 | 状态快照 |
-
-
-
-\## 七、文档索引
-
-
-
-| 文档 | 说明 |
-
+| 文件 | 职责 |
 |------|------|
+| identity.py | Ed25519 密钥对，签名/验签 |
+| registry.py | 节点注册表（node_id + public_key + url + role） |
+| register_client.py | 向 peers 注册自己 |
+| client.py | 出站 HTTP 请求 header（含 HIVE_TOKEN） |
+| heartbeat.py | 心跳对比 + 告警去重 |
+| majority.py | 多数决（2/3 一致为准） |
+| forwarder.py | 写代理转发（含熔断、幂等、防循环） |
 
-| `docs/ARCHITECTURE.md` | 本文件 |
+### core/ledger/ —— 账本
 
-| `docs/DATABASE.md` | 数据库表结构（脚本生成） |
-
-| `docs/API\_INDEX.md` | API 接口清单（脚本生成） |
-
-| `docs/EXECUTION\_HEALTH.md` | 执行质量诊断（脚本生成） |
-
-| `docs/DEVELOPER\_NOTES.md` | 开发者操作手册 |
-
-| `docs/SASES\_STATE.md` | 系统状态快照 |
-
-
-
-## 八、群聊子架构（v0.23.0）
-
-### 8.1 数据层
-
-| 表 | 用途 |
-|----|------|
-| groups | 群基本信息 + features（JSON）|
-| group_members | 成员（user_id / agent_id / role / nickname / is_muted）|
-| group_messages | 群消息（含 message_type / related_id）|
-| group_tasks | 群任务 |
-| group_task_submissions | 任务提交 |
-| group_red_packets | 群红包（user / group_pool）|
-| group_red_packet_claims | 红包领取 |
-| group_stakes | 质押 |
-| group_credit_log | 积分流水 |
-| group_airdrop_log | 空投记录 |
-| group_resource_pool | 蜂群模式共享资源 |
-| group_resource_usage | 资源使用日志 |
-| knowledge_docs | 统一知识库（scope: group / manual）|
-| group_report_queue | 群汇报队列 |
-| group_invite_pending | 待批准邀请 |
-
-### 8.2 消息类型（group_messages.message_type）
-
-| type | 说明 |
+| 文件 | 职责 |
 |------|------|
-| text | 普通消息 |
-| task_card | 任务卡片 |
-| red_packet | 红包卡片 |
-| red_packet_done | 红包发放完成 |
-| file | 文件卡片 |
+| ledger.py | 账本 hash 计算（锚定用：groups + group_messages） |
+| anchor.py | 定期写 credit_anchors |
+| replica.py | 副本同步（从主节点拉核心业务表） |
+| sync.py | 全量同步（兼容旧接口） |
 
-### 8.3 群积分池结构
+### core/broadcast/ —— 广播
 
-```
-可用余额（credits）      ← 任务抽成、空投、红包退回
-质押余额（staked_credits）← 成员质押，锁定 30 天
-```
-
-**门槛**：
-- 发红包：总积分 ≥ 1000
-- 定时群福利：总积分 ≥ 1000
-- 空投资格：总积分 ≥ 10（唯一条件）
-
-### 8.4 蜂群模式
-
-群主开启 → 成员切到蜂群模式 → 可选群共享智能体。
-
-**共享方式**：
-- 群主在蜂群模式管理页勾选智能体
-- 存入 `group_resource_pool`
-- 员工侧身份切换列表按模式分流
-
-### 8.5 时区适配（蜂巢计划）
-
-- 存储：UTC
-- 展示：本地时区
-- 前端 `_utcHourToLocal` / `_localHourToUtc` 转换
-
-### 8.6 定时任务（14 个，按频率分组）
-
-```
-秒级：executor / syntax_check
-分钟级：rescue / group_rp / rp_expire
-小时级：summary / debug / pattern / git_push / task_repush
-日级：backup / cleanup / state_sync / airdrop
-```
-
-### 8.7 跨实例同步（Hive）
-
-- 群消息：`/hive/sync/message`
-- 群创建：`/hive/sync/group`
-- 成员同步：`/hive/sync/member`
-- 任务同步：`/hive/sync/task`
-- 提交同步：`/hive/sync/submission`
-- 结果同步：`/hive/sync/task-result`
-
----
-
-
-## 八、群聊子架构（v0.23.0）
-
-### 8.1 数据层
-
-| 表 | 用途 |
-|----|------|
-| groups | 群基本信息 + features（JSON）|
-| group_members | 成员（user_id / agent_id / role / nickname / is_muted）|
-| group_messages | 群消息（含 message_type / related_id）|
-| group_tasks | 群任务 |
-| group_task_submissions | 任务提交 |
-| group_red_packets | 群红包（user / group_pool）|
-| group_red_packet_claims | 红包领取 |
-| group_stakes | 质押 |
-| group_credit_log | 积分流水 |
-| group_airdrop_log | 空投记录 |
-| group_resource_pool | 蜂群模式共享资源 |
-| group_resource_usage | 资源使用日志 |
-| knowledge_docs | 统一知识库（scope: group / manual）|
-| group_report_queue | 群汇报队列 |
-| group_invite_pending | 待批准邀请 |
-
-### 8.2 消息类型（group_messages.message_type）
-
-| type | 说明 |
+| 文件 | 职责 |
 |------|------|
-| text | 普通消息 |
-| task_card | 任务卡片 |
-| red_packet | 红包卡片 |
-| red_packet_done | 红包发放完成 |
-| file | 文件卡片 |
+| ws_hub.py | WS 连接池（group/user），纯 Python，无 FastAPI 依赖 |
+| __init__.py | 导出 broadcast_to_user / broadcast_to_group |
 
-### 8.3 群积分池结构
+**关键**：未来 L2（节点间广播）在 ws_hub 基础上扩展。
 
-```
-可用余额（credits）      ← 任务抽成、空投、红包退回
-质押余额（staked_credits）← 成员质押，锁定 30 天
-```
+### core/hive/ —— 入口壳
 
-**门槛**：
-- 发红包：总积分 ≥ 1000
-- 定时群福利：总积分 ≥ 1000
-- 空投资格：总积分 ≥ 10（唯一条件）
-
-### 8.4 蜂群模式
-
-群主开启 → 成员切到蜂群模式 → 可选群共享智能体。
-
-**共享方式**：
-- 群主在蜂群模式管理页勾选智能体
-- 存入 `group_resource_pool`
-- 员工侧身份切换列表按模式分流
-
-### 8.5 时区适配（蜂巢计划）
-
-- 存储：UTC
-- 展示：本地时区
-- 前端 `_utcHourToLocal` / `_localHourToUtc` 转换
-
-### 8.6 定时任务（14 个，按频率分组）
-
-```
-秒级：executor / syntax_check
-分钟级：rescue / group_rp / rp_expire
-小时级：summary / debug / pattern / git_push / task_repush
-日级：backup / cleanup / state_sync / airdrop
-```
-
-### 8.7 跨实例同步（Hive）
-
-- 群消息：`/hive/sync/message`
-- 群创建：`/hive/sync/group`
-- 成员同步：`/hive/sync/member`
-- 任务同步：`/hive/sync/task`
-- 提交同步：`/hive/sync/submission`
-- 结果同步：`/hive/sync/task-result`
-
----
-
-
-\## 八、文档维护
-
-
-
-| 场景 | 动作 |
-
+| 文件 | 职责 |
 |------|------|
+| config.py | 配置读取（env + config.json + 默认值） |
+| api.py | HTTP 端点（/hive/hash、/hive/anchor、/hive/register...） |
+| service.py | 挂载路由 + 后台任务 |
+| standalone.py | 轻量从节点入口 |
+| standalone_master.py | 轻量主节点入口 |
 
-| 加新表 | 跑 `python scripts/gen\_db\_doc.py` |
+### core/swarm/ —— 蜂巢资源层（未来）
 
-| 加新接口 | 跑 `python scripts/gen\_api\_doc.py` |
+预留：算力共享、存储分片、模型托管。
 
-| 每次功能上线 | 跑 `python scripts/gen\_health\_doc.py` |
+## 三、依赖方向
 
-| 重大架构变更 | 手动更新本文件 |
+```
+api_routes/services
+        ↓
+    core/hive/
+        ↓
+  ┌─────┴─────┐
+  ↓           ↓
+core/node/  core/ledger/
+  ↓           ↓
+  └─────┬─────┘
+        ↓
+  core/broadcast/
+        ↓
+      core/db.py
+```
 
+依赖规则：
+- 上层可以依赖下层
+- 同层可以互相依赖
+- 下层不依赖上层
+
+## 四、数据流
+
+### 用户请求（读）
+
+```
+浏览器 → api_routes → services → db
+```
+
+### 用户请求（写）
+
+```
+浏览器 → api_routes → services（本地写）
+  或
+浏览器 → api_routes → forwarder → 主节点 → services（本地写）
+```
+
+### 节点间同步
+
+```
+主节点 → replica.export_replica() → 从节点
+从节点 → sync_from_master() → 本地 replica.db
+```
+
+### 广播
+
+```
+services → broadcast.ws_hub → 本地 WS 客户端
+```
+
+## 五、向后兼容
+
+`core/hive/*.py` 保留为 shim，指向新位置：
+
+- core/hive/identity.py → core/node/identity.py
+- core/hive/registry.py → core/node/registry.py
+- core/hive/ledger.py → core/ledger/ledger.py
+- core/hive/client.py → core/node/client.py
+- core/hive/heartbeat.py → core/node/heartbeat.py
+- core/hive/majority.py → core/node/majority.py
+- core/hive/register_client.py → core/node/register_client.py
+- core/hive/forwarder.py → core/node/forwarder.py
+- core/hive/anchor.py → core/ledger/anchor.py
+- core/hive/replica.py → core/ledger/replica.py
+- core/hive/sync.py → core/ledger/sync.py
+
+**待清理**：确认无引用后删除 shim。
+
+## 六、未来扩展
+
+### L2 节点间广播（上服务器前）
+
+在 `core/broadcast/` 加 `node.py`，通过 WS 长连接在主节点和副本间转发广播。
+
+### 蜂巢资源层（蜂巢计划）
+
+在 `core/swarm/` 下新增：
+- compute.py（算力共享）
+- storage.py（存储分片）
+- model.py（模型托管）
+
+### B3 真去中心（长期）
+
+- DHT 节点发现
+- 共识算法
+- E2E 加密
+
+## 七、版本历史
+
+| 版本 | 内容 |
+|------|------|
+| v0.26.0 | 整合前冻结 |
+| v0.26.1 | 第 1 批：建目录 + 迁移 3 文件 |
+| v0.26.2 | 第 2 批：迁移 7 文件 |
+| v0.26.3 | 第 3 批 A：迁移 forwarder.py |
+| v0.26.4 | 第 3 批 B：抽出 broadcast 模块 |
+
+## 八、一句话
+
+三层平行：node（节点）+ ledger（账本）+ broadcast（广播），
+通过 hive（入口）挂载，swarm（资源）预留。
+
+整合原则：
+- 目录分层，不重写逻辑
+- shim 兼容，调用方零改动
+- 可撤除，任一层可独立关闭
