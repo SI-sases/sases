@@ -1,0 +1,33 @@
+=== core/hive/ 依赖关系 ===
+  anchor.py                 (  55 行) -> ['config', 'ledger']
+  api.py                    ( 154 行) -> ['anchor', 'config', 'forwarder', 'identity', 'ledger', 'registry', 'replica', 'sync']
+  client.py                 (   8 行) -> ['config']
+  config.py                 ( 103 行) -> []
+  forwarder.py              ( 169 行) -> ['client', 'config', 'identity', 'registry', 'replica']
+  heartbeat.py              (  49 行) -> ['client', 'config', 'ledger']
+  identity.py               (  75 行) -> []
+  ledger.py                 (  65 行) -> []
+  majority.py               (  41 行) -> ['client', 'config', 'ledger']
+  register_client.py        (  78 行) -> ['client', 'config', 'identity', 'registry']
+  registry.py               (  70 行) -> []
+  replica.py                ( 128 行) -> ['client', 'config']
+  reset_credits.py          (  58 行) -> []
+  service.py                (  36 行) -> ['anchor', 'api', 'config', 'heartbeat', 'majority', 'register_client', 'replica', 'sync']
+  standalone.py             (  55 行) -> ['api', 'service']
+  standalone_master.py      (  76 行) -> ['anchor', 'api', 'heartbeat', 'majority', 'register_client', 'sync']
+  sync.py                   ( 136 行) -> ['client', 'config', 'ledger']
+
+=== 广播相关（后端） ===
+  core\bootstrap.py  (broadcast x 2, websocket x 0)
+  core\api_routes\group_routes.py  (broadcast x 7, websocket x 0)
+  core\api_routes\hive_routes.py  (broadcast x 2, websocket x 0)
+  core\api_routes\message_routes.py  (broadcast x 2, websocket x 0)
+  core\api_routes\ws_routes.py  (broadcast x 2, websocket x 24)
+  core\services\group_service.py  (broadcast x 13, websocket x 0)
+  core\services\group_task_service.py  (broadcast x 5, websocket x 0)
+  core\services\message\send.py  (broadcast x 2, websocket x 0)
+  core\services\swarm\helpers.py  (broadcast x 2, websocket x 0)
+
+=== 广播相关（前端） ===
+  static\modules\group_chat.js  (broadcast x 0, websocket x 2, /ws/ x 1)
+  static\modules\ws_client.js  (broadcast x 0, websocket x 2, /ws/ x 1)
