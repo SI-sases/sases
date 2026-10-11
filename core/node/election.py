@@ -270,6 +270,10 @@ def handle_vote_request(body):
 
 async def periodic_election_check():
     """后台任务：检测主节点是否失效，若失效则发起选举。"""
+    from core.profile import ENABLE_ELECTION
+    if not ENABLE_ELECTION:
+        print("[election] profile disabled election, skip periodic check")
+        return
     await asyncio.sleep(30)
 
     while True:
