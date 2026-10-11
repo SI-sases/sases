@@ -376,6 +376,10 @@ async def lifespan(app: FastAPI):
     _background_tasks.append(asyncio.create_task(periodic_airdrop()))
 
 
+    # 【预热】启动后预热一次（不参与周期）
+    _background_tasks.append(asyncio.create_task(periodic_warmup_task()))
+
+
     # 【hive 蜂巢任务】
     try:
         from core.hive.service import start_background_tasks as _hive_tasks
