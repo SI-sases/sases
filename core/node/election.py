@@ -112,6 +112,31 @@ def get_peer_epochs():
 
 # ========== 初始化 ==========
 
+def check_peer_epochs():
+    """向 peers 查 epoch，若发现更高 epoch 的 master，降级自己。"""
+    try:
+        import httpx
+        for peer in HIVE_PEERS:
+            try:
+                r = httpx.get(f"{peer}/hive/election/state", timeout=3, trust_env=False)
+                if r.status_code != 200:
+                    continue
+                data = r.json()
+                peer_epoch = data.get("current_epoch", 0)
+                peer_role = data.get("my_role", "slave")
+                if peer_role == "master" and peer_epoch > _election_state["current_epoch"]:
+                    _election_state["current_epoch"] = peer_epoch
+                    _election_state["my_role"] = "slave"
+                    print(f"[election] startup: peer {peer} has higher epoch {peer_epoch}, downgrading to slave")
+                    return True
+            except Exception:
+                continue
+    except Exception as e:
+        print(f"[election] check peers failed: {e}")
+    return False
+
+
+
 def init_priority():
     """根据 NODE_ID 设置初始优先级（小数字优先）+ 从 DB 加载 epoch。"""
     mapping = {
