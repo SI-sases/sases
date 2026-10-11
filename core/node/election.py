@@ -3,6 +3,7 @@
 规则：
 - 优先级数字小的先当选（8001=10 > 8002=20 > 8003=30）
 - 通过 epoch 号防止裂脑
+- epoch 持久化到 node_registry，重启不丢
 - 只有超过半数节点同意才当选
 """
 import asyncio
@@ -30,8 +31,89 @@ def set_my_priority(p):
     _election_state["my_priority"] = p
 
 
+def set_my_role(role):
+    _election_state["my_role"] = role
+    print(f"[election] my role changed to: {role}")
+
+
+# ========== epoch 持久化 ==========
+
+def save_epoch_to_db(epoch):
+    """把 epoch 写入 node_registry（自己那行）。"""
+    try:
+        from core.db import db_cursor
+        with db_cursor(commit=True) as cur:
+            cur.execute(
+                "UPDATE node_registry SET master_epoch=? WHERE node_id=?",
+                (epoch, NODE_ID)
+            )
+        print(f"[election] epoch saved to db: {epoch}")
+    except Exception as e:
+        print(f"[election] save epoch failed: {e}")
+
+
+def check_higher_epoch_on_startup():
+    """启动时检查 registry 中是否有更高 epoch 的 master。若有则降级。"""
+    try:
+        from core.db import get_connection
+        conn = get_connection()
+        try:
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT node_id, master_epoch FROM node_registry "
+                "WHERE master_epoch > ? AND node_id != ?",
+                (_election_state["current_epoch"], NODE_ID)
+            )
+            rows = cur.fetchall()
+            if rows:
+                max_epoch = max(r[1] for r in rows)
+                higher_node = [r[0] for r in rows if r[1] == max_epoch][0]
+                _election_state["current_epoch"] = max_epoch
+                _election_state["my_role"] = "slave"
+                print(f"[election] startup: found higher epoch {max_epoch} at {higher_node}, downgrading to slave")
+        finally:
+            conn.close()
+    except Exception as e:
+        print(f"[election] check higher epoch failed: {e}")
+
+
+
+def load_epoch_from_db():
+    """从 node_registry 读 epoch。"""
+    try:
+        from core.db import get_connection
+        conn = get_connection()
+        try:
+            cur = conn.cursor()
+            cur.execute("SELECT master_epoch FROM node_registry WHERE node_id=?", (NODE_ID,))
+            row = cur.fetchone()
+            if row and row[0]:
+                _election_state["current_epoch"] = int(row[0])
+                print(f"[election] loaded epoch from db: {row[0]}")
+        finally:
+            conn.close()
+    except Exception as e:
+        print(f"[election] load epoch failed: {e}")
+
+
+def get_peer_epochs():
+    """通过 /hive/election/state 查询 peers 的 epoch。"""
+    import httpx
+    epochs = []
+    for peer in HIVE_PEERS:
+        try:
+            r = httpx.get(f"{peer}/hive/election/state", timeout=3, trust_env=False)
+            if r.status_code == 200:
+                epochs.append(r.json().get("current_epoch", 0))
+        except Exception:
+            continue
+    return epochs
+
+
+# ========== 初始化 ==========
+
 def init_priority():
-    """根据 NODE_ID 设置初始优先级（小数字优先）。"""
+    """根据 NODE_ID 设置初始优先级（小数字优先）+ 从 DB 加载 epoch。"""
     mapping = {
         "node-A": 10,
         "node-B": 20,
@@ -41,14 +123,14 @@ def init_priority():
     _election_state["my_priority"] = p
     if NODE_ID == "node-A":
         _election_state["my_role"] = "master"
-    print(f"[election] init: node={NODE_ID}, priority={p}, role={_election_state['my_role']}")
+
+    # 从 DB 加载 epoch
+    load_epoch_from_db()
+
+    print(f"[election] init: node={NODE_ID}, priority={p}, role={_election_state['my_role']}, epoch={_election_state['current_epoch']}")
 
 
-
-def set_my_role(role):
-    _election_state["my_role"] = role
-    print(f"[election] my role changed to: {role}")
-
+# ========== 健康检测 ==========
 
 async def check_master_health(master_url):
     """检查主节点是否存活。返回 True/False。"""
@@ -61,12 +143,19 @@ async def check_master_health(master_url):
         return False
 
 
+# ========== 选举 ==========
+
 async def propose_election():
     """发起选举：向 peers 请求投票。"""
     _election_state["last_election_at"] = time.time()
     _election_state["votes_received"] = set()
 
-    new_epoch = _election_state["current_epoch"] + 1
+    # 先查询 peers 的 epoch，取最大值 +1
+    peer_epochs = get_peer_epochs()
+    max_epoch = _election_state["current_epoch"]
+    if peer_epochs:
+        max_epoch = max([max_epoch] + peer_epochs)
+    new_epoch = max_epoch + 1
     my_priority = _election_state["my_priority"]
 
     msg = f"{NODE_ID}:{new_epoch}:{my_priority}"
@@ -100,6 +189,8 @@ async def propose_election():
         _election_state["current_epoch"] = new_epoch
         set_my_role("master")
         print(f"[election] WON: epoch={new_epoch}, votes={votes + 1}/{total}")
+        # 持久化 epoch
+        save_epoch_to_db(new_epoch)
         # 当选后清空 masters（自己是主，不需要从别人同步）
         import core.hive.config as _cfg
         _cfg.HIVE_MASTERS = []
@@ -137,8 +228,10 @@ def handle_vote_request(body):
     if priority > my_priority:
         return "no", f"candidate priority lower ({priority} > {my_priority})"
 
+    # 接受：更新本地 epoch 并持久化
     _election_state["current_epoch"] = new_epoch
     _election_state["my_role"] = "slave"
+    save_epoch_to_db(new_epoch)
     return "yes", "voted"
 
 

@@ -22,6 +22,7 @@ REPLICA_TABLES = [
     "base_facilities",
     "transactions",
     "contribution_log",
+    "model_configs",
 ]
 
 
