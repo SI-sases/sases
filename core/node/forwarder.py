@@ -57,7 +57,7 @@ def pick_master_urls():
     from core.node.registry import list_nodes
     masters = [n for n in list_nodes() if n.get('role') == 'master' and n.get('status') == 'active']
     urls = [m['url'] for m in masters if m.get('url')]
-    for u in HIVE_MASTERS:
+    for u in _cfg.HIVE_MASTERS:
         if u not in urls:
             urls.append(u)
     import os
