@@ -143,23 +143,22 @@ def check_peer_epochs():
 
 def init_priority():
     """根据 NODE_ID 设置初始优先级（小数字优先）+ 从 DB 加载 epoch。"""
+    import os as _os
+    _node_id = _os.environ.get("SASES_NODE_ID", NODE_ID)
     mapping = {
         "node-A": 10,
         "node-B": 20,
         "node-C": 30,
     }
-    p = mapping.get(NODE_ID, 100)
+    p = mapping.get(_node_id, 100)
     _election_state["my_priority"] = p
-    if NODE_ID == "node-A":
+    if _node_id == "node-A":
         _election_state["my_role"] = "master"
-
-    # 从 DB 加载 epoch
-    load_epoch_from_db()
 
     load_epoch_from_db()
     check_higher_epoch_on_startup()
     check_peer_epochs()
-    print(f"[election] init: node={NODE_ID}, priority={p}, role={_election_state['my_role']}, epoch={_election_state['current_epoch']}")
+    print(f"[election] init: node={_node_id}, priority={p}, role={_election_state['my_role']}, epoch={_election_state['current_epoch']}")
 
 
 # ========== 健康检测 ==========
