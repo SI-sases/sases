@@ -34,7 +34,9 @@ def start_background_tasks():
         asyncio.create_task(periodic_register_task()),
         asyncio.create_task(periodic_election_check()),
     ]
-    if HIVE_ROLE == "slave":
+    from core.node.election import get_election_state
+    _dynamic_role = get_election_state().get("my_role", HIVE_ROLE)
+    if _dynamic_role == "slave":
         tasks.append(asyncio.create_task(periodic_sync_task()))
         from core.hive.config import REPLICA_MODE
         if REPLICA_MODE:
