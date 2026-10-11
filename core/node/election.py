@@ -154,6 +154,7 @@ def init_priority():
 
     load_epoch_from_db()
     check_higher_epoch_on_startup()
+    check_peer_epochs()
     print(f"[election] init: node={NODE_ID}, priority={p}, role={_election_state['my_role']}, epoch={_election_state['current_epoch']}")
 
 
