@@ -151,6 +151,14 @@ def hive_profile():
 
 
 
+@router.post("/broadcast/receive")
+async def hive_broadcast_receive(body: dict):
+    """接收其他节点的广播，本地转发。"""
+    from core.broadcast.node_relay import handle_receive
+    return await handle_receive(body)
+
+
+
 @router.get("/ledger")
 def hive_ledger():
     """返回全量账本（供 slave 同步用）。"""
