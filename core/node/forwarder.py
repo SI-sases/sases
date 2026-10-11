@@ -106,7 +106,7 @@ async def forward_request(method, path, body, headers, query=''):
     forward_headers['X-Hive-Sign-Message'] = msg
 
     import httpx
-    async with httpx.AsyncClient(timeout=5, trust_env=False, headers=hive_headers()) as client:
+    async with httpx.AsyncClient(timeout=60, trust_env=False, headers=hive_headers()) as client:
         for target in targets:
             try:
                 url = f"{target}{path}"
