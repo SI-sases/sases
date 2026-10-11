@@ -82,7 +82,9 @@ def apply_replica(tables_data):
 
 async def do_one_sync():
     """单次同步核心表。返回 (success: bool, total_rows: int)。"""
-    if HIVE_ROLE != "slave" or not HIVE_MASTERS:
+    from core.node.election import get_election_state
+    _dynamic_role = get_election_state().get("my_role", HIVE_ROLE)
+    if _dynamic_role != "slave" or not HIVE_MASTERS:
         return False, 0
     import httpx
 
