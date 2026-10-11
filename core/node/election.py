@@ -152,6 +152,8 @@ def init_priority(node_id=None):
     }
     p = mapping.get(_node_id, 100)
     _election_state["my_priority"] = p
+    # 先重置为 slave（防止测试或多次调用时残留）
+    _election_state["my_role"] = "slave"
     if _node_id == "node-A":
         _election_state["my_role"] = "master"
 

@@ -5,18 +5,15 @@ from core.node import election
 
 def test_init_priority_node_A():
     """node-A 应初始化为 master 优先级 10。"""
-    import os
-    os.environ["SASES_NODE_ID"] = "node-A"
-    election.init_priority()
+    election.init_priority(node_id="node-A")
     s = election.get_election_state()
     assert s["my_priority"] == 10
     assert s["my_role"] == "master"
 
 
 def test_init_priority_node_B():
-    import os
-    os.environ["SASES_NODE_ID"] = "node-B"
-    election.init_priority()
+    """node-B 应初始化为 slave 优先级 20。"""
+    election.init_priority(node_id="node-B")
     s = election.get_election_state()
     assert s["my_priority"] == 20
     assert s["my_role"] == "slave"

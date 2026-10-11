@@ -23,7 +23,7 @@ import os
 import difflib
 from datetime import datetime
 
-ALLOWED_DIRS = ("static/", "core/", "scripts/", "docs/", "harness_modules/", "data/", "logs/", "launcher/")
+ALLOWED_DIRS = ("static/", "core/", "scripts/", "docs/", "harness_modules/", "data/", "logs/", "launcher/", "tests/")
 FORBIDDEN_EXT = {".db", ".key", ".bin", ".env", ".pem", ".crt", ".sqlite", ".sqlite3"}
 FORBIDDEN_PARTS = {".env", "users.db", "secret_key", "api_key_encryption", ".backups"}
 SELF_PROTECTED_FILES = {
