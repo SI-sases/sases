@@ -141,10 +141,10 @@ def check_peer_epochs():
 
 
 
-def init_priority():
+def init_priority(node_id=None):
     """根据 NODE_ID 设置初始优先级（小数字优先）+ 从 DB 加载 epoch。"""
     import os as _os
-    _node_id = _os.environ.get("SASES_NODE_ID", NODE_ID)
+    _node_id = node_id or _os.environ.get("SASES_NODE_ID", NODE_ID)
     mapping = {
         "node-A": 10,
         "node-B": 20,
