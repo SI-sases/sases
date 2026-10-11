@@ -130,7 +130,7 @@ async def forward_request(method, path, body, headers, query=''):
                     return r.status_code, r.json()
                 return r.status_code, {'raw': r.text[:500]}
             except Exception as e:
-                print(f"[forwarder] {target} failed: {e}")
+                print(f"[forwarder] {target} failed: {type(e).__name__}: {e}")
                 _mark_url_fail(target)
                 continue
     _stats["failed"] += 1
