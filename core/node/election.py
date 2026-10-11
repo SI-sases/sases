@@ -127,7 +127,11 @@ def check_peer_epochs():
                 if peer_role == "master" and peer_epoch >= _election_state["current_epoch"]:
                     _election_state["current_epoch"] = peer_epoch
                     _election_state["my_role"] = "slave"
-                    print(f"[election] startup: peer {peer} is master (epoch={peer_epoch}), downgrading to slave")
+                    # 关键：降级后立即把 master 填入 HIVE_MASTERS
+                    import core.hive.config as _cfg
+                    if peer not in _cfg.HIVE_MASTERS:
+                        _cfg.HIVE_MASTERS = [peer]
+                    print(f"[election] startup: peer {peer} is master (epoch={peer_epoch}), downgrading to slave, HIVE_MASTERS={_cfg.HIVE_MASTERS}")
                     return True
             except Exception:
                 continue
