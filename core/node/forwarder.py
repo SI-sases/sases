@@ -2,7 +2,8 @@
 import time
 import uuid
 
-from core.hive.config import NODE_ID, HIVE_MASTERS, FORWARD_MODE
+from core.hive.config import NODE_ID, FORWARD_MODE
+from core.hive import config as _cfg
 from core.node.client import hive_headers
 from core.node.identity import sign, verify
 
