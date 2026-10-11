@@ -75,53 +75,6 @@ async def periodic_summary_task():
             print(f"定期总结任务异常: {e}")
 
         await asyncio.sleep(6 * 3600)
-
-
-
-
-async def periodic_warmup_task():
-    """启动后 5 秒预热一次（触发冷启动 / embedding / DB 加载）。"""
-    await asyncio.sleep(5)
-    try:
-        from core.node.election import get_election_state
-        role = get_election_state().get("my_role", "slave")
-        if role != "master":
-            print("[warmup] not master, skip")
-            return
-
-        import httpx
-        import os
-        port = os.environ.get("SASES_PORT", "8001")
-        base = f"http://127.0.0.1:{port}"
-
-        r = httpx.post(f"{base}/token",
-                       data={"username": "666666", "password": "123456"},
-                       timeout=10, trust_env=False)
-        if r.status_code != 200:
-            print(f"[warmup] token failed: {r.status_code}")
-            return
-        token = r.json()["access_token"]
-
-        import time
-        start = time.time()
-        r2 = httpx.post(f"{base}/messages/send",
-                        json={"content": "[WARMUP]"},
-                        headers={"Authorization": f"Bearer {token}"},
-                        timeout=120, trust_env=False)
-        elapsed = time.time() - start
-        print(f"[warmup] first request: {r2.status_code}, {elapsed:.2f}s")
-
-        import sqlite3
-        conn = sqlite3.connect("users.db")
-        conn.execute("DELETE FROM messages WHERE content='[WARMUP]'")
-        conn.commit()
-        conn.close()
-        print("[warmup] cleaned")
-    except Exception as e:
-        print(f"[warmup] failed: {type(e).__name__}: {e}")
-
-
-
 async def periodic_git_push():
     """每小时把本地提交推送到 GitHub"""
     import subprocess
