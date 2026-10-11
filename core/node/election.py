@@ -127,6 +127,8 @@ def init_priority():
     # 从 DB 加载 epoch
     load_epoch_from_db()
 
+    load_epoch_from_db()
+    check_higher_epoch_on_startup()
     print(f"[election] init: node={NODE_ID}, priority={p}, role={_election_state['my_role']}, epoch={_election_state['current_epoch']}")
 
 
