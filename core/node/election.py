@@ -124,10 +124,10 @@ def check_peer_epochs():
                 data = r.json()
                 peer_epoch = data.get("current_epoch", 0)
                 peer_role = data.get("my_role", "slave")
-                if peer_role == "master" and peer_epoch > _election_state["current_epoch"]:
+                if peer_role == "master" and peer_epoch >= _election_state["current_epoch"]:
                     _election_state["current_epoch"] = peer_epoch
                     _election_state["my_role"] = "slave"
-                    print(f"[election] startup: peer {peer} has higher epoch {peer_epoch}, downgrading to slave")
+                    print(f"[election] startup: peer {peer} is master (epoch={peer_epoch}), downgrading to slave")
                     return True
             except Exception:
                 continue
