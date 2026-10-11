@@ -25,7 +25,7 @@ def unregister_user(user_id: int, ws):
     _user_connections.get(user_id, set()).discard(ws)
 
 
-async def broadcast_to_group(global_group_id: str, message: dict):
+async def broadcast_to_group(global_group_id: str, message: dict, relay: bool = True):
     conns = _group_connections.get(global_group_id, set())
     dead = []
     for ws in list(conns):
@@ -35,9 +35,16 @@ async def broadcast_to_group(global_group_id: str, message: dict):
             dead.append(ws)
     for ws in dead:
         conns.discard(ws)
+    if relay:
+        try:
+            import asyncio as _aio
+            from core.broadcast.node_relay import push_broadcast_to_peers
+            _aio.create_task(push_broadcast_to_peers("group", global_group_id, message))
+        except Exception:
+            pass
 
 
-async def broadcast_to_user(user_id: int, message: dict):
+async def broadcast_to_user(user_id: int, message: dict, relay: bool = True):
     conns = _user_connections.get(user_id, set())
     dead = []
     for ws in list(conns):
@@ -47,6 +54,13 @@ async def broadcast_to_user(user_id: int, message: dict):
             dead.append(ws)
     for ws in dead:
         conns.discard(ws)
+    if relay:
+        try:
+            import asyncio as _aio
+            from core.broadcast.node_relay import push_broadcast_to_peers
+            _aio.create_task(push_broadcast_to_peers("user", user_id, message))
+        except Exception:
+            pass
 
 
 def stats():
