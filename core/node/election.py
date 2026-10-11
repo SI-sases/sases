@@ -288,6 +288,11 @@ async def periodic_election_check():
                 continue
 
             print(f"[election] master {master} unreachable, proposing election...")
+            # 抖动：优先级高的先发起，避免同时选举
+            import random as _random
+            _jitter = (_election_state["my_priority"] / 100.0) * 3.0 + _random.uniform(0, 0.5)
+            print(f"[election] jitter {_jitter:.2f}s before proposing")
+            await asyncio.sleep(_jitter)
             won = await propose_election()
             if won:
                 from core.node.registry import upsert_node
