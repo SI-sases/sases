@@ -13,7 +13,9 @@ def register_routes(app):
     from core.hive.api import router, router_public
     app.include_router(router)
     app.include_router(router_public)
-    print(f"[hive] routes registered (node={__import__('core.hive.config', fromlist=['NODE_ID']).NODE_ID}, role={HIVE_ROLE})")
+    from core.node.election import get_election_state
+    _dynamic_role = get_election_state().get("my_role", HIVE_ROLE)
+    print(f"[hive] routes registered (node={__import__('core.hive.config', fromlist=['NODE_ID']).NODE_ID}, role={_dynamic_role})")
 
 
 def start_background_tasks():
