@@ -1,5 +1,8 @@
 """diag_forward.py —— 模拟 8002 转发给 8001，验证转发链路。"""
 import os
+import sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 os.environ['SASES_NODE_ID'] = 'node-B'
 
 import httpx
