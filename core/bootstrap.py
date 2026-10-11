@@ -377,7 +377,7 @@ async def lifespan(app: FastAPI):
 
 
     # 【预热】启动后预热一次（不参与周期）
-    _background_tasks.append(asyncio.create_task(periodic_warmup_task()))
+
 
 
     # 【hive 蜂巢任务】
