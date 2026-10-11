@@ -143,6 +143,14 @@ def hive_election_state():
 
 
 
+@router.get("/profile")
+def hive_profile():
+    """返回当前节点的 profile 配置。"""
+    from core.profile import info
+    return {"node_id": NODE_ID, **info()}
+
+
+
 @router.get("/ledger")
 def hive_ledger():
     """返回全量账本（供 slave 同步用）。"""
