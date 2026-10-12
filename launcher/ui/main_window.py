@@ -51,7 +51,7 @@ class MainWindow(QMainWindow):
         self.btn_stop.clicked.connect(self.stop)
         self.log = QPlainTextEdit()
         self.log.setReadOnly(True)
-        self.log.setMaximumBlockCount(5000)
+        self.log.setMaximumBlockCount(50000)
         h = QHBoxLayout()
         h.addWidget(self.btn_start)
         h.addWidget(self.btn_stop)
