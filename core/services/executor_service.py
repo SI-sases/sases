@@ -359,7 +359,7 @@ async def _execute_task(task: Dict[str, Any]):
             "step": step_id,
             "description": desc,
             "status": status,
-            "output": output[:500],
+            "output": output[:5000],
             "duration_ms": dur,
         }
 

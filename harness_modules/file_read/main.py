@@ -20,7 +20,9 @@ def _safe_path(p):
     p = p.replace(BACKSLASH, '/').strip()
     if not _is_external(p):
         if p.startswith('/') or (len(p) > 1 and p[1] == ':'):
-            return None
+            _root_norm = REPO_ROOT.replace(BACKSLASH, '/').rstrip('/').lower()
+            if not p.lower().startswith(_root_norm + '/'):
+                return None
         if '..' in p.split('/'):
             return None
     lower = p.lower()
@@ -38,7 +40,7 @@ def run(params):
     safe = _safe_path(file_path)
     if not safe:
         return {'success': False, 'error': 'file_path 不合法或指向敏感文件'}
-    abs_path = os.path.join(REPO_ROOT, safe)
+    abs_path = safe if os.path.isabs(safe) else os.path.join(REPO_ROOT, safe)
     if not os.path.exists(abs_path):
         return {'success': False, 'error': '文件不存在: ' + safe}
     if os.path.isdir(abs_path):
