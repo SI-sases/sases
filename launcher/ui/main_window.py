@@ -161,6 +161,7 @@ class MainWindow(QMainWindow):
             env.insert('SASES_NODE_ID', f'node-hidden-{i}')
             env.insert('HIVE_ROLE', 'slave')
             env.insert('HIVE_MASTER', f'http://127.0.0.1:{self._chosen_port}')
+            env.insert('HIVE_PEERS', f'http://127.0.0.1:{self._chosen_port}')
             env.insert('ENABLE_HIVE', 'true')
             p.setProcessEnvironment(env)
             p.readyReadStandardOutput.connect(self._read_hidden)
