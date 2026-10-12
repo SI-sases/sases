@@ -7,7 +7,7 @@ except Exception:
 R = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _PORT = os.environ.get("SASES_PORT", "8001")
 
-C = [sys.executable, "-m", "uvicorn", "app_full:app", "--port", _PORT]
+C = [sys.executable, "-m", "uvicorn", "app_full:app", "--port", _PORT, "--no-access-log"]
 BAD_ALLOC_THRESHOLD = 5
 
 while True:
