@@ -37,9 +37,16 @@ def create_lite_app():
     from core.db import init_db
     init_db()
 
-    from core.hive.api import router
+    from core.hive.api import router, router_public
     app = FastAPI(title="SASES Hive Lite", version="0.1.0", lifespan=_lifespan)
     app.include_router(router)
+    app.include_router(router_public)
+
+    @app.get("/hive/info")
+    def _hive_info():
+        from core.hive.config import NODE_ID, HIVE_ROLE, HIVE_PEERS
+        return {"node_id": NODE_ID, "role": HIVE_ROLE, "peers": HIVE_PEERS, "version": "1.0"}
+
     return app
 
 
