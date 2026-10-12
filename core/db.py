@@ -58,6 +58,20 @@ def init_db():
         _ensure_column(cur, "users", "tampered_flag", "INTEGER DEFAULT 0")
         _ensure_column(cur, "users", "auto_pollinate_enabled", "INTEGER DEFAULT 1")
         _ensure_column(cur, "users", "is_admin", "INTEGER DEFAULT 0")
+        # ensure node_registry table exists
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS node_registry (
+                node_id TEXT PRIMARY KEY,
+                public_key TEXT,
+                url TEXT,
+                role TEXT,
+                status TEXT DEFAULT 'active',
+                first_seen TEXT DEFAULT CURRENT_TIMESTAMP,
+                last_seen TEXT DEFAULT CURRENT_TIMESTAMP,
+                master_epoch INTEGER DEFAULT 0,
+                priority INTEGER DEFAULT 100
+            )
+        """)
         _ensure_column(cur, "node_registry", "master_epoch", "INTEGER DEFAULT 0")
         _ensure_column(cur, "node_registry", "priority", "INTEGER DEFAULT 100")
         _ensure_column(cur, "users", "email", "TEXT")

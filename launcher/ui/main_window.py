@@ -27,6 +27,9 @@ from PyQt6.QtWidgets import (
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# 隐藏节点默认端口
+HIDDEN_NODE_PORTS = [8101, 8102]
+
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -37,8 +40,9 @@ class MainWindow(QMainWindow):
         self.work_dir = self.cfg.get("work_dir", "")
         super().__init__()
         self.proc = None
+        self.hidden_procs = []          # 隐藏节点的 QProcess 列表
         self._chosen_port = self.port
-        self._allow_close = False          # 托盘退出时才置 True
+        self._allow_close = False
         self.setWindowTitle('SASES 启动器')
         self.resize(900, 600)
         self.btn_start = QPushButton('启动')
@@ -143,6 +147,45 @@ class MainWindow(QMainWindow):
         except Exception as e:
             self.out(f'[启动器] 打开浏览器失败: {e}')
 
+    # ---------- 隐藏节点 ----------
+    def _start_hidden_nodes(self):
+        """主 SASES 启动后，依次拉起 2 个隐藏节点。"""
+        for i, port in enumerate(HIDDEN_NODE_PORTS, start=1):
+            if self._port_busy(port):
+                self.out(f'[启动器] 隐藏节点端口 {port} 被占用，跳过')
+                continue
+            p = QProcess(self)
+            p.setWorkingDirectory(ROOT)
+            env = QProcessEnvironment.systemEnvironment()
+            env.insert('SASES_PORT', str(port))
+            env.insert('SASES_NODE_ID', f'node-hidden-{i}')
+            env.insert('HIVE_ROLE', 'slave')
+            env.insert('HIVE_MASTER', f'http://127.0.0.1:{self._chosen_port}')
+            env.insert('ENABLE_HIVE', 'true')
+            p.setProcessEnvironment(env)
+            p.readyReadStandardOutput.connect(self._read_hidden)
+            p.readyReadStandardError.connect(self._read_hidden)
+            p.start(sys.executable, ['-m', 'core.hive.standalone'])
+            self.hidden_procs.append(p)
+            # 静默启动，不打印日志（隐藏节点对用户不可见）
+
+    def _read_hidden(self):
+        for p in list(self.hidden_procs):
+            if p.bytesAvailable() > 0:
+                b = p.readAllStandardOutput() + p.readAllStandardError()
+                for line in _decode_child_line(bytes(b)).splitlines():
+                    self.out(f'[hidden] {line}')
+
+    def _stop_hidden_nodes(self):
+        for p in self.hidden_procs:
+            try:
+                pid = int(p.processId())
+                QProcess.startDetached('taskkill', ['/F', '/T', '/PID', str(pid)])
+            except Exception:
+                pass
+        self.hidden_procs = []
+        self.out('[启动器] 已停止所有隐藏节点')
+
     # ---------- 生命周期 ----------
     def start(self):
         if self._check_running(self.port):
@@ -181,6 +224,8 @@ class MainWindow(QMainWindow):
         if self._check_running(port):
             self.out(f'[启动器] 服务已就绪 :{port}')
             self._open_browser(port)
+            # 主服务就绪后，启动隐藏节点
+            self._start_hidden_nodes()
             return
         if attempts <= 0:
             self.out(f'[启动器] 服务未在预期时间内就绪 :{port}')
@@ -202,21 +247,21 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage('未运行')
 
     def stop(self):
+        # 先停隐藏节点
+        self._stop_hidden_nodes()
         if not self.proc:
             return
         pid = int(self.proc.processId())
         QProcess.startDetached('taskkill', ['/F', '/T', '/PID', str(pid)])
-        self.out('[启动器] 已停止 pid=%s' % pid)
+        self.out('[启动器] 已停止主服务 pid=%s' % pid)
 
     # ---------- 托盘行为 ----------
     def closeEvent(self, e):
         if self._allow_close:
-            # 真正退出
             if self.proc:
                 self.stop()
             e.accept()
             return
-        # 关闭 = 最小化到托盘
         e.ignore()
         self.hide()
         try:
