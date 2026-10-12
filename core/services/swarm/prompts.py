@@ -170,6 +170,7 @@ Python 特性提醒：同文件 def 同名会覆盖前一个，不会报错。
 
 【harness 工具参数速查（重要）】
 - file_read: file_path(必填), max_lines(默认200), offset(默认0), lines=[行号数组], grep="正则"
+  注意：调用 file_read 时必须传 file_path 参数，params 不能为空。
 - file_read 三种模式：
   1. 默认：offset + max_lines（读范围）
   2. lines=[104,105,106]：精确读指定行（禁止转成 offset）
