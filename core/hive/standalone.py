@@ -56,7 +56,7 @@ def main():
     db_path = _prepare_lite_env(node_id)
     print(f"[hive-lite] {node_id} on port {port}, db={db_path}")
     app = create_lite_app()
-    uvicorn.run(app, host="127.0.0.1", port=port, log_level="warning")
+    uvicorn.run(app, host="127.0.0.1", port=port, log_level="warning", access_log=False)
 
 
 if __name__ == "__main__":
