@@ -25,6 +25,10 @@ def _targets():
     return out
 
 
+_register_fail_counts = {}
+_register_success_logged = set()
+
+
 async def register_with_peers():
     """向所有已知 peers 注册自己，并拉回节点列表。"""
     targets = _targets()
@@ -64,7 +68,10 @@ async def register_with_peers():
                     upsert_node(n['node_id'], n.get('public_key', ''), n.get('url', ''), n.get('role', 'slave'))
                 print(f"[hive-register] {target} → ok, {len(nodes)} nodes cached")
             except Exception as e:
-                print(f"[hive-register] {target} failed: {e}")
+                _c = _register_fail_counts.get(target, 0) + 1
+                _register_fail_counts[target] = _c
+                if _c == 3 or _c % 30 == 0:
+                    print(f"[hive-register] {target} failed x{_c}: {type(e).__name__}")
 
 
 async def periodic_register_task():
