@@ -170,11 +170,12 @@ class MainWindow(QMainWindow):
             # 静默启动，不打印日志（隐藏节点对用户不可见）
 
     def _read_hidden(self):
+        # 隐藏节点日志不输出到主窗口（保持用户无感）
+        # 仅消费缓冲区，防止管道阻塞
         for p in list(self.hidden_procs):
             if p.bytesAvailable() > 0:
-                b = p.readAllStandardOutput() + p.readAllStandardError()
-                for line in _decode_child_line(bytes(b)).splitlines():
-                    self.out(f'[hidden] {line}')
+                p.readAllStandardOutput()
+                p.readAllStandardError()
 
     def _stop_hidden_nodes(self):
         for p in self.hidden_procs:
