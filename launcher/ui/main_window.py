@@ -185,7 +185,7 @@ class MainWindow(QMainWindow):
             except Exception:
                 pass
         self.hidden_procs = []
-        self.out('[启动器] 已停止所有隐藏节点')
+        # 静默停止，不打印日志
 
     # ---------- 生命周期 ----------
     def start(self):
