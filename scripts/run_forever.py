@@ -53,13 +53,22 @@ while True:
                 rr = "max hours"
                 break
     except KeyboardInterrupt:
-        p.terminate()
-        sys.exit(0)
+        print("[wrapper] Ctrl+C 收到，立即终止进程树...", flush=True)
+        try:
+            import subprocess as _sp_ci
+            _sp_ci.run(["taskkill", "/F", "/T", "/PID", str(p.pid)],
+                       capture_output=True, timeout=3)
+        except Exception:
+            try:
+                p.kill()
+            except Exception:
+                pass
+        os._exit(0)
 
     try:
         import subprocess as _sp
         _sp.run(["taskkill", "/F", "/T", "/PID", str(p.pid)],
-                capture_output=True, timeout=10)
+                capture_output=True, timeout=3)
     except Exception:
         try:
             p.terminate()

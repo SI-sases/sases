@@ -22,6 +22,7 @@
 import os
 import difflib
 from datetime import datetime
+import hashlib
 
 ALLOWED_DIRS = ("static/", "core/", "scripts/", "docs/", "harness_modules/", "data/", "logs/", "launcher/", "tests/")
 FORBIDDEN_EXT = {".db", ".key", ".bin", ".env", ".pem", ".crt", ".sqlite", ".sqlite3"}
@@ -45,6 +46,14 @@ def _is_external_allowed(p: str) -> bool:
     if not m:
         return False
     return m.group(1).upper() != 'C'
+
+
+def _file_md5(path):
+    try:
+        with open(path, "rb") as f:
+            return hashlib.md5(f.read()).hexdigest()
+    except Exception:
+        return None
 
 
 def _validate_path(file_path: str) -> str:
@@ -320,6 +329,17 @@ def _run_inner(params):
         )
 
 def run(params):
+    _fp = params.get('file_path') or ''
+    _before_md5 = None
+    _abs_path_check = None
+    try:
+        _sp = _validate_path(_fp)
+        _abs_path_check = os.path.abspath(_sp)
+        if os.path.exists(_abs_path_check):
+            _before_md5 = _file_md5(_abs_path_check)
+    except Exception:
+        pass
+
     result = _run_inner(params)
     if isinstance(result, dict) and result.get('success'):
         fp = params.get('file_path') or ''
@@ -353,4 +373,17 @@ def run(params):
                 result['success'] = False
                 result['syntax_error'] = err
                 result['error'] = 'SYNTAX_ERROR: ' + err
+
+    # v2.5.0: MD5 对比防假成功
+    if isinstance(result, dict) and result.get('success') and _abs_path_check:
+        _after_md5 = _file_md5(_abs_path_check)
+        result['before_md5'] = _before_md5
+        result['after_md5'] = _after_md5
+        if _before_md5 is None and _after_md5 is None:
+            result['success'] = False
+            result['error'] = 'NO_FILE: 写入后文件仍不存在'
+        elif _before_md5 is not None and _before_md5 == _after_md5:
+            result['success'] = False
+            result['error'] = 'NO_CHANGE: 文件内容未发生任何变化（old_snippet 与 new_snippet 可能相同）'
+
     return result

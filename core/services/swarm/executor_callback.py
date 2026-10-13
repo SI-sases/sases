@@ -57,7 +57,7 @@ async def handle_step_done(
         "status": status,
         "review": review_result,
         "reason": review_reason,
-        "output": (output or "")[:300],
+        "output": (output or "")[:12000],
     })
     _save_pending(task)
 

@@ -527,6 +527,32 @@ async def send_message(
                                 title = row["name"]
                     conversation_id = create_conversation(user_id, agent_id, title)
 
+                # 直达通道：单工具任务不走 swarm（v0.32.0）
+                try:
+                    from . import direct_channel as _dc
+                    _dc_ok, _dc_reply = await _dc.try_direct(content)
+                    if _dc_ok:
+                        with db_cursor(commit=True) as _cur_dc:
+                            _cur_dc.execute(
+                                "INSERT INTO messages (conversation_id, sender, content, sender_agent_id) VALUES (?, 'assistant', ?, ?)",
+                                (conversation_id, _dc_reply, sender_agent_id or 'sases_assistant_2')
+                            )
+                            _cur_dc.execute(
+                                "UPDATE conversations SET updated_at=? WHERE id=?",
+                                (datetime.now().isoformat(), conversation_id)
+                            )
+                        return {
+                            'conversation_id': conversation_id,
+                            'user_message': content,
+                            'assistant_reply': _dc_reply,
+                            'agent_id': agent_id,
+                            'sender_agent_id': sender_agent_id,
+                            'mode': mode,
+                            'direct_channel': True,
+                        }
+                except Exception as _e_dc:
+                    print(f'[direct] 失败，回退 swarm: {_e_dc}')
+
                 # 调度员提议执行（对话模式）
                 _skip_propose = False
                 for _kw in ('harness', 'module_id', 'file_patch', 'web_fetch', 'git_ops', 'HARNESS:', 'run_python', 'file_read', 'grep_code', 'dir_tree'):

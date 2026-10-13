@@ -69,9 +69,11 @@ class MainWindow(QMainWindow):
     # ---------- 托盘 ----------
     def _setup_tray(self):
         self.tray = QSystemTrayIcon(self)
-        self.tray.setIcon(
-            self.style().standardIcon(QStyle.StandardPixmap.SP_ComputerIcon)
-        )
+        _ico = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'icon.ico')
+        if os.path.exists(_ico):
+            self.tray.setIcon(QIcon(_ico))
+        else:
+            self.tray.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_ComputerIcon))
         self.tray.setToolTip('SASES 启动器')
         menu = QMenu()
         act_show = QAction('显示窗口', self)
@@ -88,14 +90,24 @@ class MainWindow(QMainWindow):
         menu.addAction(act_stop)
         menu.addSeparator()
         menu.addAction(act_quit)
-        self.tray.setContextMenu(menu)
+        self.tray_menu = menu  # 保存引用，不用 setContextMenu（Windows 下会冲突）
         self.tray.activated.connect(self._on_tray_clicked)
         self.tray.show()
 
     def _on_tray_clicked(self, reason):
-        if reason == QSystemTrayIcon.ActivationReason.Trigger:
+        try:
+            _name = str(reason).split('.')[-1]
+        except Exception:
+            _name = ''
+        if _name == 'Trigger':
             self._show_window()
-
+        elif _name == 'Context':
+            try:
+                from PyQt6.QtGui import QCursor
+                self.tray_menu.popup(QCursor.pos())
+            except Exception:
+                pass
+    
     def _show_window(self):
         self.showNormal()
         self.activateWindow()
@@ -103,7 +115,17 @@ class MainWindow(QMainWindow):
 
     def _real_quit(self):
         self._allow_close = True
-        self.close()
+        try:
+            self._stop_hidden_nodes()
+            if self.proc:
+                pid = int(self.proc.processId())
+                QProcess.startDetached('taskkill', ['/F', '/T', '/PID', str(pid)])
+        except Exception:
+            pass
+        self.proc = None
+        self.hidden_procs = []
+        import os as _os_q
+        _os_q._exit(0)
 
     # ---------- 工具 ----------
     def out(self, t):

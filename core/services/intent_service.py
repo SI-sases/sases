@@ -90,6 +90,9 @@ def _is_obvious_task(content: str) -> bool:
     # 文件扩展名特征
     if FILE_EXT_PATTERN.search(text):
         return True
+    # 操作动词（单字，覆盖更广）
+    if re.search(r'(搜|查|找|看|读|写|改|跑|列|删|加|建|拿|抓|拉|发|传|算|数|比|统计|分析|整理|翻|捞|整|搞|弄)', text):
+        return True
     # 动词 + 名词组合
     for verb in TASK_VERBS:
         if verb in text:
@@ -103,10 +106,16 @@ async def _llm_judge(content: str) -> bool:
     """调 LLM 判断是否为任务，返回 True 表示是任务"""
     prompt = f"""判断用户输入属于以下哪一类，只回答一个字母：
 
-A) 普通聊天（问候、闲聊、情感表达、纯知识问答）
-B) 可执行任务（需要操作计算机、抓取网页、查看文件、执行命令、调用工具等）
+A) 纯聊天（问候、寒暄、情感表达，不需要任何工具）
+   例：你好、谢谢、今天心情不错、随便聊聊
 
-注意：包含 URL、文件路径、具体操作动词（抓取/下载/查看/列出）的输入，都判为 B。
+B) 需要执行的任务（需要读文件/搜代码/执行命令/访问网络/调用工具）
+   例：搜一下 X、读 Y 文件、看看 Z 目录、抓取这个网页、统计某字数
+
+判断规则：
+- 输入含"搜、查、找、读、改、跑、列、看、抓、下载、统计、分析"等操作词 → B
+- 需要访问文件系统/网络/数据库才能回答 → B
+- 只有纯粹的情感交流或闲聊 → A
 
 用户输入：{content}
 
@@ -150,4 +159,9 @@ async def is_task_intent(content: str) -> bool:
         return True
 
     # 第二层：LLM 判断（中间地带）
-    return await _llm_judge(content)
+    llm_result = await _llm_judge(content)
+    if not llm_result:
+        # 兜底：LLM 判 chat，但内容含操作动词 → 仍判 task
+        if re.search(r'(搜|查|找|看|读|写|改|跑|列|抓|下载|统计|分析)', content):
+            return True
+    return llm_result

@@ -2,6 +2,7 @@
 import os
 import sys
 import socket
+from PyQt6.QtGui import QIcon
 
 # 单实例锁：绑定一个不对外开放的本地端口
 # 进程退出时端口自动释放，无需清理死锁文件
@@ -41,6 +42,7 @@ def main():
     from ui.main_window import MainWindow
 
     app = QApplication(sys.argv)
+    app.setWindowIcon(QIcon(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'icon.ico')))
     app.setQuitOnLastWindowClosed(False)  # 关键：关窗不退出，托盘还活着
     w = MainWindow()
     w.show()
