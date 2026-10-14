@@ -177,6 +177,22 @@ def _mode_anchor(abs_path, safe_path, params):
 
     if not anchor:
         raise ValueError("缺少 anchor_pattern 参数")
+    # v2.6.0: position 归一化——容错 LLM 常见错误值
+    _pos_aliases = {
+        "replace": "replace_line",
+        "replace_with": "replace_line",
+        "overwrite": "replace_line",
+        "insert": "after",
+        "insert_after": "after",
+        "append": "after",
+        "insert_before": "before",
+        "prepend": "before",
+    }
+    if isinstance(position, str):
+        _orig_pos = position
+        position = _pos_aliases.get(position.lower().strip(), position)
+        if _orig_pos != position:
+            print(f"[file_patch] position '{_orig_pos}' 归一化为 '{position}'")
     if position not in ("before", "after", "replace_line"):
         raise ValueError(f"position 必须是 before/after/replace_line，收到: {position}")
     if new_content is None:
