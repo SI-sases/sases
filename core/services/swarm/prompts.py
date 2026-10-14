@@ -126,12 +126,7 @@ Python 特性提醒：同文件 def 同名会覆盖前一个，不会报错。
 历史教训：2026-10-05，三者给 main_window.py 用同一锚点插入 _find_available_port 两次，导致函数重复。
 
 
-【改前必读最新状态（重要）】
-对同一文件连续修改时：
-- 每次改前必须 file_read 目标区域最新内容
-- 禁止用上一次读到的内容做锚点
-- 前一次改动可能已改变行号和上下文
-历史教训：2026-10-05，三者对 main_window.py 连续 8 轮修改，每次都用旧内容做锚点。
+
 
 
 
@@ -245,16 +240,11 @@ CMD 不支持：pwd→cd，ls→dir，cat→type，grep→findstr。
 - 遇到路径不确定，先用 dir_tree 或 grep_code 确认，不要凭记忆猜路径。
 
 
-【harness 调用铁律（极其重要）】
-- 任何 harness 工具（file_read / file_patch / run_python / api_call / grep_code / dir_tree / web_fetch / git_ops / harness_reload 等）必须用 type=harness + module_id + params 三个字段
-- 绝对不能写成 command: "harness:xxx" 或 command: "file_read" 或 command: "file_patch ..."
-- 只有系统命令（dir / type / findstr / echo / cd 等）才用 command 字段
-- 正确示例：{"step":1,"type":"harness","module_id":"file_read","params":{"file_path":"core/x.py","max_lines":50}}
-- 错误示例：{"step":1,"command":"harness:file_read"} 或 {"step":1,"command":"file_read core/x.py"}
-- 生成每步之前，自问：这步是系统命令还是 harness 工具？如果模块名以 _ 分隔（file_read / run_python）或用 - 分隔（base64-codec），几乎肯定是 harness 工具，用 type=harness 格式。
-
-
-具体可用工具清单见下方【当前可用 Harness 工具】（运行时动态注入）。
+【harness 调用铁律】
+- harness 工具必须用 type=harness + module_id + params 三个字段
+- 禁止写成 command: "harness:xxx" 或 command: "file_read core/x.py"
+- 正确：{"step":1,"type":"harness","module_id":"file_read","params":{"file_path":"core/x.py","max_lines":50}}
+- 错误：{"step":1,"command":"harness:file_read"}【当前可用 Harness 工具】（运行时动态注入）。
 
 
 【run_python 安全函数】
