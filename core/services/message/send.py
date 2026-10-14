@@ -530,7 +530,7 @@ async def send_message(
                 # 直达通道：单工具任务不走 swarm（v0.32.0）
                 try:
                     from . import direct_channel as _dc
-                    _dc_ok, _dc_reply = await _dc.try_direct(content)
+                    _dc_ok, _dc_reply = await _dc.try_direct(content, user_id=user_id, conversation_id=conversation_id)
                     if _dc_ok:
                         with db_cursor(commit=True) as _cur_dc:
                             _cur_dc.execute(

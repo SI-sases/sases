@@ -26,7 +26,8 @@ async def _call_llm(prompt: str, system_prompt: str = "", max_tokens: int = None
         model=MODEL,
         messages=messages,
         temperature=0.3,
-        max_tokens=max_tokens
+        max_tokens=max_tokens,
+        extra_body={"thinking": {"type": "disabled"}}
     )
 
     choice = resp.choices[0]

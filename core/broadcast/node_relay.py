@@ -4,6 +4,7 @@
   节点 A 广播 → push 给 peers → peers 本地广播（不再 push）
 """
 import asyncio
+import time
 import uuid
 from collections import deque
 
@@ -13,6 +14,10 @@ from core.node.client import hive_headers
 
 _seen_events = deque(maxlen=500)
 _seen_set = set()
+
+# 失败日志节流：同一 peer 在 FAIL_THROTTLE_SECONDS 内只打印一次
+_fail_cache = {}
+FAIL_THROTTLE_SECONDS = 300
 
 
 def _mark_seen(event_id):
@@ -32,8 +37,14 @@ async def _do_push(body):
         for peer in HIVE_PEERS:
             try:
                 await client.post(f"{peer}/hive/broadcast/receive", json=body)
+                # 成功时清掉该 peer 的失败缓存
+                _fail_cache.pop(peer, None)
             except Exception as e:
-                print(f"[node_relay] push to {peer} failed: {type(e).__name__}")
+                now = time.time()
+                last = _fail_cache.get(peer, 0)
+                if now - last > FAIL_THROTTLE_SECONDS:
+                    print(f"[node_relay] push to {peer} failed: {type(e).__name__}")
+                    _fail_cache[peer] = now
 
 
 async def push_broadcast_to_peers(kind, target, message, event_id=None):

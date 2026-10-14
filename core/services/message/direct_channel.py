@@ -8,9 +8,18 @@
 import json
 import re
 import asyncio
+import os
+import time
+from datetime import datetime
 import openai
 from ... import config
 from ...harness_runtime import harness_runtime
+
+_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+LOG_DIR = os.path.join(_ROOT, "data")
+LOG_FILE = os.path.join(LOG_DIR, "direct_channel.jsonl")
+LOG_KEEP_DAYS = 30
+_last_cleanup_date = None
 
 DIRECT_TOOLS = {
     "file_read": "读文件内容",
@@ -38,6 +47,48 @@ def _should_try_direct(content: str) -> bool:
     if _FILE_PAT.search(content) or "目录" in content:
         return True
     return False
+
+
+_STRONG_PATTERNS = [
+    # "读一下 xxx.py" / "看看 xxx.py 前 10 行"
+    (re.compile(r'^(?:读|看一下|看看|显示|打印|打开)(?:一下|下)?\s+([\w/\-\.]+\.\w{1,6})(?:\s*(?:的)?\s*前?\s*(\d+)\s*行)?'), 'file_read'),
+    # "搜一下 xxx"
+    (re.compile(r'^(?:搜|搜索|查找|找)(?:一下|下)?\s+([^\s，。]{2,})$'), 'grep_code'),
+    # "看看 xxx 目录" / "列出 xxx 目录"
+    (re.compile(r'^(?:看看|列出|显示|查看|列一下)(?:一下|下)?\s+([\w/\-\.]*)\s*(?:目录|文件夹)'), 'dir_tree'),
+    # "抓取 https://"
+    (re.compile(r'^(?:抓取|抓一下|爬取|请求|访问)\s+(https?://\S+)'), 'web_fetch'),
+]
+
+
+def _strong_direct_match(content: str):
+    """强判：命中的话直接走直达，不再问 LLM。返回 dict 或 None。"""
+    text = content.strip()
+    for pat, tool in _STRONG_PATTERNS:
+        m = pat.match(text)
+        if not m:
+            continue
+        try:
+            if tool == 'file_read':
+                fp = m.group(1)
+                params = {'file_path': fp}
+                if len(m.groups()) >= 2 and m.group(2):
+                    params['max_lines'] = int(m.group(2))
+                return {'direct': True, 'tool': 'file_read', 'params': params}
+            elif tool == 'grep_code':
+                pattern = m.group(1).strip()
+                if len(pattern) < 2:
+                    continue
+                return {'direct': True, 'tool': 'grep_code', 'params': {'pattern': pattern}}
+            elif tool == 'dir_tree':
+                path = m.group(1).strip() or '.'
+                return {'direct': True, 'tool': 'dir_tree', 'params': {'path': path}}
+            elif tool == 'web_fetch':
+                url = m.group(1).strip()
+                return {'direct': True, 'tool': 'web_fetch', 'params': {'url': url}}
+        except Exception:
+            continue
+    return None
 
 
 async def can_direct_execute(content: str) -> dict:
@@ -77,6 +128,7 @@ async def can_direct_execute(content: str) -> dict:
             messages=[{"role": "user", "content": prompt}],
             temperature=0.1,
             max_tokens=300,
+            extra_body={"thinking": {"type": "disabled"}},
         )
         raw = (resp.choices[0].message.content or "").strip()
         i = raw.find("{")
@@ -120,15 +172,77 @@ async def execute_direct(tool: str, params: dict) -> str:
         return f"执行异常：{e}"
 
 
-async def try_direct(content: str):
+def _log_direct(entry: dict):
+    """写一行 JSONL 日志。每天最多清理一次旧日志。"""
+    global _last_cleanup_date
+    try:
+        os.makedirs(LOG_DIR, exist_ok=True)
+        with open(LOG_FILE, "a", encoding="utf-8") as f:
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    except Exception as e:
+        print(f"[direct] 写日志失败: {e}")
+        return
+    _today = datetime.now().strftime("%Y-%m-%d")
+    if _last_cleanup_date != _today:
+        _last_cleanup_date = _today
+        try:
+            _cleanup_old_inner(LOG_KEEP_DAYS)
+        except Exception as e:
+            print(f"[direct] 清理旧日志失败: {e}")
+
+
+def _cleanup_old_inner(days: int):
+    """保留最近 days 天的日志，其他删除。"""
+    if not os.path.exists(LOG_FILE):
+        return
+    from datetime import timedelta
+    cutoff = (datetime.now() - timedelta(days=days)).isoformat()
+    kept = []
+    with open(LOG_FILE, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                entry = json.loads(line)
+                if entry.get("ts", "") >= cutoff:
+                    kept.append(line)
+            except Exception:
+                continue
+    with open(LOG_FILE, "w", encoding="utf-8") as f:
+        for line in kept:
+            f.write(line + "\n")
+
+
+async def try_direct(content: str, user_id=None, conversation_id=None):
     """一站式入口：预筛 + 判断 + 执行。返回 (success: bool, result: str)"""
     if not _should_try_direct(content):
         return False, ""
-    dec = await can_direct_execute(content)
+    # 先强判（不走 LLM）
+    dec = _strong_direct_match(content)
+    if dec:
+        print(f"[direct] 强判命中 {dec['tool']}")
+    else:
+        # 走 LLM 判断
+        dec = await can_direct_execute(content)
     if not dec.get("direct"):
         return False, ""
     tool = dec["tool"]
     params = dec.get("params", {})
     print(f"[direct] 直达 {tool} params={params}")
+    _start = time.time()
     result = await execute_direct(tool, params)
+    _dur = int((time.time() - _start) * 1000)
+    _ok = not result.startswith("执行失败") and not result.startswith("执行异常")
+    _log_direct({
+        "ts": datetime.now().isoformat(),
+        "user_id": user_id,
+        "conv_id": conversation_id,
+        "input": content[:200],
+        "tool": tool,
+        "params": params,
+        "status": "success" if _ok else "failed",
+        "result_len": len(result),
+        "duration_ms": _dur,
+    })
     return True, result

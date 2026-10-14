@@ -6,12 +6,23 @@ from transformers import AutoTokenizer
 
 
 class LocalEmbedding:
+    _instance = None
+    _initialized = False
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
     def __init__(self, model_dir="./bge-small-zh-onnx"):
+        if LocalEmbedding._initialized:
+            return
         self.model_dir = model_dir
         self.tokenizer = None
         self.session = None
         self._input_names = None
         self._load()
+        LocalEmbedding._initialized = True
 
     def _load(self):
         if not os.path.exists(self.model_dir):
@@ -27,7 +38,15 @@ class LocalEmbedding:
                 raise FileNotFoundError(f"ONNX 模型文件不存在: {onnx_path}")
 
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_dir)
-        self.session = ort.InferenceSession(onnx_path)
+        _opts = ort.SessionOptions()
+        _opts.intra_op_num_threads = 1
+        _opts.inter_op_num_threads = 1
+        _opts.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
+        self.session = ort.InferenceSession(
+            onnx_path,
+            sess_options=_opts,
+            providers=['CPUExecutionProvider']
+        )
         # 记录模型期望的输入名
         self._input_names = [i.name for i in self.session.get_inputs()]
         print(f"[本地Embedding] 模型输入: {self._input_names}")
