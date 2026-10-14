@@ -52,6 +52,30 @@ async def task_summarizer(task):
         if _r.get('rolled_back') or _r.get('syntax_ok') is False:
             _all_text += 'rolled_back | '
             _all_text += 'rolled_back | '
+    # v0.35.1: 合法"未找到"判定（优先于可疑词检测）
+    try:
+        import re as _re_nf
+        _answer_text = ''
+        for _r in results:
+            _answer_text += str(_r.get('output') or '') + ' '
+            _answer_text += str(_r.get('command') or '') + ' '
+        _nf_patterns = [r'未找到', r'不存在', r'没有找到', r'文件中没有']
+        _has_not_found = any(_re_nf.search(p, _answer_text) for p in _nf_patterns)
+        _has_empty_grep = False
+        _has_any_answer = False
+        for _r in results:
+            _cmd = str(_r.get('command') or _r.get('module_id') or '')
+            _out = str(_r.get('output') or '')
+            if _cmd == 'grep_code' and 'count' in _out and ('"count": 0' in _out or "'count': 0" in _out):
+                _has_empty_grep = True
+            if _cmd == 'answer' and _r.get('status') == 'success':
+                _has_any_answer = True
+        if _has_not_found and _has_empty_grep and _has_any_answer:
+            print('[supervisor] task_summarizer 合法未找到判定: grep 空 + answer 报告未找到 → 判完成')
+            return {'goal_achieved': True, 'goal_reason': '目标不存在，已向用户报告', 'missing': [], 'next_hint': ''}
+    except Exception as _e_nf:
+        print('[supervisor] 未找到判定异常: ' + str(_e_nf))
+
     _suspicious_kws = ['剩余', '请继续', '请分批', '请再发', '下一步', '未完成', '待完成',
                        'rolled_back', 'verify fail', '已回滚', '请回复',
                        '请确认', '请检查', '未做', '待做', '请用户', '需要用户', '请先', '请提供',

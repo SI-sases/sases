@@ -180,6 +180,20 @@ Python 特性提醒：同文件 def 同名会覆盖前一个，不会报错。
     锚点模式: anchor_pattern + position(before/after/replace_line) + new_content
     精确片段: old_snippet + new_snippet + expected_count
 
+【前提验证铁律（v0.34.0，最高优先级）】
+1. 任务涉及具体标识符（变量名/函数名/设置项/字段名）时，第一步必须 grep_code 验证它存在。
+   · 如果 grep 返回 0 结果 → 直接 answer 报告"未找到 X，请确认名称或文件"，禁止继续。
+   · 禁止在未确认存在的情况下生成 file_patch。
+2. grep_code 的 pattern 必填，params 不能为空 {}。
+   正确：{"pattern": "foo"}
+   错误：{}（会直接报"缺少 pattern"）
+3. 禁止生成 old_snippet 和 new_snippet 相同或仅数字不同的 file_patch
+   （这意味着"没有真实改动"，会被 MD5 对比拦截）。
+4. 任务描述与实际文件不符时（如文件里没有该设置），
+   正确做法是 answer 报告"文件里没有 X，可能是记错了名称"，
+   而不是猜一个名称去 file_patch。
+
+
 【file_patch 硬规则（v0.33.0，违反必失败）】
 1. old_snippet 必须从 file_read/grep_code 的【实际输出】里逐字复制，禁止凭记忆写。
    如果当前任务还没读原文 → 必须先调 file_read 读一次再 file_patch。
@@ -231,17 +245,7 @@ CMD 不支持：pwd→cd，ls→dir，cat→type，grep→findstr。
 - 遇到路径不确定，先用 dir_tree 或 grep_code 确认，不要凭记忆猜路径。
 
 
-【harness 调用铁律（附反例）】
-
-正确格式：
-[{"step":1,"type":"harness","module_id":"file_patch","params":{"file_path":"..."}}]
-
-错误格式（禁止）：
-[{"step":1,"command":"harness:file_patch core/xxx.py"}]
-[{"step":1,"command":"调用 file_patch"}]
-[{"step":1,"type":"harness"}]  ← 缺 module_id
-
-原铁律：【harness 调用铁律（极其重要）】
+【harness 调用铁律（极其重要）】
 - 任何 harness 工具（file_read / file_patch / run_python / api_call / grep_code / dir_tree / web_fetch / git_ops / harness_reload 等）必须用 type=harness + module_id + params 三个字段
 - 绝对不能写成 command: "harness:xxx" 或 command: "file_read" 或 command: "file_patch ..."
 - 只有系统命令（dir / type / findstr / echo / cd 等）才用 command 字段
@@ -328,45 +332,9 @@ CMD 不支持：pwd→cd，ls→dir，cat→type，grep→findstr。
 2. 可以用一个 Python 函数实现
 3. 只依赖白名单模块（json / re / math / datetime / collections / itertools）
 
-【创建 4 步（严格按此顺序）】
-
-step 1: 用 edit_file 创建 manifest.json
-  params 必含：
-    file_path: harness_modules/{工具名}/manifest.json
-    create_if_missing: true
-    new_content: '{"id":"{工具名}","name":"中文名","description":"一句话功能","version":"1.0.0","capabilities":[],"permissions":[],"entrypoint":"main.py","node_type":"harness"}'
-  ⚠️ 必须传 create_if_missing=true
-  ⚠️ 字段必须是：id / name / description / version / capabilities / permissions / entrypoint / node_type
-  ⚠️ 禁止用 module_id / entry / functions
-
-step 2: 用 edit_file 创建 main.py
-  params 必含：
-    file_path: harness_modules/{工具名}/main.py
-    create_if_missing: true
-    new_content: 'def run(params):\n    x = params.get("x", "")\n    return {"success": True, "result": ...}'
-  ⚠️ 函数名必须是 run(params)
-  ⚠️ 返回值必须含 success：{'success': True, ...}
-  ⚠️ 禁止 import os/sys/subprocess/socket/requests/urllib
-  ⚠️ 禁止 if __name__ == '__main__' 块
-
-step 3: 调用 reload
-  正确：{'step':3,'type':'harness','module_id':'harness_reload','params':{}}
-  错误：{'step':3,'command':'harness_reload'}  ← 被白名单拒绝
-
-step 4: 调用新工具验证
-  {'step':4,'type':'harness','module_id':'{工具名}','params':{...}}
-
-【工具名规范】
-英文小写 + 下划线（如 count_chinese_chars）；目录名 = 工具名 = manifest 里的 id
-
-【完整示例：统计中文字符】
-用户：统计'你好world世界'里有几个中文字符
-
-step 1: edit_file(file_path='harness_modules/count_chinese_chars/manifest.json', create_if_missing=true, new_content='{"id":"count_chinese_chars","name":"中文字符统计","description":"统计中文字符数量","version":"1.0.0","capabilities":[],"permissions":[],"entrypoint":"main.py","node_type":"harness"}')
-step 2: edit_file(file_path='harness_modules/count_chinese_chars/main.py', create_if_missing=true, new_content='def run(params):\n    import re\n    text = params.get("text", "")\n    cnt = len(re.findall(r"[\u4e00-\u9fff]", text))\n    return {"success": True, "count": cnt}')
-step 3: harness_reload(params={})
-step 4: count_chinese_chars(params={"text":"你好world世界"}) → {"success": true, "count": 4}
-
+【工具创建】
+需要创建新 harness 工具时，先检索项目库文档《工具创建手册》。
+（触发词："创建一个能 X 的工具" / "写个工具帮我 X"）
 """
 
 SUMMARY_SYSTEM_PROMPT = """请根据用户任务和执行结果，输出最终结果。
