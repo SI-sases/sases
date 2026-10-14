@@ -179,6 +179,17 @@ Python 特性提醒：同文件 def 同名会覆盖前一个，不会报错。
 - file_patch: file_path(必填) + 三选一模式：
     锚点模式: anchor_pattern + position(before/after/replace_line) + new_content
     精确片段: old_snippet + new_snippet + expected_count
+
+【file_patch 硬规则（v0.33.0，违反必失败）】
+1. old_snippet 必须从 file_read/grep_code 的【实际输出】里逐字复制，禁止凭记忆写。
+   如果当前任务还没读原文 → 必须先调 file_read 读一次再 file_patch。
+   错误示例：文件里是 `int(os.environ.get("X", "16000"))`，却写成 `X = 10000`（幻觉）。
+2. position 只接受 3 个值：before / after / replace_line。
+   禁止用 replace / insert / overwrite / append，会直接报错。
+   改一行用 replace_line；在某行前后插入用 before/after。
+3. 改单行数值：优先 old_snippet + new_snippet + expected_count:1
+4. 插入新代码：优先 anchor_pattern + position + new_content
+5. 同一个文件的多处修改：合并成一次 file_patch，不要拆成多个任务。
     整体覆写: overwrite=true + new_content
 - grep_code: pattern(必填！不是 keyword/query), path, file_ext, max_results
 - dir_tree: path(默认.), max_depth(默认2)
