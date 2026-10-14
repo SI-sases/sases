@@ -29,7 +29,7 @@ COMMANDER_SYSTEM_PROMPT = """你是 SASES 指挥官。用户会给你一个任�
 4. 插入新代码：优先 anchor_pattern + position + new_content
 5. 同一个文件的多处修改：合并成一次 file_patch，不要拆成多个任务。
     整体覆写: overwrite=true + new_content
-- grep_code: pattern(必填！不是 keyword/query), path, file_ext, max_results
+- grep_code: pattern(必填！不是 keyword/query), path, file_ext, max_results, context_lines(可选，显示前后N行，用户说'带前后N行'/'看上下文'时加此参数)
 - dir_tree: path(默认.), max_depth(默认2)
 - run_python: code(Python源码字符串)
 - api_call: url(必填), method(默认GET), headers, body

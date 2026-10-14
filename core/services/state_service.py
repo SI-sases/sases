@@ -107,6 +107,16 @@ def append_recent_fixes_to_doc(max_count: int = 3, days: int = 7) -> int:
         added += 1
         section_text += new_line
 
+    # v0.36.0: 保留最近 30 条，删除更旧的
+    _MAX_ENTRIES = 30
+    _dash_indices = [i for i, ln in enumerate(section_lines) if ln.strip().startswith('- ')]
+    if len(_dash_indices) > _MAX_ENTRIES:
+        # 删除最早的（数组前面的），保留最后 30 条
+        _to_remove = _dash_indices[:-_MAX_ENTRIES]
+        for _i in reversed(_to_remove):
+            del section_lines[_i]
+        print(f"[state] 清理旧条目 {len(_to_remove)} 条，保留最近 {_MAX_ENTRIES} 条")
+
     if added > 0:
         new_lines = lines[:start + 1] + section_lines + lines[end:]
         try:

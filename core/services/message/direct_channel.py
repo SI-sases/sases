@@ -53,7 +53,7 @@ _STRONG_PATTERNS = [
     # "读一下 xxx.py" / "看看 xxx.py 前 10 行"
     (re.compile(r'^(?:读|看一下|看看|显示|打印|打开)(?:一下|下)?\s+([\w/\-\.]+\.\w{1,6})(?:\s*(?:的)?\s*前?\s*(\d+)\s*行)?'), 'file_read'),
     # "搜一下 xxx"
-    (re.compile(r'^(?:搜|搜索|查找|找)(?:一下|下)?\s+([^\s，。]{2,})$'), 'grep_code'),
+    (re.compile(r'^(?:搜|搜索|查找|找)(?:一下|下)?\s+([^\s，。]{2,})(?:[，,]\s*(?:带|显示)?(?:前后)?\s*(\d+)\s*行(?:上下文)?)?$'), 'grep_code'),
     # "看看 xxx 目录" / "列出 xxx 目录"
     (re.compile(r'^(?:看看|列出|显示|查看|列一下)(?:一下|下)?\s+([\w/\-\.]*)\s*(?:目录|文件夹)'), 'dir_tree'),
     # "抓取 https://"
@@ -79,7 +79,16 @@ def _strong_direct_match(content: str):
                 pattern = m.group(1).strip()
                 if len(pattern) < 2:
                     continue
-                return {'direct': True, 'tool': 'grep_code', 'params': {'pattern': pattern}}
+                params = {'pattern': pattern}
+                # v0.36.0: 解析"带前后 N 行"
+                if len(m.groups()) >= 2 and m.group(2):
+                    try:
+                        ctx = int(m.group(2))
+                        if 1 <= ctx <= 10:
+                            params['context_lines'] = ctx
+                    except Exception:
+                        pass
+                return {'direct': True, 'tool': 'grep_code', 'params': params}
             elif tool == 'dir_tree':
                 path = m.group(1).strip() or '.'
                 return {'direct': True, 'tool': 'dir_tree', 'params': {'path': path}}

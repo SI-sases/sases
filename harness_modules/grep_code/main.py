@@ -6,6 +6,7 @@ BACKSLASH = chr(92)
 SKIP_DIRS = ('venv312', 'venv', 'node_modules', '.git', '__pycache__', '.backups', 'archive', 'training_data', 'seeds')
 SKIP_EXT = ('.pyc', '.zip', '.safetensors', '.onnx', '.db', '.bin', '.key', '.png', '.jpg', '.ico', '.bak', '.bak_acceptance')
 SKIP_NAME_MARKERS = ('.db.bak', '.db.bak_', '.bak.')
+MAX_FILE_BYTES = 2 * 1024 * 1024  # 2MB
 
 
 def _iter_files(root, rel_base, file_ext):
@@ -48,6 +49,11 @@ def run(params):
     max_results = int(params.get('max_results', 30))
     if max_results < 1 or max_results > 100:
         max_results = 30
+    context_lines = int(params.get('context_lines', 0))
+    if context_lines < 0:
+        context_lines = 0
+    if context_lines > 10:
+        context_lines = 10
     try:
         _regex = re.compile(pattern)
     except re.error:
@@ -59,15 +65,42 @@ def run(params):
         if scanned > 2000:
             break
         try:
-            with open(full, 'r', encoding='utf-8', errors='ignore') as f:
-                for ln, line in enumerate(f, 1):
+            _size = os.path.getsize(full)
+            if context_lines > 0 and _size <= MAX_FILE_BYTES:
+                # 有上下文：一次性读入内存
+                with open(full, 'r', encoding='utf-8', errors='ignore') as f:
+                    _lines = f.readlines()
+                for i, line in enumerate(_lines):
                     _matched = (_regex.search(line) is not None) if _regex else (pattern in line)
                     if _matched:
-                        matches.append({'file': rel, 'line': ln, 'text': line.rstrip()[:200]})
+                        _ln = i + 1
+                        _start = max(0, i - context_lines)
+                        _end = min(len(_lines), i + context_lines + 1)
+                        _ctx = ''.join(
+                            f"{j+1}: {_lines[j].rstrip()}\n" for j in range(_start, _end)
+                        ).rstrip('\n')
+                        matches.append({
+                            'file': rel,
+                            'line': _ln,
+                            'text': line.rstrip()[:200],
+                            'context': _ctx,
+                        })
                         if len(matches) >= max_results:
                             break
+            else:
+                # 无上下文或文件过大：逐行迭代
+                with open(full, 'r', encoding='utf-8', errors='ignore') as f:
+                    for ln, line in enumerate(f, 1):
+                        _matched = (_regex.search(line) is not None) if _regex else (pattern in line)
+                        if _matched:
+                            matches.append({'file': rel, 'line': ln, 'text': line.rstrip()[:200]})
+                            if len(matches) >= max_results:
+                                break
         except Exception:
             continue
         if len(matches) >= max_results:
             break
-    return {'success': True, 'pattern': pattern, 'scanned_files': scanned, 'count': len(matches), 'matches': matches}
+    _result = {'success': True, 'pattern': pattern, 'scanned_files': scanned, 'count': len(matches), 'matches': matches}
+    if context_lines > 0:
+        _result['context_lines'] = context_lines
+    return _result
