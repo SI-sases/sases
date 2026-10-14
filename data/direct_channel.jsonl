@@ -17,3 +17,5 @@
 {"ts": "2026-10-14T22:30:29.240296", "user_id": 2, "conv_id": 101, "input": "读一下 core/config.py", "tool": "file_read", "params": {"file_path": "core/config.py"}, "status": "success", "result_len": 5450, "duration_ms": 1}
 {"ts": "2026-10-14T22:30:48.038624", "user_id": 2, "conv_id": 101, "input": "搜一下 TASK_VERBS", "tool": "grep_code", "params": {"pattern": "TASK_VERBS"}, "status": "success", "result_len": 574, "duration_ms": 746}
 {"ts": "2026-10-14T22:35:59.020973", "user_id": 2, "conv_id": 101, "input": "读一下 core/config.py", "tool": "file_read", "params": {"file_path": "core/config.py"}, "status": "success", "result_len": 5450, "duration_ms": 1}
+{"ts": "2026-10-14T22:36:49.318830", "user_id": 2, "conv_id": 101, "input": "搜一下 TASK_VERBS", "tool": "grep_code", "params": {"pattern": "TASK_VERBS"}, "status": "success", "result_len": 805, "duration_ms": 732}
+{"ts": "2026-10-14T22:42:40.128470", "user_id": 2, "conv_id": 101, "input": "读一下 core/config.py", "tool": "file_read", "params": {"file_path": "core/config.py"}, "status": "success", "result_len": 5450, "duration_ms": 1}
