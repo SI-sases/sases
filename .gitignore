@@ -132,3 +132,6 @@ launcher.lockusers.db.bak*
 hive-nodes/*/key.pem 
 hive-nodes/*/*.key 
 hive-nodes/ 
+
+data/direct_channel.jsonl
+data/*.jsonl

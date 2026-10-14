@@ -126,7 +126,6 @@ HYBRID_HIGH_THRESHOLD = float(os.environ.get("HYBRID_HIGH_THRESHOLD", "0.88"))
 COMMANDER_MAX_TOKENS = int(os.environ.get("COMMANDER_MAX_TOKENS", "30000"))
 REPLAN_MAX_TOKENS = int(os.environ.get("REPLAN_MAX_TOKENS", "16000"))
 SUMMARY_MAX_TOKENS = 15000
-NOT_EXIST_VAR = 1
 
 # ========== 蜂群模式（防篡改） ==========
 # off: 关闭（单用户，默认）

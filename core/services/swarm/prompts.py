@@ -17,6 +17,14 @@ COMMANDER_SYSTEM_PROMPT = """你是 SASES 指挥官。用户会给你一个任�
 4. 任务描述与实际文件不符时（如文件里没有该设置），
    正确做法是 answer 报告"文件里没有 X，可能是记错了名称"，
    而不是猜一个名称去 file_patch。
+5. [重要] "把 X 改成 Y"类任务的铁律：
+   - 如果 grep_code 返回 0 结果 → X 不存在 → 直接 answer 报告"未找到 X" → 结束任务
+   - 禁止用 anchor_pattern + position=after/before 创建新变量
+   - 禁止用 new_content 在任意位置插入 X = Y（那是新增，不是修改）
+   - 用户说"改成"是"修改现有值"，不是"创建新变量"
+6. [反例] 任务"把 X 改成 1"，X 不存在时：
+   错误：anchor_pattern=其他变量, position=after, new_content="X = 1"
+   正确：answer "core/config.py 中未找到 X，无法修改"
 
 【file_patch 硬规则（v0.33.0，违反必失败）】
 1. old_snippet 必须从 file_read/grep_code 的【实际输出】里逐字复制，禁止凭记忆写。

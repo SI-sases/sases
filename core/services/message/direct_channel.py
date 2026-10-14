@@ -50,8 +50,20 @@ def _should_try_direct(content: str) -> bool:
 
 
 _STRONG_PATTERNS = [
+    # "读 X 最后 N 行"
+    (re.compile(r'^(?:读|看一下|看看|显示|打印|打开)(?:一下|下)?\s+([\w/\-\.]+\.\w{1,6})\s*(?:的)?\s*最后\s*(\d+)\s*行$'), 'file_read_tail'),
+    # "读 X 第 N 到 M 行"
+    (re.compile(r'^(?:读|看一下|看看|显示|打印|打开)(?:一下|下)?\s+([\w/\-\.]+\.\w{1,6})\s*(?:的)?\s*第\s*(\d+)\s*[到至\-~]\s*(\d+)\s*行'), 'file_read_range'),
+    # "读 X 第 N 行"
+    (re.compile(r'^(?:读|看一下|看看|显示|打印|打开)(?:一下|下)?\s+([\w/\-\.]+\.\w{1,6})\s*(?:的)?\s*第\s*(\d+)\s*行'), 'file_read_line'),
     # "读一下 xxx.py" / "看看 xxx.py 前 10 行"
     (re.compile(r'^(?:读|看一下|看看|显示|打印|打开)(?:一下|下)?\s+([\w/\-\.]+\.\w{1,6})(?:\s*(?:的)?\s*前?\s*(\d+)\s*行)?'), 'file_read'),
+    # "搜一下 X 里的 Y"（带 path 的搜索）
+    (re.compile(r'^(?:搜|搜索|查找|找)(?:一下|下)?\s+([\w/\-\.]+\.\w{1,6})\s*里的\s*([^\s，。]{1,})(?:[，,]\s*(?:带|显示)?(?:前后)?\s*(\d+)\s*行(?:上下文)?)?$'), 'grep_code_in_file'),
+    # "搜 X 目录下的 Y"
+    (re.compile(r'^(?:搜|搜索|查找|找)(?:一下|下)?\s+([\w/\-\.]+)\s*目录[下的里中]{0,3}\s*([^\s，。]{1,})(?:[，,]\s*(?:带|显示)?(?:前后)?\s*(\d+)\s*行(?:上下文)?)?$'), 'grep_code_in_dir'),
+    # "在 X 里找 Y" / "在 X 里搜 Y"
+    (re.compile(r'^(?:在)\s+([\w/\-\.]+)\s*(?:里|中|下)\s*(?:搜|找|查|查找)(?:一下|下)?\s+([^\s，。]{1,})$'), 'grep_code_in_file'),
     # "搜一下 xxx"
     (re.compile(r'^(?:搜|搜索|查找|找)(?:一下|下)?\s+([^\s，。]{2,})(?:[，,]\s*(?:带|显示)?(?:前后)?\s*(\d+)\s*行(?:上下文)?)?$'), 'grep_code'),
     # "看看 xxx 目录" / "列出 xxx 目录"
@@ -69,18 +81,65 @@ def _strong_direct_match(content: str):
         if not m:
             continue
         try:
-            if tool == 'file_read':
+            if tool == 'file_read_tail':
+                fp = m.group(1)
+                n = int(m.group(2))
+                if n > 500:
+                    n = 500
+                return {'direct': True, 'tool': 'file_read', 'params': {'file_path': fp, 'tail_lines': n}}
+            elif tool == 'file_read_line':
+                fp = m.group(1)
+                ln = int(m.group(2))
+                return {'direct': True, 'tool': 'file_read', 'params': {'file_path': fp, 'lines': [ln]}}
+            elif tool == 'file_read_range':
+                fp = m.group(1)
+                n1 = int(m.group(2))
+                n2 = int(m.group(3))
+                if n1 > n2:
+                    n1, n2 = n2, n1
+                cnt = n2 - n1 + 1
+                if cnt > 500:
+                    cnt = 500
+                return {'direct': True, 'tool': 'file_read', 'params': {'file_path': fp, 'offset': n1 - 1, 'max_lines': cnt}}
+            elif tool == 'file_read':
                 fp = m.group(1)
                 params = {'file_path': fp}
                 if len(m.groups()) >= 2 and m.group(2):
                     params['max_lines'] = int(m.group(2))
                 return {'direct': True, 'tool': 'file_read', 'params': params}
+            elif tool == 'grep_code_in_file':
+                fpath = m.group(1).strip()
+                pattern = m.group(2).strip()
+                if len(pattern) < 1:
+                    continue
+                params = {'pattern': pattern, 'path': fpath}
+                if len(m.groups()) >= 3 and m.group(3):
+                    try:
+                        ctx = int(m.group(3))
+                        if 1 <= ctx <= 10:
+                            params['context_lines'] = ctx
+                    except Exception:
+                        pass
+                return {'direct': True, 'tool': 'grep_code', 'params': params}
+            elif tool == 'grep_code_in_dir':
+                dpath = m.group(1).strip()
+                pattern = m.group(2).strip()
+                if len(pattern) < 1:
+                    continue
+                params = {'pattern': pattern, 'path': dpath}
+                if len(m.groups()) >= 3 and m.group(3):
+                    try:
+                        ctx = int(m.group(3))
+                        if 1 <= ctx <= 10:
+                            params['context_lines'] = ctx
+                    except Exception:
+                        pass
+                return {'direct': True, 'tool': 'grep_code', 'params': params}
             elif tool == 'grep_code':
                 pattern = m.group(1).strip()
-                if len(pattern) < 2:
+                if len(pattern) < 1:
                     continue
                 params = {'pattern': pattern}
-                # v0.36.0: 解析"带前后 N 行"
                 if len(m.groups()) >= 2 and m.group(2):
                     try:
                         ctx = int(m.group(2))
@@ -156,11 +215,20 @@ async def execute_direct(tool: str, params: dict) -> str:
     try:
         response = await asyncio.to_thread(harness_runtime.invoke_tool, tool, params)
         if not getattr(response, "success", False):
-            return f"执行失败：{getattr(response, 'error', '未知错误')}"
+            _err = getattr(response, 'error', '未知错误')
+            print(f"[direct] {tool} 失败: {_err}")
+            _cands = getattr(response, 'result', None)
+            if isinstance(_cands, dict) and _cands.get('candidates'):
+                print(f"[direct] 候选: {_cands['candidates']}")
+            return f"执行失败：{_err}"
         result = getattr(response, "result", None)
         if isinstance(result, dict):
             if result.get("success") is False:
-                return f"执行失败：{result.get('error', '')}"
+                _err = result.get('error', '')
+                print(f"[direct] {tool} 内层失败: {_err}")
+                if result.get('candidates'):
+                    print(f"[direct] 候选: {result['candidates']}")
+                return f"执行失败：{_err}"
             if tool == "file_read":
                 return result.get("content", "")
             elif tool == "dir_tree":
@@ -178,6 +246,7 @@ async def execute_direct(tool: str, params: dict) -> str:
             return str(result)
         return str(result)
     except Exception as e:
+        print(f"[direct] {tool} 异常: {e}")
         return f"执行异常：{e}"
 
 

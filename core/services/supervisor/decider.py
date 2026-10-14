@@ -73,6 +73,29 @@ async def task_summarizer(task):
         if _has_not_found and _has_empty_grep and _has_any_answer:
             print('[supervisor] task_summarizer 合法未找到判定: grep 空 + answer 报告未找到 → 判完成')
             return {'goal_achieved': True, 'goal_reason': '目标不存在，已向用户报告', 'missing': [], 'next_hint': ''}
+
+        # v0.35.2: 扩展——grep 空 + 任务含改/删动词 → 判目标不存在
+        import re as _re_v2
+        _action_pat = _re_v2.search(r'(改成|改为|修改|删除|删掉|更新|替换)', user_text)
+        _any_grep_empty = False
+        for _r in results:
+            _cmd = str(_r.get('command') or _r.get('module_id') or '')
+            _out = str(_r.get('output') or '')
+            if _cmd == 'grep_code' and '"count": 0' in _out:
+                _any_grep_empty = True
+                break
+        _has_any_file_patch = any(
+            str(_r.get('command') or _r.get('module_id') or '') == 'file_patch'
+            for _r in results
+        )
+        if _action_pat and _any_grep_empty and not _has_any_file_patch:
+            print('[supervisor] task_summarizer 目标不存在判定: grep 空 + 含改/删动词 + 无 file_patch → 判完成')
+            return {
+                'goal_achieved': True,
+                'goal_reason': '目标不存在，无法执行改/删操作',
+                'missing': [],
+                'next_hint': '',
+            }
     except Exception as _e_nf:
         print('[supervisor] 未找到判定异常: ' + str(_e_nf))
 

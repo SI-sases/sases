@@ -31,6 +31,42 @@ def _iter_files(root, rel_base, file_ext):
             yield full, rel
 
 
+def _resolve_path(safe):
+    """路径补全：裸文件名搜索同名文件。返回 (resolved, error_msg, candidates)"""
+    full = os.path.join(REPO_ROOT, safe)
+    if os.path.exists(full):
+        return safe, None, []
+    # 含路径分隔符 → 不补全
+    if '/' in safe or BACKSLASH in safe:
+        return safe, f'path 不存在: {safe}', []
+    # 裸文件名 → 搜索
+    candidates = []
+    _total = 0
+    for dirpath, dirnames, filenames in os.walk(REPO_ROOT):
+        dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
+        if safe in filenames:
+            _total += 1
+            if len(candidates) < 5:
+                rel = os.path.relpath(os.path.join(dirpath, safe), REPO_ROOT).replace(BACKSLASH, '/')
+                candidates.append(rel)
+    if _total == 1:
+        return candidates[0], None, candidates
+    elif _total > 1:
+        _info = []
+        for _c in sorted(candidates):
+            try:
+                _sz = os.path.getsize(os.path.join(REPO_ROOT, _c))
+                _info.append(_c + " (" + str(_sz) + "B)")
+            except Exception:
+                _info.append(_c)
+        _extra = ''
+        if _total > len(candidates):
+            _extra = '（仅显示前 ' + str(len(candidates)) + ' 个）'
+        return safe, f'path "{safe}" 匹配到 ' + str(_total) + ' 个文件' + _extra + ': ' + " | ".join(_info) + '。请用完整路径。', candidates
+    else:
+        return safe, f'path 不存在: {safe}', []
+
+
 def run(params):
     pattern = params.get('pattern', '').strip()
     if not pattern:
@@ -43,6 +79,15 @@ def run(params):
         return {'success': False, 'error': 'path 不合法'}
     if '..' in safe.split('/'):
         return {'success': False, 'error': 'path 不合法'}
+    # v0.36.1: 路径自动补全
+    _resolved, _resolve_err, _candidates = _resolve_path(safe)
+    if _resolve_err:
+        if _candidates and len(_candidates) > 1:
+            return {'success': False, 'error': _resolve_err, 'candidates': _candidates}
+        return {'success': False, 'error': _resolve_err}
+    if _resolved != safe:
+        print(f'[grep_code] path "{safe}" 未找到，自动解析为 "{_resolved}"')
+        safe = _resolved
     file_ext = params.get('file_ext', '').strip()
     if file_ext and not file_ext.startswith('.'):
         file_ext = '.' + file_ext
