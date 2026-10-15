@@ -138,6 +138,25 @@ function _hideStopBtn() {
   if (window.updateSendButtonVisibility) window.updateSendButtonVisibility();
 }
 
+function _tryFlushPendingFeedback() {
+  // 检查是否该渲染挂起的反馈条
+  const st = window.chatState;
+  if (!st || !st._pendingFeedback) return;
+  const container = document.getElementById('chat-messages');
+  if (!container) return;
+  // 找最后一个消息行
+  const rows = container.querySelectorAll('.message-row');
+  if (!rows.length) return;
+  const lastRow = rows[rows.length - 1];
+  // 最后一条是用户消息 → AI 还没回复，不渲染
+  if (lastRow.classList.contains('user')) return;
+  // 渲染
+  const { taskId, conversationId } = st._pendingFeedback;
+  st._pendingFeedback = null;
+  console.log('[feedback] AI 回复落位，渲染反馈条', taskId);
+  _renderFeedbackBar(taskId, conversationId);
+}
+
 function _renderFeedbackBar(taskId, conversationId) {
   const container = document.getElementById('chat-messages');
   if (!container) return;
@@ -757,6 +776,14 @@ export function initChat() {
 
   if (messagesContainer) {
     messagesContainer.addEventListener('scroll', handleScroll);
+    // v0.39.3: 监听消息区变化，自动 flush 挂起的反馈条
+    if (!messagesContainer._sasesFeedbackObserver) {
+      const _obs = new MutationObserver(() => {
+        try { _tryFlushPendingFeedback(); } catch (e) {}
+      });
+      _obs.observe(messagesContainer, { childList: true });
+      messagesContainer._sasesFeedbackObserver = _obs;
+    }
   }
 
   updateSendButtonVisibility();
