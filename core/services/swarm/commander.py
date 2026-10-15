@@ -433,7 +433,7 @@ def submit_feedback(
     }
 
 
-async def replan_failed_steps(task: Dict[str, Any]) -> Optional[List[Dict[str, Any]]]:
+async def replan_failed_steps(task: Dict[str, Any], max_steps: int = None) -> Optional[List[Dict[str, Any]]]:
     failed_info = []
     for r in task["results"]:
         if r.get("review") == "retry":

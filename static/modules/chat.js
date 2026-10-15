@@ -611,7 +611,10 @@ window.addEventListener('sases_new_message', (e) => {
     chatState._seenMsgIds.add(d.message_id);
   }
   let _display = _content;
-  if (_display.startsWith('[SUMMARY]:')) _display = _display.slice(10);
+  if (_display.startsWith('[SUMMARY]:')) {
+    _display = _display.slice(10);
+    try { _hideStopBtn(); } catch (e) {}
+  }
   if (typeof appendMessage === 'function') {
     appendMessage(d.sender || 'assistant', _display, d.sender_agent_id || 'AI', d.message_id, d.created_at, false, chatState);
   }

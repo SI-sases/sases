@@ -192,6 +192,14 @@ Python 特性提醒：同文件 def 同名会覆盖前一个，不会报错。
 - file_patch: file_path(必填) + 三选一模式：
     锚点模式: anchor_pattern + position(before/after/replace_line) + new_content
     精确片段: old_snippet + new_snippet + expected_count
+- grep_code: pattern(必填！不是 keyword/query), path, file_ext, max_results, context_lines(可选，显示前后N行)
+- dir_tree: path(默认.), max_depth(默认2)
+- run_python: code(Python源码字符串)
+- api_call: url(必填), method(默认GET), headers, body
+- verify_patch: file_path(必填), expect_contains, expect_not_contains
+- harness_reload: 无参数
+- web_fetch: url(必填)
+- git_ops: action(必填: status/diff/log/add/commit/push/pull/rollback/snapshot)
 
 
 
