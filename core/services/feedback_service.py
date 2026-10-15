@@ -33,7 +33,7 @@ def _calc_weight(created_at_iso: str) -> float:
 
 # ========== 快照构建 ==========
 def _build_task_snapshot(task_id: str) -> dict:
-    """从 swarm_pending_tasks 拉任务快照"""
+    """从 swarm_pending_tasks 拉任务快照；任务完成后回退到 reviews"""
     with db_cursor() as cur:
         cur.execute(
             "SELECT user_text, steps, supervisor_run_id FROM swarm_pending_tasks WHERE task_id=?",
@@ -41,9 +41,17 @@ def _build_task_snapshot(task_id: str) -> dict:
         )
         row = cur.fetchone()
     if not row:
+        # 任务已完成：从 supervisor_runs.goal 拉目标
+        with db_cursor() as cur:
+            cur.execute(
+                "SELECT goal FROM supervisor_runs WHERE id=(SELECT supervisor_run_id FROM swarm_reviews WHERE task_id=? LIMIT 1)",
+                (task_id,)
+            )
+            r2 = cur.fetchone()
+            _goal = r2["goal"] if r2 and r2["goal"] else ""
         return {
-            "user_input": "",
-            "mode": "unknown",
+            "user_input": _goal[:2000],
+            "mode": "swarm",
             "steps_total": 0,
             "steps_tools": [],
             "retry_count": 0,
@@ -80,7 +88,7 @@ def _build_task_snapshot(task_id: str) -> dict:
 
 
 def _build_result_snapshot(task_id: str) -> dict:
-    """从 swarm_pending_tasks.results 拉结果快照"""
+    """从 swarm_pending_tasks.results 拉结果快照；任务完成后回退到 reviews 统计"""
     with db_cursor() as cur:
         cur.execute(
             "SELECT results, retry_count, status, created_at FROM swarm_pending_tasks WHERE task_id=?",
@@ -88,10 +96,20 @@ def _build_result_snapshot(task_id: str) -> dict:
         )
         row = cur.fetchone()
     if not row:
+        # 任务已完成：从 swarm_reviews 聚合
+        with db_cursor() as cur:
+            cur.execute(
+                "SELECT COUNT(*) as total, SUM(CASE WHEN exec_status='success' THEN 1 ELSE 0 END) as ok FROM swarm_reviews WHERE task_id=?",
+                (task_id,)
+            )
+            r2 = cur.fetchone()
+        _total = r2["total"] if r2 else 0
+        _ok = r2["ok"] if r2 and r2["ok"] else 0
         return {
-            "status": "unknown",
+            "status": "completed",
             "duration_ms": 0,
-            "steps_done": 0,
+            "steps_done": _ok,
+            "steps_total": _total,
             "final_output_len": 0,
             "restart_pending": False,
             "files_touched": [],
@@ -134,6 +152,8 @@ def submit_explicit(user_id: int, task_id: str, rating: str,
         return {"ok": False, "message": "rating 必须为 up/down/neutral"}
 
     # 权限校验：task 必须属于该用户
+    # 优先 swarm_pending_tasks（任务运行中），任务完成后记录会被删
+    # 回退到 swarm_reviews + conversations（任务完成后仍有审核日志）
     with db_cursor() as cur:
         cur.execute(
             "SELECT user_id, conversation_id FROM swarm_pending_tasks WHERE task_id=?",
@@ -141,7 +161,21 @@ def submit_explicit(user_id: int, task_id: str, rating: str,
         )
         row = cur.fetchone()
         if not row:
-            return {"ok": False, "message": "任务不存在"}
+            # 回退 1：从 swarm_reviews 拿 conversation_id
+            cur.execute(
+                "SELECT conversation_id FROM swarm_reviews WHERE task_id=? LIMIT 1",
+                (task_id,)
+            )
+            rev = cur.fetchone()
+            if rev and rev["conversation_id"]:
+                _cid = rev["conversation_id"]
+                # 从 conversations 拿 user_id
+                cur.execute("SELECT user_id FROM conversations WHERE id=?", (_cid,))
+                conv = cur.fetchone()
+                if conv:
+                    row = {"user_id": conv["user_id"], "conversation_id": _cid}
+        if not row:
+            return {"ok": False, "message": "任务不存在或已过期"}
         if int(row["user_id"]) != int(user_id):
             return {"ok": False, "message": "无权反馈"}
         if conversation_id is None:
