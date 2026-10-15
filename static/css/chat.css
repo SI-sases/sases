@@ -907,3 +907,34 @@ textarea#chat-input { field-sizing: fixed !important; }
 .attachment-remove:hover {
   background: rgba(0,0,0,0.8);
 }
+/* ===== 反馈条（v0.39.0） ===== */
+.feedback-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  margin: 6px 12px;
+  background: var(--bg-input, #f9f9f9);
+  border-radius: var(--radius-md, 8px);
+  font-size: 12px;
+  color: var(--text-secondary, #666);
+}
+.feedback-label {
+  margin-right: auto;
+}
+.feedback-btn {
+  background: none;
+  border: 0.5px solid var(--border-base, #ddd);
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.feedback-btn:hover {
+  background: var(--bg-hover, #eaeaea);
+}
+.feedback-done {
+  color: #34c759;
+  font-size: 12px;
+}

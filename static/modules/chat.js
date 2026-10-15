@@ -132,6 +132,42 @@ function _hideStopBtn() {
   if (window.updateSendButtonVisibility) window.updateSendButtonVisibility();
 }
 
+function _renderFeedbackBar(taskId, conversationId) {
+  const container = document.getElementById('chat-messages');
+  if (!container) return;
+  // 同任务已有反馈条则不重复
+  if (container.querySelector('.feedback-bar[data-task-id="' + taskId + '"]')) return;
+  const bar = document.createElement('div');
+  bar.className = 'feedback-bar';
+  bar.dataset.taskId = taskId;
+  bar.innerHTML = '<span class="feedback-label">这次结果满意吗？</span>'
+    + '<button class="feedback-btn" data-rating="up">👍</button>'
+    + '<button class="feedback-btn" data-rating="down">👎</button>'
+    + '<button class="feedback-btn" data-rating="neutral">🤷</button>';
+  bar.querySelectorAll('.feedback-btn').forEach(btn => {
+    btn.onclick = async () => {
+      const rating = btn.dataset.rating;
+      try {
+        const token = localStorage.getItem('sases_token');
+        await fetch('/feedback/submit', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify({ task_id: taskId, rating, conversation_id: conversationId })
+        });
+        bar.innerHTML = '<span class="feedback-done">已记录，谢谢 🙏</span>';
+        setTimeout(() => bar.remove(), 2000);
+      } catch (e) {
+        console.warn('[feedback] 提交失败', e);
+      }
+    };
+  });
+  container.appendChild(bar);
+  container.scrollTop = container.scrollHeight;
+}
+
 async function _stopCurrentTask() {
   const tid = window.chatState && window.chatState.currentTaskId;
   _hideStopBtn();
@@ -647,7 +683,13 @@ window.addEventListener('sases_new_message', (e) => {
   let _display = _content;
   if (_display.startsWith('[SUMMARY]:')) {
     _display = _display.slice(10);
+    const _fbTid = (window.chatState && window.chatState.currentTaskId) || null;
     try { _hideStopBtn(); } catch (e) {}
+    if (_fbTid) {
+      setTimeout(() => {
+        try { _renderFeedbackBar(_fbTid, window.chatState && window.chatState.conversationId); } catch (e) {}
+      }, 300);
+    }
   }
   if (typeof appendMessage === 'function') {
     appendMessage(d.sender || 'assistant', _display, d.sender_agent_id || 'AI', d.message_id, d.created_at, false, chatState);

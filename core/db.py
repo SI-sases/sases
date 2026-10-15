@@ -1170,6 +1170,34 @@ def init_db():
         # 蜂群审核日志新增：按会话查询（v0.16.0）
         cur.execute("CREATE INDEX IF NOT EXISTS idx_swarm_reviews_conversation ON swarm_reviews(conversation_id)")
 
+        # ========== task_feedback（v0.39.0）：反馈信号机制 ==========
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS task_feedback (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                task_id TEXT NOT NULL,
+                user_id INTEGER NOT NULL,
+                conversation_id INTEGER,
+                task_source TEXT NOT NULL,
+                feedback_type TEXT NOT NULL,
+                rating TEXT,
+                reason_tag TEXT,
+                reason_text TEXT,
+                task_snapshot TEXT NOT NULL,
+                result_snapshot TEXT NOT NULL,
+                metadata TEXT,
+                weight REAL DEFAULT 1.0,
+                is_latest INTEGER DEFAULT 1,
+                task_alive INTEGER DEFAULT 1,
+                created_at TEXT NOT NULL,
+                updated_at TEXT
+            )
+        """)
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_feedback_task ON task_feedback(task_id)")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_feedback_user ON task_feedback(user_id, created_at)")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_feedback_rating ON task_feedback(rating, created_at)")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_feedback_reason ON task_feedback(reason_tag)")
+        print("[db] task_feedback 表就绪")
+
 if __name__ == '__main__':
     init_db()
     print("Database initialized successfully.")
