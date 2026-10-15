@@ -102,12 +102,12 @@ async function _pollTaskStatus(taskId) {
     // 任务已完结（pass 或 done）
     if (last && last.review_result && !['retry', 'pending'].includes(last.review_result)) {
       _hideStopBtn();
-      // v0.39.0: 任务完成 → 显示反馈条（不依赖 WS）
+      // v0.39.1: 任务完成 → 延迟 2 秒显示反馈条（等 AI 回复先落位）
       setTimeout(() => {
         try {
           _renderFeedbackBar(taskId, (window.chatState && window.chatState.conversationId) || null);
         } catch (e) { console.warn('[feedback] 轮询触发失败', e); }
-      }, 300);
+      }, 2000);
     }
   } catch (e) { /* 忽略 */ }
 }
@@ -153,9 +153,10 @@ function _renderFeedbackBar(taskId, conversationId) {
   bar.querySelectorAll('.feedback-btn').forEach(btn => {
     btn.onclick = async () => {
       const rating = btn.dataset.rating;
+      console.log('[feedback] 点击', rating, 'task_id=', taskId);
       try {
         const token = localStorage.getItem('sases_token');
-        await fetch('/feedback/submit', {
+        const resp = await fetch('/feedback/submit', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -163,10 +164,12 @@ function _renderFeedbackBar(taskId, conversationId) {
           },
           body: JSON.stringify({ task_id: taskId, rating, conversation_id: conversationId })
         });
+        console.log('[feedback] 提交返回', resp.status);
         bar.innerHTML = '<span class="feedback-done">已记录，谢谢 🙏</span>';
-        setTimeout(() => bar.remove(), 2000);
+        setTimeout(() => { try { bar.remove(); } catch(e) {} }, 3000);
       } catch (e) {
         console.warn('[feedback] 提交失败', e);
+        bar.innerHTML = '<span style="color:#ff3b30;">提交失败，请重试</span>';
       }
     };
   });
