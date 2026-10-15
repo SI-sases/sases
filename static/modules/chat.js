@@ -102,6 +102,12 @@ async function _pollTaskStatus(taskId) {
     // 任务已完结（pass 或 done）
     if (last && last.review_result && !['retry', 'pending'].includes(last.review_result)) {
       _hideStopBtn();
+      // v0.39.0: 任务完成 → 显示反馈条（不依赖 WS）
+      setTimeout(() => {
+        try {
+          _renderFeedbackBar(taskId, (window.chatState && window.chatState.conversationId) || null);
+        } catch (e) { console.warn('[feedback] 轮询触发失败', e); }
+      }, 300);
     }
   } catch (e) { /* 忽略 */ }
 }
@@ -182,6 +188,7 @@ async function _stopCurrentTask() {
   } catch (e) { console.warn('[stop] 取消失败', e); }
 }
 
+window._renderFeedbackBar = _renderFeedbackBar;
 window._showStopBtn = _showStopBtn;
 window._hideStopBtn = _hideStopBtn;
 window._stopCurrentTask = _stopCurrentTask;
