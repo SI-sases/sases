@@ -83,6 +83,36 @@ function _showStopBtn(taskId) {
     if (window.chatState._stopTimer) clearTimeout(window.chatState._stopTimer);
     window.chatState._stopTimer = setTimeout(() => _hideStopBtn(), 30000);
   }
+  try { _startPollTimer(taskId); } catch (e) {}
+}
+
+async function _pollTaskStatus(taskId) {
+  // 轮询任务状态，任务完成后自动隐藏停止按钮
+  if (!window.chatState || window.chatState.currentTaskId !== taskId) return;
+  try {
+    const token = localStorage.getItem('sases_token');
+    const r = await fetch('/swarm/reviews?task_id=' + encodeURIComponent(taskId) + '&limit=1', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (!r.ok) return;
+    const data = await r.json();
+    const reviews = data.reviews || [];
+    if (!reviews.length) return;
+    const last = reviews[0];
+    // 任务已完结（pass 或 done）
+    if (last && last.review_result && !['retry', 'pending'].includes(last.review_result)) {
+      _hideStopBtn();
+    }
+  } catch (e) { /* 忽略 */ }
+}
+
+function _startPollTimer(taskId) {
+  if (window.chatState && window.chatState._pollTimer) {
+    clearInterval(window.chatState._pollTimer);
+  }
+  if (window.chatState) {
+    window.chatState._pollTimer = setInterval(() => _pollTaskStatus(taskId), 3000);
+  }
 }
 
 function _hideStopBtn() {
@@ -92,6 +122,10 @@ function _hideStopBtn() {
       clearTimeout(window.chatState._stopTimer);
       window.chatState._stopTimer = null;
     }
+  }
+  if (window.chatState && window.chatState._pollTimer) {
+    clearInterval(window.chatState._pollTimer);
+    window.chatState._pollTimer = null;
   }
   const stopBtn = document.getElementById('stop-btn');
   if (stopBtn) stopBtn.style.display = 'none';
