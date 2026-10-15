@@ -114,9 +114,14 @@ def _normalize_steps(steps):
             out.append(s)
     return out
 
-def _parse_plan(raw: str) -> Optional[List[Dict[str, Any]]]:
+def _parse_plan(raw: str, max_steps: int = None) -> Optional[List[Dict[str, Any]]]:
     if not raw:
         return None
+    _limit = max_steps if max_steps is not None else config.MAX_STEPS
+    def _trunc(lst):
+        if _limit <= 0:
+            return lst
+        return lst[:_limit]
     raw = raw.strip()
 
     if raw.startswith("```"):
@@ -132,7 +137,7 @@ def _parse_plan(raw: str) -> Optional[List[Dict[str, Any]]]:
         try:
             steps = json.loads(raw[start:end+1])
             if isinstance(steps, list) and steps:
-                return steps[:config.MAX_STEPS]
+                return _trunc(steps)
         except json.JSONDecodeError:
             pass
 
@@ -153,7 +158,7 @@ def _parse_plan(raw: str) -> Optional[List[Dict[str, Any]]]:
                 steps = json.loads(fixed)
                 if isinstance(steps, list) and steps:
                     print(f"[swarm] _parse_plan 三级修复成功，步骤数: {len(steps)}")
-                    return steps[:config.MAX_STEPS]
+                    return _trunc(steps)
             except json.JSONDecodeError:
                 pass
 
@@ -180,7 +185,7 @@ def _parse_plan(raw: str) -> Optional[List[Dict[str, Any]]]:
             for i, s in enumerate(objects):
                 s["step"] = i + 1
             print(f"[swarm] _parse_plan 四级修复成功，步骤数: {len(objects)}")
-            return objects[:config.MAX_STEPS]
+            return _trunc(objects)
 
     return None
 

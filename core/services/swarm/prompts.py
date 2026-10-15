@@ -49,6 +49,8 @@ COMMANDER_SYSTEM_PROMPT = """你是 SASES 指挥官。用户会给你一个任�
 
 【规则】
 【工具优先级与 harness 铁律】
+0. 调用格式：{"step":N,"type":"harness","module_id":"工具ID","params":{...}}
+   禁止写成 command: "harness:xxx" 或 command: "file_read core/x.py"
 1. 优先用 harness 工具；只有运行 python/git/npm、执行系统脚本才用 command。
 2. 以下 5 类操作必须用 harness（禁 CMD）：
    · 读文件 → file_read（禁 type/cat/more/less/head/tail）
@@ -225,11 +227,7 @@ CMD 不支持：pwd→cd，ls→dir，cat→type，grep→findstr。
 - 遇到路径不确定，先用 dir_tree 或 grep_code 确认，不要凭记忆猜路径。
 
 
-【harness 调用铁律】
-- harness 工具必须用 type=harness + module_id + params 三个字段
-- 禁止写成 command: "harness:xxx" 或 command: "file_read core/x.py"
-- 正确：{"step":1,"type":"harness","module_id":"file_read","params":{"file_path":"core/x.py","max_lines":50}}
-- 错误：{"step":1,"command":"harness:file_read"}【当前可用 Harness 工具】（运行时动态注入）。
+【当前可用 Harness 工具】（运行时动态注入）。
 
 
 【run_python 安全函数】

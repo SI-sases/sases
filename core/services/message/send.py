@@ -47,7 +47,8 @@ async def send_message(
     agent_id: str,
     content: str,
     sender_agent_id: str = None,
-    mode: str = "normal"
+    mode: str = "normal",
+    max_steps: int = None
 ):
     print(f"[MSG_DEBUG] content={content!r} | mode={mode!r} | agent_id={agent_id!r}")
 
@@ -182,6 +183,7 @@ async def send_message(
                             user_input=content,
                             supervisor_id=sender_agent_id or agent_id,
                             supervisor_run_id=_run_id,
+                            max_steps=max_steps,
                         )
                         print("[supervisor] auto_run 已派单 run_id=" + str(_run_id))
                     except Exception as _ae:
@@ -637,7 +639,8 @@ async def send_message(
                     user_input=content,
                     require_confirmation=require_confirmation,
                     supervisor_id=sender_agent_id,
-                    supervisor_run_id=locals().get('_supervisor_run_id')
+                    supervisor_run_id=locals().get('_supervisor_run_id'),
+                    max_steps=max_steps
                 )
                 print(f"[MSG_DEBUG] plan_result={plan_result}")
 

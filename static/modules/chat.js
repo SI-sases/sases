@@ -1,3 +1,4 @@
+import { initParamBar, getParamMaxSteps } from './param_bar.js';
 // static/modules/chat.js
 import { api } from './api.js';
 
@@ -70,6 +71,51 @@ async function sendTransfer(receiver_id, amount, message, conversation_id) {
   }
 }
 
+
+// ===== 停止按钮（v0.38.0）=====
+function _showStopBtn(taskId) {
+  if (window.chatState) window.chatState.currentTaskId = taskId;
+  const sendBtn = document.getElementById('send-btn');
+  const stopBtn = document.getElementById('stop-btn');
+  if (sendBtn) sendBtn.style.display = 'none';
+  if (stopBtn) stopBtn.style.display = 'block';
+  if (window.chatState) {
+    if (window.chatState._stopTimer) clearTimeout(window.chatState._stopTimer);
+    window.chatState._stopTimer = setTimeout(() => _hideStopBtn(), 30000);
+  }
+}
+
+function _hideStopBtn() {
+  if (window.chatState) {
+    window.chatState.currentTaskId = null;
+    if (window.chatState._stopTimer) {
+      clearTimeout(window.chatState._stopTimer);
+      window.chatState._stopTimer = null;
+    }
+  }
+  const stopBtn = document.getElementById('stop-btn');
+  if (stopBtn) stopBtn.style.display = 'none';
+  if (window.updateSendButtonVisibility) window.updateSendButtonVisibility();
+}
+
+async function _stopCurrentTask() {
+  const tid = window.chatState && window.chatState.currentTaskId;
+  _hideStopBtn();
+  if (!tid) return;
+  try {
+    const token = localStorage.getItem('sases_token');
+    await fetch('/swarm/cancel', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ task_id: tid })
+    });
+  } catch (e) { console.warn('[stop] 取消失败', e); }
+}
+
+window._showStopBtn = _showStopBtn;
+window._hideStopBtn = _hideStopBtn;
+window._stopCurrentTask = _stopCurrentTask;
+
 async function sendMessage() {
   const input = document.getElementById('chat-input');
 
@@ -125,12 +171,15 @@ async function sendMessage() {
       }
     }
 
+    let _maxSteps = null;
+    try { _maxSteps = getParamMaxSteps(); } catch (e) {}
     const data = await api.sendMessage({
       conversation_id: chatState.conversationId,
       agent_id: chatState.agentId,
       content: text,
       sender_agent_id: chatState.senderAgentId,
-      mode: chatState.mode
+      mode: chatState.mode,
+      max_steps: _maxSteps
     });
 
     if (!chatState.conversationId) {
@@ -154,6 +203,7 @@ async function sendMessage() {
     // ========== 普通蜂群任务：显示操作按钮 ==========
     else if (data.swarm && data.task_id) {
       showSwarmActionButtons(data.task_id, text, data.swarm_status);
+      _showStopBtn(data.task_id);
     }
 
     if (typeof window.onboarding?.report === 'function') {
@@ -290,6 +340,7 @@ export function openChatWindow(conversationId, chatName, agentId = null, agentTy
   updateModeText();
   updateInputPlaceholder();
   updateIdentityButton(chatState);
+  try { initParamBar(); } catch (e) { console.warn('[chat] param_bar 初始化失败', e); }
 
   const titleEl = document.getElementById('chat-window-title');
   if (titleEl) titleEl.textContent = chatName || '会话';
@@ -343,6 +394,12 @@ export function openChatWindow(conversationId, chatName, agentId = null, agentTy
   updateSendButtonVisibility();
   hideQuoteBar();
   closeChatPlusPanel();
+  const _stopBtn = document.getElementById('stop-btn');
+  if (_stopBtn && !_stopBtn._sasesStopBound) {
+    _stopBtn._sasesStopBound = true;
+    _stopBtn.onclick = _stopCurrentTask;
+  }
+  _hideStopBtn();
 
   const messagesContainer = document.getElementById('chat-messages');
   if (messagesContainer) {
@@ -395,6 +452,7 @@ export function closeChatWindow() {
   if (modeBtn) modeBtn.style.display = 'none';
   hideQuoteBar();
   closeChatPlusPanel();
+  _hideStopBtn();
 }
 
 function updateModeText() {
