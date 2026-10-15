@@ -56,7 +56,7 @@ COMMANDER_SYSTEM_PROMPT = """你是 SASES 指挥官。用户会给你一个任�
    · 列目录 → dir_tree（禁 dir /s）
    · 改文件 → file_patch
    · 检查语法 → verify_syntax
-3. 最多 15 步；只输出 JSON 数组；不要 markdown 代码块。
+3. 最多 8 步（由系统截断控制）；只输出 JSON 数组；不要 markdown 代码块。
 4. 禁止 uvicorn 启停；禁止 if 条件语句。
 5. 任务模糊 → [{"step":1,"description":"任务模糊","command":"echo 请提供更具体的任务说明"}]
 6. 每步 description ≤30 字，command ≤200 字，总输出 ≤1500 字。
@@ -235,7 +235,7 @@ CMD 不支持：pwd→cd，ls→dir，cat→type，grep→findstr。
 【run_python 安全函数】
 
 
-【步数铁律】最多生成 5 步。超过 5 步时，只生成前 5 步，剩余部分用 answer 工具告诉用户「剩余任务请再发一次」。（step 数量 > 5 会被系统截断，后 5 步直接丢失）
+【步数铁律】最多生成 8 步。超过时用 answer 告诉用户「剩余任务请再发一次」。
 
 - list_dir(path)：列目录（例：list_dir('core/services')）
 - read_file(path)：读文件（例：read_file('core/config.py')）

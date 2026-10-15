@@ -132,7 +132,7 @@ def _parse_plan(raw: str) -> Optional[List[Dict[str, Any]]]:
         try:
             steps = json.loads(raw[start:end+1])
             if isinstance(steps, list) and steps:
-                return steps[:5]
+                return steps[:config.MAX_STEPS]
         except json.JSONDecodeError:
             pass
 
@@ -153,7 +153,7 @@ def _parse_plan(raw: str) -> Optional[List[Dict[str, Any]]]:
                 steps = json.loads(fixed)
                 if isinstance(steps, list) and steps:
                     print(f"[swarm] _parse_plan 三级修复成功，步骤数: {len(steps)}")
-                    return steps[:5]
+                    return steps[:config.MAX_STEPS]
             except json.JSONDecodeError:
                 pass
 
@@ -180,7 +180,7 @@ def _parse_plan(raw: str) -> Optional[List[Dict[str, Any]]]:
             for i, s in enumerate(objects):
                 s["step"] = i + 1
             print(f"[swarm] _parse_plan 四级修复成功，步骤数: {len(objects)}")
-            return objects[:5]
+            return objects[:config.MAX_STEPS]
 
     return None
 

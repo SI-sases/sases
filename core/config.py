@@ -125,7 +125,7 @@ HYBRID_HIGH_THRESHOLD = float(os.environ.get("HYBRID_HIGH_THRESHOLD", "0.88"))
 # ========== 指挥官/审核员 LLM 参数 ==========
 COMMANDER_MAX_TOKENS = int(os.environ.get("COMMANDER_MAX_TOKENS", "30000"))
 REPLAN_MAX_TOKENS = int(os.environ.get("REPLAN_MAX_TOKENS", "16000"))
-SUMMARY_MAX_TOKENS = 15000
+SUMMARY_MAX_TOKENS = 20000
 
 # ========== 蜂群模式（防篡改） ==========
 # off: 关闭（单用户，默认）
@@ -139,3 +139,6 @@ HIVE_PEERS = [x.strip() for x in os.environ.get("SASES_HIVE_PEERS", "").split(",
 HIVE_NODE_ID = os.environ.get("SASES_HIVE_NODE_ID", "")
 HIVE_ANCHOR_INTERVAL = int(os.environ.get("SASES_HIVE_ANCHOR_INTERVAL", "3600"))
 HIVE_HEARTBEAT_INTERVAL = int(os.environ.get("SASES_HIVE_HEARTBEAT_INTERVAL", "300"))
+
+# 每轮最大拆解步数（环境变量可调）
+MAX_STEPS = int(os.environ.get("SASES_MAX_STEPS", "8"))

@@ -347,7 +347,7 @@ def confirm_task(
         return {"status": "not_draft", "message": "该任务不是草稿"}
 
     if edited_steps:
-        task["steps"] = edited_steps[:5]
+        task["steps"] = edited_steps[:config.MAX_STEPS]
         print(f"[swarm] 用户已编辑草稿 {task_id}，新步骤数: {len(edited_steps)}")
 
     task["is_draft"] = False
