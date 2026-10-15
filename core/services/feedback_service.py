@@ -41,16 +41,27 @@ def _build_task_snapshot(task_id: str) -> dict:
         )
         row = cur.fetchone()
     if not row:
-        # 任务已完成：从 supervisor_runs.goal 拉目标
-        with db_cursor() as cur:
-            cur.execute(
-                "SELECT goal FROM supervisor_runs WHERE id=(SELECT supervisor_run_id FROM swarm_reviews WHERE task_id=? LIMIT 1)",
-                (task_id,)
-            )
-            r2 = cur.fetchone()
-            _goal = r2["goal"] if r2 and r2["goal"] else ""
+        # 任务已完成：从 conversations 最近的 user 消息取任务描述
+        _input = ""
+        try:
+            with db_cursor() as cur:
+                cur.execute(
+                    "SELECT conversation_id FROM swarm_reviews WHERE task_id=? LIMIT 1",
+                    (task_id,)
+                )
+                rev = cur.fetchone()
+                if rev and rev["conversation_id"]:
+                    cur.execute(
+                        "SELECT content FROM messages WHERE conversation_id=? AND sender='user' ORDER BY id DESC LIMIT 1",
+                        (rev["conversation_id"],)
+                    )
+                    m = cur.fetchone()
+                    if m and m["content"]:
+                        _input = str(m["content"])[:2000]
+        except Exception as e:
+            print(f"[feedback] 回退拉 user_input 失败: {e}")
         return {
-            "user_input": _goal[:2000],
+            "user_input": _input,
             "mode": "swarm",
             "steps_total": 0,
             "steps_tools": [],
