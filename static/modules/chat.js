@@ -153,6 +153,7 @@ function _renderFeedbackBar(taskId, conversationId) {
   bar.querySelectorAll('.feedback-btn').forEach(btn => {
     btn.onclick = async () => {
       const rating = btn.dataset.rating;
+      if (bar._autoRemoveTimer) { clearTimeout(bar._autoRemoveTimer); bar._autoRemoveTimer = null; }
       console.log('[feedback] 点击', rating, 'task_id=', taskId);
       // 立即禁用所有按钮，避免重复点击
       bar.querySelectorAll('.feedback-btn').forEach(b => { b.disabled = true; });
@@ -187,6 +188,13 @@ function _renderFeedbackBar(taskId, conversationId) {
   });
   container.appendChild(bar);
   container.scrollTop = container.scrollHeight;
+  // v0.39.2: 30 秒未操作自动移除
+  bar._autoRemoveTimer = setTimeout(() => {
+    try {
+      if (bar.parentNode) bar.parentNode.removeChild(bar);
+      console.log('[feedback] 30 秒未操作，自动移除');
+    } catch (e) {}
+  }, 30000);
 }
 
 async function _stopCurrentTask() {
