@@ -154,6 +154,8 @@ function _renderFeedbackBar(taskId, conversationId) {
     btn.onclick = async () => {
       const rating = btn.dataset.rating;
       console.log('[feedback] 点击', rating, 'task_id=', taskId);
+      // 立即禁用所有按钮，避免重复点击
+      bar.querySelectorAll('.feedback-btn').forEach(b => { b.disabled = true; });
       try {
         const token = localStorage.getItem('sases_token');
         const resp = await fetch('/feedback/submit', {
@@ -164,9 +166,19 @@ function _renderFeedbackBar(taskId, conversationId) {
           },
           body: JSON.stringify({ task_id: taskId, rating, conversation_id: conversationId })
         });
-        console.log('[feedback] 提交返回', resp.status);
-        bar.innerHTML = '<span class="feedback-done">已记录，谢谢 🙏</span>';
-        setTimeout(() => { try { bar.remove(); } catch(e) {} }, 3000);
+        console.log('[feedback] 提交返回', resp.status, '父节点存在:', !!bar.parentNode);
+        // 替换为"已记录"
+        if (bar.parentNode) {
+          bar.innerHTML = '<span class="feedback-done">已记录，谢谢 🙏</span>';
+          console.log('[feedback] innerHTML 已替换，内容:', bar.innerHTML);
+        }
+        // 3 秒后移除（用 parentNode 检查）
+        setTimeout(() => {
+          try {
+            if (bar.parentNode) bar.parentNode.removeChild(bar);
+            console.log('[feedback] bar 已移除');
+          } catch (e) { console.warn('[feedback] remove 失败', e); }
+        }, 3000);
       } catch (e) {
         console.warn('[feedback] 提交失败', e);
         bar.innerHTML = '<span style="color:#ff3b30;">提交失败，请重试</span>';
