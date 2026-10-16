@@ -103,6 +103,34 @@ async def periodic_git_push():
 
 
 
+async def periodic_feedback_weekly():
+    """每 7 天生成一次反馈周报（v0.40.0）"""
+    import subprocess
+    import sys as _sys
+    import os as _os
+    await asyncio.sleep(600)  # 启动后 10 分钟首跑
+    repo = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+    script = _os.path.join(repo, "scripts", "feedback_weekly.py")
+    out = _os.path.join(repo, "docs", "feedback_weekly.md")
+    while True:
+        try:
+            if not _os.path.exists(script):
+                print("[feedback-weekly] 脚本不存在，跳过")
+            else:
+                r = subprocess.run(
+                    [_sys.executable, script, "7"],
+                    cwd=repo, capture_output=True,
+                    encoding="utf-8", errors="replace", timeout=120
+                )
+                if r.returncode == 0:
+                    print("[feedback-weekly] 周报已生成")
+                else:
+                    print(f"[feedback-weekly] 生成失败: {(r.stderr or '')[:200]}")
+        except Exception as e:
+            print(f"[feedback-weekly] 异常: {e}")
+        await asyncio.sleep(7 * 24 * 3600)
+
+
 async def periodic_pattern_finalize():
     """每小时检查一次，把 24 小时前的 tentative pattern 转为 active"""
     while True:

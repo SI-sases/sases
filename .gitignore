@@ -135,3 +135,5 @@ hive-nodes/
 
 data/direct_channel.jsonl
 data/*.jsonl
+
+docs/feedback_weekly/

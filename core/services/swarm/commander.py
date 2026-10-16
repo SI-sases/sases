@@ -4,6 +4,7 @@ from typing import Optional, Dict, Any, List
 from ... import config
 from ...db import db_cursor
 from .. import memory_service
+from .. import feedback_service
 from .prompts import COMMANDER_SYSTEM_PROMPT, REPLAN_SYSTEM_PROMPT
 from .reviewer import UNRECOVERABLE_KEYWORDS
 from .memory_cache import _pending
@@ -380,6 +381,20 @@ def reject_task(task_id: str, user_id: int) -> Dict[str, Any]:
     return {"status": "rejected", "task_id": task_id}
 
 
+def _record_cancel_feedback(user_id, task_id):
+    """记录用户主动取消的隐式反馈"""
+    try:
+        feedback_service.record_implicit(
+            user_id=user_id,
+            task_id=task_id,
+            rating="down",
+            signal="user_cancelled",
+            task_source="swarm",
+        )
+    except Exception as e:
+        print(f"[feedback] 记录取消反馈失败: {e}")
+
+
 def cancel_task(task_id: str, user_id: int) -> Dict[str, Any]:
     if task_id not in _pending:
         return {"status": "not_found", "message": "任务不存在或已完成"}
@@ -391,11 +406,13 @@ def cancel_task(task_id: str, user_id: int) -> Dict[str, Any]:
     if task.get("no_plan"):
         del _pending[task_id]
         _delete_pending_from_db(task_id)
+        _record_cancel_feedback(user_id, task_id)
         return {"status": "cancelled", "task_id": task_id}
 
     task["cancelled"] = True
     _save_pending(task)
     _insert_message(task["conversation_id"], "[SUMMARY]:任务已取消。", sender_agent_id=task["commander_id"])
+    _record_cancel_feedback(user_id, task_id)
     return {"status": "cancelled", "task_id": task_id}
 
 
