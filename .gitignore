@@ -137,3 +137,12 @@ data/direct_channel.jsonl
 data/*.jsonl
 
 docs/feedback_weekly/
+
+
+# ========== 一次性修复/测试脚本 ==========
+fix_*.py
+diag_*.py
+analyze_*.py
+measure_*.py
+dump_*.py
+test_feedback.py
