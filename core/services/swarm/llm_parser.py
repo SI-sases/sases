@@ -207,8 +207,18 @@ def _validate_steps_format(steps):
 
 
 def _precheck_steps(steps):
-    """执行前预检，只返回 warnings，不拦截"""
+    """
+    执行前预检。
+    返回 (warnings, blocked)：
+      - warnings: 非致命问题，打印但不拦截
+      - blocked: 致命问题，调用方应拦截并触发重拆
+    v2.7.0 变更：
+      - 返回值从 list 改为 (list, list)
+      - position 不再检查（信任 file_patch 的归一化）
+      - run_python 的 import 检查更新为真正的禁用模块
+    """
     warnings = []
+    blocked = []
     for s in steps:
         module_id = s.get("module_id", "")
         params = s.get("params", {}) or {}
@@ -216,20 +226,17 @@ def _precheck_steps(steps):
         if module_id == "file_patch":
             fp = params.get("file_path", "")
             if not params.get("anchor_pattern") and not params.get("old_snippet") and not params.get("new_content"):
-                warnings.append(f"step {step_num}: file_patch 缺参数")
-            pos = params.get("position")
-            if pos and pos not in ("before", "after", "replace_line"):
-                warnings.append(f"step {step_num}: position 非法 {pos}")
+                blocked.append(f"step {step_num}: file_patch 缺 new_content/old_snippet/anchor_pattern")
             if "file_patch/main.py" in fp or "executor_service.py" in fp:
-                warnings.append(f"step {step_num}: 目标是受保护文件")
+                blocked.append(f"step {step_num}: 目标是受保护文件")
         if module_id == "file_read":
             fp = params.get("file_path", "")
             if "{{step" in fp or "{step" in fp:
-                warnings.append(f"step {step_num}: 路径含未替换占位符")
+                blocked.append(f"step {step_num}: 路径含未替换占位符")
         if module_id == "run_python":
             code = params.get("code", "")
-            for banned in ("import os", "import sys", "import subprocess", "import pathlib"):
-                if banned in code:
-                    warnings.append(f"step {step_num}: run_python 含 {banned}")
+            for banned in ("subprocess", "socket", "ctypes", "multiprocessing", "signal"):
+                if f"import {banned}" in code:
+                    warnings.append(f"step {step_num}: run_python 含 import {banned}")
                     break
-    return warnings
+    return warnings, blocked

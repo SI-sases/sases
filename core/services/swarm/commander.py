@@ -244,9 +244,12 @@ async def plan_task(
         steps = _normalize_steps(steps)
         steps, _fmt_errors = _validate_steps_format(steps)
         if steps:
-            _pre_warns = _precheck_steps(steps)
+            _pre_warns, _pre_blocks = _precheck_steps(steps)
             if _pre_warns:
                 print(f"[precheck] warnings: {_pre_warns}")
+            if _pre_blocks:
+                print(f"[precheck] blocked: {_pre_blocks}")
+                return None
         if _fmt_errors:
             print(f"[swarm] step 格式错误: {_fmt_errors}")
             return None
@@ -510,9 +513,12 @@ async def replan_failed_steps(task: Dict[str, Any], max_steps: int = None) -> Op
         steps = _normalize_steps(steps)
         steps, _fmt_errors = _validate_steps_format(steps)
         if steps:
-            _pre_warns = _precheck_steps(steps)
+            _pre_warns, _pre_blocks = _precheck_steps(steps)
             if _pre_warns:
                 print(f"[precheck] warnings: {_pre_warns}")
+            if _pre_blocks:
+                print(f"[precheck] blocked: {_pre_blocks}")
+                return None
         if _fmt_errors:
             print(f"[swarm] step 格式错误: {_fmt_errors}")
             return None

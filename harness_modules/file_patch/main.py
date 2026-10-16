@@ -12,12 +12,16 @@
   参数: file_path, new_content, create_if_missing=true
   行为: 文件不存在或为空时，直接写入 new_content
 
-【v2.3.0 权限】
+【v2.7.0 权限】
   - 项目内允许目录：static/ / core/ / scripts/ / docs/ / harness_modules/
   - 外部允许目录：D:/ 全盘（用于多实例测试）
   - 禁止文件：users.db / .env / *.key / *.bin / *.pem / *.crt
   - 自我保护：file_patch 自身、executor_service.py
   - 自动备份到 .backups/
+
+【v2.7.0 变更】
+  - position 归一化扩充：补 replace_all / update / modify / append_to 等别名
+  - 配合 manifest 的 aliases 字段，file_write / write_file 等别名指向本工具
 """
 import os
 import difflib
@@ -177,14 +181,18 @@ def _mode_anchor(abs_path, safe_path, params):
 
     if not anchor:
         raise ValueError("缺少 anchor_pattern 参数")
-    # v2.6.0: position 归一化——容错 LLM 常见错误值
+    # v2.7.0: position 归一化——容错 LLM 常见错误值（扩充至 12 个别名）
     _pos_aliases = {
         "replace": "replace_line",
         "replace_with": "replace_line",
         "overwrite": "replace_line",
+        "replace_all": "replace_line",
+        "update": "replace_line",
+        "modify": "replace_line",
         "insert": "after",
         "insert_after": "after",
         "append": "after",
+        "append_to": "after",
         "insert_before": "before",
         "prepend": "before",
     }
