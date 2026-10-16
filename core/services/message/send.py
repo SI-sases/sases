@@ -177,7 +177,7 @@ async def send_message(
                     _supervisor_run_id = _run_id
                     from .. import swarm_service
                     try:
-                        await swarm_service.plan_task(
+                        _plan_result = await swarm_service.plan_task(
                             user_id=user_id,
                             conversation_id=_cid_auto,
                             user_input=content,
@@ -185,9 +185,33 @@ async def send_message(
                             supervisor_run_id=_run_id,
                             max_steps=max_steps,
                         )
+                        # v0.37.0: plan_task 返回 None 或 no_plan/error 时立即结束 run，避免卡死会话锁
+                        if _plan_result is None or _plan_result.get('status') in ('no_plan', 'error'):
+                            try:
+                                supervisor_service.finish_run(_run_id, 'plan_failed')
+                            except Exception as _fe:
+                                print("[supervisor] auto_run finish_run 失败: " + str(_fe))
+                            _fail_reason = '任务拆解失败（precheck 拦截或格式错误）'
+                            if _plan_result and _plan_result.get('message'):
+                                _fail_reason = _plan_result.get('message')
+                            return {
+                                'conversation_id': conversation_id,
+                                'user_message': content,
+                                'assistant_reply': _fail_reason,
+                                'agent_id': agent_id,
+                                'sender_agent_id': sender_agent_id,
+                                'mode': mode,
+                                'swarm': False,
+                                'swarm_status': 'plan_failed',
+                                'task_id': _run_id,
+                            }
                         print("[supervisor] auto_run 已派单 run_id=" + str(_run_id))
                     except Exception as _ae:
                         print("[supervisor] auto_run 派单失败: " + str(_ae))
+                        try:
+                            supervisor_service.finish_run(_run_id, 'plan_failed')
+                        except Exception as _fe2:
+                            print("[supervisor] auto_run finish_run 异常路径失败: " + str(_fe2))
                     return {
                         'conversation_id': conversation_id,
                         'user_message': content,

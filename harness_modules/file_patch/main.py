@@ -398,7 +398,7 @@ def run(params):
                 result['syntax_error'] = err
                 result['error'] = 'SYNTAX_ERROR: ' + err
 
-    # v2.5.0: MD5 对比防假成功
+    # v2.8.0: MD5 对比防假成功（create/overwrite 模式下 NO_CHANGE 视为幂等成功）
     if isinstance(result, dict) and result.get('success') and _abs_path_check:
         _after_md5 = _file_md5(_abs_path_check)
         result['before_md5'] = _before_md5
@@ -407,7 +407,15 @@ def run(params):
             result['success'] = False
             result['error'] = 'NO_FILE: 写入后文件仍不存在'
         elif _before_md5 is not None and _before_md5 == _after_md5:
-            result['success'] = False
-            result['error'] = 'NO_CHANGE: 文件内容未发生任何变化（old_snippet 与 new_snippet 可能相同）'
+            _mode_now = result.get('mode', '')
+            if _mode_now in ('create', 'overwrite'):
+                # 文件本来就存在且内容一致 → 幂等完成
+                result['mode'] = _mode_now + '_no_change'
+                result['note'] = '文件已包含目标内容（幂等）'
+                # 保持 success=True
+            else:
+                # patch 模式下 MD5 相同 = 没改动 = 真失败
+                result['success'] = False
+                result['error'] = 'NO_CHANGE: 文件内容未发生任何变化'
 
     return result

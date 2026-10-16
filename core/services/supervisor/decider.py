@@ -99,6 +99,38 @@ async def task_summarizer(task):
     except Exception as _e_nf:
         print('[supervisor] 未找到判定异常: ' + str(_e_nf))
 
+    # v0.36.0: file_patch 成功判定（优先于可疑词检测）
+    # 场景：任务含"创建/写入/生成 xxx 文件"，且 file_patch 已成功
+    # 不再因 answer 里出现"已完成"等词而误判未完成
+    try:
+        _has_file_patch_success = False
+        _has_any_retry = False
+        _has_final_answer = False
+        for _r in results:
+            _cmd = str(_r.get('command') or _r.get('module_id') or '')
+            _status = _r.get('status', '')
+            _mode = str(_r.get('mode') or '')
+            if _cmd == 'file_patch' and _status == 'success':
+                _has_file_patch_success = True
+            if _status in ('failed', 'blocked', 'timeout', 'error'):
+                _has_any_retry = True
+            if _cmd == 'answer' and _status == 'success':
+                _has_final_answer = True
+
+        _create_words = ['创建', '写入', '生成', '写一个', '写个', '新建', '覆盖']
+        _is_create_task = any(w in user_text for w in _create_words)
+
+        if _is_create_task and _has_file_patch_success and not _has_any_retry:
+            print('[supervisor] task_summarizer file_patch 成功判定 → 判完成')
+            return {
+                'goal_achieved': True,
+                'goal_reason': '文件已成功创建/写入',
+                'missing': [],
+                'next_hint': '',
+            }
+    except Exception as _e_fp:
+        print('[supervisor] file_patch 判定异常: ' + str(_e_fp))
+
     _suspicious_kws = ['剩余', '请继续', '请分批', '请再发', '下一步', '未完成', '待完成',
                        'rolled_back', 'verify fail', '已回滚', '请回复',
                        '请确认', '请检查', '未做', '待做', '请用户', '需要用户', '请先', '请提供',

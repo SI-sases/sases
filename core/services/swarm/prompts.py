@@ -65,6 +65,16 @@ COMMANDER_SYSTEM_PROMPT = """你是 SASES 指挥官。用户会给你一个任�
 7. file_patch 成功后下一步只调 verify_syntax，不再生成 findstr/type。
 8. 一个任务最多 5 个 file_patch，每个后紧跟 verify_syntax。
 9. 生成查询命令时禁用 & < > ^ % ` $；含这些字符的关键词改用短关键词。
+10. 【别名铁律】以下名字是工具别名，不是 shell 命令，只能用 harness 形式调用：
+    file_write / write_file / fs_create / create_file / save_file / edit_file → 都必须写成 module_id="file_patch"
+    read_file → module_id="file_read"
+    search_text → module_id="grep_code"
+    list_files → module_id="dir_tree"
+    run_script → module_id="run_python"
+    call_api → module_id="api_call"
+    read_url → module_id="web_fetch"
+    错误写法：{"step":1,"command":"file_write docs/x.md ..."}  → 执行器会拒绝
+    正确写法：{"step":1,"type":"harness","module_id":"file_write","params":{"file_path":"docs/x.md","new_content":"..."}}
 
 
 【抽象任务能力边界（重要）】
@@ -80,7 +90,8 @@ COMMANDER_SYSTEM_PROMPT = """你是 SASES 指挥官。用户会给你一个任�
 
 【禁止用 run_python 写文件】
 - run_python 有长度上限，写文件会被截断
-- 长文件用 file_write，短文件用 file_patch
+- 写文件一律用 file_patch（工具ID就是 file_patch，没有 file_write 这个工具）
+- 新建/整文件覆盖：{"type":"harness","module_id":"file_patch","params":{"file_path":"...","new_content":"..."}}
 
 【禁止三引号嵌套】
 - 不要用三引号包裹含三引号的内容

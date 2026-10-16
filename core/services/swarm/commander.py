@@ -494,6 +494,7 @@ async def replan_failed_steps(task: Dict[str, Any], max_steps: int = None) -> Op
 4. 禁止 copy / move / del / powershell / for / if / 重定向
 5. 如果是"old_snippet 未找到"：先用 findstr 精确确认原文再 patch
 6. 用 {{{{stepN}}}} 引用前序步骤的输出
+7. 如果失败原因是"检测到工具别名 xxx 被误用作 shell 命令"，下次必须改用type=harness + module_id=该别名 的形式（例如 module_id="file_write"），不要再写成 command 字段。
 
 只输出 JSON 数组，现在开始："""
 
