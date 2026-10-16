@@ -144,16 +144,17 @@ function _tryFlushPendingFeedback() {
   if (!st || !st._pendingFeedback) return;
   const container = document.getElementById('chat-messages');
   if (!container) return;
-  // 找最后一个消息行
-  const rows = container.querySelectorAll('.message-row');
+  // v0.39.4: 消息元素用 data-role 属性标记，不是 class
+  const rows = container.querySelectorAll('[data-role]');
   if (!rows.length) return;
   const lastRow = rows[rows.length - 1];
+  const _role = lastRow.dataset.role || '';
   // 最后一条是用户消息 → AI 还没回复，不渲染
-  if (lastRow.classList.contains('user')) return;
+  if (_role === 'user') return;
   // 渲染
   const { taskId, conversationId } = st._pendingFeedback;
   st._pendingFeedback = null;
-  console.log('[feedback] AI 回复落位，渲染反馈条', taskId);
+  console.log('[feedback] AI 回复落位，渲染反馈条', taskId, '最后消息 role=', _role);
   _renderFeedbackBar(taskId, conversationId);
 }
 
