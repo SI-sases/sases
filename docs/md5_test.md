@@ -1,3 +1,0 @@
-Hello
-AAA
-BBB
