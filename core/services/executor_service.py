@@ -345,9 +345,35 @@ async def _execute_task(task: Dict[str, Any]):
                     cmd = cmd.replace("{step" + str(_k) + "}", _first_line)
                 cmd = cmd.strip()
                 if cmd:
-                    _timeout = step.get("timeout") or DEFAULT_TIMEOUT
-                    output, status, dur = await _run_command(cmd, timeout=_timeout)
-                    print(f"[executor]   command 结果: {status} ({dur}ms) | {output[:200]}")
+                    # v2.7.0: 检测 command 首个词是否为 harness 工具别名
+                    _first_word = cmd.split(None, 1)[0].lower() if cmd else ""
+                    _alias_map = {
+                        "file_write": "file_patch",
+                        "write_file": "file_patch",
+                        "fs_create": "file_patch",
+                        "create_file": "file_patch",
+                        "save_file": "file_patch",
+                        "edit_file": "file_patch",
+                        "read_file": "file_read",
+                        "search_text": "grep_code",
+                        "list_files": "dir_tree",
+                        "run_script": "run_python",
+                        "call_api": "api_call",
+                        "read_url": "web_fetch",
+                    }
+                    if _first_word in _alias_map:
+                        _correct = _alias_map[_first_word]
+                        output = (
+                            f"检测到工具别名 '{_first_word}' 被误用作 shell 命令。"
+                            f"正确做法：type=harness, module_id={_correct}, "
+                            f"params 里传 file_path / new_content 等。"
+                        )
+                        status, dur = "failed", 0
+                        print(f"[executor]   command 是工具别名，拒绝执行: {_first_word} → 建议 {_correct}")
+                    else:
+                        _timeout = step.get("timeout") or DEFAULT_TIMEOUT
+                        output, status, dur = await _run_command(cmd, timeout=_timeout)
+                        print(f"[executor]   command 结果: {status} ({dur}ms) | {output[:200]}")
                 else:
                     output, status, dur = "空命令，跳过", "skipped", 0
 
