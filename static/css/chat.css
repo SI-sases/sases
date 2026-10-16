@@ -938,3 +938,21 @@ textarea#chat-input { field-sizing: fixed !important; }
   color: #34c759;
   font-size: 12px;
 }
+
+/* 反馈归因按钮（v0.39.5） */
+.feedback-reason-btn {
+  background: none;
+  border: 0.5px solid var(--border-base, #ddd);
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--text-secondary, #666);
+}
+.feedback-reason-btn:hover {
+  background: var(--bg-hover, #eaeaea);
+}
+.feedback-skip-btn {
+  margin-left: auto;
+  color: var(--text-muted, #999);
+}

@@ -170,45 +170,67 @@ function _renderFeedbackBar(taskId, conversationId) {
     + '<button class="feedback-btn" data-rating="up">👍</button>'
     + '<button class="feedback-btn" data-rating="down">👎</button>'
     + '<button class="feedback-btn" data-rating="neutral">🤷</button>';
+
+  const _submit = async (rating, reason_tag, reason_text) => {
+    bar.querySelectorAll('.feedback-btn').forEach(b => { b.disabled = true; });
+    try {
+      const token = localStorage.getItem('sases_token');
+      const _body = { task_id: taskId, rating, conversation_id: conversationId };
+      if (reason_tag) _body.reason_tag = reason_tag;
+      if (reason_text) _body.reason_text = reason_text;
+      const resp = await fetch('/feedback/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token
+        },
+        body: JSON.stringify(_body)
+      });
+      console.log('[feedback] 提交返回', resp.status);
+      if (bar.parentNode) {
+        bar.innerHTML = '<span class="feedback-done">已记录，谢谢 🙏</span>';
+      }
+      setTimeout(() => {
+        try { if (bar.parentNode) bar.parentNode.removeChild(bar); } catch (e) {}
+      }, 3000);
+    } catch (e) {
+      console.warn('[feedback] 提交失败', e);
+      bar.innerHTML = '<span style="color:#ff3b30;">提交失败，请重试</span>';
+    }
+  };
+
+  const _showReasonPanel = () => {
+    // 用二级小条替换主条内容
+    bar.innerHTML = '<span class="feedback-label">哪里不满意？</span>'
+      + '<button class="feedback-reason-btn" data-rt="understood_wrong">理解错了</button>'
+      + '<button class="feedback-reason-btn" data-rt="decomposed_wrong">拆解乱了</button>'
+      + '<button class="feedback-reason-btn" data-rt="exec_failed">执行失败</button>'
+      + '<button class="feedback-reason-btn" data-rt="output_poor">结果不好看</button>'
+      + '<button class="feedback-reason-btn feedback-skip-btn" data-rt="">跳过</button>';
+    bar.querySelectorAll('.feedback-reason-btn').forEach(rb => {
+      rb.onclick = () => {
+        const rt = rb.dataset.rt || null;
+        _submit('down', rt, '');
+      };
+    });
+  };
+
   bar.querySelectorAll('.feedback-btn').forEach(btn => {
-    btn.onclick = async () => {
+    btn.onclick = () => {
       const rating = btn.dataset.rating;
       if (bar._autoRemoveTimer) { clearTimeout(bar._autoRemoveTimer); bar._autoRemoveTimer = null; }
       console.log('[feedback] 点击', rating, 'task_id=', taskId);
-      // 立即禁用所有按钮，避免重复点击
-      bar.querySelectorAll('.feedback-btn').forEach(b => { b.disabled = true; });
-      try {
-        const token = localStorage.getItem('sases_token');
-        const resp = await fetch('/feedback/submit', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + token
-          },
-          body: JSON.stringify({ task_id: taskId, rating, conversation_id: conversationId })
-        });
-        console.log('[feedback] 提交返回', resp.status, '父节点存在:', !!bar.parentNode);
-        // 替换为"已记录"
-        if (bar.parentNode) {
-          bar.innerHTML = '<span class="feedback-done">已记录，谢谢 🙏</span>';
-          console.log('[feedback] innerHTML 已替换，内容:', bar.innerHTML);
-        }
-        // 3 秒后移除（用 parentNode 检查）
-        setTimeout(() => {
-          try {
-            if (bar.parentNode) bar.parentNode.removeChild(bar);
-            console.log('[feedback] bar 已移除');
-          } catch (e) { console.warn('[feedback] remove 失败', e); }
-        }, 3000);
-      } catch (e) {
-        console.warn('[feedback] 提交失败', e);
-        bar.innerHTML = '<span style="color:#ff3b30;">提交失败，请重试</span>';
+      if (rating === 'down') {
+        // 弹归因面板
+        _showReasonPanel();
+      } else {
+        _submit(rating, null, '');
       }
     };
   });
+
   container.appendChild(bar);
   container.scrollTop = container.scrollHeight;
-  // v0.39.2: 30 秒未操作自动移除
   bar._autoRemoveTimer = setTimeout(() => {
     try {
       if (bar.parentNode) bar.parentNode.removeChild(bar);
