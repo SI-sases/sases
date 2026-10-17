@@ -1133,7 +1133,6 @@ window.openGroupAgentPickerForReply = async function(quotedText, groupId) {
 // ======================================================================
 
 // openGroupFiles 已迁移到 group_file_ui.js，通过 import 使用
-// openGroupFiles 已迁移到 group_file_ui.js，通过 import 使用
   try {
     const resp = await fetch('/group/' + groupId + '/files', {
       headers: { 'Authorization': 'Bearer ' + localStorage.getItem('sases_token') }
