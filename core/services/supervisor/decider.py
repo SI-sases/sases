@@ -15,9 +15,25 @@ def build_next_input(run_id):
     if not history:
         return run['goal']
     lines = ['目标：' + run['goal'], '', '已完成：']
-    for h in history[-3:]:
-        lines.append('第 ' + str(h['round']) + ' 轮：' + (h.get('plan', '') or '')[:80])
-        lines.append('  结果：' + (h.get('exec', '') or '')[:200])
+    for h in history[-5:]:
+        _rev = h.get('review') or {}
+        _ok = _rev.get('goal_achieved') if isinstance(_rev, dict) else None
+        _mark = '✅' if _ok else ('⚠️' if _ok is False else '·')
+        lines.append(f"第 {h['round']} 轮 {_mark}：{(h.get('plan') or '')[:100]}")
+        lines.append(f"  结果：{(h.get('exec') or '')[:250]}")
+
+    # v0.39.1: 明确标注失败轮次，避免重复犯错
+    _failed = []
+    for h in history:
+        _rev = h.get('review') or {}
+        if isinstance(_rev, dict) and _rev.get('goal_achieved') is False:
+            _failed.append(h)
+    if _failed:
+        lines.append('')
+        lines.append('【需要避免的失败模式】')
+        for h in _failed[-3:]:
+            lines.append(f"- 第 {h['round']} 轮失败：{(h.get('plan') or '')[:120]}")
+
     lines.append('')
     lines.append('请判断目标是否已完成。如果已完成，只输出 [DONE]。否则输出下一步要做的任务（一句话）。')
     return chr(10).join(lines)
