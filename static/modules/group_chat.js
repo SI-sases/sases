@@ -1,6 +1,7 @@
 // static/modules/group_chat.js
 import { api } from './api.js';
 import { showGroupToast } from './group_toast.js';
+import { openGroupFiles } from './group_file_ui.js';
 
 let currentGroupId = null;
 let currentGroupName = '';
@@ -2624,3 +2625,4 @@ window.openNicknameEditor = openNicknameEditor;
 window.openGroupSearch = openGroupSearch;
 window.toggleGroupMute = toggleGroupMute;
 window.toggleGroupPin = toggleGroupPin;
+window.openGroupSettings = openGroupSettings;
