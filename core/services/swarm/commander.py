@@ -487,14 +487,40 @@ async def replan_failed_steps(task: Dict[str, Any], max_steps: int = None) -> Op
 失败的步骤（需要你重新拆解）：
 {json.dumps(failed_info, ensure_ascii=False, indent=2)}
 
-请针对上述失败步骤重新拆解命令。要求：
-1. 必须输出 JSON 数组，不要任何解释文字
-2. 格式：[{{"step":1,"description":"...","command":"..."}}]
-3. 只允许命令：dir / ls / tree / type / cat / head / tail / findstr / find / grep / where / echo / pwd / cd / whoami / hostname / wc
-4. 禁止 copy / move / del / powershell / for / if / 重定向
-5. 如果是"old_snippet 未找到"：先用 findstr 精确确认原文再 patch
-6. 用 {{{{stepN}}}} 引用前序步骤的输出
-7. 如果失败原因是"检测到工具别名 xxx 被误用作 shell 命令"，下次必须改用type=harness + module_id=该别名 的形式（例如 module_id="file_write"），不要再写成 command 字段。
+请针对上述失败步骤重新拆解。要求：
+1. 必须输出 JSON 数组，不要任何解释文字，不要 markdown 代码块
+2. 每步格式二选一：
+   - harness 调用：{{"step":1,"description":"...","type":"harness","module_id":"工具ID","params":{{...}}}}
+   - shell 命令：{{"step":1,"description":"...","command":"dir core"}}
+3. 【工具优先级】优先用 harness 工具，只有以下情况才用 command：
+   - 运行 python / git / npm / pip
+   - 执行系统脚本
+   - 查看进程、端口、环境变量
+   以下场景必须用 harness（禁止用 shell 命令代替）：
+   - 读文件 → file_read（禁 type / cat / more / less / head / tail）
+   - 搜代码 → grep_code（禁 findstr / find）
+   - 列目录 → dir_tree（禁 dir /s）
+   - 改文件 → file_patch
+   - 检查语法 → verify_syntax
+4. 【file_patch 参数铁律】必须提供以下三组之一，缺一不可：
+   A. 精确片段：old_snippet + new_snippet + expected_count
+   B. 锚点插入：anchor_pattern + position(before/after/replace_line) + new_content
+   C. 整文件写：file_path + new_content（配合 create_if_missing 或 overwrite）
+   禁止只传 file_path 而不传内容参数。
+5. 【禁止的命令】copy / move / del / powershell / for / if / 重定向
+6. 【占位符】用 {{{{stepN}}}} 引用前序步骤的输出（只引用成功的步骤）
+7. 【别名纠正】如果失败原因是"检测到工具别名 xxx 被误用作 shell 命令"，必须改用：
+   {{"type":"harness","module_id":"xxx","params":{{...}}}}
+   不要把别名写成 command 字段。
+8. 【precheck blocked 修正】如果失败原因是 "step N: file_patch 缺 new_content/old_snippet/anchor_pattern"，
+   说明上一步 file_patch 参数不全，本轮必须补齐第 4 条要求的三组之一。
+9. 【old_snippet 未找到】先用 file_read 读取目标文件对应行区间，从输出中逐字复制 old_snippet，
+   禁止凭记忆写。然后用 file_patch 重试。
+10. 【失败重试策略】
+    - 文件不存在 → 用 dir_tree 确认路径，或改用 create_if_missing
+    - 路径错误 → 先用 dir_tree 确认目录结构
+    - 语法错误 → 换一种写法
+    - 任务本身不可完成 → 输出 [{{"step":1,"description":"无法完成","command":"echo 任务无法完成，请用户确认"}}]
 
 只输出 JSON 数组，现在开始："""
 

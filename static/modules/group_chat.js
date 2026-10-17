@@ -1132,7 +1132,7 @@ window.openGroupAgentPickerForReply = async function(quotedText, groupId) {
 // 【模块 9. 群文件】
 // ======================================================================
 
-window.openGroupFiles = async function(groupId) {
+// openGroupFiles 已迁移到 group_file_ui.js，通过 import 使用
   let files = [];
   try {
     const resp = await fetch('/group/' + groupId + '/files', {
