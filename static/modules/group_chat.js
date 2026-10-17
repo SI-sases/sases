@@ -1,5 +1,6 @@
 // static/modules/group_chat.js
 import { api } from './api.js';
+import { showGroupToast } from './group_toast.js';
 
 let currentGroupId = null;
 let currentGroupName = '';
@@ -219,17 +220,7 @@ function openTaskListPage(tasks) {
 // 【模块 3. 通用工具（Toast）】
 // ======================================================================
 
-window.showGroupToast = function(text) {
-  const toast = document.createElement('div');
-  toast.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:#fff;padding:12px 24px;border-radius:10px;font-size:14px;z-index:99999;box-shadow:0 4px 12px rgba(0,0,0,0.3);';
-  toast.textContent = text;
-  document.body.appendChild(toast);
-  setTimeout(function() {
-    toast.style.transition = 'opacity 0.4s';
-    toast.style.opacity = '0';
-    setTimeout(function() { toast.remove(); }, 400);
-  }, 2000);
-};
+// showGroupToast 已迁移到 group_toast.js，通过 import 使用
 
 
 
