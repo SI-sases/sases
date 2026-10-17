@@ -6,6 +6,15 @@ HLC 地基健康度检查
 import os
 import sys
 import sqlite3
+
+# v0.39.2: Windows GBK 控制台编码保护
+import sys as _sys_h
+import io as _io_h
+if _sys_h.stdout.encoding and _sys_h.stdout.encoding.lower() not in ('utf-8', 'utf8'):
+    _sys_h.stdout = _io_h.TextIOWrapper(_sys_h.stdout.buffer, encoding='utf-8', errors='replace')
+if _sys_h.stderr.encoding and _sys_h.stderr.encoding.lower() not in ('utf-8', 'utf8'):
+    _sys_h.stderr = _io_h.TextIOWrapper(_sys_h.stderr.buffer, encoding='utf-8', errors='replace')
+
 from datetime import datetime
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

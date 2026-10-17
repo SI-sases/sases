@@ -1,7 +1,7 @@
 """reset_credits.py —— 清空积分相关数据，跑前自动备份。
 
 用法（在项目根目录）：
-    python core/hive/reset_credits.py
+    python scripts/hive/reset_credits.py
 """
 import os
 import shutil
