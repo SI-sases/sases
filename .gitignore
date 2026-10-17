@@ -145,4 +145,4 @@ docs/feedback_weekly/
 /analyze_*.py
 /measure_*.py
 /dump_*.py
-/test_feedback.py
+/test_feedback.py*.bin
