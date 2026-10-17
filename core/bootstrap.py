@@ -130,6 +130,61 @@ async def periodic_feedback_weekly():
             print(f"[feedback-weekly] 异常: {e}")
         await asyncio.sleep(7 * 24 * 3600)
 
+async def periodic_hlc_health():
+    """每天跑一次 HLC 健康检查，输出到 docs/hlc_health/（v0.38.0）"""
+    import subprocess
+    import sys as _sys
+    import os as _os
+
+    await asyncio.sleep(300)  # 启动后 5 分钟首跑，避开启动高峰
+    repo = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+    script = _os.path.join(repo, "scripts", "hlc_health.py")
+    out_dir = _os.path.join(repo, "docs", "hlc_health")
+
+    while True:
+        try:
+            if not _os.path.exists(script):
+                print("[hlc-health] 脚本不存在，跳过")
+            else:
+                r = subprocess.run(
+                    [_sys.executable, script],
+                    cwd=repo, capture_output=True,
+                    encoding="utf-8", errors="replace", timeout=120
+                )
+                if r.returncode == 0:
+                    print("[hlc-health] ✅ 健康检查通过")
+                else:
+                    print(f"[hlc-health] ⚠️ 健康检查有问题: {(r.stdout or '')[-500:]}")
+                    if r.stderr:
+                        print(f"[hlc-health] stderr: {(r.stderr or '')[:300]}")
+        except subprocess.TimeoutExpired:
+            print("[hlc-health] 超时 120 秒")
+        except Exception as e:
+            print(f"[hlc-health] 异常: {e}")
+
+        # 清理 30 天前的报告
+        try:
+            if _os.path.isdir(out_dir):
+                import time as _time
+                now = _time.time()
+                removed = 0
+                for fname in _os.listdir(out_dir):
+                    if not fname.endswith(".md"):
+                        continue
+                    fpath = _os.path.join(out_dir, fname)
+                    try:
+                        if now - _os.path.getmtime(fpath) > 30 * 24 * 3600:
+                            _os.remove(fpath)
+                            removed += 1
+                    except Exception:
+                        pass
+                if removed:
+                    print(f"[hlc-health] 清理旧报告 {removed} 个")
+        except Exception as e:
+            print(f"[hlc-health] 清理异常: {e}")
+
+        await asyncio.sleep(24 * 3600)
+
 
 async def periodic_pattern_finalize():
     """每小时检查一次，把 24 小时前的 tentative pattern 转为 active"""
@@ -303,16 +358,22 @@ async def lifespan(app: FastAPI):
     asyncio.create_task(supervisor_service.resume_restart_pending_runs())
     init_db()
 
-    # 启动时清理中断的 run 和任务（v0.18.0）
+    # 启动时清理中断的 run 和任务（v0.18.0，v0.37.2 加强）
     try:
         from .db import db_cursor as _dbc
         with _dbc(commit=True) as _c:
+            # 条件 1：超过 30 分钟的老 running
             _c.execute("UPDATE supervisor_runs SET status='interrupted', finished_at=datetime('now') WHERE status='running' AND (created_at IS NULL OR created_at < datetime('now', '-30 minutes'))")
             _r1 = _c.rowcount
+            # 条件 2（新增）：history 为空的僵尸 run——plan_task 失败但 run 未结束
+            _c.execute("UPDATE supervisor_runs SET status='plan_failed', finished_at=datetime('now') WHERE status IN ('running', 'running_resumed') AND (history = '[]' OR history IS NULL OR history = '')")
+            _r1b = _c.rowcount
+            # swarm 任务清理
             _c.execute("UPDATE swarm_pending_tasks SET status='interrupted' WHERE status IN ('pending', 'running') AND created_at < datetime('now', '-30 minutes')")
             _r2 = _c.rowcount
-        if _r1 or _r2:
-            print(f"[bootstrap] 清理中断状态: runs={_r1}, tasks={_r2}")
+        _total_runs = _r1 + _r1b
+        if _total_runs or _r2:
+            print(f"[bootstrap] 清理中断状态: runs={_total_runs}(老={_r1},僵尸={_r1b}), tasks={_r2}")
     except Exception as _e:
         print(f"[bootstrap] 清理中断状态失败: {_e}")
 
@@ -356,6 +417,7 @@ async def lifespan(app: FastAPI):
     _background_tasks.append(asyncio.create_task(cleanup_service.periodic_cleanup(interval_hours=24)))
     _background_tasks.append(asyncio.create_task(_state_svc.periodic_state_sync(interval_hours=24)))
     _background_tasks.append(asyncio.create_task(periodic_airdrop()))
+    _background_tasks.append(asyncio.create_task(periodic_hlc_health()))
 
 
     # 【预热】启动后预热一次（不参与周期）

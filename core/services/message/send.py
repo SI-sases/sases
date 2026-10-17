@@ -101,6 +101,16 @@ async def send_message(
         conversation_id = create_conversation(user_id, agent_id, _auto_title)
         print(f"[MSG_DEBUG] 兜底创建 conversation_id={conversation_id}")
 
+    # v0.39.0: [CONTENT]: 多段规范化
+    if isinstance(content, str) and '[CONTENT]:' in content:
+        _parts = content.split('[CONTENT]:')
+        if len(_parts) > 2:
+            _normalized = _parts[0].rstrip()
+            for _ci, _cp in enumerate(_parts[1:], 1):
+                _normalized += f"\n\n---\n\n第 {_ci} 段：\n{_cp.strip()}"
+            content = _normalized
+            print(f"[content] 检测到 {len(_parts)-1} 段 [CONTENT]:，已规范化为 --- 分隔")
+
     # v0.18.3: 用户输入自动授粉
     try:
         from .. import pollination_service as _poll_in

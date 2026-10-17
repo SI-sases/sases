@@ -327,6 +327,14 @@ async function sendMessage() {
     if (!chatState.conversationId) {
       chatState.conversationId = data.conversation_id;
     }
+
+    // v0.38.0: 记录写入 HLC，供读己之写检查
+    try {
+      if (data.write_hlc && data.conversation_id) {
+        sessionStorage.setItem('last_write_hlc_' + data.conversation_id, data.write_hlc);
+      }
+    } catch (e) {}
+
     updateMessageStatus(tempId, 'sent');
     const _is_swarm_task = !!(data.swarm && data.task_id);
     if (!_is_swarm_task && data.assistant_reply && String(data.assistant_reply).trim() !== String(text).trim()) {
@@ -670,6 +678,27 @@ async function loadMessages(conversationId, force = false) {
     if (messages.length < PAGE_SIZE) {
       chatState.hasMore = false;
     }
+
+    // v0.38.0: 读己之写检查 —— 本地最新消息 HLC 落后于写入 HLC 时自动重载一次
+    try {
+      const _lastWrite = sessionStorage.getItem('last_write_hlc_' + conversationId);
+      if (_lastWrite && messages.length > 0) {
+        const _latest = messages[messages.length - 1];
+        const _latestHlc = _latest && _latest.hlc_ts;
+        if (_latestHlc && _latestHlc < _lastWrite && !chatState._rywRetried) {
+          chatState._rywRetried = true;
+          console.warn('[读己之写] 最新消息 HLC 落后于本地写入，1 秒后重载');
+          setTimeout(() => {
+            chatState._rywRetried = false;
+            loadMessages(conversationId, true);
+          }, 1000);
+          return;
+        }
+        // 已追上，清除标记
+        chatState._rywRetried = false;
+      }
+    } catch (e) {}
+    
     chatState._bulkLoading = true;
     chatState._seenMsgIds = new Set();
     messages.forEach(msg => {

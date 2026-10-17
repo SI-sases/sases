@@ -46,6 +46,7 @@ def get_messages(user_id: int, conversation_id: int, limit: int = 50, offset: in
 
         query = """
             SELECT m.id, m.sender, m.content, m.sender_agent_id, m.created_at,
+                   m.hlc_ts, m.origin_node,
                    CASE WHEN m.sender_agent_id IS NOT NULL THEN mc.name
                         WHEN m.sender = 'user' THEN '我'
                         ELSE 'AI' END as sender_name

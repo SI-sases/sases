@@ -89,6 +89,23 @@ async def send_message(body: SendMessageRequest, user_id: int = Depends(get_curr
         })
     except Exception as _e:
         print('[ws] send push failed:', _e)
+
+    # v0.38.0: 返回 write_hlc 供前端读己之写
+    try:
+        from ..db import db_cursor as _dbc
+        _cid_hlc = result.get('conversation_id') if isinstance(result, dict) else None
+        if _cid_hlc:
+            with _dbc() as _cur_hlc:
+                _cur_hlc.execute(
+                    "SELECT hlc_ts FROM messages WHERE conversation_id=? ORDER BY id DESC LIMIT 1",
+                    (_cid_hlc,)
+                )
+                _row_hlc = _cur_hlc.fetchone()
+                if _row_hlc and _row_hlc["hlc_ts"]:
+                    result['write_hlc'] = _row_hlc["hlc_ts"]
+    except Exception as _e_hlc:
+        print('[hlc] write_hlc 附加失败:', _e_hlc)
+
     return result
 
 
