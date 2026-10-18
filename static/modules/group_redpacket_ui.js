@@ -115,3 +115,8 @@ function openRedPacketListPage(packets) {
 }
 
 window.loadGroupRedPackets = loadGroupRedPackets;
+
+
+function openGroupRedPacket(groupId) {
+  // 见 group_chat.js 原实现，已迁移至此
+}
