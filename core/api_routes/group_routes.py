@@ -365,6 +365,30 @@ async def api_create_group_red_packet(group_id: int, body: GroupRedPacketCreateR
     ok, res = group_red_packet_service.create_packet(group_id, user_id, body.total_amount, body.total_count, body.message, body.source_type, getattr(body, "packet_type", "lucky"))
     if not ok:
         raise HTTPException(status_code=400, detail=res)
+    # v0.42.0: 红包创建后触发 WS 广播
+    try:
+        from .ws_routes import broadcast_to_group
+        from ..db import db_cursor
+        with db_cursor() as cur:
+            cur.execute("SELECT global_group_id FROM groups WHERE id=?", (group_id,))
+            _rg = cur.fetchone()
+            cur.execute("SELECT id, content FROM group_messages WHERE group_id=? AND message_type='red_packet' ORDER BY id DESC LIMIT 1", (group_id,))
+            _rm = cur.fetchone()
+        if _rg and _rg['global_group_id'] and _rm:
+            with db_cursor() as _cur_n:
+                _cur_n.execute('SELECT username FROM users WHERE id=?', (user_id,))
+                _u_n = _cur_n.fetchone()
+                _sname = _u_n['username'] if _u_n else '?'
+            await broadcast_to_group(_rg['global_group_id'], {
+                'type': 'message',
+                'content': _rm['content'],
+                'message_id': _rm['id'],
+                'sender_id': user_id,
+                'sender_name': _sname,
+                'message_type': 'red_packet',
+            })
+    except Exception as _e:
+        print('[ws] red packet push failed:', _e)
     return res
 
 
