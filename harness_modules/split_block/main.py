@@ -50,6 +50,69 @@ def _find_unique(lines, pattern):
     return [i + 1 for i, ln in enumerate(lines) if pattern in ln]
 
 
+def _extract_imports(lines):
+    imports = []
+    for ln in lines:
+        s = ln.strip()
+        if s.startswith("import ") or s.startswith("from "):
+            imports.append(ln if ln.endswith("\n") else ln + "\n")
+    return imports
+
+
+def _find_used_imports(block_text, source_imports):
+    used = []
+    for imp in source_imports:
+        s = imp.strip()
+        if s.startswith("import "):
+            body = s[len("import "):]
+            names = [n.strip().split(" as ")[-1].strip() for n in body.split(",")]
+        elif s.startswith("from "):
+            parts = s.split(" import ")
+            if len(parts) != 2:
+                continue
+            names = [n.strip().split(" as ")[-1].strip() for n in parts[1].split(",")]
+        else:
+            continue
+        for n in names:
+            if not n or n == "*":
+                continue
+            if n in block_text:
+                used.append(imp)
+                break
+    return used
+
+
+
+def _extract_imports(lines):
+    out = []
+    for ln in lines:
+        s = ln.strip()
+        if s.startswith("import ") or s.startswith("from "):
+            out.append(ln if ln.endswith("\n") else ln + "\n")
+    return out
+
+
+def _find_used_imports(block_text, source_imports):
+    used = []
+    for imp in source_imports:
+        s = imp.strip()
+        if s.startswith("import "):
+            names = [n.strip().split(" as ")[-1].split(".")[0] for n in s[7:].split(",")]
+        elif s.startswith("from "):
+            parts = s.split(" import ")
+            if len(parts) != 2:
+                continue
+            names = [n.strip().split(" as ")[-1] for n in parts[1].split(",")]
+        else:
+            continue
+        for n in names:
+            if n and n != "*" and n in block_text:
+                used.append(imp)
+                break
+    return used
+
+
+
 def run(params):
     result = {
         "success": False,
@@ -123,7 +186,14 @@ def run(params):
         src_backup = _backup(src)
 
         os.makedirs(os.path.dirname(newf) or ".", exist_ok=True)
+        source_imports = _extract_imports(lines)
+        block_text = "".join(block)
+        used_imports = _find_used_imports(block_text, source_imports)
+        source_imports = _extract_imports(lines)
+        block_text = "".join(block)
+        used_imports = _find_used_imports(block_text, source_imports)
         with open(newf, "w", encoding="utf-8") as f:
+            f.writelines(used_imports)
             f.writelines(block)
         new_created = True
         result["new_file_lines"] = len(block)
