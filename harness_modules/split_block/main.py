@@ -23,7 +23,6 @@ def _validate_path(path):
 def _backup(path):
     os.makedirs(BACKUP_DIR, exist_ok=True)
     ts = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-    # v1.1: 用路径前缀避免同名文件冲突
     safe_name = path.replace("\\", "/").replace("/", "__")
     dst = os.path.join(BACKUP_DIR, safe_name + "." + ts + ".bak")
     shutil.copy2(path, dst)
@@ -77,7 +76,6 @@ def run(params):
             raise ValueError("源文件不存在: " + src)
         if os.path.exists(newf):
             raise ValueError("新文件已存在: " + newf)
-        # v1.1: 强制同目录（相对 import 需要）
         if os.path.dirname(src) != os.path.dirname(newf):
             raise ValueError("source_file 和 new_file 必须在同一目录: %s vs %s" % (os.path.dirname(src), os.path.dirname(newf)))
 
@@ -96,17 +94,22 @@ def run(params):
         if start >= end:
             raise ValueError("start(%d) 必须小于 end(%d)" % (start, end))
 
+        # v1.2: 从 end-1 往前找最后一个包含 } 的行，把尾部注释/空行保留在主文件里
+        _actual_end = end - 1
+        while _actual_end > start:
+            _line = lines[_actual_end - 1].strip()
+            if _line and ('}' in _line):
+                break
+            _actual_end -= 1
+        if _actual_end <= start:
+            raise ValueError("找不到函数结束的 }")
+        end = _actual_end + 1   # 1-based，下一行
+
         block = lines[start - 1:end - 1]
         if not block:
             raise ValueError("切片为空")
 
-        # v1.1: 末行检查放宽（接受 } 或 };）+ 括号平衡检查
-        non_empty = [ln.rstrip() for ln in block if ln.strip()]
-        if not non_empty:
-            raise ValueError("切片无有效行")
-        _last = non_empty[-1]
-        if not (_last.endswith("}") or _last.endswith("};")):
-            raise ValueError("切片最后一个非空行不是 } 或 };，实际: " + _last[-50:])
+        # 括号平衡检查
         _ob = sum(ln.count("{") for ln in block)
         _cb = sum(ln.count("}") for ln in block)
         if _ob != _cb:
@@ -134,7 +137,6 @@ def run(params):
             a_hits = _find_unique(lines, import_anchor)
             if len(a_hits) != 1:
                 raise ValueError("import_anchor 匹配 %d 处，必须唯一" % len(a_hits))
-            # v1.1: 拒绝 import 插入在代码块内部
             if start <= a_hits[0] < end:
                 raise ValueError("import_anchor 位于代码块内部（行%d），会导致删除范围错乱" % a_hits[0])
             base = os.path.basename(newf)
@@ -146,14 +148,12 @@ def run(params):
             result["main_file_syntax_ok"] = ok
             if not ok:
                 raise ValueError("源文件加 import 后语法错误: " + err)
-            # v1.1: 精确行号调整
             if start > a_hits[0]:
                 start += 1
             if end > a_hits[0]:
                 end += 1
 
         del lines[start - 1:end - 1]
-        # v1.1: 空 replace_with 不多插行
         if replace_with:
             rep = replace_with
             if not rep.endswith("\n"):
