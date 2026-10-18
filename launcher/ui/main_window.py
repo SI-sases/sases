@@ -1,12 +1,22 @@
-# SASES Launcher Module
-"""SASES 启动器主窗口。"""
-import os, sys
+"""SASES 启动器主窗口（终极防冲突版）。"""
+import os, sys, time
 import urllib.request
 import urllib.error
 import webbrowser
 import socket
+import subprocess
 import launcher_config
+from PyQt6.QtCore import QProcess, QProcessEnvironment, QTimer, Qt
+from PyQt6.QtGui import QAction, QIcon, QFont
+from PyQt6.QtWidgets import (
+    QMainWindow, QWidget, QPushButton, QPlainTextEdit,
+    QVBoxLayout, QHBoxLayout, QMessageBox, QLabel,
+    QSystemTrayIcon, QMenu, QStyle, QListWidget, QStackedWidget,
+    QFrame
+)
 
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+HIDDEN_NODE_PORTS = [8101, 8102]
 
 def _decode_child_line(raw):
     for enc in ('utf-8', 'gbk', 'cp936', 'latin-1'):
@@ -15,21 +25,6 @@ def _decode_child_line(raw):
         except (UnicodeDecodeError, LookupError):
             continue
     return raw.decode('utf-8', 'replace')
-
-
-from PyQt6.QtCore import QProcess, QProcessEnvironment, QTimer
-from PyQt6.QtGui import QAction, QIcon
-from PyQt6.QtWidgets import (
-    QMainWindow, QWidget, QPushButton, QPlainTextEdit,
-    QVBoxLayout, QHBoxLayout, QMessageBox,
-    QSystemTrayIcon, QMenu, QStyle, QLabel,
-)
-
-ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-# 隐藏节点默认端口
-HIDDEN_NODE_PORTS = [8101, 8102]
-
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -40,116 +35,356 @@ class MainWindow(QMainWindow):
         self.work_dir = self.cfg.get("work_dir", "")
         super().__init__()
         self.proc = None
-        self.hidden_procs = []          # 隐藏节点的 QProcess 列表
         self._chosen_port = self.port
         self._allow_close = False
+        self._browser_opened = False
+        
         self.setWindowTitle('SASES 启动器')
-        self.resize(900, 600)
-        self.btn_start = QPushButton('启动')
-        self.btn_stop = QPushButton('停止')
+        self.resize(950, 650)
+        
+        self._init_ui()
+        self._setup_tray()
+        
+        QTimer.singleShot(500, self._check_existing)
+
+    def _init_ui(self):
+        main_widget = QWidget()
+        self.setCentralWidget(main_widget)
+        main_layout = QHBoxLayout(main_widget)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+
+        # ========== 左侧导航 ==========
+        self.sidebar = QListWidget()
+        self.sidebar.setFixedWidth(180)
+        self.sidebar.setStyleSheet("""
+            QListWidget {
+                background-color: #2b2b2b;
+                color: #aaaaaa;
+                border: none;
+                outline: none;
+                font-size: 14px;
+            }
+            QListWidget::item {
+                height: 50px;
+                padding-left: 20px;
+                border-bottom: 1px solid #3c3c3c;
+            }
+            QListWidget::item:selected {
+                background-color: #3c3f41;
+                color: #ffffff;
+                border-left: 4px solid #4a90e2;
+            }
+            QListWidget::item:hover:!selected {
+                background-color: #333333;
+            }
+        """)
+        self.sidebar.addItems(["📜 运行日志", "🛠 诊断工具", "🔄 检查更新"])
+        self.sidebar.currentRowChanged.connect(self._on_sidebar_changed)
+        
+        # ========== 右侧主区域 ==========
+        right_panel = QWidget()
+        right_panel.setStyleSheet("background-color: #1e1e1e;")
+        right_layout = QVBoxLayout(right_panel)
+        right_layout.setContentsMargins(0, 0, 0, 0)
+        right_layout.setSpacing(0)
+
+        # 顶部状态栏
+        top_bar = QFrame()
+        top_bar.setFixedHeight(50)
+        top_bar.setStyleSheet("background-color: #1e1e1e; border-bottom: 1px solid #333;")
+        top_layout = QHBoxLayout(top_bar)
+        top_layout.setContentsMargins(20, 0, 20, 0)
+        
+        self.status_label = QLabel('未运行')
+        self.status_label.setStyleSheet("color: #ff5c5c; font-weight: bold; font-size: 14px;")
+        
         self.version_label = QLabel('版本：未加载')
+        self.version_label.setStyleSheet("color: #aaaaaa; font-size: 12px;")
         self.btn_version = QPushButton('刷新版本')
         self.btn_version.clicked.connect(self._load_version_info)
-        self.btn_start.clicked.connect(self.start)
-        self.btn_stop.clicked.connect(self.stop)
+        self.btn_version.setStyleSheet("background: transparent; color: #4a90e2; border: none; text-decoration: underline; cursor: pointer;")
+        
+        top_layout.addWidget(self.status_label)
+        top_layout.addStretch(1)
+        top_layout.addWidget(self.version_label)
+        top_layout.addWidget(self.btn_version)
+        
+        # ========== 页面堆叠区 ==========
+        self.stacked_widget = QStackedWidget()
+        self.stacked_widget.setStyleSheet("background-color: #1e1e1e;")
+
+        # 页面 0：运行日志
+        page_log = QWidget()
+        log_layout = QVBoxLayout(page_log)
+        log_layout.setContentsMargins(0, 0, 0, 0)
         self.log = QPlainTextEdit()
         self.log.setReadOnly(True)
         self.log.setMaximumBlockCount(50000)
-        h = QHBoxLayout()
-        h.addWidget(self.btn_start)
-        h.addWidget(self.btn_stop)
-        h.addWidget(self.version_label)
-        h.addWidget(self.btn_version)
-        self.btn_diag = QPushButton('导出诊断')
-        self.btn_diag.clicked.connect(self._export_diag)
-        h.addWidget(self.btn_diag)
-        self.btn_update = QPushButton('检查更新')
-        self.btn_update.clicked.connect(self._check_update)
-        h.addWidget(self.btn_update)
-        h.addStretch(1)
-        v = QVBoxLayout()
-        v.addLayout(h)
-        v.addWidget(self.log)
-        w = QWidget()
-        w.setLayout(v)
-        self.setCentralWidget(w)
-        self.statusBar().showMessage('未运行')
-        self.btn_stop.setEnabled(False)
-        self._setup_tray()
+        self.log.setStyleSheet("background-color: #1e1e1e; color: #00ff00; border: none; font-family: Consolas, monospace; padding: 10px;")
+        log_layout.addWidget(self.log)
 
-    # ---------- 托盘 ----------
-    def _check_update(self):
-        import json, urllib.request
-        try:
-            req = urllib.request.Request(
-                "http://127.0.0.1:8001/version/check-update",
-                data=b"{}",
-                headers={"Content-Type": "application/json"},
-                method="POST",
-            )
-            with urllib.request.urlopen(req, timeout=15) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
-            has_update = bool(data.get("has_update"))
-        except Exception:
-            has_update = False
-        if has_update:
-            QMessageBox.information(self, "检查更新", "有新版本，请运行更新.bat")
+        # 页面 1：诊断工具
+        page_diag = QWidget()
+        diag_layout = QVBoxLayout(page_diag)
+        diag_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        diag_title = QLabel("系统诊断")
+        diag_title.setStyleSheet("color: #fff; font-size: 24px; font-weight: bold;")
+        diag_desc = QLabel("如果你的启动器连不上服务，或者遇到未知错误，\n请点击下方按钮生成诊断报告，并发送给开发者。")
+        diag_desc.setStyleSheet("color: #aaa; font-size: 14px; text-align: center; margin-bottom: 20px;")
+        diag_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        btn_do_diag = QPushButton("生成诊断报告")
+        btn_do_diag.setFixedSize(160, 40)
+        btn_do_diag.setStyleSheet("background-color: #4a90e2; color: white; border-radius: 4px; font-weight: bold;")
+        btn_do_diag.clicked.connect(self._export_diag)
+        
+        diag_layout.addWidget(diag_title)
+        diag_layout.addWidget(diag_desc)
+        diag_layout.addWidget(btn_do_diag, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        # 页面 2：检查更新
+        page_update = QWidget()
+        update_layout = QVBoxLayout(page_update)
+        update_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        upd_title = QLabel("版本更新")
+        upd_title.setStyleSheet("color: #fff; font-size: 24px; font-weight: bold;")
+        upd_desc = QLabel("点击下方按钮检查是否有最新的代码更新。")
+        upd_desc.setStyleSheet("color: #aaa; font-size: 14px; text-align: center; margin-bottom: 20px;")
+        upd_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        btn_do_update = QPushButton("检查更新")
+        btn_do_update.setFixedSize(160, 40)
+        btn_do_update.setStyleSheet("background-color: #4a90e2; color: white; border-radius: 4px; font-weight: bold;")
+        btn_do_update.clicked.connect(self._check_update)
+        
+        update_layout.addWidget(upd_title)
+        update_layout.addWidget(upd_desc)
+        update_layout.addWidget(btn_do_update, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        self.stacked_widget.addWidget(page_log)
+        self.stacked_widget.addWidget(page_diag)
+        self.stacked_widget.addWidget(page_update)
+        
+        # ========== 底部操作区（右下角悬浮控制） ==========
+        bottom_bar = QWidget()
+        bottom_bar.setStyleSheet("background-color: #1e1e1e;")
+        bottom_layout = QHBoxLayout(bottom_bar)
+        bottom_layout.setContentsMargins(0, 10, 30, 30)
+        bottom_layout.addStretch(1)
+        
+        self.btn_toggle = QPushButton("▶")
+        self.btn_toggle.setFixedSize(60, 60)
+        self.btn_toggle.clicked.connect(self._toggle_service)
+        self.btn_toggle.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._set_running_ui(False)
+        
+        bottom_layout.addWidget(self.btn_toggle)
+        
+        right_layout.addWidget(top_bar)
+        right_layout.addWidget(self.stacked_widget)
+        right_layout.addWidget(bottom_bar)
+        
+        main_layout.addWidget(self.sidebar)
+        main_layout.addWidget(right_panel)
+        
+        self.sidebar.setCurrentRow(0)
+
+    def _on_sidebar_changed(self, index):
+        self.stacked_widget.setCurrentIndex(index)
+
+    def _set_running_ui(self, is_running):
+        if is_running:
+            self.status_label.setText(f"运行中 :{self._chosen_port}")
+            self.status_label.setStyleSheet("color: #34c759; font-weight: bold; font-size: 14px;")
+            self.btn_toggle.setText("⏹")
+            self.btn_toggle.setStyleSheet("""
+                QPushButton {
+                    background-color: #ff5c5c;
+                    color: white;
+                    border-radius: 30px;
+                    font-size: 24px;
+                }
+                QPushButton:hover { background-color: #d94b4b; }
+            """)
         else:
-            QMessageBox.information(self, "检查更新", "已是最新版本")
+            self.status_label.setText("未运行")
+            self.status_label.setStyleSheet("color: #ff5c5c; font-weight: bold; font-size: 14px;")
+            self.btn_toggle.setText("▶")
+            self.btn_toggle.setStyleSheet("""
+                QPushButton {
+                    background-color: #4a90e2;
+                    color: white;
+                    border-radius: 30px;
+                    font-size: 24px;
+                    padding-left: 5px;
+                }
+                QPushButton:hover { background-color: #357abd; }
+            """)
 
+    def _toggle_service(self):
+        if self.proc is None:
+            self.start()
+        else:
+            self.stop()
 
-    def _export_diag(self):
-        import datetime, sys, subprocess, urllib.request
-        lines = []
-        lines.append('时间: ' + datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-        lines.append('Python: ' + sys.version)
+    def _kill_port_process(self, port):
+        """强制杀掉占用指定端口的进程"""
         try:
-            out = subprocess.run('netstat -ano | findstr :8001', shell=True, capture_output=True, text=True, timeout=10)
-            lines.append('端口8001:\n' + (out.stdout or '(无输出)'))
+            out = subprocess.check_output(["netstat", "-ano"], text=True, encoding='gbk', errors='ignore')
+            for line in out.splitlines():
+                if f":{port}" in line and "LISTENING" in line:
+                    parts = line.strip().split()
+                    if len(parts) >= 5:
+                        pid = parts[-1]
+                        self._log(f"[启动器] 发现残留进程 PID={pid} 占用端口 {port}，正在清理...")
+                        subprocess.run(f"taskkill /F /T /PID {pid}", shell=True, capture_output=True)
+            time.sleep(1) # 给系统一点时间释放端口
         except Exception as e:
-            lines.append('端口检查失败: ' + str(e))
-        try:
-            url = 'http://127.0.0.1:%s/version' % self._chosen_port
-            with urllib.request.urlopen(url, timeout=5) as r:
-                lines.append('版本接口: ' + r.read().decode('utf-8', 'ignore'))
-        except Exception as e:
-            lines.append('版本接口失败: ' + str(e))
-        try:
-            with open('logs/latest.log', 'r', encoding='utf-8', errors='ignore') as f:
-                tail = f.readlines()[-50:]
-            lines.append('日志末尾50行:\n' + ''.join(tail))
-        except Exception as e:
-            lines.append('日志读取失败: ' + str(e))
-        try:
-            with open('diag.txt', 'w', encoding='utf-8') as f:
-                f.write('\n'.join(lines))
-            QMessageBox.information(self, '导出诊断', '诊断文件已生成: diag.txt')
-        except Exception as e:
-            QMessageBox.warning(self, '导出诊断', '写入失败: ' + str(e))
+            self._log(f"[启动器] 清理端口异常: {e}")
 
-
+    # ====== 版本与功能逻辑 ======
     def _load_version_info(self):
         import json
-        import urllib.request
-        # 禁用代理，防止访问本地端口被代理软件拦截
         proxy_handler = urllib.request.ProxyHandler({})
         opener = urllib.request.build_opener(proxy_handler)
-        
         url = f"http://127.0.0.1:{self._chosen_port}/version"
         try:
             req = urllib.request.Request(url)
             with opener.open(req, timeout=3) as r:
                 data = json.loads(r.read().decode())
-            txt = (
-                f"版本：{data.get('commit','?')} ({data.get('branch','?')}) | "
-                f"Schema：{data.get('schema','?')} | "
-                f"节点：{data.get('node_id','?')} | "
-                f"端口：{data.get('port','?')}"
-            )
-        except Exception as e:
-            txt = f"版本：不可用 [URL: {url}] ({e})"
+            txt = f"v{data.get('commit','?')} ({data.get('branch','?')}) | Schema:{data.get('schema','?')} | 节点:{data.get('node_id','?')}"
+        except Exception:
+            txt = "版本不可用（服务未启动？）"
         self.version_label.setText(txt)
 
+    def _export_diag(self):
+        import datetime
+        path = os.path.join(os.path.dirname(__file__), "diag.txt")
+        lines = [f"=== SASES 诊断报告 {datetime.datetime.now()} ==="]
+        try:
+            out = subprocess.check_output(["netstat", "-ano"], text=True, timeout=10, encoding='gbk', errors='ignore')
+            port_lines = [l for l in out.splitlines() if f":{self._chosen_port}" in l]
+            lines.append(f"[端口 {self._chosen_port}]")
+            lines.extend(port_lines or ["未监听"])
+        except Exception as e:
+            lines.append(f"[端口] 检测失败: {e}")
+        
+        lines.append(f"[版本] {self.version_label.text()}")
+        
+        log_path = os.path.join(os.getcwd(), "logs", "latest.log")
+        if os.path.exists(log_path):
+            try:
+                with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
+                    tail = f.readlines()[-50:]
+                lines.append("[日志尾部]")
+                lines.extend(tail)
+            except Exception as e:
+                lines.append(f"[日志] 读取失败: {e}")
+                
+        with open(path, "w", encoding="utf-8") as f:
+            f.write("\n".join(lines))
+        QMessageBox.information(self, "导出成功", f"诊断报告已生成：\n{path}")
+
+    def _check_update(self):
+        import json, urllib.request
+        proxy_handler = urllib.request.ProxyHandler({})
+        opener = urllib.request.build_opener(proxy_handler)
+        url = f"http://127.0.0.1:{self._chosen_port}/version/check-update"
+        try:
+            req = urllib.request.Request(url, method="POST")
+            with opener.open(req, timeout=10) as r:
+                data = json.loads(r.read().decode())
+            if data.get("has_update"):
+                QMessageBox.information(self, "检查更新", f"发现新版本！\n本地: {data.get('local')}\n远程: {data.get('remote')}\n\n请运行更新.bat")
+            else:
+                QMessageBox.information(self, "检查更新", "当前已是最新版本")
+        except Exception as e:
+            QMessageBox.warning(self, "检查失败", f"无法连接后端检查更新：\n{e}")
+
+    # ====== 进程控制 ======
+    def _check_existing(self):
+        # 启动器刚打开时，如果发现服务已经在跑，只接管状态，不自动弹网页
+        try:
+            proxy = urllib.request.ProxyHandler({})
+            opener = urllib.request.build_opener(proxy)
+            with opener.open(f"http://127.0.0.1:{self._chosen_port}/version", timeout=2):
+                self._log("[启动器] 检测到服务已在后台运行")
+                self._set_running_ui(True)
+                self._load_version_info()
+        except Exception:
+            pass
+
+    def start(self):
+        if self.proc is not None:
+            return
+            
+        # 最关键的一步：启动前强制清理残留进程
+        self._kill_port_process(self._chosen_port)
+
+        self._set_running_ui(True)
+        self.sidebar.setCurrentRow(0)
+        self._log(f"[启动器] 正在启动 SASES 服务 :{self._chosen_port}")
+        self._browser_opened = False
+
+        env = QProcessEnvironment.systemEnvironment()
+        env.insert("SASES_PORT", str(self._chosen_port))
+        
+        self.proc = QProcess(self)
+        self.proc.setProcessChannelMode(QProcess.ProcessChannelMode.MergedChannels)
+        self.proc.readyReadStandardOutput.connect(self._read_out)
+        self.proc.finished.connect(self._on_finished)
+        self.proc.setWorkingDirectory(self.work_dir)
+        
+        self.proc.start(self.python_path, [self.script_path])
+        QTimer.singleShot(5000, self._load_version_info)
+
+    def stop(self):
+        self._log("[启动器] 正在停止 SASES 服务...")
+        if self.proc:
+            pid = self.proc.processId()
+            if pid:
+                try:
+                    subprocess.run(f"taskkill /F /T /PID {pid}", shell=True, capture_output=True)
+                except Exception:
+                    pass
+            self.proc.terminate()
+            if not self.proc.waitForFinished(1000):
+                self.proc.kill()
+        self._on_finished()
+
+    def _on_finished(self):
+        self.proc = None
+        self._set_running_ui(False)
+        self._log("[启动器] 服务已停止")
+
+    def _read_out(self):
+        if not self.proc:
+            return
+        raw = self.proc.readAllStandardOutput().data()
+        text = _decode_child_line(raw)
+        for line in text.splitlines():
+            self._log(line)
+            if "Application startup complete" in line or "服务已就绪" in line:
+                self._set_running_ui(True)
+                self._load_version_info()
+                self._open_browser()
+
+    def _open_browser(self):
+        if not self._browser_opened:
+            self._browser_opened = True
+            url = f"http://127.0.0.1:{self._chosen_port}/static/index.html"
+            self._log(f"[启动器] 打开浏览器 {url}")
+            webbrowser.open(url)
+
+    def _log(self, text):
+        self.log.appendPlainText(text)
+        sb = self.log.verticalScrollBar()
+        sb.setValue(sb.maximum())
+
+    # ====== 托盘 ======
     def _setup_tray(self):
         self.tray = QSystemTrayIcon(self)
         _ico = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'icon.ico')
@@ -167,214 +402,34 @@ class MainWindow(QMainWindow):
         act_stop.triggered.connect(self.stop)
         act_quit = QAction('退出', self)
         act_quit.triggered.connect(self._real_quit)
+        
         menu.addAction(act_show)
         menu.addSeparator()
         menu.addAction(act_start)
         menu.addAction(act_stop)
         menu.addSeparator()
         menu.addAction(act_quit)
-        self.tray_menu = menu  # 保存引用，不用 setContextMenu（Windows 下会冲突）
-        self.tray.activated.connect(self._on_tray_clicked)
+        self.tray.setContextMenu(menu)
+        self.tray.activated.connect(self._tray_activated)
         self.tray.show()
 
-    def _on_tray_clicked(self, reason):
-        try:
-            _name = str(reason).split('.')[-1]
-        except Exception:
-            _name = ''
-        if _name == 'Trigger':
+    def _tray_activated(self, reason):
+        if reason == QSystemTrayIcon.ActivationReason.Trigger:
             self._show_window()
-        elif _name == 'Context':
-            try:
-                from PyQt6.QtGui import QCursor
-                self.tray_menu.popup(QCursor.pos())
-            except Exception:
-                pass
-    
+
     def _show_window(self):
         self.showNormal()
         self.activateWindow()
-        self.raise_()
+
+    def closeEvent(self, event):
+        if not self._allow_close:
+            event.ignore()
+            self.hide()
+        else:
+            event.accept()
 
     def _real_quit(self):
         self._allow_close = True
-        try:
-            self._stop_hidden_nodes()
-            if self.proc:
-                pid = int(self.proc.processId())
-                QProcess.startDetached('taskkill', ['/F', '/T', '/PID', str(pid)])
-        except Exception:
-            pass
-        self.proc = None
-        self.hidden_procs = []
-        import os as _os_q
-        _os_q._exit(0)
-
-    # ---------- 工具 ----------
-    def out(self, t):
-        self.log.appendPlainText(t.rstrip())
-
-    def _check_running(self, port):
-        try:
-            urllib.request.urlopen(
-                f'http://127.0.0.1:{port}/hive/info', timeout=2
-            ).close()
-            return True
-        except Exception:
-            return False
-
-    def _port_busy(self, p):
-        """用 connect 判占用（避开 Windows SO_REUSEADDR 陷阱）。"""
-        for family, host in (
-            (socket.AF_INET,  '127.0.0.1'),
-            (socket.AF_INET6, '::1'),
-        ):
-            try:
-                with socket.socket(family, socket.SOCK_STREAM) as s:
-                    s.settimeout(0.3)
-                    if s.connect_ex((host, p)) == 0:
-                        return True
-            except Exception:
-                continue
-        return False
-
-    def _find_free_port(self, start, span=20):
-        for p in range(start, start + span):
-            if not self._port_busy(p):
-                return p
-        return start
-
-    def _open_browser(self, port):
-        url = f'http://127.0.0.1:{port}/static/index.html'
-        self.out(f'[启动器] 打开浏览器 {url}')
-        try:
-            webbrowser.open(url)
-        except Exception as e:
-            self.out(f'[启动器] 打开浏览器失败: {e}')
-
-    # ---------- 隐藏节点 ----------
-    def _start_hidden_nodes(self):
-        """主 SASES 启动后，依次拉起 2 个隐藏节点。"""
-        for i, port in enumerate(HIDDEN_NODE_PORTS, start=1):
-            if self._port_busy(port):
-                self.out(f'[启动器] 隐藏节点端口 {port} 被占用，跳过')
-                continue
-            p = QProcess(self)
-            p.setWorkingDirectory(ROOT)
-            env = QProcessEnvironment.systemEnvironment()
-            env.insert('SASES_PORT', str(port))
-            env.insert('SASES_NODE_ID', f'node-hidden-{i}')
-            env.insert('HIVE_ROLE', 'slave')
-            env.insert('HIVE_MASTER', f'http://127.0.0.1:{self._chosen_port}')
-            env.insert('HIVE_PEERS', f'http://127.0.0.1:{self._chosen_port}')
-            env.insert('ENABLE_HIVE', 'true')
-            p.setProcessEnvironment(env)
-            p.readyReadStandardOutput.connect(self._read_hidden)
-            p.readyReadStandardError.connect(self._read_hidden)
-            p.start(sys.executable, ['-m', 'core.hive.standalone'])
-            self.hidden_procs.append(p)
-            # 静默启动，不打印日志（隐藏节点对用户不可见）
-
-    def _read_hidden(self):
-        # 隐藏节点日志不输出到主窗口（保持用户无感）
-        # 仅消费缓冲区，防止管道阻塞
-        for p in list(self.hidden_procs):
-            if p.bytesAvailable() > 0:
-                p.readAllStandardOutput()
-                p.readAllStandardError()
-
-    def _stop_hidden_nodes(self):
-        for p in self.hidden_procs:
-            try:
-                pid = int(p.processId())
-                QProcess.startDetached('taskkill', ['/F', '/T', '/PID', str(pid)])
-            except Exception:
-                pass
-        self.hidden_procs = []
-        # 静默停止，不打印日志
-
-    # ---------- 生命周期 ----------
-    def start(self):
-        if self._check_running(self.port):
-            self.statusBar().showMessage('已运行（外部进程）')
-            self.out('检测到外部进程，跳过启动')
-            self._open_browser(self.port)
-            return
-
-        chosen = self._find_free_port(self.port)
-        if chosen != self.port:
-            self.out(f'[启动器] 端口 {self.port} 被占用，改用 {chosen}')
-        self._chosen_port = chosen
-
-        if self.proc:
-            return
-
-        p = QProcess(self)
-        p.setWorkingDirectory(ROOT)
-        env = QProcessEnvironment.systemEnvironment()
-        env.insert('SASES_PORT', str(chosen))
-        p.setProcessEnvironment(env)
-        p.readyReadStandardOutput.connect(self.read)
-        p.readyReadStandardError.connect(self.read)
-        p.finished.connect(self.done)
-        p.start(sys.executable, ['scripts/run_forever.py'])
-
-        self.proc = p
-        self.btn_start.setEnabled(False)
-        self.btn_stop.setEnabled(True)
-        self.statusBar().showMessage(f'运行中 :{chosen}')
-        self.out(f'[启动器] 已启动 SASES 服务 :{chosen}')
-
-        QTimer.singleShot(2000, lambda: self._poll_ready(chosen, 15))
-
-    def _poll_ready(self, port, attempts):
-        if self._check_running(port):
-            self.out(f'[启动器] 服务已就绪 :{port}')
-            self._open_browser(port)
-            # 主服务就绪后，启动隐藏节点
-            self._start_hidden_nodes()
-            return
-        if attempts <= 0:
-            self.out(f'[启动器] 服务未在预期时间内就绪 :{port}')
-            return
-        QTimer.singleShot(2000, lambda: self._poll_ready(port, attempts - 1))
-
-    def read(self):
-        if not self.proc:
-            return
-        b = self.proc.readAllStandardOutput() + self.proc.readAllStandardError()
-        for line in _decode_child_line(bytes(b)).splitlines():
-            self.out(line)
-
-    def done(self, code, st):
-        self.out('[启动器] 进程结束 code=%s' % code)
-        self.proc = None
-        self.btn_start.setEnabled(True)
-        self.btn_stop.setEnabled(False)
-        self.statusBar().showMessage('未运行')
-
-    def stop(self):
-        # 先停隐藏节点
-        self._stop_hidden_nodes()
-        if not self.proc:
-            return
-        pid = int(self.proc.processId())
-        QProcess.startDetached('taskkill', ['/F', '/T', '/PID', str(pid)])
-        self.out('[启动器] 已停止主服务 pid=%s' % pid)
-
-    # ---------- 托盘行为 ----------
-    def closeEvent(self, e):
-        if self._allow_close:
-            if self.proc:
-                self.stop()
-            e.accept()
-            return
-        e.ignore()
-        self.hide()
-        try:
-            self.tray.showMessage(
-                'SASES 启动器', '已最小化到托盘，双击图标恢复',
-                QSystemTrayIcon.MessageIcon.Information, 2000
-            )
-        except Exception:
-            pass
+        self.stop()
+        self.close()
+        QTimer.singleShot(200, lambda: os._exit(0))
