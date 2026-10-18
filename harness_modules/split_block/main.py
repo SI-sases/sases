@@ -11,7 +11,7 @@ BACKUP_DIR = ".backups"
 
 def _validate_path(path):
     p = path.replace("\\", "/")
-    if p.startswith("/") or ":" in p:
+    if p.startswith("/") or (len(p) > 1 and p[1] == ":"):
         raise ValueError("禁止绝对路径: " + path)
     if not any(p.startswith(a) for a in ALLOWED):
         raise ValueError("路径不在允许目录: " + path)
@@ -23,7 +23,9 @@ def _validate_path(path):
 def _backup(path):
     os.makedirs(BACKUP_DIR, exist_ok=True)
     ts = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-    dst = os.path.join(BACKUP_DIR, os.path.basename(path) + "." + ts + ".bak")
+    # v1.1: 用路径前缀避免同名文件冲突
+    safe_name = path.replace("\\", "/").replace("/", "__")
+    dst = os.path.join(BACKUP_DIR, safe_name + "." + ts + ".bak")
     shutil.copy2(path, dst)
     return dst
 
@@ -38,7 +40,7 @@ def _syntax_ok(path):
             return False, str(e)
     if path.endswith(".js"):
         try:
-            r = subprocess.run(["node", "--check", path], capture_output=True, text=True, timeout=15)
+            r = subprocess.run(["node", "--check", path], capture_output=True, text=True, timeout=15, encoding="utf-8", errors="replace")
             return (r.returncode == 0), (r.stderr or "")
         except Exception as e:
             return False, str(e)
@@ -46,8 +48,7 @@ def _syntax_ok(path):
 
 
 def _find_unique(lines, pattern):
-    hits = [i + 1 for i, ln in enumerate(lines) if pattern in ln]
-    return hits
+    return [i + 1 for i, ln in enumerate(lines) if pattern in ln]
 
 
 def run(params):
@@ -76,6 +77,9 @@ def run(params):
             raise ValueError("源文件不存在: " + src)
         if os.path.exists(newf):
             raise ValueError("新文件已存在: " + newf)
+        # v1.1: 强制同目录（相对 import 需要）
+        if os.path.dirname(src) != os.path.dirname(newf):
+            raise ValueError("source_file 和 new_file 必须在同一目录: %s vs %s" % (os.path.dirname(src), os.path.dirname(newf)))
 
         with open(src, "r", encoding="utf-8") as f:
             content = f.read()
@@ -96,9 +100,18 @@ def run(params):
         if not block:
             raise ValueError("切片为空")
 
+        # v1.1: 末行检查放宽（接受 } 或 };）+ 括号平衡检查
         non_empty = [ln.rstrip() for ln in block if ln.strip()]
-        if not non_empty or not non_empty[-1].endswith("};"):
-            raise ValueError("切片最后一个非空行不是 };")
+        if not non_empty:
+            raise ValueError("切片无有效行")
+        _last = non_empty[-1]
+        if not (_last.endswith("}") or _last.endswith("};")):
+            raise ValueError("切片最后一个非空行不是 } 或 };，实际: " + _last[-50:])
+        _ob = sum(ln.count("{") for ln in block)
+        _cb = sum(ln.count("}") for ln in block)
+        if _ob != _cb:
+            raise ValueError("切片括号不平衡: {=%d, }=%d" % (_ob, _cb))
+
         if any(end_pattern in ln for ln in block):
             raise ValueError("切片包含 end_pattern")
         if not any(start_pattern in ln for ln in block):
@@ -121,6 +134,9 @@ def run(params):
             a_hits = _find_unique(lines, import_anchor)
             if len(a_hits) != 1:
                 raise ValueError("import_anchor 匹配 %d 处，必须唯一" % len(a_hits))
+            # v1.1: 拒绝 import 插入在代码块内部
+            if start <= a_hits[0] < end:
+                raise ValueError("import_anchor 位于代码块内部（行%d），会导致删除范围错乱" % a_hits[0])
             base = os.path.basename(newf)
             imp_line = "import './" + base + "';\n"
             lines.insert(a_hits[0], imp_line)
@@ -130,14 +146,19 @@ def run(params):
             result["main_file_syntax_ok"] = ok
             if not ok:
                 raise ValueError("源文件加 import 后语法错误: " + err)
-            start += 1
-            end += 1
+            # v1.1: 精确行号调整
+            if start > a_hits[0]:
+                start += 1
+            if end > a_hits[0]:
+                end += 1
 
         del lines[start - 1:end - 1]
-        rep = replace_with
-        if rep and not rep.endswith("\n"):
-            rep += "\n"
-        lines.insert(start - 1, rep)
+        # v1.1: 空 replace_with 不多插行
+        if replace_with:
+            rep = replace_with
+            if not rep.endswith("\n"):
+                rep += "\n"
+            lines.insert(start - 1, rep)
         with open(src, "w", encoding="utf-8") as f:
             f.writelines(lines)
 

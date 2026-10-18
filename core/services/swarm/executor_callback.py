@@ -270,6 +270,9 @@ async def handle_step_done(
                             )
                             if isinstance(_next_result, dict) and _next_result.get("status") == "done":
                                 supervisor_service.finish_run(_run_id, "completed")
+                            elif _next_result is None or (isinstance(_next_result, dict) and _next_result.get("status") in ("no_plan", "error")):
+                                print(f"[supervisor] run {_run_id} 续跑 plan_task 失败: {_next_result}")
+                                supervisor_service.finish_run(_run_id, "plan_failed")
                         else:
                             supervisor_service.finish_run(_run_id, "completed")
                     else:
@@ -579,6 +582,9 @@ async def handle_step_done(
                             )
                             if isinstance(_next_result, dict) and _next_result.get("status") == "done":
                                 supervisor_service.finish_run(_run_id, "completed")
+                            elif _next_result is None or (isinstance(_next_result, dict) and _next_result.get("status") in ("no_plan", "error")):
+                                print(f"[supervisor] run {_run_id} 续跑 plan_task 失败: {_next_result}")
+                                supervisor_service.finish_run(_run_id, "plan_failed")
                         else:
                             supervisor_service.finish_run(_run_id, "completed")
                     else:
