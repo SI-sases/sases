@@ -7,6 +7,7 @@ import './group_redpacket_ui.js';
 import './group_task_ui.js';
 import './group_swarm_ui.js';
 import './group_manage_ui.js';
+import './group_report_ui.js';
 
 let currentGroupId = null;
 let currentGroupName = '';
@@ -234,62 +235,7 @@ function openTaskListPage(tasks) {
 // 【模块 4. 群红包（抢/拆/列表）】
 // ======================================================================
 
-window.openGroupRedPacket = async function(packetId) {
-  try {
-    const detail = await fetch('/group/red-packets/' + packetId, {
-      headers: { 'Authorization': 'Bearer ' + localStorage.getItem('sases_token') }
-    }).then(r => r.json());
-    if (detail.error || detail.detail) { alert('加载失败：' + (detail.error || detail.detail)); return; }
-    let claimsHtml = '';
-    if (detail.claims && detail.claims.length > 0) {
-      claimsHtml = '<div style="margin-top:20px;"><div style="font-size:13px;color:#999;margin-bottom:8px;">领取记录</div>';
-      detail.claims.forEach(c => {
-        claimsHtml += '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f5f5f5;font-size:13px;"><span>' + (c.username || '匿名') + '</span><span style="color:#f59e0b;font-weight:600;">' + c.amount + ' 积分</span></div>';
-      });
-      claimsHtml += '</div>';
-    }
-    let bodyHtml = '';
-    if (detail.claimed_by_me !== null && detail.claimed_by_me !== undefined) {
-      bodyHtml = '<div style="font-size:48px;font-weight:700;color:#f59e0b;margin:20px 0;">' + detail.claimed_by_me + '</div><div style="font-size:14px;color:#666;">已存入你的积分</div>';
-    } else if (detail.status === 'empty') {
-      bodyHtml = '<div style="font-size:36px;color:#999;margin:20px 0;">已抢完</div>';
-    } else if (detail.status === 'expired') {
-      bodyHtml = '<div style="font-size:36px;color:#999;margin:20px 0;">已过期</div>';
-    } else {
-      bodyHtml = '<button id="grp-rp-claim-btn" style="width:180px;height:180px;border-radius:50%;background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#fff;font-size:24px;font-weight:700;border:none;cursor:pointer;margin:20px auto;display:block;box-shadow:0 8px 24px rgba(245,158,11,0.3);">開</button>';
-    }
-    const html = '<div style="text-align:center;padding:30px 20px;">'
-      + '<div style="font-size:18px;font-weight:600;margin-bottom:8px;">' + (detail.message || '恭喜发财') + '</div>'
-      + '<div style="font-size:13px;color:#999;margin-bottom:20px;">来自 ' + (detail.sender_name || '群友') + ' 的群红包</div>'
-      + '<div style="background:linear-gradient(135deg,#fef3c7,#fed7aa);border-radius:16px;padding:30px 20px;margin:0 auto;">'
-      + bodyHtml
-      + '<div style="font-size:12px;color:#92400e;margin-top:12px;">' + detail.claimed_count + '/' + detail.total_count + ' 已领取 · 总额 ' + detail.total_amount + ' 积分</div>'
-      + '</div>'
-      + claimsHtml
-      + '</div>';
-    window.openSubpage('群红包', html);
-    setTimeout(() => {
-      const btn = document.getElementById('grp-rp-claim-btn');
-      if (btn) {
-        btn.onclick = async function() {
-          btn.disabled = true;
-          btn.textContent = '...';
-          try {
-            const resp = await fetch('/group/red-packets/' + packetId + '/claim', {
-              method: 'POST',
-              headers: { 'Authorization': 'Bearer ' + localStorage.getItem('sases_token') }
-            });
-            const data = await resp.json();
-            if (data.error || data.detail) { alert('领取失败：' + (data.error || data.detail)); btn.disabled = false; btn.textContent = '開'; return; }
-            if (window.showGroupToast) window.showGroupToast('🧧 你抢到了 ' + data.amount + ' 积分');
-            window.openGroupRedPacket(packetId);
-            if (typeof loadGroupMessages === 'function') loadGroupMessages();
-          } catch (e) { alert('网络错误：' + e.message); btn.disabled = false; btn.textContent = '開'; }
-        };
-      }
-    }, 100);
-  } catch (e) { alert('网络错误：' + e.message); }
-};
+// openGroupRedPacket 已迁移到 group_redpacket_ui.js
 
 
 // 群红包 UI 已迁移到 group_redpacket_ui.js
@@ -1582,108 +1528,7 @@ function leaveGroup() {
   api.removeGroupMember(currentGroupId, 'self').then(() => { window.closeSubpage(); location.reload(); }).catch(e => alert('失败: ' + e.message));
 }
 
-window.openReportResolveDialog = async function(groupId, queueId) {
-  let question = '';
-  try {
-    const resp = await fetch('/group/' + groupId + '/report-queue?status=pending', {
-      headers: { 'Authorization': 'Bearer ' + localStorage.getItem('sases_token') }
-    });
-    const data = await resp.json();
-    const item = (data.items || []).find(i => i.id === queueId);
-    if (item) question = item.question || '';
-  } catch (e) {}
-
-  const html = `
-    <div class="me-menu">
-      <div class="me-menu-item" style="display:block;padding:12px;">
-        <div style="font-size:13px;color:#666;margin-bottom:6px;">问题</div>
-        <div style="font-size:14px;color:#333;line-height:1.6;background:#f8f8f8;padding:10px;border-radius:6px;">${question}</div>
-      </div>
-    </div>
-    <div class="me-menu">
-      <div class="me-menu-item" style="display:block;padding:12px;">
-        <div style="font-size:13px;color:#666;margin-bottom:6px;">答案</div>
-        <textarea id="report-answer" rows="8" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;resize:vertical;" placeholder="输入答案，将自动加入群知识库"></textarea>
-      </div>
-    </div>
-    <button class="save-btn" id="report-save">保存答案</button>
-  `;
-
-  window.openSubpage('补充答案', html, {
-    showMore: false,
-    returnAction: () => window.openGroupReportQueue(groupId)
-  });
-
-  setTimeout(() => {
-    const btn = document.getElementById('report-save');
-    if (!btn) return;
-    btn.onclick = async () => {
-      const answer = (document.getElementById('report-answer') || {}).value || '';
-      if (!answer.trim()) { alert('答案不能为空'); return; }
-      try {
-        const resp = await fetch('/group/report-queue/' + queueId + '/resolve', {
-          method: 'POST',
-          headers: { 'Authorization': 'Bearer ' + localStorage.getItem('sases_token'), 'Content-Type': 'application/json' },
-          body: JSON.stringify({ answer: answer, category: 'faq' })
-        });
-        const data = await resp.json();
-        if (data.error || data.detail) { alert('保存失败：' + (data.error || data.detail)); return; }
-        alert('已保存并加入群知识库');
-        window.closeSubpage();
-        window.openGroupReportQueue(groupId);
-      } catch (e) { alert('网络错误：' + e.message); }
-    };
-  }, 300);
-};
-
-
-window.openGroupReportQueue = async function(groupId) {
-  let items = [];
-  try {
-    const resp = await fetch('/group/' + groupId + '/report-queue?status=pending', {
-      headers: { 'Authorization': 'Bearer ' + localStorage.getItem('sases_token') }
-    });
-    const data = await resp.json();
-    if (data.error || data.detail) { alert('加载失败：' + (data.error || data.detail)); return; }
-    items = data.items || [];
-  } catch (e) { alert('网络错误：' + e.message); return; }
-
-  let listHtml = '';
-  if (items.length === 0) {
-    listHtml = '<div class="subpage-placeholder">暂无待补充问题</div>';
-  } else {
-    items.forEach(it => {
-      const asker = it.anonymous ? '匿名' : (it.username || '群友');
-      listHtml += '<div class="me-menu-item report-item" data-qid="' + it.id + '" style="cursor:pointer;">';
-      listHtml += '<div style="flex:1;min-width:0;">';
-      listHtml += '<div style="font-size:14px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (it.question || '') + '</div>';
-      listHtml += '<div style="font-size:12px;color:#999;margin-top:2px;">来自 ' + asker + '</div>';
-      listHtml += '</div>';
-      listHtml += '<span class="menu-arrow">›</span>';
-      listHtml += '</div>';
-    });
-  }
-
-  const html = `
-    <div class="me-menu">
-      ${listHtml}
-    </div>
-    <div style="padding:12px;font-size:12px;color:#999;line-height:1.6;">
-      员工提问时，如果群知识库没有答案，会自动出现在这里。补充答案后，会自动进入群知识库。
-    </div>
-  `;
-
-  window.openSubpage('群汇报', html, {
-    showMore: false,
-    returnAction: () => openGroupSettings()
-  });
-
-  setTimeout(() => {
-    document.querySelectorAll('.report-item').forEach(el => {
-      el.onclick = () => window.openReportResolveDialog(groupId, parseInt(el.dataset.qid));
-    });
-  }, 300);
-};
+// 群汇报 UI 已迁移到 group_report_ui.js
 
 
 // window mount
