@@ -155,12 +155,3 @@ window.openGroupKnowledgeAdd = function(groupId) {
   }, 100);
 };
 
-
-// ======================================================================
-// 【模块 6. 蜂群模式管理】
-// ======================================================================
-
-window.openSwarmConfig = async function(groupId) {
-  let swarmEnabled = false;
-  let sharedAgents = [];
-  let allAgents = [];
