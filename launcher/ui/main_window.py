@@ -60,6 +60,9 @@ class MainWindow(QMainWindow):
         h.addWidget(self.btn_stop)
         h.addWidget(self.version_label)
         h.addWidget(self.btn_version)
+        self.btn_diag = QPushButton('导出诊断')
+        self.btn_diag.clicked.connect(self._export_diag)
+        h.addWidget(self.btn_diag)
         h.addStretch(1)
         v = QVBoxLayout()
         v.addLayout(h)
@@ -72,6 +75,36 @@ class MainWindow(QMainWindow):
         self._setup_tray()
 
     # ---------- 托盘 ----------
+    def _export_diag(self):
+        import datetime, sys, subprocess, urllib.request
+        lines = []
+        lines.append('时间: ' + datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+        lines.append('Python: ' + sys.version)
+        try:
+            out = subprocess.run('netstat -ano | findstr :8001', shell=True, capture_output=True, text=True, timeout=10)
+            lines.append('端口8001:\n' + (out.stdout or '(无输出)'))
+        except Exception as e:
+            lines.append('端口检查失败: ' + str(e))
+        try:
+            url = 'http://127.0.0.1:%s/version' % self._chosen_port
+            with urllib.request.urlopen(url, timeout=5) as r:
+                lines.append('版本接口: ' + r.read().decode('utf-8', 'ignore'))
+        except Exception as e:
+            lines.append('版本接口失败: ' + str(e))
+        try:
+            with open('logs/latest.log', 'r', encoding='utf-8', errors='ignore') as f:
+                tail = f.readlines()[-50:]
+            lines.append('日志末尾50行:\n' + ''.join(tail))
+        except Exception as e:
+            lines.append('日志读取失败: ' + str(e))
+        try:
+            with open('diag.txt', 'w', encoding='utf-8') as f:
+                f.write('\n'.join(lines))
+            QMessageBox.information(self, '导出诊断', '诊断文件已生成: diag.txt')
+        except Exception as e:
+            QMessageBox.warning(self, '导出诊断', '写入失败: ' + str(e))
+
+
     def _load_version_info(self):
         import json
         import urllib.request
