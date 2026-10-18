@@ -63,6 +63,9 @@ class MainWindow(QMainWindow):
         self.btn_diag = QPushButton('导出诊断')
         self.btn_diag.clicked.connect(self._export_diag)
         h.addWidget(self.btn_diag)
+        self.btn_update = QPushButton('检查更新')
+        self.btn_update.clicked.connect(self._check_update)
+        h.addWidget(self.btn_update)
         h.addStretch(1)
         v = QVBoxLayout()
         v.addLayout(h)
@@ -75,6 +78,26 @@ class MainWindow(QMainWindow):
         self._setup_tray()
 
     # ---------- 托盘 ----------
+    def _check_update(self):
+        import json, urllib.request
+        try:
+            req = urllib.request.Request(
+                "http://127.0.0.1:8001/version/check-update",
+                data=b"{}",
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+            has_update = bool(data.get("has_update"))
+        except Exception:
+            has_update = False
+        if has_update:
+            QMessageBox.information(self, "检查更新", "有新版本，请运行更新.bat")
+        else:
+            QMessageBox.information(self, "检查更新", "已是最新版本")
+
+
     def _export_diag(self):
         import datetime, sys, subprocess, urllib.request
         lines = []

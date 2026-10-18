@@ -38,3 +38,19 @@ def get_version():
         "node_id": os.environ.get("SASES_NODE_ID", "unknown"),
         "port": os.environ.get("SASES_PORT", "8001"),
     }
+
+
+@router.post("/version/check-update")
+def check_update():
+    import subprocess
+    has_update = False
+    local_hash = ""
+    remote_hash = ""
+    try:
+        subprocess.run(["git", "fetch", "origin"], cwd=os.getcwd(), capture_output=True, timeout=30)
+        local_hash = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=os.getcwd(), text=True).strip()
+        remote_hash = subprocess.check_output(["git", "rev-parse", "origin/main"], cwd=os.getcwd(), text=True).strip()
+        has_update = local_hash != remote_hash
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+    return {"has_update": has_update, "local": local_hash[:7], "remote": remote_hash[:7]}
