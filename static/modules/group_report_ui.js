@@ -91,7 +91,7 @@ window.openGroupReportQueue = async function(groupId) {
 
   window.openSubpage('群汇报', html, {
     showMore: false,
-    returnAction: () => openGroupSettings()
+    returnAction: () => window.openGroupSettings()
   });
 
   setTimeout(() => {

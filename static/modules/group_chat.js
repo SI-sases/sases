@@ -235,7 +235,62 @@ function openTaskListPage(tasks) {
 // 【模块 4. 群红包（抢/拆/列表）】
 // ======================================================================
 
-// openGroupRedPacket 已迁移到 group_redpacket_ui.js
+window.openGroupRedPacket = async function(packetId) {
+  try {
+    const detail = await fetch('/group/red-packets/' + packetId, {
+      headers: { 'Authorization': 'Bearer ' + localStorage.getItem('sases_token') }
+    }).then(r => r.json());
+    if (detail.error || detail.detail) { alert('加载失败：' + (detail.error || detail.detail)); return; }
+    let claimsHtml = '';
+    if (detail.claims && detail.claims.length > 0) {
+      claimsHtml = '<div style="margin-top:20px;"><div style="font-size:13px;color:#999;margin-bottom:8px;">领取记录</div>';
+      detail.claims.forEach(c => {
+        claimsHtml += '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f5f5f5;font-size:13px;"><span>' + (c.username || '匿名') + '</span><span style="color:#f59e0b;font-weight:600;">' + c.amount + ' 积分</span></div>';
+      });
+      claimsHtml += '</div>';
+    }
+    let bodyHtml = '';
+    if (detail.claimed_by_me !== null && detail.claimed_by_me !== undefined) {
+      bodyHtml = '<div style="font-size:48px;font-weight:700;color:#f59e0b;margin:20px 0;">' + detail.claimed_by_me + '</div><div style="font-size:14px;color:#666;">已存入你的积分</div>';
+    } else if (detail.status === 'empty') {
+      bodyHtml = '<div style="font-size:36px;color:#999;margin:20px 0;">已抢完</div>';
+    } else if (detail.status === 'expired') {
+      bodyHtml = '<div style="font-size:36px;color:#999;margin:20px 0;">已过期</div>';
+    } else {
+      bodyHtml = '<button id="grp-rp-claim-btn" style="width:180px;height:180px;border-radius:50%;background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#fff;font-size:24px;font-weight:700;border:none;cursor:pointer;margin:20px auto;display:block;box-shadow:0 8px 24px rgba(245,158,11,0.3);">開</button>';
+    }
+    const html = '<div style="text-align:center;padding:30px 20px;">'
+      + '<div style="font-size:18px;font-weight:600;margin-bottom:8px;">' + (detail.message || '恭喜发财') + '</div>'
+      + '<div style="font-size:13px;color:#999;margin-bottom:20px;">来自 ' + (detail.sender_name || '群友') + ' 的群红包</div>'
+      + '<div style="background:linear-gradient(135deg,#fef3c7,#fed7aa);border-radius:16px;padding:30px 20px;margin:0 auto;">'
+      + bodyHtml
+      + '<div style="font-size:12px;color:#92400e;margin-top:12px;">' + detail.claimed_count + '/' + detail.total_count + ' 已领取 · 总额 ' + detail.total_amount + ' 积分</div>'
+      + '</div>'
+      + claimsHtml
+      + '</div>';
+    window.openSubpage('群红包', html);
+    setTimeout(() => {
+      const btn = document.getElementById('grp-rp-claim-btn');
+      if (btn) {
+        btn.onclick = async function() {
+          btn.disabled = true;
+          btn.textContent = '...';
+          try {
+            const resp = await fetch('/group/red-packets/' + packetId + '/claim', {
+              method: 'POST',
+              headers: { 'Authorization': 'Bearer ' + localStorage.getItem('sases_token') }
+            });
+            const data = await resp.json();
+            if (data.error || data.detail) { alert('领取失败：' + (data.error || data.detail)); btn.disabled = false; btn.textContent = '開'; return; }
+            if (window.showGroupToast) window.showGroupToast('🧧 你抢到了 ' + data.amount + ' 积分');
+            window.openGroupRedPacket(packetId);
+            if (typeof loadGroupMessages === 'function') loadGroupMessages();
+          } catch (e) { alert('网络错误：' + e.message); btn.disabled = false; btn.textContent = '開'; }
+        };
+      }
+    }, 100);
+  } catch (e) { alert('网络错误：' + e.message); }
+};
 
 
 // 群红包 UI 已迁移到 group_redpacket_ui.js
