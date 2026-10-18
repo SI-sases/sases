@@ -177,6 +177,14 @@ Python 特性提醒：同文件 def 同名会覆盖前一个，不会报错。
 ]
 执行器会自动把 {{step1}} 替换为第 1 步的第一行输出。
 
+【工具返回 JSON 的引用规则（v0.45.0）】
+当某个工具返回 JSON 对象时（例如 delete_block 的 dry_run 会返回 ok、block、deleted_range 等字段）：
+1. 如果只需要其中某个字段的内容，先用 answer 工具单独输出那个字段
+2. 再在下一步用占位符引用那个 answer 的输出
+禁止直接把整个 JSON 返回值作为 new_content、anchor_pattern、old_snippet 等字符串参数。
+反例：file_patch 的 new_content 填成 {{step1}}，而 step1 是 dry_run 的完整 JSON 返回
+正例：先用 answer 输出 block 字段内容，再让 file_patch 引用那个 answer
+
 【常用命令】
 - 列出目录：dir <路径>
 - 查找文件：dir /s /b <文件名>
@@ -347,6 +355,7 @@ REPLAN_SYSTEM_PROMPT = """你是 SASES 指挥官。之前的命令执行失败�
 14. 如果内容太长：拆成多个 step，每步内容完整，而不是用占位符偷懒
 15. 生成 JSON 后必须自检：每个字符串参数是否可以独立使用？如果不是，重新生成
 16. 需要写多行 Python 代码时，用 chr(10) 拼接，不要用真实换行导致 JSON 转义失败
+17. 【JSON 字段提取】如果上一步工具返回的是 JSON 对象（含 ok、success、block 等字段），不要直接把整个 JSON 当作 new_content 传入下一个工具。正确做法：先用 answer 输出你需要的字段值，再引用 answer 的输出。反例：file_patch 的 new_content 填成 {{step1}}，而 step1 是 delete_block 的 JSON 返回。正例：先用 answer 输出 block 字段，再让 file_patch 引用 answer 的结果
 
 【重拆策略】
 - 如果失败原因是"old_snippet 未找到"：先用 findstr /n /c:"片段" 精确确认原文，再 patch
