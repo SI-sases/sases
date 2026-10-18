@@ -147,6 +147,31 @@ async def task_summarizer(task):
     except Exception as _e_fp:
         print('[supervisor] file_patch 判定异常: ' + str(_e_fp))
 
+    # v0.43.1: split_block / delete_block 成功判定
+    try:
+        _block_tools = ('split_block', 'delete_block')
+        _has_block_success = False
+        _has_any_fail = False
+        for _r in results:
+            _cmd = str(_r.get('command') or _r.get('module_id') or '')
+            _status = _r.get('status', '')
+            _out = str(_r.get('output') or '')
+            if _cmd in _block_tools and _status == 'success' and '"success": true' in _out:
+                _has_block_success = True
+            if _status in ('failed', 'blocked', 'timeout', 'error'):
+                _has_any_fail = True
+        if _has_block_success and not _has_any_fail:
+            print('[supervisor] task_summarizer block 工具成功判定 → 判完成')
+            return {
+                'goal_achieved': True,
+                'goal_reason': '拆分/删除工具成功完成',
+                'missing': [],
+                'next_hint': '',
+            }
+    except Exception as _e_bt:
+        print('[supervisor] block 工具判定异常: ' + str(_e_bt))
+
+
     _suspicious_kws = ['剩余', '请继续', '请分批', '请再发', '下一步', '未完成', '待完成',
                        'rolled_back', 'verify fail', '已回滚', '请回复',
                        '请确认', '请检查', '未做', '待做', '请用户', '需要用户', '请先', '请提供',
