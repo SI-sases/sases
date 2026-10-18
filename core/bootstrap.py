@@ -57,6 +57,7 @@ from .api_routes import (
     yunchong_routes,
     swarm_routes,
     hive_task_routes,
+    version_routes,
 )
 
 
@@ -589,6 +590,7 @@ def create_app() -> FastAPI:
     app.include_router(ws_routes.router)
     app.include_router(hive_task_routes.router)
     app.include_router(feedback_routes.router)
+    app.include_router(version_routes.router)
 
     @app.get("/static/index.html", response_class=HTMLResponse)
     async def serve_index():
