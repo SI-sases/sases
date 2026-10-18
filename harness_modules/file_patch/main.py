@@ -227,6 +227,24 @@ def _mode_anchor(abs_path, safe_path, params):
             f"匹配行号：{[i+1 for i in matched_indices]}。请用更精确的锚点。"
         )
 
+    # v2.9.0: 幂等检查——new_content 已存在则跳过，防止重拆时重复插入
+    _nc_stripped = (new_content or "").strip()
+    if _nc_stripped and len(_nc_stripped) >= 20 and _nc_stripped in original:
+        print(f"[file_patch] new_content 已存在于 {safe_path}，跳过插入")
+        return {
+            "success": True, "mode": "anchor", "file_path": safe_path,
+            "anchor": anchor, "skipped": "already_exists",
+            "matched_line_number": matched_indices[0] + 1,
+            "matched_line_preview": lines[matched_indices[0]].strip()[:120],
+            "position": position, "action": "skipped: already_exists",
+            "old_length": len(original), "new_length": len(original),
+            "diff_bytes": 0,
+            "backup": None,
+            "restart_required": False,
+            "note": "new_content 已存在，跳过插入（幂等）",
+        }
+
+
     idx = matched_indices[0]
     matched_line = lines[idx]
     backup_path = _backup_before_write(abs_path, safe_path)
