@@ -171,10 +171,38 @@ async def task_summarizer(task):
     except Exception as _e_bt:
         print('[supervisor] block 工具判定异常: ' + str(_e_bt))
 
+    # v0.47.0: answer 含明确完成信号 → 直接判完成（不依赖可疑词）
+    try:
+        _done_signals = ['已完成', '已迁移', '已拆分', '已删除', '语法通过', '语法检查通过', '已恢复', '迁移完成', '拆分完成']
+        _has_done_answer = False
+        _has_any_fail2 = False
+        _has_success_tool = False
+        for _r in results:
+            _cmd2 = str(_r.get('command') or _r.get('module_id') or '')
+            _st2 = _r.get('status', '')
+            _out2 = str(_r.get('answer') or _r.get('output') or '')
+            if _st2 in ('failed', 'blocked', 'timeout', 'error'):
+                _has_any_fail2 = True
+            if _st2 == 'success' and _cmd2 and _cmd2 != 'answer':
+                _has_success_tool = True
+            if _cmd2 == 'answer' and _st2 == 'success':
+                if any(_sig in _out2 for _sig in _done_signals):
+                    _has_done_answer = True
+        if _has_done_answer and _has_success_tool and not _has_any_fail2:
+            print('[supervisor] task_summarizer answer 含完成信号 → 判完成')
+            return {
+                'goal_achieved': True,
+                'goal_reason': '工具成功 + answer 含完成信号',
+                'missing': [],
+                'next_hint': '',
+            }
+    except Exception as _e_da:
+        print('[supervisor] answer 完成信号判定异常: ' + str(_e_da))
 
-    _suspicious_kws = ['剩余', '请继续', '请分批', '请再发', '下一步', '未完成', '待完成',
+
+    _suspicious_kws = ['剩余', '请继续', '请分批', '请再发', '未完成', '待完成',
                        'rolled_back', 'verify fail', '已回滚', '请回复',
-                       '请确认', '请检查', '未做', '待做', '请用户', '需要用户', '请先', '请提供',
+                       '请确认', '请检查', '请用户', '需要用户', '请先', '请提供',
                        '发起第2轮', '发起第 2 轮', '发起第3轮', '发起第 3 轮', '下一轮', '请发起',
                        '第1轮完成', '第 1 轮完成', '本轮完成', '继续核对', '继续验证']
     _neg_contexts = ["未做修改", "未做改动", "不需要修改", "无需修改", "不影响", "未做变更"]
@@ -197,7 +225,7 @@ async def task_summarizer(task):
             print(f'[supervisor] task_summarizer 终轮提示词命中: {_fl_count} 条 file:line')
             return {'goal_achieved': True, 'goal_reason': f'报告含 {_fl_count} 条 file:line 具体结论', 'missing': [], 'next_hint': ''}
 
-    _sys_prompt = '你是任务完成度评估器。请只输出 JSON：{"goal_achieved": true 或 false, "goal_reason": "理由", "missing": ["未完成项"], "next_hint": "下一步具体命令"}。判断规则：第一，逐条列出原始目标里的每一个要求（编号1/2/3/4），逐一核对是否真的通过 file_patch/file_read/run_python 等工具执行过，没执行过的放入missing。第二，如果执行结果里出现"剩余""请继续""请分批""请再发""下一步""未完成"等字眼，强制 goal_achieved=false。第三，把用户目标拆成子任务逐一核对，不因某一子任务完成就判整体完成。第四，如果用户目标里显式写了"第 N 轮"、"步骤 N"、"1./2./3."等分步描述，必须逐条核对——前 N-1 步完成不算整体完成，必须最后一步（通常是"生成报告"/"输出结论"/"用 answer"/"写入文件"）也执行了才算 goal_achieved=true。第五，只读了数据但没有分析/报告/输出的任务，视为未完成。目标含总结/回答/分析/说明，必须有文字产出（answer 或写文件）。目标含改/加/实现/修复，必须有成功 file_patch。目标含读/查看/列出且没有分步描述时，有 file_read 或 dir 即可。第六，如果 answer 输出里已包含 ≥3 条 "文件:行号" 格式的具体结论（如 chat.css:105），且未出现"剩余/请再发/下一轮/未完成"等词，判 goal_achieved=true。next_hint 必须具体写清工具+文件路径+动作，不许写重新探测。'
+    _sys_prompt = '你是任务完成度评估器。请只输出 JSON：{"goal_achieved": true 或 false, "goal_reason": "理由", "missing": ["未完成项"], "next_hint": "下一步具体命令"}。判断规则：第一，逐条列出原始目标里的每一个要求（编号1/2/3/4），逐一核对是否真的通过 file_patch/file_read/run_python 等工具执行过，没执行过的放入missing。第二，如果执行结果里出现"剩余""请继续""请分批""请再发""未完成"等字眼，强制 goal_achieved=false。第三，把用户目标拆成子任务逐一核对，不因某一子任务完成就判整体完成。第四，如果用户目标里显式写了"第 N 轮"、"步骤 N"、"1./2./3."等分步描述，必须逐条核对——前 N-1 步完成不算整体完成，必须最后一步（通常是"生成报告"/"输出结论"/"用 answer"/"写入文件"）也执行了才算 goal_achieved=true。第五，只读了数据但没有分析/报告/输出的任务，视为未完成。目标含总结/回答/分析/说明，必须有文字产出（answer 或写文件）。目标含改/加/实现/修复，必须有成功 file_patch。目标含读/查看/列出且没有分步描述时，有 file_read 或 dir 即可。第六，如果 answer 输出里已包含 ≥3 条 "文件:行号" 格式的具体结论（如 chat.css:105），且未出现"剩余/请再发/下一轮/未完成"等词，判 goal_achieved=true。next_hint 必须具体写清工具+文件路径+动作，不许写重新探测。'
     _user_prompt = '【用户目标】' + user_text + chr(10) + '【执行步骤】' + chr(10).join(steps)
     client = openai.OpenAI(api_key=config.DEEPSEEK_API_KEY, base_url=config.DEEPSEEK_BASE_URL, timeout=30)
     try:

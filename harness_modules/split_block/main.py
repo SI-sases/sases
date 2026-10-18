@@ -158,6 +158,34 @@ def run(params):
         end = _actual_end + 1
 
         block = lines[start - 1:end - 1]
+
+        # v1.4: 自动加 window. 前缀——扫描切片里的裸函数调用
+        import re as _re_w
+        _main_funcs = set()
+        for _ln in lines:
+            _m = _re_w.search(r"(?:async\s+)?function\s+(\w+)\s*\(", _ln)
+            if _m:
+                _main_funcs.add(_m.group(1))
+            _m2 = _re_w.search(r"window\.(\w+)\s*=", _ln)
+            if _m2:
+                _main_funcs.add(_m2.group(1))
+
+        _fixed_block = []
+        _fixed_count = 0
+        for _ln in block:
+            for _fn in _main_funcs:
+                if _re_w.search(r"(?:async\s+)?function\s+" + _re_w.escape(_fn) + r"\s*\(", _ln):
+                    continue
+                if "window." + _fn in _ln:
+                    continue
+                _new_ln, _n = _re_w.subn(r"(?<![\w.])" + _re_w.escape(_fn) + r"(\s*\()", "window." + _fn + r"\1", _ln)
+                if _n > 0:
+                    _ln = _new_ln
+                    _fixed_count += _n
+            _fixed_block.append(_ln)
+        block = _fixed_block
+        result["auto_window_prefix"] = _fixed_count
+
         if not block:
             raise ValueError("切片为空")
 
