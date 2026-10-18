@@ -22,7 +22,7 @@ from PyQt6.QtGui import QAction, QIcon
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QPushButton, QPlainTextEdit,
     QVBoxLayout, QHBoxLayout, QMessageBox,
-    QSystemTrayIcon, QMenu, QStyle,
+    QSystemTrayIcon, QMenu, QStyle, QLabel,
 )
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -47,6 +47,9 @@ class MainWindow(QMainWindow):
         self.resize(900, 600)
         self.btn_start = QPushButton('启动')
         self.btn_stop = QPushButton('停止')
+        self.version_label = QLabel('版本：未加载')
+        self.btn_version = QPushButton('刷新版本')
+        self.btn_version.clicked.connect(self._load_version_info)
         self.btn_start.clicked.connect(self.start)
         self.btn_stop.clicked.connect(self.stop)
         self.log = QPlainTextEdit()
@@ -55,6 +58,8 @@ class MainWindow(QMainWindow):
         h = QHBoxLayout()
         h.addWidget(self.btn_start)
         h.addWidget(self.btn_stop)
+        h.addWidget(self.version_label)
+        h.addWidget(self.btn_version)
         h.addStretch(1)
         v = QVBoxLayout()
         v.addLayout(h)
@@ -67,6 +72,24 @@ class MainWindow(QMainWindow):
         self._setup_tray()
 
     # ---------- 托盘 ----------
+    def _load_version_info(self):
+        import json
+        try:
+            req = urllib.request.Request(
+                f"http://127.0.0.1:{self._chosen_port}/version"
+            )
+            with urllib.request.urlopen(req, timeout=3) as r:
+                data = json.loads(r.read().decode())
+            txt = (
+                f"版本：{data.get('commit','?')} ({data.get('branch','?')}) | "
+                f"Schema：{data.get('schema','?')} | "
+                f"节点：{data.get('node_id','?')} | "
+                f"端口：{data.get('port','?')}"
+            )
+        except Exception as e:
+            txt = f"版本：不可用（{e}）"
+        self.version_label.setText(txt)
+
     def _setup_tray(self):
         self.tray = QSystemTrayIcon(self)
         _ico = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'icon.ico')
