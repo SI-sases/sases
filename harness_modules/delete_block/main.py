@@ -1,111 +1,98 @@
-import ast
 import json
-import re
-import shutil
-import subprocess
 import os
-from datetime import datetime
+import shutil
+import ast
+
+ALLOWED = ('static/', 'core/', 'scripts/', 'docs/', 'harness_modules/', 'launcher/', 'data/')
 
 
-def _backup(path):
-    bak_dir = os.path.join(os.path.dirname(path) or '.', '.backups')
-    os.makedirs(bak_dir, exist_ok=True)
-    ts = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
-    bak = os.path.join(bak_dir, os.path.basename(path) + '.' + ts + '.bak')
-    shutil.copy2(path, bak)
-    return bak
+def _resolve(path):
+    p = path.replace('\\', '/')
+    if os.path.isabs(p):
+        return p
+    return os.path.join(os.getcwd(), p)
 
 
-def _syntax_check(path):
-    ext = os.path.splitext(path)[1].lower()
-    try:
-        if ext == '.py':
-            with open(path, 'r', encoding='utf-8') as f:
-                ast.parse(f.read())
-            return True, ''
-        if ext == '.js':
-            r = subprocess.run(['node', '--check', path], capture_output=True, text=True, timeout=30)
-            if r.returncode == 0:
-                return True, ''
-            return False, (r.stderr or r.stdout)[:500]
-    except Exception as e:
-        return False, str(e)
-    return True, ''
+def _check_allowed(path):
+    p = path.replace('\\', '/')
+    if os.path.isabs(p):
+        return True
+    return any(p.startswith(a) for a in ALLOWED)
 
 
-def _similar(lines, pattern):
-    best = None
-    best_score = 0
-    key = pattern.strip()
-    for i, ln in enumerate(lines, 1):
-        s = ln.strip()
-        if not s:
+def _find_block(lines, start_pattern):
+    start = -1
+    for i, ln in enumerate(lines):
+        if start_pattern in ln:
+            start = i
+            break
+    if start < 0:
+        return None, '未找到 start_pattern'
+    depth = 0
+    seen = False
+    end = -1
+    for i in range(start, len(lines)):
+        for ch in lines[i]:
+            if ch == '{':
+                depth += 1
+                seen = True
+            elif ch == '}':
+                depth -= 1
+        if seen and depth <= 0:
+            end = i
+            break
+    if end < 0:
+        return None, '括号未闭合，未找到代码块结尾'
+    return (start, end), None
+
+
+def _orphan_check(lines, start, end):
+    lo = max(0, start - 5)
+    hi = min(len(lines), end + 6)
+    bad = []
+    for i in range(lo, hi):
+        if start <= i <= end:
             continue
-        score = 0
-        for ch in key:
-            if ch in s:
-                score += 1
-        if score > best_score:
-            best_score = score
-            best = (i, s)
-    return best
-
-
-def delete_block(file_path, start_pattern, end_marker, replace_with='// 代码块已删除'):
-    if not os.path.isfile(file_path):
-        return {'ok': False, 'error': '文件不存在: ' + file_path}
-    with open(file_path, 'r', encoding='utf-8') as f:
-        text = f.read()
-    lines = text.splitlines(keepends=True)
-    starts = [i for i, ln in enumerate(lines) if start_pattern in ln]
-    if not starts:
-        sim = _similar(lines, start_pattern)
-        hint = ('最相似: 行 %d: %s' % sim) if sim else '无相似行'
-        return {'ok': False, 'error': '未找到 start_pattern', 'hint': hint}
-    if len(starts) > 1:
-        return {'ok': False, 'error': 'start_pattern 匹配到 %d 行，请提供更精确的模式' % len(starts), 'lines': [i + 1 for i in starts]}
-    s = starts[0]
-    if end_marker in lines[s]:
-        e = s
-    else:
-        e = None
-        for j in range(s + 1, len(lines)):
-            if end_marker in lines[j]:
-                e = j
-                break
-        if e is None:
-            return {'ok': False, 'error': '从起始行往下未找到 end_marker: ' + end_marker}
-    bak = _backup(file_path)
-    new_lines = lines[:s] + [replace_with + '\n'] + lines[e + 1:]
-    with open(file_path, 'w', encoding='utf-8') as f:
-        f.write(''.join(new_lines))
-    ok, err = _syntax_check(file_path)
-    if not ok:
-        shutil.copy2(bak, file_path)
-        return {'ok': False, 'error': '语法检查失败，已回滚', 'detail': err, 'backup': bak}
-    return {'ok': True, 'deleted_lines': e - s + 1, 'start_line': s + 1, 'end_line': e + 1, 'syntax_ok': True, 'backup': bak}
-
-
-TOOL_SPEC = {
-    'name': 'delete_block',
-    'description': '安全删除多行代码块（自动备份+语法检查+失败回滚）',
-    'parameters': {
-        'type': 'object',
-        'properties': {
-            'file_path': {'type': 'string', 'description': '文件路径'},
-            'start_pattern': {'type': 'string', 'description': '代码块起始特征'},
-            'end_marker': {'type': 'string', 'description': '代码块结束标记'},
-            'replace_with': {'type': 'string', 'description': '替换注释，默认 // 代码块已删除'}
-        },
-        'required': ['file_path', 'start_pattern', 'end_marker']
-    }
-}
+        s = lines[i].strip()
+        for kw in ('try {', 'catch', 'for (', 'for(', 'if (', 'if('):
+            if s.startswith(kw):
+                bad.append('行%d: %s' % (i + 1, s[:60]))
+    return bad
 
 
 def run(params):
-    return delete_block(
-        params.get('file_path'),
-        params.get('start_pattern'),
-        params.get('end_marker'),
-        params.get('replace_with', '// 代码块已删除')
-    )
+    file_path = params.get('file_path', '')
+    start_pattern = params.get('start_pattern', '')
+    end_marker = params.get('end_marker', '')
+    replace_with = params.get('replace_with', '')
+    if not file_path or not start_pattern:
+        return {'ok': False, 'error': '缺少 file_path 或 start_pattern'}
+    if not _check_allowed(file_path):
+        return {'ok': False, 'error': '路径不在允许目录内'}
+    fp = _resolve(file_path)
+    if not os.path.exists(fp):
+        return {'ok': False, 'error': '文件不存在: ' + file_path}
+    with open(fp, 'r', encoding='utf-8') as f:
+        content = f.read()
+    lines = content.split('\n')
+    rng, err = _find_block(lines, start_pattern)
+    if err:
+        return {'ok': False, 'error': err}
+    start, end = rng
+    if end_marker and end_marker not in lines[end]:
+        return {'ok': False, 'error': '结束行不含 end_marker，疑似定位错误: ' + lines[end].strip()[:60]}
+    bad = _orphan_check(lines, start, end)
+    if bad:
+        return {'ok': False, 'error': '检测到孤立控制块，已中止', 'detail': bad}
+    backup = fp + '.bak'
+    shutil.copyfile(fp, backup)
+    new_lines = lines[:start] + ([replace_with] if replace_with else []) + lines[end + 1:]
+    new_content = '\n'.join(new_lines)
+    if fp.endswith('.py'):
+        try:
+            ast.parse(new_content)
+        except SyntaxError as e:
+            return {'ok': False, 'error': '删除后语法错误，已回滚: %s' % e}
+    with open(fp, 'w', encoding='utf-8') as f:
+        f.write(new_content)
+    return {'ok': True, 'deleted_lines': [start + 1, end + 1], 'backup': backup}
