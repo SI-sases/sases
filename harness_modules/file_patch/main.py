@@ -425,15 +425,20 @@ def run(params):
             result['success'] = False
             result['error'] = 'NO_FILE: 写入后文件仍不存在'
         elif _before_md5 is not None and _before_md5 == _after_md5:
-            _mode_now = result.get('mode', '')
-            if _mode_now in ('create', 'overwrite'):
-                # 文件本来就存在且内容一致 → 幂等完成
-                result['mode'] = _mode_now + '_no_change'
-                result['note'] = '文件已包含目标内容（幂等）'
+            # v2.9.1: skipped=already_exists 视为幂等成功，不判失败
+            if result.get('skipped') == 'already_exists':
+                result['note'] = '幂等跳过：内容已存在'
                 # 保持 success=True
             else:
-                # patch 模式下 MD5 相同 = 没改动 = 真失败
-                result['success'] = False
-                result['error'] = 'NO_CHANGE: 文件内容未发生任何变化'
+                _mode_now = result.get('mode', '')
+                if _mode_now in ('create', 'overwrite'):
+                    # 文件本来就存在且内容一致 → 幂等完成
+                    result['mode'] = _mode_now + '_no_change'
+                    result['note'] = '文件已包含目标内容（幂等）'
+                    # 保持 success=True
+                else:
+                    # patch 模式下 MD5 相同 = 没改动 = 真失败
+                    result['success'] = False
+                    result['error'] = 'NO_CHANGE: 文件内容未发生任何变化'
 
     return result
