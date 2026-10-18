@@ -168,3 +168,18 @@
 87. 根因：periodic\_git\_push 没有判断“当前实例是否应该推送”。
 88. 状态：待处理（l1-server 阶段加 ENABLE\_GIT\_PUSH 开关，默认只在主节点开）
 
+
+89. \## 问题 17：add\_launcher\_version.py 的检查条件有 bug
+90. 
+91. 现象：脚本报告 "\_load\_version\_info 已存在"，但实际上只插入了调用，没插入方法定义，启动器报 AttributeError。
+92. 根因：检查条件用 `"\_load\_version\_info" not in content`，但调用 `self.btn\_version.clicked.connect(self.\_load\_version\_info)` 里也包含这个字符串，导致误判。
+93. 修复：检查条件改为 `"def \_load\_version\_info"`。
+94. 状态：已修复（fix\_launcher\_version.py 补充插入）。
+
+95. \## 问题 17：add\_launcher\_version.py 检查条件误判
+96. 
+97. 现象：脚本报告 "\_load\_version\_info 已存在"，但只插入了调用，没插入方法定义，启动器报 AttributeError。
+98. 根因：检查条件用 `"\_load\_version\_info" not in content`，调用行里也含这个字符串。
+99. 修复：改为检查 `"def \_load\_version\_info"`，已用 fix\_launcher\_version.py 补上。
+100. 状态：已修复。
+
