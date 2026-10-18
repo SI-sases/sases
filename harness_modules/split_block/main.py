@@ -51,6 +51,7 @@ def _find_unique(lines, pattern):
 
 
 def _extract_imports(lines):
+    """提取源文件里的所有 import 语句（返回字符串列表，保留换行）"""
     imports = []
     for ln in lines:
         s = ln.strip()
@@ -60,57 +61,42 @@ def _extract_imports(lines):
 
 
 def _find_used_imports(block_text, source_imports):
+    """在切片文本里找到用了哪些 import 的标识符，返回对应的 import 语句列表"""
     used = []
     for imp in source_imports:
         s = imp.strip()
+        names = []
         if s.startswith("import "):
-            body = s[len("import "):]
-            names = [n.strip().split(" as ")[-1].strip() for n in body.split(",")]
+            # import { a, b } from 'x'; 或 import x from 'y'; 或 import * as z from 'w';
+            if " from " in s:
+                body = s.split(" from ")[0][len("import "):]
+                body = body.strip().strip("{").strip("}")
+                names = [n.strip().split(" as ")[-1].strip() for n in body.split(",")]
+            else:
+                body = s[len("import "):]
+                names = [n.strip().split(" as ")[-1].strip() for n in body.split(",")]
         elif s.startswith("from "):
             parts = s.split(" import ")
             if len(parts) != 2:
                 continue
-            names = [n.strip().split(" as ")[-1].strip() for n in parts[1].split(",")]
+            body = parts[1].strip().strip("{").strip("}")
+            names = [n.strip().split(" as ")[-1].strip() for n in body.split(",")]
         else:
             continue
         for n in names:
             if not n or n == "*":
                 continue
-            if n in block_text:
+            # 简单边界匹配：前后不是字母数字下划线
+            if _contains_word(block_text, n):
                 used.append(imp)
                 break
     return used
 
 
-
-def _extract_imports(lines):
-    out = []
-    for ln in lines:
-        s = ln.strip()
-        if s.startswith("import ") or s.startswith("from "):
-            out.append(ln if ln.endswith("\n") else ln + "\n")
-    return out
-
-
-def _find_used_imports(block_text, source_imports):
-    used = []
-    for imp in source_imports:
-        s = imp.strip()
-        if s.startswith("import "):
-            names = [n.strip().split(" as ")[-1].split(".")[0] for n in s[7:].split(",")]
-        elif s.startswith("from "):
-            parts = s.split(" import ")
-            if len(parts) != 2:
-                continue
-            names = [n.strip().split(" as ")[-1] for n in parts[1].split(",")]
-        else:
-            continue
-        for n in names:
-            if n and n != "*" and n in block_text:
-                used.append(imp)
-                break
-    return used
-
+def _contains_word(text, word):
+    """检查 text 里是否包含 word 作为独立标识符"""
+    import re
+    return re.search(r'(?<![A-Za-z0-9_$])' + re.escape(word) + r'(?![A-Za-z0-9_$])', text) is not None
 
 
 def run(params):
@@ -121,6 +107,7 @@ def run(params):
         "deleted_range": None,
         "main_file_syntax_ok": False,
         "new_file_syntax_ok": False,
+        "auto_imports": [],
         "error": None,
     }
     src = None
@@ -157,16 +144,18 @@ def run(params):
         if start >= end:
             raise ValueError("start(%d) 必须小于 end(%d)" % (start, end))
 
-        # v1.2: 从 end-1 往前找最后一个包含 } 的行，把尾部注释/空行保留在主文件里
+        # v1.3: 从 end-1 往前找最后一个包含 } 的行（>= start，支持单行函数）
         _actual_end = end - 1
-        while _actual_end > start:
+        _found = False
+        while _actual_end >= start:
             _line = lines[_actual_end - 1].strip()
             if _line and ('}' in _line):
+                _found = True
                 break
             _actual_end -= 1
-        if _actual_end <= start:
+        if not _found:
             raise ValueError("找不到函数结束的 }")
-        end = _actual_end + 1   # 1-based，下一行
+        end = _actual_end + 1
 
         block = lines[start - 1:end - 1]
         if not block:
@@ -183,20 +172,20 @@ def run(params):
         if not any(start_pattern in ln for ln in block):
             raise ValueError("切片不包含 start_pattern")
 
+        # v1.3: 分析切片用了哪些 import，自动补到新文件开头
+        source_imports = _extract_imports(lines)
+        block_text = "".join(block)
+        used_imports = _find_used_imports(block_text, source_imports)
+        result["auto_imports"] = [x.strip() for x in used_imports]
+
         src_backup = _backup(src)
 
         os.makedirs(os.path.dirname(newf) or ".", exist_ok=True)
-        source_imports = _extract_imports(lines)
-        block_text = "".join(block)
-        used_imports = _find_used_imports(block_text, source_imports)
-        source_imports = _extract_imports(lines)
-        block_text = "".join(block)
-        used_imports = _find_used_imports(block_text, source_imports)
         with open(newf, "w", encoding="utf-8") as f:
             f.writelines(used_imports)
             f.writelines(block)
         new_created = True
-        result["new_file_lines"] = len(block)
+        result["new_file_lines"] = len(block) + len(used_imports)
 
         ok, err = _syntax_ok(newf)
         result["new_file_syntax_ok"] = ok
