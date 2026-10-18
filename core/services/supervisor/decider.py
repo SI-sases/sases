@@ -152,7 +152,11 @@ async def task_summarizer(task):
                        '请确认', '请检查', '未做', '待做', '请用户', '需要用户', '请先', '请提供',
                        '发起第2轮', '发起第 2 轮', '发起第3轮', '发起第 3 轮', '下一轮', '请发起',
                        '第1轮完成', '第 1 轮完成', '本轮完成', '继续核对', '继续验证']
-    _hit = [kw for kw in _suspicious_kws if kw in _all_text]
+    _neg_contexts = ["未做修改", "未做改动", "不需要修改", "无需修改", "不影响", "未做变更"]
+    _text_clean = _all_text
+    for _neg in _neg_contexts:
+        _text_clean = _text_clean.replace(_neg, "")
+    _hit = [kw for kw in _suspicious_kws if kw in _text_clean]
     _force_continue = bool(_hit)
     if _hit:
         print('[supervisor] task_summarizer 代码规则命中: ' + ','.join(_hit) + ' —— 继续调 LLM 生成具体 hint')

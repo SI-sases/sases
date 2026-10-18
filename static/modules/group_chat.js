@@ -2,7 +2,6 @@
 import { api } from './api.js';
 import { showGroupToast } from './group_toast.js';
 import { openGroupFiles } from './group_file_ui.js';
-import './group_knowledge_ui.js';
 
 let currentGroupId = null;
 let currentGroupName = '';
@@ -506,7 +505,63 @@ window.openGroupKnowledgeDetail = async function(docId, groupId) {
   } catch (e) { alert('网络错误：' + e.message); }
 };
 
-// openGroupKnowledgeAdd 已迁移到 group_knowledge_ui.js
+window.openGroupKnowledgeAdd = function(groupId) {
+  const html = `
+    <div class="me-menu">
+      <div class="me-menu-item">
+        <span class="menu-label">标题</span>
+        <input id="gk-title" type="text" class="inline-input" placeholder="简短描述">
+      </div>
+      <div class="me-menu-item">
+        <span class="menu-label">分类</span>
+        <select id="gk-category" class="inline-input">
+          <option value="doc">文档</option>
+          <option value="faq">FAQ</option>
+          <option value="meeting">会议纪要</option>
+          <option value="policy">规章制度</option>
+        </select>
+      </div>
+    </div>
+    <div class="me-menu">
+      <div class="me-menu-item" style="display:block;padding:12px;">
+        <div style="font-size:13px;color:#666;margin-bottom:6px;">内容</div>
+        <textarea id="gk-content" rows="6" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:14px;resize:vertical;"></textarea>
+      </div>
+    </div>
+    <div class="me-menu">
+      <div class="me-menu-item">
+        <span class="menu-label">标签</span>
+        <input id="gk-tags" type="text" class="inline-input" placeholder="逗号分隔，可选">
+      </div>
+    </div>
+    <button class="save-btn" id="gk-submit">保存</button>
+  `;
+  window.openSubpage('添加知识', html, {
+    returnAction: () => window.openGroupKnowledge(groupId)
+  });
+  setTimeout(() => {
+    const btn = document.getElementById('gk-submit');
+    if (!btn) return;
+    btn.onclick = async () => {
+      const title = (document.getElementById('gk-title') || {}).value || '';
+      const content = (document.getElementById('gk-content') || {}).value || '';
+      const category = (document.getElementById('gk-category') || {}).value || 'doc';
+      const tags = (document.getElementById('gk-tags') || {}).value || '';
+      if (!content.trim()) { alert('内容不能为空'); return; }
+      try {
+        const resp = await fetch('/group/' + groupId + '/knowledge', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + localStorage.getItem('sases_token'), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: title.trim(), content: content, category: category, tags: tags })
+        });
+        const data = await resp.json();
+        if (data.error || data.detail) { alert('保存失败：' + (data.error || data.detail)); return; }
+        alert('已保存');
+        window.openGroupKnowledge(groupId);
+      } catch (e) { alert('网络错误：' + e.message); }
+    };
+  }, 100);
+};
 
 
 // ======================================================================
