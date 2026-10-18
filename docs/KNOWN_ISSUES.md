@@ -161,3 +161,10 @@
 82. 根因：ws\_hub 对同一 user\_id 只保留一个连接，新连接覆盖旧连接；旧连接被关闭时 Windows asyncio 抛异常。
 83. 状态：待处理（l1-server 阶段：ws\_hub 支持同一用户多连接，或前端限制单标签页连接）
 
+## 问题 16：多实例同时跑时 periodic\_git\_push 会争抢推送
+84. 
+85. 现象：主环境和 sases-clean 都跑 run\_forever.py，每小时都 `git push origin main`，可能互相覆盖。
+86. 影响：git 历史混乱，或推送失败刷日志。
+87. 根因：periodic\_git\_push 没有判断“当前实例是否应该推送”。
+88. 状态：待处理（l1-server 阶段加 ENABLE\_GIT\_PUSH 开关，默认只在主节点开）
+
