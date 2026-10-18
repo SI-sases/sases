@@ -74,11 +74,15 @@ class MainWindow(QMainWindow):
     # ---------- 托盘 ----------
     def _load_version_info(self):
         import json
+        import urllib.request
+        # 禁用代理，防止访问本地端口被代理软件拦截
+        proxy_handler = urllib.request.ProxyHandler({})
+        opener = urllib.request.build_opener(proxy_handler)
+        
+        url = f"http://127.0.0.1:{self._chosen_port}/version"
         try:
-            req = urllib.request.Request(
-                f"http://127.0.0.1:{self._chosen_port}/version"
-            )
-            with urllib.request.urlopen(req, timeout=3) as r:
+            req = urllib.request.Request(url)
+            with opener.open(req, timeout=3) as r:
                 data = json.loads(r.read().decode())
             txt = (
                 f"版本：{data.get('commit','?')} ({data.get('branch','?')}) | "
@@ -87,7 +91,7 @@ class MainWindow(QMainWindow):
                 f"端口：{data.get('port','?')}"
             )
         except Exception as e:
-            txt = f"版本：不可用（{e}）"
+            txt = f"版本：不可用 [URL: {url}] ({e})"
         self.version_label.setText(txt)
 
     def _setup_tray(self):
