@@ -41,6 +41,25 @@ def review_step(step: Dict[str, Any], status: str, output: str) -> Tuple[str, st
     if status == "skipped":
         return "retry", "跳过：依赖步骤失败"
 
+    # v0.44.0: verify_syntax 的 syntax_ok=false 检查
+    # 排除 undefined_calls 误报（跨文件 window 引用）
+    module_id = (step.get("module_id") or "").strip()
+    if module_id == "verify_syntax" and status == "success":
+        try:
+            import json as _json
+            _data = _json.loads(output) if isinstance(output, str) else output
+            if isinstance(_data, dict) and _data.get("syntax_ok") is False:
+                _err = str(_data.get("error") or "")
+                _undef = _data.get("undefined_calls") or []
+                # 只有真语法错误才 retry
+                if "SyntaxError" in _err or "Unexpected token" in _err or "unexpected" in _err.lower() or "missing" in _err.lower():
+                    return "retry", "verify_syntax 语法错误: " + _err[:150]
+                elif _undef:
+                    import sys as _sys
+                    print("[reviewer] verify_syntax undefined_calls 警告（不判失败）: %s" % _undef, file=_sys.stderr)
+        except Exception:
+            pass
+
     output_str = output or ""
     output_lower = output_str.lower()
     for kw in ERROR_KEYWORDS:

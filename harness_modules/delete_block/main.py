@@ -86,6 +86,7 @@ def run(params):
     start_pattern = params.get("start_pattern")
     end_marker = params.get("end_marker", "}")
     replace_with = params.get("replace_with", "")
+    dry_run = params.get("dry_run", False)
     if not fp or not start_pattern:
         return {"ok": False, "error": "缺少 file_path 或 start_pattern"}
 
@@ -120,6 +121,21 @@ def run(params):
 
     before_ctx = "".join(lines[max(0, start_idx - 2):start_idx])
     after_ctx = "".join(lines[end_idx + 1:end_idx + 3])
+
+    # v1.4: dry_run 模式——只返回要删除的内容，不实际删除
+    if dry_run:
+        _block = "".join(lines[start_idx:end_idx + 1])
+        return {
+            "ok": True,
+            "dry_run": True,
+            "file": str(p),
+            "deleted_range": [start_idx + 1, end_idx + 1],
+            "deleted_lines": end_idx - start_idx + 1,
+            "block": _block,
+            "before_context": before_ctx,
+            "after_context": after_ctx,
+        }
+
 
     # 4. 删除
     new_lines = lines[:start_idx]
