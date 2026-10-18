@@ -204,6 +204,17 @@ def _substitute_placeholders(cmd: str, previous_outputs: Dict[int, str]) -> str:
 
     def replace_match(match):
         step_num = int(match.group(1))
+        field = match.group(2) if match.re.groups >= 2 else None
+        if field and step_num in previous_outputs:
+            try:
+                import json as _json_ph
+                _raw = previous_outputs[step_num]
+                data = _json_ph.loads(_raw) if isinstance(_raw, str) else _raw
+                if isinstance(data, dict) and field in data:
+                    return str(data[field])
+            except Exception:
+                pass
+            return match.group(0)
         if step_num in previous_outputs:
             output = previous_outputs[step_num]
             for line in output.split("\n"):
@@ -217,8 +228,8 @@ def _substitute_placeholders(cmd: str, previous_outputs: Dict[int, str]) -> str:
                 return line
         return match.group(0)
 
-    cmd = re.sub(r'\{\{step(\d+)\}\}', replace_match, cmd)
-    cmd = re.sub(r'\{step(\d+)\}', replace_match, cmd)
+    cmd = re.sub(r'\{\{step(\d+)(?:\.([A-Za-z_][A-Za-z0-9_]*))?\}\}', replace_match, cmd)
+    cmd = re.sub(r'\{step(\d+)(?:\.([A-Za-z_][A-Za-z0-9_]*))?\}', replace_match, cmd)
     return cmd
 
 
