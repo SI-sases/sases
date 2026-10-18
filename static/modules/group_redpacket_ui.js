@@ -1,4 +1,5 @@
 import { api } from './api.js';
+// 待追加：openGroupRedPacket 原文（来自第2步读取结果）
 window.openGroupRedPacketDialog = function(groupId) {
   const html = `
     <div style="padding:16px;">
