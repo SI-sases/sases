@@ -100,6 +100,30 @@ function initLoginUI() {
 
   if (!loginBtn || !usernameInput || !passwordInput || !agreeCheckbox) return;
 
+  const goRegister = document.getElementById('go-register');
+  if (goRegister) {
+    goRegister.addEventListener('click', async (e) => {
+      e.preventDefault();
+      if (!agreeCheckbox.checked) {
+        alert('请先阅读并同意用户协议和隐私政策');
+        return;
+      }
+      const regUser = usernameInput.value.trim();
+      const regPass = passwordInput.value;
+      if (!regUser || !regPass) {
+        alert('请先在上方输入框填写用户名和密码，再点注册');
+        usernameInput.focus();
+        return;
+      }
+      try {
+        await register(regUser, regPass);
+        window.location.reload();
+      } catch (err) {
+        alert('注册失败: ' + (err.message || err));
+      }
+    });
+  }
+
   langButtons.forEach(btn => {
     btn.addEventListener('click', () => {
       const lang = btn.dataset.lang;

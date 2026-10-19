@@ -183,3 +183,11 @@
 99. 修复：改为检查 `"def \_load\_version\_info"`，已用 fix\_launcher\_version.py 补上。
 100. 状态：已修复。
 
+
+101. \## 问题 18：三者无法稳定使用 file\_patch 追加多行 API 代码
+102. 
+103. 现象：run 442 尝试往 version\_routes.py 末尾追加 check-update 接口，连续三次重拆均失败（锚点带换行符/引号解析错误）。
+104. 根因：大段多行代码作为 anchor 或 new\_content 时，LLM 生成的特殊字符（引号、大括号）容易与工具的 JSON 序列化发生冲突。
+105. 应对：通过手工脚本完成追加，或后续强化 prompt，引导它在追加文件时先 read 文件，用最后一行作为单行 anchor，再 position: after。
+106. 状态：已通过脚本绕过。
+
