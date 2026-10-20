@@ -32,7 +32,22 @@
             <span class="lang-divider">|</span>
             <button class="lang-btn" data-lang="en">English</button>
           </div>
-          <h2 class="login-title" id="login-title">SASES</h2>
+<div id="form-login" class="login-form active">
+            <h2 class="login-title" id="login-title">SASES</h2>
+            <p class="login-subtitle" id="login-subtitle">登录你的账号</p>
+            <input type="text" id="login-username" class="login-input" placeholder="用户名" autocomplete="username">
+            <input type="password" id="login-password" class="login-input" placeholder="密码" autocomplete="current-password">
+            <button id="login-btn" class="login-btn">登录</button>
+            <div class="agreement-row">
+              <input type="checkbox" id="agree-checkbox">
+              <label for="agree-checkbox" class="agreement-text" id="agreement-text">我已阅读并同意 <a href="#" id="user-agreement-link">用户协议</a> 和 <a href="#" id="privacy-policy-link">隐私政策</a></label>
+            </div>
+            <div class="login-links">
+              <a href="#" id="go-register">注册新账号</a>
+              <span class="link-divider">·</span>
+              <a href="#" id="forgot-password">找回密码</a>
+            </div>
+          </div>
           <p class="login-subtitle" id="login-subtitle">登录你的账号</p>
           <input type="text" id="login-username" class="login-input" placeholder="用户名 / Username" autocomplete="username">
           <input type="password" id="login-password" class="login-input" placeholder="密码 / Password" autocomplete="current-password">
