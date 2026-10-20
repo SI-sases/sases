@@ -16,6 +16,67 @@ security = HTTPBearer()
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+# ========== 注册校验 ==========
+import re
+
+USERNAME_MIN, USERNAME_MAX = 3, 20
+PASSWORD_MIN, PASSWORD_MAX = 8, 32
+
+
+def _is_same_char(s: str) -> bool:
+    return len(set(s)) == 1
+
+
+def _is_sequential(s: str) -> bool:
+    if len(s) < 3:
+        return False
+    diffs = [ord(s[i + 1]) - ord(s[i]) for i in range(len(s) - 1)]
+    return all(d == 1 for d in diffs) or all(d == -1 for d in diffs)
+
+
+def validate_username(username: str):
+    if not username:
+        return "用户名不能为空"
+    if not (USERNAME_MIN <= len(username) <= USERNAME_MAX):
+        return f"用户名长度需在 {USERNAME_MIN}-{USERNAME_MAX} 字符之间"
+    if not re.match(r'^[A-Za-z0-9_]+$', username):
+        return "用户名只能包含字母、数字、下划线"
+    if not re.match(r'^[A-Za-z0-9]', username):
+        return "用户名必须以字母或数字开头"
+    if _is_same_char(username):
+        return "用户名不能全部是同一个字符"
+    if _is_sequential(username):
+        return "用户名不能是连续字符序列（如 123456、abcdef）"
+    return None
+
+
+def validate_password(password: str, username: str):
+    if not password:
+        return "密码不能为空"
+    if not (PASSWORD_MIN <= len(password) <= PASSWORD_MAX):
+        return f"密码长度需在 {PASSWORD_MIN}-{PASSWORD_MAX} 字符之间"
+    if not re.search(r'[A-Za-z]', password):
+        return "密码必须包含字母"
+    if not re.search(r'\d', password):
+        return "密码必须包含数字"
+    if _is_same_char(password):
+        return "密码不能全部是同一个字符"
+    if _is_sequential(password):
+        return "密码不能是连续字符序列"
+    if password.lower() == username.lower():
+        return "密码不能与用户名相同"
+    return None
+
+
+def validate_email(email: str):
+    if not email:
+        return None
+    if len(email) > 120:
+        return "邮箱过长"
+    if not re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$', email):
+        return "邮箱格式不正确"
+    return None
+
 class RegisterRequest(BaseModel):
     username: str
     password: str
