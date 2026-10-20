@@ -9,6 +9,7 @@ from typing import Optional, List, Dict, Any
 from .. import config
 from ..db import db_cursor
 from . import work_service
+from core.services import executor_service
 from core.harness_runtime import harness_runtime
 
 client = openai.OpenAI(

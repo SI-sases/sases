@@ -13,6 +13,8 @@ security = HTTPBearer()
 
 
 class SendMessageRequest(BaseModel):
+    msg_type: Optional[str] = "standard"
+    attachments: Optional[list] = None
     conversation_id: Optional[int] = None
     agent_id: Optional[str] = None
     content: str
