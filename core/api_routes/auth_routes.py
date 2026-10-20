@@ -225,6 +225,36 @@ async def register(body: RegisterRequest):
         "sases_id": sases_id
     }
 
+class ResetPasswordRequest(BaseModel):
+    username: str
+    email: str
+    new_password: str
+
+
+@router.post("/auth/reset-password")
+async def reset_password(body: ResetPasswordRequest):
+    username = body.username.strip()
+    email = (body.email or "").strip()
+    new_password = body.new_password
+
+    if not username or not email or not new_password:
+        raise HTTPException(status_code=422, detail="用户名、邮箱、新密码不能为空")
+
+    err = validate_password(new_password, username)
+    if err:
+        raise HTTPException(status_code=400, detail=err)
+
+    with db_cursor(commit=True) as cur:
+        cur.execute("SELECT id FROM users WHERE username=? AND email=?", (username, email))
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="用户名与邮箱不匹配")
+        cur.execute("UPDATE users SET password_hash=? WHERE id=?", (hash_password(new_password), row["id"]))
+
+    return {"status": "ok", "message": "密码已重置，请用新密码登录"}
+
+
+
 @router.get("/auth/me")
 async def get_me(user: dict = Depends(get_current_user)):
     return {
