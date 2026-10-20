@@ -746,7 +746,7 @@ async function handleScroll() {
         const prevScrollHeight = container.scrollHeight;
         for (let i = olderMessages.length - 1; i >= 0; i--) {
           const msg = olderMessages[i];
-          const wrapper = createMessageElement(msg.sender, msg.content, msg.sender_name, msg.id, msg.created_at, false, true, chatState);
+          const wrapper = createMessageElement(msg.sender, msg.content, msg.sender_name, msg.id, msg.created_at, false, true, chatState, msg.msg_type, msg.attachments);
           container.insertBefore(wrapper, container.firstChild);
         }
         container.scrollTop = container.scrollHeight - prevScrollHeight;

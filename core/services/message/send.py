@@ -48,10 +48,13 @@ async def send_message(
     content: str,
     sender_agent_id: str = None,
     mode: str = "normal",
-    max_steps: int = None
+    max_steps: int = None,
+    msg_type: str = "standard",
+    attachments: list = None
 ):
-    print(f"[MSG_DEBUG] content={content!r} | mode={mode!r} | agent_id={agent_id!r}")
+    print(f"[MSG_DEBUG] content={content!r} | mode={mode!r} | agent_id={agent_id!r} | msg_type={msg_type}")
 
+    _att_str = json.dumps(attachments) if attachments else None
 
     # #5 清锁（最先拦截，绕过所有锁检查）
     if isinstance(content, str) and content.strip().startswith('#5'):
@@ -65,8 +68,8 @@ async def send_message(
             try:
                 with db_cursor(commit=True) as _c5:
                     _c5.execute(
-                        "INSERT INTO messages (conversation_id, sender, content, sender_agent_id) VALUES (?, 'assistant', ?, ?)",
-                        (conversation_id, _msg, sender_agent_id or agent_id)
+                        "INSERT INTO messages (conversation_id, sender, content, sender_agent_id, msg_type, attachments) VALUES (?, 'assistant', ?, ?, ?, ?)",
+                        (conversation_id, _msg, sender_agent_id or agent_id, msg_type, _att_str)
                     )
                     _c5.execute('UPDATE conversations SET updated_at=? WHERE id=?', (datetime.now().isoformat(), conversation_id))
             except Exception:
@@ -117,6 +120,7 @@ async def send_message(
         _poll_in.try_pollinate_from_input(user_id, conversation_id or 0, content)
     except Exception as _pe:
         print(f'[message] 输入授粉失败: {_pe}')
+        
     # 附件消息（[IMAGE]: / [FILE]:）直接入库，不调模型
     _IMG_IMP_E = ('图片导入知识库', '图片存入知识库', '这张图导入知识库', '把图存入知识库')
     _skip_e = any(_k in content for _k in _IMG_IMP_E) if isinstance(content, str) else False
@@ -131,7 +135,7 @@ async def send_message(
                     title = _r['name']
             conversation_id = create_conversation(user_id, agent_id, title)
         with db_cursor(commit=True) as _c:
-            _c.execute("INSERT INTO messages (conversation_id, sender, content, sender_agent_id) VALUES (?, 'user', ?, ?)", (conversation_id, content, sender_agent_id))
+            _c.execute("INSERT INTO messages (conversation_id, sender, content, sender_agent_id, msg_type, attachments) VALUES (?, 'user', ?, ?, ?, ?)", (conversation_id, content, sender_agent_id, msg_type, _att_str))
             _c.execute('UPDATE conversations SET updated_at=? WHERE id=?', (datetime.now().isoformat(), conversation_id))
         # 关键改动：把附件内容附加进来，不再 return，继续走正常问答
         try:
@@ -139,11 +143,8 @@ async def send_message(
         except Exception as _e:
             print('[message] enrich 失败: ' + str(_e))
 
-
-
     # ========== 检测草稿前缀 ==========
     require_confirmation = REQUIRE_TASK_CONFIRMATION
-    # 检测 #1~#4 编号前缀
     _numbered_prefix_matched = False
     _force_swarm = False
     for _p, _m in COMMAND_PREFIX_MAP.items():
@@ -245,7 +246,6 @@ async def send_message(
                     }
             break
 
-
     for prefix in DRAFT_PREFIXES:
         if content.startswith(prefix):
             require_confirmation = True
@@ -306,13 +306,13 @@ async def send_message(
                             if _mr:
                                 _mr = dict(_mr)
                                 with db_cursor(commit=True) as _cur:
-                                    _cur.execute('INSERT INTO messages (conversation_id, sender, content) VALUES (?, ?, ?)', (conversation_id, 'user', content))
+                                    _cur.execute('INSERT INTO messages (conversation_id, sender, content, msg_type, attachments) VALUES (?, ?, ?, ?, ?)', (conversation_id, 'user', content, msg_type, _att_str))
                                 try:
                                     _reply = await call_model_with_config(_mr, _ans_prompt)
                                 except Exception as _e:
                                     _reply = '模型调用失败: ' + str(_e)
                                 with db_cursor(commit=True) as _cur:
-                                    _cur.execute('INSERT INTO messages (conversation_id, sender, content) VALUES (?, ?, ?)', (conversation_id, 'assistant', _reply))
+                                    _cur.execute('INSERT INTO messages (conversation_id, sender, content, msg_type, attachments) VALUES (?, ?, ?, ?, ?)', (conversation_id, 'assistant', _reply, msg_type, _att_str))
                                     _cur.execute('UPDATE conversations SET updated_at=? WHERE id=?', (datetime.now().isoformat(), conversation_id))
                                 print('[message] 项目库快速回答命中，相似度 ' + str(round(_chunks[0].get('score', 0), 3)))
                                 return {'conversation_id': conversation_id, 'user_message': content, 'assistant_reply': _reply, 'agent_id': agent_id, 'sender_agent_id': sender_agent_id, 'mode': mode, 'project_kb_hit': True}
@@ -337,7 +337,7 @@ async def send_message(
                         if _img_reply:
                             try:
                                 with db_cursor(commit=True) as _cwi:
-                                    _cwi.execute("INSERT INTO messages (conversation_id, sender, content, sender_agent_id) VALUES (?, 'assistant', ?, ?)", (conversation_id, _img_reply, sender_agent_id or agent_id))
+                                    _cwi.execute("INSERT INTO messages (conversation_id, sender, content, sender_agent_id, msg_type, attachments) VALUES (?, 'assistant', ?, ?, ?, ?)", (conversation_id, _img_reply, sender_agent_id or agent_id, msg_type, _att_str))
                                     _cwi.execute("UPDATE conversations SET updated_at=? WHERE id=?", (datetime.now().isoformat(), conversation_id))
                             except Exception as _eiw:
                                 print("[message] 图片导入回写失败: " + str(_eiw))
@@ -353,11 +353,10 @@ async def send_message(
                     except Exception as _eii:
                         print("[message] 图片导入异常: " + str(_eii))
 
-
             # *1 统一导入（知识库/项目库）
             _uni_text = None
             _uni_target = 'kb'
-            if True:  # v0.18: 所有用户都能 *1 投喂个人知识库
+            if True:
                 for _up in ('*1：', '*1:'):
                     if content.startswith(_up):
                         _uni_body = content[len(_up):].strip()
@@ -397,7 +396,7 @@ async def send_message(
                         _img_rep = '图片导入异常：' + str(_e_img)
                     try:
                         with db_cursor(commit=True) as _cin_img:
-                            _cin_img.execute("INSERT INTO messages (conversation_id, sender, content, sender_agent_id) VALUES (?, 'assistant', ?, ?)", (conversation_id, _img_rep, sender_agent_id))
+                            _cin_img.execute("INSERT INTO messages (conversation_id, sender, content, sender_agent_id, msg_type, attachments) VALUES (?, 'assistant', ?, ?, ?, ?)", (conversation_id, _img_rep, sender_agent_id, msg_type, _att_str))
                             _cin_img.execute("UPDATE conversations SET updated_at=? WHERE id=?", (_dtn.now().isoformat(), conversation_id))
                     except Exception as _e2_img:
                         print('[message] *1 单行图片导入回写失败: ' + str(_e2_img))
@@ -430,7 +429,7 @@ async def send_message(
                     conversation_id = create_conversation(user_id, agent_id or 'sases_assistant_2', '导入知识库')
                 try:
                     with db_cursor(commit=True) as _cin_uni:
-                        _cin_uni.execute("INSERT INTO messages (conversation_id, sender, content, sender_agent_id) VALUES (?, 'assistant', ?, ?)", (conversation_id, _urep, sender_agent_id))
+                        _cin_uni.execute("INSERT INTO messages (conversation_id, sender, content, sender_agent_id, msg_type, attachments) VALUES (?, 'assistant', ?, ?, ?, ?)", (conversation_id, _urep, sender_agent_id, msg_type, _att_str))
                         _cin_uni.execute("UPDATE conversations SET updated_at=? WHERE id=?", (datetime.now().isoformat(), conversation_id))
                 except Exception as _e2_uni:
                     print('[message] *1 导入回写失败: ' + str(_e2_uni))
@@ -464,7 +463,7 @@ async def send_message(
                     conversation_id = create_conversation(user_id, agent_id or 'sases_assistant_2', '导入知识库')
                 try:
                     with db_cursor(commit=True) as _cin:
-                        _cin.execute("INSERT INTO messages (conversation_id, sender, content, sender_agent_id) VALUES (?, 'assistant', ?, ?)", (conversation_id, _irep_inline, sender_agent_id))
+                        _cin.execute("INSERT INTO messages (conversation_id, sender, content, sender_agent_id, msg_type, attachments) VALUES (?, 'assistant', ?, ?, ?, ?)", (conversation_id, _irep_inline, sender_agent_id, msg_type, _att_str))
                         _cin.execute("UPDATE conversations SET updated_at=? WHERE id=?", (datetime.now().isoformat(), conversation_id))
                 except Exception as _e2_inline:
                     print('[supervisor] 文字导入回写失败: ' + str(_e2_inline))
@@ -499,15 +498,13 @@ async def send_message(
                         else:
                             _irep = '导入失败：' + _ires.get('error', '未知')
                     with db_cursor(commit=True) as _cwi:
-                        _cwi.execute("INSERT INTO messages (conversation_id, sender, content, sender_agent_id) VALUES (?, 'assistant', ?, ?)", (conversation_id, _irep, sender_agent_id))
+                        _cwi.execute("INSERT INTO messages (conversation_id, sender, content, sender_agent_id, msg_type, attachments) VALUES (?, 'assistant', ?, ?, ?, ?)", (conversation_id, _irep, sender_agent_id, msg_type, _att_str))
                         _cwi.execute("UPDATE conversations SET updated_at=? WHERE id=?", (datetime.now().isoformat(), conversation_id))
                     return {'conversation_id': conversation_id, 'user_message': content, 'assistant_reply': _irep, 'agent_id': agent_id, 'sender_agent_id': sender_agent_id, 'mode': mode, 'import_mode': True}
                 except Exception as _ei:
                     print('[supervisor] 导入失败: ' + str(_ei))
 
-
             # 对话模式（v0.18.0）：非任务、非技术指令、非问候，直接回答
-            pass
             if sender_agent_id and not is_task and not _is_operation and not _is_harness_call and not _is_greeting:
                 try:
                     from .. import supervisor_service as _sv
@@ -525,15 +522,12 @@ async def send_message(
                             _lines = [l.strip() for l in _rc.split(chr(10)) if l.strip() and not l.strip().startswith(('我们', '需要', '首先', '分析', '但', '然而', '因此', '所以', '根据'))]
                             if _lines:
                                 _chat_reply = ' '.join(_lines[-3:])[:300]
-                    pass
-
-                    pass
 
                     if _chat_reply:
                         with db_cursor(commit=True) as _ccur:
                             _ccur.execute(
-                                "INSERT INTO messages (conversation_id, sender, content, sender_agent_id) VALUES (?, 'assistant', ?, ?)",
-                                (conversation_id, _chat_reply, sender_agent_id)
+                                "INSERT INTO messages (conversation_id, sender, content, sender_agent_id, msg_type, attachments) VALUES (?, ?, ?, ?, ?, ?)",
+                                (conversation_id, 'assistant', _chat_reply, sender_agent_id, msg_type, _att_str)
                             )
                             _ccur.execute(
                                 "UPDATE conversations SET updated_at=? WHERE id=?",
@@ -550,7 +544,6 @@ async def send_message(
                         }
                 except Exception as _che:
                     print('[supervisor] 对话模式失败: ' + str(_che))
-
 
             if is_task:
                 if not conversation_id:
@@ -570,8 +563,8 @@ async def send_message(
                     if _dc_ok:
                         with db_cursor(commit=True) as _cur_dc:
                             _cur_dc.execute(
-                                "INSERT INTO messages (conversation_id, sender, content, sender_agent_id) VALUES (?, 'assistant', ?, ?)",
-                                (conversation_id, _dc_reply, sender_agent_id or 'sases_assistant_2')
+                                "INSERT INTO messages (conversation_id, sender, content, sender_agent_id, msg_type, attachments) VALUES (?, 'assistant', ?, ?, ?, ?)",
+                                (conversation_id, _dc_reply, sender_agent_id or 'sases_assistant_2', msg_type, _att_str)
                             )
                             _cur_dc.execute(
                                 "UPDATE conversations SET updated_at=? WHERE id=?",
@@ -616,8 +609,8 @@ async def send_message(
                                 print('[supervisor] 提议执行 run_id=' + str(_rid) + ' goal=' + _dec['goal'][:50])
                                 with db_cursor(commit=True) as _c3:
                                     _c3.execute(
-                                        "INSERT INTO messages (conversation_id, sender, content, sender_agent_id) VALUES (?, 'assistant', ?, ?)",
-                                        (conversation_id, '【提议执行】' + _dec['goal'][:80], sender_agent_id)
+                                        "INSERT INTO messages (conversation_id, sender, content, sender_agent_id, msg_type, attachments) VALUES (?, 'assistant', ?, ?, ?, ?)",
+                                        (conversation_id, '【提议执行】' + _dec['goal'][:80], sender_agent_id, msg_type, _att_str)
                                     )
                                 return {
                                     'conversation_id': conversation_id,
@@ -631,8 +624,6 @@ async def send_message(
                     except Exception as _e2:
                         print('[supervisor] 提议检查失败: ' + str(_e2))
 
-
-                # (旧对话模式已删)
                 # 调度者回执（v0.18.0 带上下文）
                 if sender_agent_id:
                     try:
@@ -657,8 +648,8 @@ async def send_message(
                             print(f"[supervisor] 回执生成失败，用默认: {_ce}")
                         with db_cursor(commit=True) as _cur:
                             _cur.execute(
-                                "INSERT INTO messages (conversation_id, sender, content, sender_agent_id) VALUES (?, 'assistant', ?, ?)",
-                                (conversation_id, _receipt, sender_agent_id)
+                                "INSERT INTO messages (conversation_id, sender, content, sender_agent_id, msg_type, attachments) VALUES (?, 'assistant', ?, ?, ?, ?)",
+                                (conversation_id, _receipt, sender_agent_id, msg_type, _att_str)
                             )
                             _cur.execute(
                                 "UPDATE conversations SET updated_at=? WHERE id=?",
@@ -724,8 +715,8 @@ async def send_message(
 
         with db_cursor(commit=True) as cur:
             cur.execute(
-                "INSERT INTO messages (conversation_id, sender, content, sender_agent_id) VALUES (?, 'assistant', ?, ?)",
-                (conversation_id, content, sender_agent_id)
+                "INSERT INTO messages (conversation_id, sender, content, sender_agent_id, msg_type, attachments) VALUES (?, 'assistant', ?, ?, ?, ?)",
+                (conversation_id, content, sender_agent_id, msg_type, _att_str)
             )
             cur.execute(
                 "UPDATE conversations SET updated_at=? WHERE id=?",
@@ -804,11 +795,11 @@ async def send_message(
 
     with db_cursor(commit=True) as cur:
         if sender_agent_id:
-            cur.execute("INSERT INTO messages (conversation_id, sender, content, sender_agent_id) VALUES (?, 'user', ?, ?)",
-                        (conversation_id, content, sender_agent_id))
+            cur.execute("INSERT INTO messages (conversation_id, sender, content, sender_agent_id, msg_type, attachments) VALUES (?, 'user', ?, ?, ?, ?)",
+                        (conversation_id, content, sender_agent_id, msg_type, _att_str))
         else:
-            cur.execute("INSERT INTO messages (conversation_id, sender, content) VALUES (?, 'user', ?)",
-                        (conversation_id, content))
+            cur.execute("INSERT INTO messages (conversation_id, sender, content, msg_type, attachments) VALUES (?, 'user', ?, ?, ?)",
+                        (conversation_id, content, msg_type, _att_str))
         cur.execute("UPDATE conversations SET updated_at=? WHERE id=?", (datetime.now().isoformat(), conversation_id))
 
     if agent_id:
@@ -859,8 +850,8 @@ async def send_message(
         assistant_reply = "请先在“我的→模型管理”中配置模型，或从智能体页面发起对话"
 
     with db_cursor(commit=True) as cur:
-        cur.execute("INSERT INTO messages (conversation_id, sender, content) VALUES (?, 'assistant', ?)",
-                    (conversation_id, assistant_reply))
+        cur.execute("INSERT INTO messages (conversation_id, sender, content, msg_type, attachments) VALUES (?, 'assistant', ?, ?, ?)",
+                    (conversation_id, assistant_reply, msg_type, _att_str))
         cur.execute("UPDATE conversations SET updated_at=? WHERE id=?", (datetime.now().isoformat(), conversation_id))
 
     try:
@@ -877,4 +868,3 @@ async def send_message(
         "sender_agent_id": sender_agent_id,
         "mode": mode
     }
-
