@@ -100,29 +100,58 @@ function initLoginUI() {
 
   if (!loginBtn || !usernameInput || !passwordInput || !agreeCheckbox) return;
 
-  const goRegister = document.getElementById('go-register');
-  if (goRegister) {
-    goRegister.addEventListener('click', async (e) => {
-      e.preventDefault();
-      if (!agreeCheckbox.checked) {
-        alert('请先阅读并同意用户协议和隐私政策');
-        return;
-      }
-      const regUser = usernameInput.value.trim();
-      const regPass = passwordInput.value;
-      if (!regUser || !regPass) {
-        alert('请先在上方输入框填写用户名和密码，再点注册');
-        usernameInput.focus();
-        return;
-      }
-      try {
-        await register(regUser, regPass);
-        window.location.reload();
-      } catch (err) {
-        alert('注册失败: ' + (err.message || err));
-      }
-    });
+  function showLoginForm(name) {
+    document.querySelectorAll('.login-form').forEach(el => el.classList.remove('active'));
+    const target = document.getElementById('form-' + name);
+    if (target) target.classList.add('active');
   }
+
+  const goRegister = document.getElementById('go-register');
+  if (goRegister) goRegister.addEventListener('click', (e) => { e.preventDefault(); showLoginForm('register'); });
+
+  const goForgot = document.getElementById('forgot-password');
+  if (goForgot) goForgot.addEventListener('click', (e) => { e.preventDefault(); showLoginForm('reset'); });
+
+  const regBack = document.getElementById('reg-back');
+  if (regBack) regBack.addEventListener('click', (e) => { e.preventDefault(); showLoginForm('login'); });
+
+  const resetBack = document.getElementById('reset-back');
+  if (resetBack) resetBack.addEventListener('click', (e) => { e.preventDefault(); showLoginForm('login'); });
+
+  const regSubmit = document.getElementById('reg-submit');
+  if (regSubmit) regSubmit.addEventListener('click', async () => {
+    const u = document.getElementById('reg-username').value.trim();
+    const p = document.getElementById('reg-password').value;
+    const p2 = document.getElementById('reg-password2').value;
+    const em = document.getElementById('reg-email').value.trim();
+    if (!u || !p) { alert('用户名和密码不能为空'); return; }
+    if (p !== p2) { alert('两次输入的密码不一致'); return; }
+    try {
+      const res = await fetch('/auth/register', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ username: u, password: p, email: em || null }) });
+      const data = await res.json();
+      if (!res.ok) { const msg = data.error || data.message || (Array.isArray(data.detail) ? data.detail[0]?.msg : data.detail) || '注册失败'; alert(msg); return; }
+      localStorage.setItem('sases_token', data.access_token);
+      localStorage.setItem('sases_username', data.username);
+      localStorage.setItem('sases_user_id', data.user_id);
+      localStorage.setItem('sases_sas_id', data.sases_id || '');
+      window.location.reload();
+    } catch (err) { alert('网络错误: ' + err.message); }
+  });
+
+  const resetSubmit = document.getElementById('reset-submit');
+  if (resetSubmit) resetSubmit.addEventListener('click', async () => {
+    const u = document.getElementById('reset-username').value.trim();
+    const em = document.getElementById('reset-email').value.trim();
+    const p = document.getElementById('reset-password').value;
+    if (!u || !em || !p) { alert('所有字段都必须填写'); return; }
+    try {
+      const res = await fetch('/auth/reset-password', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ username: u, email: em, new_password: p }) });
+      const data = await res.json();
+      if (!res.ok) { const msg = data.error || data.message || (Array.isArray(data.detail) ? data.detail[0]?.msg : data.detail) || '重置失败'; alert(msg); return; }
+      alert(data.message || '密码已重置，请用新密码登录');
+      showLoginForm('login');
+    } catch (err) { alert('网络错误: ' + err.message); }
+  });
 
   langButtons.forEach(btn => {
     btn.addEventListener('click', () => {
