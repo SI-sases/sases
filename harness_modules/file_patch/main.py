@@ -147,6 +147,14 @@ def _mode_snippet(abs_path, safe_path, params):
     with open(abs_path, "w", encoding="utf-8") as f:
         f.write(new_content)
 
+    # v2.9.1: 写后读回校验
+    with open(abs_path, "r", encoding="utf-8") as f:
+        _chk = f.read()
+    if new_content not in _chk:
+        with open(abs_path, "w", encoding="utf-8") as f:
+            f.write(original)
+        raise ValueError(f"写入校验失败：{safe_path} 实际写入内容与预期不符（可能被截断），已自动回滚。")
+
     return {
         "success": True, "mode": "snippet", "file_path": safe_path,
         "matches_replaced": count,
@@ -263,6 +271,14 @@ def _mode_anchor(abs_path, safe_path, params):
     with open(abs_path, "w", encoding="utf-8") as f:
         f.write(new_text)
 
+    # v2.9.1: 写后读回校验
+    with open(abs_path, "r", encoding="utf-8") as f:
+        _chk = f.read()
+    if _chk != new_text:
+        with open(abs_path, "w", encoding="utf-8") as f:
+            f.write(original)
+        raise ValueError(f"写入校验失败：{safe_path} 实际写入内容与预期不符（可能被截断），已自动回滚。")
+
     return {
         "success": True, "mode": "anchor", "file_path": safe_path,
         "anchor": anchor, "matched_line_number": idx + 1,
@@ -295,6 +311,14 @@ def _mode_create(abs_path, safe_path, params):
 
     with open(abs_path, "w", encoding="utf-8") as f:
         f.write(new_content)
+
+    # v2.9.1: 写后读回校验
+    with open(abs_path, "r", encoding="utf-8") as f:
+        _chk = f.read()
+    if new_content not in _chk:
+        with open(abs_path, "w", encoding="utf-8") as f:
+            f.write(original)
+        raise ValueError(f"写入校验失败：{safe_path} 实际写入内容与预期不符（可能被截断），已自动回滚。")
 
     return {
         "success": True,
