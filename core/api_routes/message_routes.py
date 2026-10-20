@@ -77,7 +77,9 @@ async def send_message(body: SendMessageRequest, user_id: int = Depends(get_curr
         content=body.content,
         sender_agent_id=body.sender_agent_id,
         mode=body.mode,
-        max_steps=body.max_steps
+        max_steps=body.max_steps,
+        msg_type=body.msg_type,
+        attachments=body.attachments
     )
     try:
         from .ws_routes import broadcast_to_user
