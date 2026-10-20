@@ -180,24 +180,40 @@ async def _login(username: str, password: str):
 async def register(body: RegisterRequest):
     username = body.username.strip()
     password = body.password
-    if not username or not password:
-        raise HTTPException(status_code=422, detail="用户名和密码不能为空")
-    if len(username) < 2 or len(username) > 32:
-        raise HTTPException(status_code=422, detail="用户名长度需在2-32个字符之间")
-    if len(password) < 4:
-        raise HTTPException(status_code=422, detail="密码长度至少4个字符")
+    email = (body.email or "").strip() or None
+
+    err = validate_username(username)
+    if err:
+        raise HTTPException(status_code=400, detail=err)
+
+    err = validate_password(password, username)
+    if err:
+        raise HTTPException(status_code=400, detail=err)
+
+    err = validate_email(email or "")
+    if err:
+        raise HTTPException(status_code=400, detail=err)
 
     password_hash = hash_password(password)
     sases_id = generate_sases_id()
     try:
         with db_cursor(commit=True) as cur:
+            cur.execute("SELECT id FROM users WHERE username=?", (username,))
+            if cur.fetchone():
+                raise HTTPException(status_code=409, detail="用户名已存在")
+            if email:
+                cur.execute("SELECT id FROM users WHERE email=?", (email,))
+                if cur.fetchone():
+                    raise HTTPException(status_code=409, detail="该邮箱已被使用")
             cur.execute(
-                "INSERT INTO users (username, password_hash, sases_id) VALUES (?, ?, ?)",
-                (username, password_hash, sases_id)
+                "INSERT INTO users (username, password_hash, sases_id, email) VALUES (?, ?, ?, ?)",
+                (username, password_hash, sases_id, email)
             )
             user_id = cur.lastrowid
-    except Exception:
-        raise HTTPException(status_code=409, detail="用户名已存在")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"注册失败: {e}")
 
     token = create_access_token(user_id)
     return {
