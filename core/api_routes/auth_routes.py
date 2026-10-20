@@ -80,6 +80,7 @@ def validate_email(email: str):
 class RegisterRequest(BaseModel):
     username: str
     password: str
+    email: str | None = None
 
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
