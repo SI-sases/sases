@@ -475,7 +475,7 @@ function updateInputPlaceholder() {
   }
 }
 
-export function openChatWindow(conversationId, chatName, agentId = null, agentType = 'my') {
+export function openChatWindow(conversationId, chatName, agentId = null, agentType = 'my', isFriendChat = 0, friendMode = 'normal') {
 
   // 好友模式切换按钮（模拟）
   if (chatState && chatState.is_friend_chat == 1) {
@@ -503,6 +503,21 @@ export function openChatWindow(conversationId, chatName, agentId = null, agentTy
   try { initParamBar(); } catch (e) { console.warn('[chat] param_bar 初始化失败', e); }
 
   const titleEl = document.getElementById('chat-window-title');
+  // ====== 好友模式按钮 ======
+  const topBar = document.querySelector('.top-actions') || document.querySelector('.top-bar');
+  const oldBtn = document.getElementById('friend-mode-btn');
+  if (oldBtn) oldBtn.remove();
+  if (isFriendChat === 1 && topBar) {
+    const btn = document.createElement('button');
+    btn.id = 'friend-mode-btn';
+    btn.style.cssText = 'margin-right: 8px; padding: 4px 8px; font-size: 12px; border-radius: 4px; border: none; color: #fff; cursor: pointer; background: ' + (friendMode === 'free' ? '#ff9500' : '#007aff') + ';';
+    btn.textContent = friendMode === 'free' ? '⚡ 自由模式' : '💬 普通模式';
+    btn.onclick = () => {
+      alert('当前模式: ' + friendMode + '，点击切换功能待实现');
+    };
+    topBar.insertBefore(btn, topBar.firstChild);
+  }
+
   if (titleEl) titleEl.textContent = chatName || '会话';
 
   document.getElementById('view-chat-window').style.display = 'flex';
