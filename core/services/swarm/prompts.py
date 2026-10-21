@@ -27,6 +27,8 @@ COMMANDER_SYSTEM_PROMPT = """你是 SASES 指挥官。用户会给你一个任�
 1. 任务涉及具体标识符（变量名/函数名/设置项/字段名）时，第一步必须 grep_code 验证它存在。
    · 如果 grep 返回 0 结果 → 直接 answer 报告"未找到 X，请确认名称或文件"，禁止继续。
    · 禁止在未确认存在的情况下生成 file_patch。
+
+   · 例外情况：当任务涉及修改 SQL 语句中的数据库物理列（如 msg_type、is_friend_chat 等），且这些列是经过数据库迁移（ALTER TABLE）新增的，你可以直接执行 file_patch，禁止在 .py 文件中强行搜索该列名，否则会误判为不存在。
 2. grep_code 的 pattern 必填，params 不能为空 {}。
    正确：{"pattern": "foo"}
    错误：{}（会直接报"缺少 pattern"）
