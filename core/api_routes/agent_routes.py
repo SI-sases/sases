@@ -63,24 +63,33 @@ async def get_received_friend_requests(user_id: int = Depends(get_current_user))
 async def accept_friend_request(body: AcceptRequest, user_id: int = Depends(get_current_user)):
     try:
         with db_cursor(commit=True) as cur:
-            cur.execute("SELECT sender_id, receiver_id FROM agent_friend_requests WHERE id=? AND receiver_id=? AND status='pending'", (body.request_id, user_id))
+            # 1. 查真实的好友请求
+            cur.execute("SELECT user_id, target_user_id FROM agent_friendships WHERE id=? AND status='pending'", (body.request_id,))
             row = cur.fetchone()
             if not row:
-                raise PermissionError("好友请求不存在或无权处理")
-            sender_id = row[0]
-            receiver_id = row[1]
-            cur.execute("UPDATE agent_friendships SET status='accepted' WHERE user_id=? AND friend_user_id=?", (sender_id, receiver_id))
-            cur.execute("UPDATE agent_friendships SET status='accepted' WHERE user_id=? AND friend_user_id=?", (receiver_id, sender_id))
-            cur.execute("UPDATE agent_friend_requests SET status='accepted' WHERE id=?", (body.request_id,))
-            cur.execute("SELECT 1 FROM conversations WHERE user_id=? AND target_user_id=? AND is_friend_chat=1", (sender_id, receiver_id))
+                raise PermissionError("好友请求不存在或已处理")
+            
+            sender_id = row[0]       # 发起请求的人
+            receiver_id = row[1]     # 同意请求的人 (当前用户)
+            
+            # 2. 更新好友关系为 accepted
+            cur.execute("UPDATE agent_friendships SET status='accepted' WHERE id=?", (body.request_id,))
+            
+            # 3. 为发起者建会话 (如果不存在)
+            cur.execute("SELECT id FROM conversations WHERE user_id=? AND target_user_id=? AND is_friend_chat=1", (sender_id, receiver_id))
             if not cur.fetchone():
-                cur.execute("INSERT INTO conversations (user_id, target_user_id, is_friend_chat) VALUES (?, ?, 1)", (sender_id, receiver_id))
-            cur.execute("SELECT 1 FROM conversations WHERE user_id=? AND target_user_id=? AND is_friend_chat=1", (receiver_id, sender_id))
+                cur.execute("INSERT INTO conversations (user_id, target_user_id, title, is_friend_chat, friend_mode) VALUES (?, ?, ?, 1, 'normal')", (sender_id, receiver_id, f"与 User{receiver_id} 聊天"))
+                
+            # 4. 为接收者建会话 (如果不存在)
+            cur.execute("SELECT id FROM conversations WHERE user_id=? AND target_user_id=? AND is_friend_chat=1", (receiver_id, sender_id))
             if not cur.fetchone():
-                cur.execute("INSERT INTO conversations (user_id, target_user_id, is_friend_chat) VALUES (?, ?, 1)", (receiver_id, sender_id))
+                cur.execute("INSERT INTO conversations (user_id, target_user_id, title, is_friend_chat, friend_mode) VALUES (?, ?, ?, 1, 'normal')", (receiver_id, sender_id, f"与 User{sender_id} 聊天"))
+                
         return {"status": "accepted"}
     except PermissionError as e:
         raise HTTPException(status_code=403, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/friend-requests/reject")
 async def reject_friend_request(body: AcceptRequest, user_id: int = Depends(get_current_user)):
@@ -99,20 +108,6 @@ async def call_agent(body: CallAgentRequest, user_id: int = Depends(get_current_
         raise HTTPException(status_code=402, detail=str(e))
     except PermissionError as e:
         raise HTTPException(status_code=403, detail=str(e))
-
-
-@router.post("/chat")
-async def api_suggest_reply(body: CallAgentRequest, user_id: int = Depends(get_current_user)):
-    """根据智能体生成建议回复（不入库）"""
-    from ..services import chat_service
-    try:
-        reply = await chat_service.call_agent_chat(user_id, body.agent_id, body.query)
-        return {"response": reply}
-    except PermissionError as e:
-        raise HTTPException(status_code=403, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
 
 @router.post("/chat")
 async def api_suggest_reply(body: CallAgentRequest, user_id: int = Depends(get_current_user)):
@@ -143,14 +138,15 @@ async def set_friend_mode(body: FriendModeRequest, user_id: int = Depends(get_cu
             if not cur.fetchone():
                 raise HTTPException(status_code=403, detail="你们还不是好友")
                 
-            # 更新模式
+            # 更新好友关系表中的模式
             cur.execute("UPDATE agent_friendships SET friend_mode=? WHERE user_id=? AND target_user_id=?", (body.mode, user_id, body.target_user_id))
             
-            # 同步更新会话模式
-            cur.execute("UPDATE conversations SET friend_mode=? WHERE user_id=? AND is_friend_chat=1", (body.mode, user_id))
+            # 精确更新当前与这个好友的会话模式（加上 target_user_id 防止误改别人的）
+            cur.execute("UPDATE conversations SET friend_mode=? WHERE user_id=? AND target_user_id=? AND is_friend_chat=1", (body.mode, user_id, body.target_user_id))
             
         return {"status": "ok", "mode": body.mode}
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"[friend-mode 报错] {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-    
