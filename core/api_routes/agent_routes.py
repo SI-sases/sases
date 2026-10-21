@@ -13,6 +13,7 @@ router = APIRouter(prefix="/agents", tags=["agents"])
 security = HTTPBearer()
 
 class FriendRequest(BaseModel):
+    target_sases_id: str
     agent_id: str
 
 class CallAgentRequest(BaseModel):
