@@ -51,13 +51,25 @@ async function loadConversations(container) {
 
     let html = '';
 
-    // 渲染单聊会话
+    // 安全转义函数，防止 XSS 和 HTML 结构破坏
+    const escapeHtml = (str) => {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    };
+
+    // ================= 渲染单聊会话 =================
     conversations.forEach(conv => {
-      const agentName = conv.title || '会话';
-      const lastMessage = conv.last_message || '';
+      const agentName = escapeHtml(conv.title || '会话');
+      const lastMessage = escapeHtml(conv.last_message || '');
       const unread = conv.unread_count || 0;
       const pinned = conv.is_pinned ? 'pinned' : '';
-      const lastSenderName = conv.last_sender_name || '';
+      const pinnedVal = conv.is_pinned ? 1 : 0;
+      const lastSenderName = escapeHtml(conv.last_sender_name || '');
       const displayLast = lastSenderName ? `${lastSenderName}: ${lastMessage}` : lastMessage;
 
       html += `
@@ -70,30 +82,30 @@ async function loadConversations(container) {
             <div class="session-name">${agentName}</div>
             <div class="session-last">${displayLast}</div>
           </div>
-          <button class="session-more-btn" data-type="single" data-id="${conv.id}" data-pinned="${conv.is_pinned}">⋯</button>
+          <button class="session-more-btn" data-type="single" data-id="${conv.id}" data-pinned="${pinnedVal}">⋯</button>
         </div>
       `;
     });
 
-    // 渲染群聊会话
+    // ================= 渲染群聊会话 =================
     const _hiddenGroups = (() => { try { return JSON.parse(localStorage.getItem('sases_hidden_groups') || '[]'); } catch(e) { return []; } })();
 
     groups.forEach(group => {
-      const groupName = group.name || '群聊';
-      const lastMessage = group.last_message || '';
-      const lastSenderName = group.last_sender_name || '';
+      const groupName = escapeHtml(group.name || '群聊');
+      const lastMessage = escapeHtml(group.last_message || '');
+      const lastSenderName = escapeHtml(group.last_sender_name || '');
       const displayLast = lastSenderName ? `${lastSenderName}: ${lastMessage}` : lastMessage;
       const groupId = group.id;
       if (_hiddenGroups.map(String).includes(String(groupId))) return;
 
-
       const _groupPinned = group.is_pinned ? 'pinned' : '';
       const _groupUnread = group.unread_count || 0;
+      
       html += `
         <div class="session-item ${_groupPinned}" data-type="group" data-group-id="${groupId}" data-title="${groupName}" data-pinned="${group.is_pinned ? 1 : 0}">
           <div class="session-avatar">
             ${groupName.charAt(0)}
-            ${_groupUnread > 0 ? '<span class="unread-badge">' + _groupUnread + '</span>' : ''}
+            ${_groupUnread > 0 ? `<span class="unread-badge">${_groupUnread}</span>` : ''}
           </div>
           <div class="session-info">
             <div class="session-name">${groupName}</div>
@@ -106,18 +118,22 @@ async function loadConversations(container) {
 
     container.innerHTML = html;
 
+    // ... 下面的点击事件绑定保持不变 ...
     initPullToRefresh(container, async () => {
       await loadConversations(container);
     });
 
+    // ================= 绑定点击事件 =================
     container.querySelectorAll('.session-item').forEach(item => {
       item.addEventListener('click', (e) => {
         if (e.target.closest('.session-more-btn')) return;
         const type = item.dataset.type;
+        
         // 上报新手引导动作：打开会话视为完成"发送消息"任务的前置
         if (typeof window.onboarding?.report === 'function') {
           window.onboarding.report('send_message');
         }
+        
         if (type === 'single') {
           const conversationId = item.dataset.conversationId;
           const agentId = item.dataset.agentId || null;
@@ -126,6 +142,7 @@ async function loadConversations(container) {
           const isFriendChat = parseInt(item.dataset.isFriend || 0);
           const friendMode = item.dataset.friendMode || 'normal';
           
+          // 把 is_friend_chat 和 friend_mode 透传给聊天窗口
           openChatWindow(conversationId, title, agentId, agentType, isFriendChat, friendMode);
         } else if (type === 'group') {
           const groupId = item.dataset.groupId;
@@ -149,6 +166,7 @@ async function loadConversations(container) {
       });
     });
   } catch (e) {
+    console.error('loadConversations error:', e);
     container.innerHTML = `<div class="empty">${t('load_failed')}: ${e.message}</div>`;
   }
 }
@@ -184,8 +202,6 @@ function showSessionMenu(btn, items, onSelect) {
     document.addEventListener('click', closer);
   }, 0);
 }
-
-
 
 function showSingleSessionActions(conversationId, pinned, btn) {
   if (btn && typeof showSessionMenu === 'function') {
@@ -224,7 +240,6 @@ function showGroupSessionActions(groupId, btn) {
         api.markGroupRead(groupId).then(() => location.reload()).catch(e => alert('操作失败: ' + (e.message || '')));
         return;
       }
-
       if (a === 'pin') {
         api.togglePinGroup(groupId, !pinned).then(() => location.reload()).catch(e => alert('操作失败: ' + (e.message || '')));
         return;
@@ -246,7 +261,7 @@ function showGroupSessionActions(groupId, btn) {
     try {
       const list = JSON.parse(localStorage.getItem('sases_hidden_groups') || '[]').map(String);
       const _gid = String(groupId);
-          if (!list.includes(_gid)) list.push(_gid);
+      if (!list.includes(_gid)) list.push(_gid);
       localStorage.setItem('sases_hidden_groups', JSON.stringify(list));
     } catch(e) {}
     if (btn && btn.closest('.session-item')) btn.closest('.session-item').remove();
