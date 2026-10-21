@@ -62,7 +62,22 @@ async def get_received_friend_requests(user_id: int = Depends(get_current_user))
 @router.post("/friend-requests/accept")
 async def accept_friend_request(body: AcceptRequest, user_id: int = Depends(get_current_user)):
     try:
-        agent_service.accept_friend_request(user_id, body.request_id)
+        with db_cursor(commit=True) as cur:
+            cur.execute("SELECT sender_id, receiver_id FROM agent_friend_requests WHERE id=? AND receiver_id=? AND status='pending'", (body.request_id, user_id))
+            row = cur.fetchone()
+            if not row:
+                raise PermissionError("好友请求不存在或无权处理")
+            sender_id = row[0]
+            receiver_id = row[1]
+            cur.execute("UPDATE agent_friendships SET status='accepted' WHERE user_id=? AND friend_user_id=?", (sender_id, receiver_id))
+            cur.execute("UPDATE agent_friendships SET status='accepted' WHERE user_id=? AND friend_user_id=?", (receiver_id, sender_id))
+            cur.execute("UPDATE agent_friend_requests SET status='accepted' WHERE id=?", (body.request_id,))
+            cur.execute("SELECT 1 FROM conversations WHERE user_id=? AND target_user_id=? AND is_friend_chat=1", (sender_id, receiver_id))
+            if not cur.fetchone():
+                cur.execute("INSERT INTO conversations (user_id, target_user_id, is_friend_chat) VALUES (?, ?, 1)", (sender_id, receiver_id))
+            cur.execute("SELECT 1 FROM conversations WHERE user_id=? AND target_user_id=? AND is_friend_chat=1", (receiver_id, sender_id))
+            if not cur.fetchone():
+                cur.execute("INSERT INTO conversations (user_id, target_user_id, is_friend_chat) VALUES (?, ?, 1)", (receiver_id, sender_id))
         return {"status": "accepted"}
     except PermissionError as e:
         raise HTTPException(status_code=403, detail=str(e))
