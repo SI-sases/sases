@@ -7,6 +7,7 @@ def list_conversations(user_id: int):
     with db_cursor() as cur:
         cur.execute("""
             SELECT c.id, c.title, c.agent_id, c.updated_at, c.unread_count, c.is_pinned,
+                   c.is_friend_chat, c.friend_mode,
                    (SELECT content FROM messages WHERE conversation_id=c.id ORDER BY id DESC LIMIT 1) as last_message,
                    (SELECT sender FROM messages WHERE conversation_id=c.id ORDER BY id DESC LIMIT 1) as last_sender,
                    (SELECT sender_agent_id FROM messages WHERE conversation_id=c.id ORDER BY id DESC LIMIT 1) as last_sender_agent_id

@@ -476,6 +476,16 @@ function updateInputPlaceholder() {
 }
 
 export function openChatWindow(conversationId, chatName, agentId = null, agentType = 'my') {
+
+  // 好友模式切换按钮（模拟）
+  if (chatState && chatState.is_friend_chat == 1) {
+    var bar = document.createElement('div');
+    bar.className = 'friend-mode-bar';
+    bar.innerHTML = '<button onclick="alert(\'好友模式切换（模拟）\')">切换好友模式</button>';
+    var host = document.getElementById('chat-header') || document.body;
+    host.insertBefore(bar, host.firstChild);
+  }
+
   chatState.conversationId = conversationId ? parseInt(conversationId) : null;
   chatState.agentId = agentId;
   chatState.agentType = agentType;
