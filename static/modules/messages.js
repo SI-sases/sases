@@ -122,7 +122,7 @@ async function loadConversations(container) {
           const conversationId = item.dataset.conversationId;
           const agentId = item.dataset.agentId || null;
           const title = item.dataset.title;
-          openChatWindow(conversationId, title, agentId);
+          openChatWindow(conversationId, title, agentId, conv.agent_type || 'my', conv.is_friend_chat || 0, conv.friend_mode || 'normal');
         } else if (type === 'group') {
           const groupId = item.dataset.groupId;
           const title = item.dataset.title;
