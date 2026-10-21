@@ -20,8 +20,12 @@ def check_friend_gate(user_id, conversation_id, sender_agent_id, content, agent_
                     'friend_mode': 'normal'
                 }
             elif _fmode == 'free':
-                from core.services.task_engine import dispatch_task
-                dispatch_task(user_id, content, context_type="friend", context_id=str(conversation_id))
+                try:
+                    from core.services.task_engine import dispatch_task
+                    dispatch_task(user_id, content, context_type="friend", context_id=str(conversation_id))
+                except Exception as e:
+                    print(f"[friend_gate] 任务派发失败: {e}")
+                
                 return {
                     'conversation_id': conversation_id,
                     'user_message': content,

@@ -546,7 +546,7 @@ async def send_message(
                     print('[supervisor] 对话模式失败: ' + str(_che))
 
             if is_task:
-                from .friend_gate import check_friend_gate
+                from core.services.friend_gate import check_friend_gate
                 _gate_res = check_friend_gate(user_id, conversation_id, sender_agent_id, content, agent_id, mode)
                 if _gate_res:
                     return _gate_res
