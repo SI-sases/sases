@@ -507,14 +507,42 @@ export function openChatWindow(conversationId, chatName, agentId = null, agentTy
   const topBar = document.querySelector('.top-actions') || document.querySelector('.top-bar');
   const oldBtn = document.getElementById('friend-mode-btn');
   if (oldBtn) oldBtn.remove();
+
   if (isFriendChat === 1 && topBar) {
     const btn = document.createElement('button');
     btn.id = 'friend-mode-btn';
     btn.style.cssText = 'margin-right: 8px; padding: 4px 8px; font-size: 12px; border-radius: 4px; border: none; color: #fff; cursor: pointer; background: ' + (friendMode === 'free' ? '#ff9500' : '#007aff') + ';';
     btn.textContent = friendMode === 'free' ? '⚡ 自由模式' : '💬 普通模式';
-    btn.onclick = () => {
-      alert('当前模式: ' + friendMode + '，点击切换功能待实现');
+
+    btn.onclick = async () => {
+      const nextMode = friendMode === 'free' ? 'normal' : 'free';
+      try {
+        const token = localStorage.getItem('sases_token');
+        const res = await fetch('/agents/friend-mode', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify({ 
+            target_user_id: 13, // 注意：这里是你的测试用户B的ID，正式版建议从会话信息里取
+            mode: nextMode 
+          })
+        });
+        
+        if (res.ok) {
+          friendMode = nextMode;
+          btn.textContent = friendMode === 'free' ? '⚡ 自由模式' : '💬 普通模式';
+          btn.style.background = friendMode === 'free' ? '#ff9500' : '#007aff';
+          btn.dataset.mode = friendMode;
+        } else {
+          alert('切换失败，请检查后端日志');
+        }
+      } catch (err) {
+        console.error('切换好友模式失败:', err);
+      }
     };
+    
     topBar.insertBefore(btn, topBar.firstChild);
   }
 

@@ -61,7 +61,7 @@ async function loadConversations(container) {
       const displayLast = lastSenderName ? `${lastSenderName}: ${lastMessage}` : lastMessage;
 
       html += `
-        <div class="session-item ${pinned}" data-type="single" data-conversation-id="${conv.id}" data-agent-id="${conv.agent_id || ''}" data-title="${agentName}">
+        <div class="session-item ${pinned}" data-type="single" data-conversation-id="${conv.id}" data-agent-id="${conv.agent_id || ''}" data-title="${agentName}" data-is-friend="${conv.is_friend_chat || 0}" data-friend-mode="${conv.friend_mode || 'normal'}">
           <div class="session-avatar">
             ${agentName.charAt(0)}
             ${unread > 0 ? `<span class="unread-badge">${unread}</span>` : ''}
@@ -122,7 +122,11 @@ async function loadConversations(container) {
           const conversationId = item.dataset.conversationId;
           const agentId = item.dataset.agentId || null;
           const title = item.dataset.title;
-          openChatWindow(conversationId, title, agentId, conv.agent_type || 'my', conv.is_friend_chat || 0, conv.friend_mode || 'normal');
+          const agentType = item.dataset.agentType || 'my';
+          const isFriendChat = parseInt(item.dataset.isFriend || 0);
+          const friendMode = item.dataset.friendMode || 'normal';
+          
+          openChatWindow(conversationId, title, agentId, agentType, isFriendChat, friendMode);
         } else if (type === 'group') {
           const groupId = item.dataset.groupId;
           const title = item.dataset.title;
