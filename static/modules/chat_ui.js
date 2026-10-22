@@ -207,7 +207,7 @@ export function appendMessage(role, content, senderName = null, messageId = null
   messages.appendChild(wrapper);
   if (!chatState || !chatState._bulkLoading) messages.scrollTop = messages.scrollHeight;
 
-  if ((role === 'assistant' || role === 'friend') && typeof window.attachLongPress === 'function') {
+  if (((role === 'assistant' || role === 'friend') || role === 'friend') && typeof window.attachLongPress === 'function') {
     window.attachLongPress(wrapper, chatState);
   if (wrapper && wrapper.querySelector && wrapper.querySelector('.red-packet-bubble')) {
     const bubble = wrapper.querySelector('.red-packet-bubble');
