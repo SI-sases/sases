@@ -20,6 +20,10 @@ function _openWs(uid) {
     const proto = location.protocol === 'https:' ? 'wss://' : 'ws://';
     const url = proto + location.host + '/ws/user/' + uid;
     _ws = new WebSocket(url);
+    
+    // 【关键修复】：暴露给全局，方便在 Console 调试
+    window._ws = _ws; 
+
     _ws.onopen = () => {
       console.log('[user-ws] connected for user', uid);
       if (_ws._hb) clearInterval(_ws._hb);
@@ -30,7 +34,8 @@ function _openWs(uid) {
     _ws.onmessage = (e) => {
       try {
         const d = JSON.parse(e.data);
-        if (d && d.type === 'new_message') {
+        // 兼容不同的推送类型名称
+        if (d && (d.type === 'new_message' || d.type === 'sases_new_message')) {
           window.dispatchEvent(new CustomEvent('sases_new_message', { detail: d }));
         }
       } catch (err) {}

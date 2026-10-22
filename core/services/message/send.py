@@ -104,6 +104,14 @@ async def send_message(
                 _auto_title = _rq0['name']
         conversation_id = create_conversation(user_id, agent_id, _auto_title)
         print(f"[MSG_DEBUG] 兜底创建 conversation_id={conversation_id}")
+    # ====== 强制跨账号投递（优先级最高，只要有会话就推给 B） ======
+    if conversation_id:
+        try:
+            from core.services import cross_account_delivery as _cad
+            _cad.deliver_to_linked_accounts(user_id, conversation_id, content, sender_agent_id, msg_type, attachments)
+        except Exception as _cade:
+            print('[message] 跨账号投递调用失败: ' + str(_cade))
+    # ====== 投递结束 ======
 
     # v0.39.0: [CONTENT]: 多段规范化
     if isinstance(content, str) and '[CONTENT]:' in content:
@@ -138,11 +146,7 @@ async def send_message(
         with db_cursor(commit=True) as _c:
             _c.execute("INSERT INTO messages (conversation_id, sender, content, sender_agent_id, msg_type, attachments) VALUES (?, 'user', ?, ?, ?, ?)", (conversation_id, content, sender_agent_id, msg_type, _att_str))
             _c.execute('UPDATE conversations SET updated_at=? WHERE id=?', (datetime.now().isoformat(), conversation_id))
-        try:
-            from .. import cross_account_delivery as _cad
-            _cad.deliver_to_linked_accounts(user_id, conversation_id, content, sender_agent_id)
-        except Exception as _cade:
-            print('[message] 跨账号投递失败: ' + str(_cade))
+
         # 关键改动：把附件内容附加进来，不再 return，继续走正常问答
         try:
             content = _enrich_attachment(content)

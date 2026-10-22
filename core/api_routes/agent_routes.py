@@ -13,8 +13,8 @@ router = APIRouter(prefix="/agents", tags=["agents"])
 security = HTTPBearer()
 
 class FriendRequest(BaseModel):
-    target_sases_id: str
-    agent_id: str
+    target_sases_id: Optional[str] = None
+    agent_id: Optional[str] = None
 
 class CallAgentRequest(BaseModel):
     agent_id: str
@@ -49,11 +49,41 @@ async def search_agents(q: str, include_self: bool = False, user_id: int = Depen
 
 @router.post("/friend-request")
 async def send_friend_request(body: FriendRequest, user_id: int = Depends(get_current_user)):
-    try:
-        agent_service.send_friend_request(user_id, body.agent_id)
+    # 1. 如果传了 target_sases_id，说明是加真人好友
+    if body.target_sases_id:
+        with db_cursor(commit=True) as cur:
+            cur.execute("SELECT id FROM users WHERE sases_id=?", (body.target_sases_id,))
+            target = cur.fetchone()
+            if not target:
+                raise HTTPException(status_code=404, detail="找不到该 SASES ID 的用户")
+            
+            target_user_id = target["id"]
+            if target_user_id == user_id:
+                raise HTTPException(status_code=400, detail="不能添加自己为好友")
+                
+            # 查是否已经是好友或待同意
+            cur.execute("SELECT status FROM agent_friendships WHERE user_id=? AND target_user_id=?", (user_id, target_user_id))
+            exist = cur.fetchone()
+            if exist:
+                if exist["status"] == "accepted":
+                    raise HTTPException(status_code=400, detail="你们已经是好友了")
+                elif exist["status"] == "pending":
+                    raise HTTPException(status_code=400, detail="请求已发送，等待对方同意")
+                    
+            # 插入真实好友请求
+            cur.execute("INSERT INTO agent_friendships (user_id, friend_agent_id, target_user_id, status, friend_mode) VALUES (?, 'dummy', ?, 'pending', 'normal')", (user_id, target_user_id))
         return {"status": "request_sent"}
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+
+    # 2. 如果传了 agent_id，说明是原有的加智能体功能
+    elif body.agent_id:
+        try:
+            agent_service.send_friend_request(user_id, body.agent_id)
+            return {"status": "request_sent"}
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+            
+    else:
+        raise HTTPException(status_code=400, detail="必须提供 target_sases_id 或 agent_id")
 
 @router.get("/friend-requests")
 async def get_received_friend_requests(user_id: int = Depends(get_current_user)):

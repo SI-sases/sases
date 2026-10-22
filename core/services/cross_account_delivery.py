@@ -1,0 +1,40 @@
+# core/services/cross_account_delivery.py
+import json
+import asyncio
+from core.db import db_cursor
+
+def deliver_to_linked_accounts(user_id, conversation_id, content, sender_agent_id, msg_type='standard', attachments=None):
+    try:
+        _att_str = json.dumps(attachments) if attachments else None
+        
+        with db_cursor(commit=True) as cur:
+            # 1. 查找对方的 user_id
+            cur.execute("SELECT target_user_id FROM conversations WHERE id=?", (conversation_id,))
+            _t_row = cur.fetchone()
+            if _t_row and _t_row["target_user_id"]:
+                _target_uid = _t_row["target_user_id"]
+                
+                # 2. 查对方的会话
+                cur.execute("SELECT id FROM conversations WHERE user_id=? AND target_user_id=? AND is_friend_chat=1", (_target_uid, user_id))
+                _t_conv = cur.fetchone()
+                if _t_conv:
+                    _target_conv_id = _t_conv["id"]
+                    
+                    # 3. 写入对方数据库
+                    cur.execute(
+                        "INSERT INTO messages (conversation_id, sender, content, sender_agent_id, msg_type, attachments) VALUES (?, ?, ?, ?, ?, ?)",
+                        (_target_conv_id, 'user', content, sender_agent_id, msg_type, _att_str)
+                    )
+                    cur.execute("UPDATE conversations SET updated_at=CURRENT_TIMESTAMP WHERE id=?", (_target_conv_id,))
+                    
+                    # 4. WebSocket 实时推送
+                    from core.api_routes.ws_routes import broadcast_to_user
+                    asyncio.create_task(broadcast_to_user(_target_uid, {
+                        "type": "sases_new_message",
+                        "conversation_id": _target_conv_id,
+                        "content": content,
+                        "sender_agent_id": sender_agent_id
+                    }))
+                    print(f"[投递成功] 消息已推送给用户 {_target_uid}")
+    except Exception as e:
+        print(f"[message] 跨账号投递失败: {e}")
