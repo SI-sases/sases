@@ -31,6 +31,7 @@ def deliver_to_linked_accounts(user_id, conversation_id, content, sender_agent_i
                     from core.api_routes.ws_routes import broadcast_to_user
                     asyncio.create_task(broadcast_to_user(_target_uid, {
                         "type": "sases_new_message",
+                        "sender": "friend",
                         "conversation_id": _target_conv_id,
                         "content": content,
                         "sender": "friend",

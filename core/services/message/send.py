@@ -139,6 +139,12 @@ async def send_message(
             _c.execute("INSERT INTO messages (conversation_id, sender, content, sender_agent_id, msg_type, attachments) VALUES (?, 'user', ?, ?, ?, ?)", (conversation_id, content, sender_agent_id, msg_type, _att_str))
             _c.execute('UPDATE conversations SET updated_at=? WHERE id=?', (datetime.now().isoformat(), conversation_id))
 
+            try:
+                from core.services import cross_account_delivery as _cad
+                _cad.deliver_to_linked_accounts(user_id, conversation_id, content, sender_agent_id, msg_type, attachments)
+            except Exception as _cade:
+                print('[message] 跨账号投递调用失败: ' + str(_cade))
+
         # 关键改动：把附件内容附加进来，不再 return，继续走正常问答
         try:
             content = _enrich_attachment(content)
