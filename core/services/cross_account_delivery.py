@@ -23,7 +23,7 @@ def deliver_to_linked_accounts(user_id, conversation_id, content, sender_agent_i
                     # 3. 写入对方数据库
                     cur.execute(
                         "INSERT INTO messages (conversation_id, sender, content, sender_agent_id, msg_type, attachments) VALUES (?, ?, ?, ?, ?, ?)",
-                        (_target_conv_id, 'user', content, sender_agent_id, msg_type, _att_str)
+                        (_target_conv_id, 'friend', content, sender_agent_id, msg_type, _att_str)
                     )
                     cur.execute("UPDATE conversations SET updated_at=CURRENT_TIMESTAMP WHERE id=?", (_target_conv_id,))
                     
@@ -33,6 +33,7 @@ def deliver_to_linked_accounts(user_id, conversation_id, content, sender_agent_i
                         "type": "sases_new_message",
                         "conversation_id": _target_conv_id,
                         "content": content,
+                        "sender": "friend",
                         "sender_agent_id": sender_agent_id
                     }))
                     print(f"[投递成功] 消息已推送给用户 {_target_uid}")

@@ -817,6 +817,17 @@ window.addEventListener('sases_new_message', (e) => {
   const d = e.detail || {};
   // 忽略用户自己发的消息（本地已渲染）
   if (d.sender === 'user') return;
+    if (d.sender === 'friend') {
+      const _box = document.getElementById('chat-messages');
+      if (_box) {
+        const _el = document.createElement('div');
+        _el.className = 'message assistant';
+        _el.textContent = d.content || '';
+        _box.appendChild(_el);
+        if (typeof scrollToBottom === 'function') scrollToBottom();
+      }
+      return;
+    }
   const _cid = d.conversation_id;
   if (_cid && chatState.conversationId && String(_cid) !== String(chatState.conversationId)) return;
   // 收到最终结果（非协议消息）时，自动移除任务按钮卡片
