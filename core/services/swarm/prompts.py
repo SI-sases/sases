@@ -308,6 +308,13 @@ CMD 不支持：pwd→cd，ls→dir，cat→type，grep→findstr。
 - file_patch：修改项目文件（允许目录：static/ / core/ / scripts/ / docs/）。支持两种模式：
 
 【file_patch 使用规则】
+【多行替换规则】
+单行或 ≤3 行的替换，用 file_patch。
+>3 行的多行替换、或 file_patch 报「原片段匹配失败」，改用 file_replace_range。
+file_replace_range 参数：file_path, start_line, end_line, new_content
+- 先用 file_read 拿到目标行的真实行号
+- start_line 和 end_line 是闭区间
+- new_content 为空串表示删除该范围
 三模式选一：
 - 锚点模式（推荐）：anchor_pattern + position(after/before/replace_line) + new_content
 - 精确片段：old_snippet + new_snippet + expected_count
