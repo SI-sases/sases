@@ -257,7 +257,7 @@ def send_group_message(group_id: int, sender_id: int, content: str, sender_agent
                 cur.execute("SELECT id FROM group_resource_pool WHERE group_id=? AND agent_id=? AND enabled=1", (group_id, sender_agent_id))
                 if not cur.fetchone():
                     return False, "智能体不在群中"
-            cur.execute("INSERT INTO group_messages (group_id, sender_id, sender_agent_id, content, global_msg_id, origin_node) VALUES (?, ?, ?, ?, ?, ?)", (group_id, sender_id, sender_agent_id, content, _global_msg_id, _cfg.HIVE_NODE_ID if _global_msg_id else None))
+            cur.execute("INSERT INTO group_messages (group_id, sender_id, sender_agent_id, content, global_msg_id, origin_node, msg_type, attachments) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (group_id, sender_id, sender_agent_id, content, _global_msg_id, _cfg.HIVE_NODE_ID if _global_msg_id else None, 'standard', None))
         else:
             cur.execute("SELECT id FROM group_members WHERE group_id=? AND user_id=?", (group_id, sender_id))
             if not cur.fetchone():
@@ -266,7 +266,7 @@ def send_group_message(group_id: int, sender_id: int, content: str, sender_agent
             _ru = cur.fetchone()
             if _ru:
                 _sender_sases_id = _ru['sases_id']
-            cur.execute("INSERT INTO group_messages (group_id, sender_id, content, global_msg_id, origin_node) VALUES (?, ?, ?, ?, ?)", (group_id, sender_id, content, _global_msg_id, _cfg.HIVE_NODE_ID if _global_msg_id else None))
+            cur.execute("INSERT INTO group_messages (group_id, sender_id, content, global_msg_id, origin_node, msg_type, attachments) VALUES (?, ?, ?, ?, ?, ?, ?)", (group_id, sender_id, content, _global_msg_id, _cfg.HIVE_NODE_ID if _global_msg_id else None, 'standard', None))
 
     if _global_msg_id and _global_gid and _cfg.HIVE_PEERS:
         try:
@@ -644,8 +644,8 @@ def insert_agent_message(group_id, agent_id, content, trigger_user_id=0):
             _gmid = (_cfg.HIVE_NODE_ID or 'unknown') + ':m-' + _sec.token_hex(8)
     with db_cursor(commit=True) as cur:
         cur.execute(
-            "INSERT INTO group_messages (group_id, sender_id, sender_agent_id, content, global_msg_id, origin_node) VALUES (?, ?, ?, ?, ?, ?)",
-            (group_id, trigger_user_id, agent_id, content, _gmid, _cfg.HIVE_NODE_ID if _gmid else None)
+            "INSERT INTO group_messages (group_id, sender_id, sender_agent_id, content, global_msg_id, origin_node, msg_type, attachments) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (group_id, trigger_user_id, agent_id, content, _gmid, _cfg.HIVE_NODE_ID if _gmid else None, 'standard', None)
         )
         msg_id = cur.lastrowid
     return msg_id

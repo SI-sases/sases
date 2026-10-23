@@ -249,7 +249,7 @@ async def plan_task(
                 print(f"[precheck] warnings: {_pre_warns}")
             if _pre_blocks:
                 print(f"[precheck] blocked: {_pre_blocks}")
-                return None
+                return {"status": "no_plan", "reason": "precheck blocked: " + str(_pre_blocks)}
         if _fmt_errors:
             print(f"[swarm] step 格式错误: {_fmt_errors}")
             return None
@@ -545,7 +545,7 @@ async def replan_failed_steps(task: Dict[str, Any], max_steps: int = None) -> Op
                 print(f"[precheck] warnings: {_pre_warns}")
             if _pre_blocks:
                 print(f"[precheck] blocked: {_pre_blocks}")
-                return None
+                return {"status": "no_plan", "reason": "precheck blocked: " + str(_pre_blocks)}
         if _fmt_errors:
             print(f"[swarm] step 格式错误: {_fmt_errors}")
             return None
