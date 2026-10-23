@@ -252,10 +252,21 @@ async def handle_step_done(
                             if _review.get('goal_achieved'):
                                 _decision = {'action': 'done'}
                             else:
-                                _decision = {'action': 'execute', 'task': '[MODIFY] ' + (_review.get('next_hint') or '继续完成目标')}
+                                _ans_wait_text = ''
+                                for _r_w in task.get('results', []):
+                                    if (_r_w.get('module_id') == 'answer' or _r_w.get('command') == 'answer') and _r_w.get('status') == 'success':
+                                        _ans_wait_text += str(_r_w.get('output') or '') + ' ' + str(_r_w.get('answer') or '')
+                                _wait_kw = ['请提供', '请说明', '请告诉', '请确认', '需要你', '请补', '请先', '请给']
+                                if _ans_wait_text and any(_k in _ans_wait_text for _k in _wait_kw):
+                                    _decision = {'action': 'waiting_user'}
+                                else:
+                                    _decision = {'action': 'execute', 'task': '[MODIFY] ' + (_review.get('next_hint') or '继续完成目标')}
                         else:
                             _decision = await supervisor_service.decide_next_step(_run_id)
-                        if _decision and _decision.get("action") == "done":
+                        if _decision and _decision.get("action") == "waiting_user":
+                            supervisor_service.finish_run(_run_id, "waiting_user")
+                            print(f"[supervisor] run {_run_id} 等待用户输入，已放锁")
+                        elif _decision and _decision.get("action") == "done":
                             supervisor_service.finish_run(_run_id, "completed")
                             print(f"[supervisor] run {_run_id} 已完成（调度者判定）")
                         elif _decision and _decision.get("task"):
@@ -565,10 +576,21 @@ async def handle_step_done(
                             if _review.get('goal_achieved'):
                                 _decision = {'action': 'done'}
                             else:
-                                _decision = {'action': 'execute', 'task': '[MODIFY] ' + (_review.get('next_hint') or '继续完成目标')}
+                                _ans_wait_text = ''
+                                for _r_w in task.get('results', []):
+                                    if (_r_w.get('module_id') == 'answer' or _r_w.get('command') == 'answer') and _r_w.get('status') == 'success':
+                                        _ans_wait_text += str(_r_w.get('output') or '') + ' ' + str(_r_w.get('answer') or '')
+                                _wait_kw = ['请提供', '请说明', '请告诉', '请确认', '需要你', '请补', '请先', '请给']
+                                if _ans_wait_text and any(_k in _ans_wait_text for _k in _wait_kw):
+                                    _decision = {'action': 'waiting_user'}
+                                else:
+                                    _decision = {'action': 'execute', 'task': '[MODIFY] ' + (_review.get('next_hint') or '继续完成目标')}
                         else:
                             _decision = await supervisor_service.decide_next_step(_run_id)
-                        if _decision and _decision.get("action") == "done":
+                        if _decision and _decision.get("action") == "waiting_user":
+                            supervisor_service.finish_run(_run_id, "waiting_user")
+                            print(f"[supervisor] run {_run_id} 等待用户输入，已放锁")
+                        elif _decision and _decision.get("action") == "done":
                             supervisor_service.finish_run(_run_id, "completed")
                             print(f"[supervisor] run {_run_id} 已完成（调度者判定）")
                         elif _decision and _decision.get("task"):

@@ -39,8 +39,13 @@ async def resume_restart_pending_runs():
                 _hist_r = json.loads(row.get('history') or '[]')
                 _last_rev = _hist_r[-1].get('review') if _hist_r else None
                 if _last_rev and isinstance(_last_rev, dict) and _last_rev.get('goal_achieved') is True:
-                    with db_cursor(commit=True) as _cur_done:
-                        _cur_done.execute("UPDATE supervisor_runs SET status='completed' WHERE id=?", (_rid,))
+                    try:
+                        from .runs import finish_run as _fr_resume
+                        _fr_resume(_rid, 'completed')
+                    except Exception as _e_fr:
+                        print('[supervisor] resume finish_run 失败: ' + str(_e_fr))
+                        with db_cursor(commit=True) as _cur_done:
+                            _cur_done.execute("UPDATE supervisor_runs SET status='completed' WHERE id=?", (_rid,))
                     print('[supervisor] resume: run ' + str(_rid) + ' 目标已达成，直接 completed')
                     continue
             except Exception as _e_hist:

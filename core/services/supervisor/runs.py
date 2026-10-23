@@ -115,8 +115,36 @@ def cancel_run(run_id, user_id):
 
 
 def finish_run(run_id, status='completed'):
+    _conv_id = None
+    _sup_id = None
+    try:
+        with db_cursor() as _c_pre:
+            _c_pre.execute('SELECT conversation_id, supervisor_id FROM supervisor_runs WHERE id=?', (run_id,))
+            _r_pre = _dict(_c_pre.fetchone())
+            if _r_pre:
+                _conv_id = _r_pre.get('conversation_id')
+                _sup_id = _r_pre.get('supervisor_id')
+    except Exception as _e_pre:
+        print('[supervisor] finish_run 预查失败: ' + str(_e_pre))
     with db_cursor(commit=True) as cur:
-        cur.execute("UPDATE supervisor_runs SET status=%s, finished_at=NOW() WHERE id=%s", (status, run_id))
+        cur.execute('UPDATE supervisor_runs SET status=?, finished_at=? WHERE id=?', (status, datetime.now().isoformat(), run_id))
+    try:
+        if _conv_id:
+            from ..swarm.helpers import _insert_message as _im_fin
+            if status == 'completed':
+                _msg_fin = '[SUMMARY]:OK 执行已结束'
+            elif status == 'waiting_user':
+                _msg_fin = '[SUMMARY]:等待你补充信息后继续（可立即发新任务）'
+            elif status == 'restart_pending':
+                _msg_fin = '[SUMMARY]:改动完成，等待重启验证'
+            elif status in ('failed', 'plan_failed', 'error', 'timeout', 'interrupted'):
+                _msg_fin = '[SUMMARY]:执行失败（' + str(status) + '）'
+            else:
+                _msg_fin = '[SUMMARY]:执行结束（' + str(status) + '）'
+            _im_fin(_conv_id, _msg_fin, sender_agent_id=_sup_id)
+            print('[supervisor] finish_run 推送: ' + _msg_fin)
+    except Exception as _e_fin:
+        print('[supervisor] finish_run 推送失败: ' + str(_e_fin))
     print('[supervisor] finish_run: ' + str(run_id) + ' -> ' + status)
 
 # (旧版 build_context 已删除，用第 12 行版本)

@@ -23,7 +23,7 @@ def clear_conversation_lock(conversation_id: str) -> bool:
         if cur.rowcount:
             cleared = True
         cur.execute(
-            "UPDATE supervisor_runs SET status='failed', finished_at=? WHERE conversation_id=? AND status IN ('running','running_resumed','restart_pending')",
+            "UPDATE supervisor_runs SET status='failed' WHERE conversation_id=? AND status IN ('running','running_resumed','restart_pending')",
             (conversation_id,),
         )
         if cur.rowcount:

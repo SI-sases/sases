@@ -164,12 +164,12 @@ export function showFreeModeGuide(container, isSases = false) {
   guide.innerHTML = `
     <div style="font-weight:600; margin-bottom:8px;">💡 使用提示</div>
     <div>· 直接输入文字与我对话</div>
+    <div>· #0：清除会话锁，例 #0：清锁</div>
             <div>· #1：跑一条命令，例 #1：看看 core 目录有什么</div>
     <div>· #2：让 AI 拆解完成，例 #2：帮我做一份文件放在桌面上</div>
     <div>· #3：先看方案再执行，例 #3：整理一下我的下载文件夹</div>
     <div>· #4：自主循环完成，例 #4：把红包功能做好</div>
 
-    <div>· #5：清除会话锁，例 #5：清锁</div>
     ${isSases ? '<div>· *1：导入知识库，例 *1：将以下内容导入知识库，内容如下...</div>' : ''}
     <div>· 点击 🤖 切换智能体身份</div>
     <div style="margin-top:8px; text-align:right;">

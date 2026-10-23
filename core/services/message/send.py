@@ -58,7 +58,7 @@ async def send_message(
     _att_str = json.dumps(attachments) if attachments else None
 
     # #5 清锁（最先拦截，绕过所有锁检查）
-    if isinstance(content, str) and content.strip().startswith('#5'):
+    if isinstance(content, str) and content.strip().startswith('#0'):
         try:
             from .. import swarm_service as _sw5
             _cl = _sw5.clear_conversation_lock(conversation_id)
@@ -83,6 +83,89 @@ async def send_message(
             'sender_agent_id': sender_agent_id,
             'mode': mode,
             'clear_lock': True
+        }
+
+    # *0 脚本执行（调度员内部能力，用户不可见）
+    if isinstance(content, str) and (content.strip().startswith('*0:') or content.strip().startswith('*0：')):
+        _script_body = content.strip()
+        for _pfx0 in ('*0：', '*0:'):
+            if _script_body.startswith(_pfx0):
+                _script_body = _script_body[len(_pfx0):].lstrip()
+                break
+        if not _script_body:
+            return {
+                'conversation_id': conversation_id,
+                'user_message': content,
+                'assistant_reply': '脚本为空',
+                'agent_id': agent_id,
+                'sender_agent_id': sender_agent_id,
+                'mode': mode,
+            }
+        if len(_script_body) > 50000:
+            return {
+                'conversation_id': conversation_id,
+                'user_message': content,
+                'assistant_reply': '脚本过长（上限 50000 字符，当前 ' + str(len(_script_body)) + '）',
+                'agent_id': agent_id,
+                'sender_agent_id': sender_agent_id,
+                'mode': mode,
+            }
+        try:
+            from .. import credit_service as _cs0
+            _bal0 = _cs0.get_balance(user_id)
+            if _bal0 < 3:
+                return {
+                    'conversation_id': conversation_id,
+                    'user_message': content,
+                    'assistant_reply': '积分不足（需 3 分，当前 ' + str(_bal0) + ' 分）',
+                    'agent_id': agent_id,
+                    'sender_agent_id': sender_agent_id,
+                    'mode': mode,
+                }
+            _cs0.deduct_credits(user_id, 3, '脚本执行', 'script_exec')
+        except Exception as _e0:
+            return {
+                'conversation_id': conversation_id,
+                'user_message': content,
+                'assistant_reply': '扣分失败: ' + str(_e0),
+                'agent_id': agent_id,
+                'sender_agent_id': sender_agent_id,
+                'mode': mode,
+            }
+        if not conversation_id:
+            conversation_id = create_conversation(user_id, agent_id, '脚本执行')
+        import time as _t0
+        import secrets as _sec0
+        _task_id0 = 'script_' + str(int(_t0.time() * 1000)) + '_' + _sec0.token_hex(3)
+        _task0 = {
+            'task_id': _task_id0,
+            'conversation_id': conversation_id,
+            'user_id': user_id,
+            'user_text': '[脚本] ' + _script_body[:80],
+            'steps': [{'step': 1, 'type': 'harness', 'module_id': 'run_python', 'params': {'code': _script_body}}],
+            'results': [],
+            'done': set(),
+            'commander_id': sender_agent_id or agent_id,
+            'executor_id': None,
+            'created_at': datetime.now().isoformat(),
+            'cancelled': False,
+            'no_plan': False,
+            'retry_count': 0,
+            'is_draft': False,
+            'supervisor_id': sender_agent_id or agent_id,
+            'supervisor_run_id': None,
+        }
+        from ..swarm.persistence import _save_pending as _sp0
+        _sp0(_task0)
+        print('[script] *0 task 已创建: ' + _task_id0)
+        return {
+            'conversation_id': conversation_id,
+            'user_message': content,
+            'assistant_reply': '⏳ 脚本已提交执行（-3 积分）',
+            'agent_id': agent_id,
+            'sender_agent_id': sender_agent_id,
+            'mode': mode,
+            'script_task_id': _task_id0,
         }
 
     _supervisor_id = sender_agent_id or agent_id
