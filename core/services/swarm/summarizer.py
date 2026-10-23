@@ -16,6 +16,37 @@ def _infer_domain(results):
     return 'dev_probe'
 
 
+
+def _prepend_changes(summary, results):
+    """在 summary 前强制拼上 file_patch 成功的文件清单"""
+    try:
+        _files = []
+        for _r in (results or []):
+            _cmd = str(_r.get('command') or _r.get('module_id') or '')
+            if _cmd != 'file_patch':
+                continue
+            if _r.get('status') != 'success':
+                continue
+            _fp = None
+            _params = _r.get('params')
+            if isinstance(_params, dict):
+                _fp = _params.get('file_path')
+            if not _fp:
+                import re as _re_fp
+                _out = str(_r.get('output') or '')
+                _m = _re_fp.search(r'"file_path"\s*:\s*"([^"]+)"', _out)
+                if _m:
+                    _fp = _m.group(1)
+            if _fp and _fp not in _files:
+                _files.append(_fp)
+        if _files:
+            return '【改动】' + ' | '.join(_files) + chr(10) + summary
+    except Exception as _e:
+        print('[swarm] _prepend_changes 失败: ' + str(_e))
+    return summary
+
+
+
 async def _summarize(user_text: str, results: List[Dict[str, Any]], user_id: int = None, task_id: str = None) -> str:
     # P0：记录经验 pattern（静默失败，不阻塞主流程）
     try:
@@ -77,6 +108,7 @@ async def _summarize(user_text: str, results: List[Dict[str, Any]], user_id: int
     result_text = chr(10).join(result_lines)
     prompt = f"【背景】用户请求：{user_text}\n\n【执行过程】\n{result_text}\n\n【要求】请直接输出最终结果，用于展示给用户。\n- 绝对不要重复用户请求的内容。\n- 如果工具返回了具体内容（文件内容、数据、答案），直接原样呈现。\n- 如果任务只是完成某个操作（如改代码、发消息），用一句话说明完成情况。\n- 直接输出结果本身，不要任何前缀、标题、格式说明。"
     try:
-        return await _call_llm(prompt, SUMMARY_SYSTEM_PROMPT, max_tokens=config.SUMMARY_MAX_TOKENS)
+        _raw_sum = await _call_llm(prompt, SUMMARY_SYSTEM_PROMPT, max_tokens=config.SUMMARY_MAX_TOKENS)
+        return _prepend_changes(_raw_sum, results)
     except Exception:
-        return "任务执行完成。"
+        return _prepend_changes("任务执行完成。", results)

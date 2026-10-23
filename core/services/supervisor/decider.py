@@ -225,6 +225,25 @@ async def task_summarizer(task):
             print(f'[supervisor] task_summarizer 终轮提示词命中: {_fl_count} 条 file:line')
             return {'goal_achieved': True, 'goal_reason': f'报告含 {_fl_count} 条 file:line 具体结论', 'missing': [], 'next_hint': ''}
 
+    # v0.38.0: 假完成拦截 —— 任务含修改动词但无 file_patch 成功
+    try:
+        _action_kws = ['改成', '改为', '修改', '删除', '删掉', '新增', '添加', '创建', '写入', '替换', '移动', '插入', '修复']
+        _need_patch = any(k in user_text for k in _action_kws)
+        _has_patch_ok = any(
+            str(r.get('command') or r.get('module_id') or '') == 'file_patch' and r.get('status') == 'success'
+            for r in results
+        )
+        if _need_patch and not _has_patch_ok:
+            _any_not_found = any(
+                ('未找到' in str(r.get('output') or '') or '不存在' in str(r.get('output') or ''))
+                for r in results
+            )
+            if not _any_not_found:
+                print('[supervisor] task_summarizer 假完成拦截: 任务含修改动词但无 file_patch 成功')
+                return {'goal_achieved': False, 'goal_reason': '任务要求修改但无 file_patch 成功落地', 'missing': ['实际修改'], 'next_hint': '用 file_patch 实际执行修改，禁止只报告不修改'}
+    except Exception as _e_fake:
+        print('[supervisor] 假完成判定异常: ' + str(_e_fake))
+    
     _sys_prompt = '你是任务完成度评估器。请只输出 JSON：{"goal_achieved": true 或 false, "goal_reason": "理由", "missing": ["未完成项"], "next_hint": "下一步具体命令"}。判断规则：第一，逐条列出原始目标里的每一个要求（编号1/2/3/4），逐一核对是否真的通过 file_patch/file_read/run_python 等工具执行过，没执行过的放入missing。第二，如果执行结果里出现"剩余""请继续""请分批""请再发""未完成"等字眼，强制 goal_achieved=false。第三，把用户目标拆成子任务逐一核对，不因某一子任务完成就判整体完成。第四，如果用户目标里显式写了"第 N 轮"、"步骤 N"、"1./2./3."等分步描述，必须逐条核对——前 N-1 步完成不算整体完成，必须最后一步（通常是"生成报告"/"输出结论"/"用 answer"/"写入文件"）也执行了才算 goal_achieved=true。第五，只读了数据但没有分析/报告/输出的任务，视为未完成。目标含总结/回答/分析/说明，必须有文字产出（answer 或写文件）。目标含改/加/实现/修复，必须有成功 file_patch。目标含读/查看/列出且没有分步描述时，有 file_read 或 dir 即可。第六，如果 answer 输出里已包含 ≥3 条 "文件:行号" 格式的具体结论（如 chat.css:105），且未出现"剩余/请再发/下一轮/未完成"等词，判 goal_achieved=true。next_hint 必须具体写清工具+文件路径+动作，不许写重新探测。'
     _user_prompt = '【用户目标】' + user_text + chr(10) + '【执行步骤】' + chr(10).join(steps)
     client = openai.OpenAI(api_key=config.DEEPSEEK_API_KEY, base_url=config.DEEPSEEK_BASE_URL, timeout=30)

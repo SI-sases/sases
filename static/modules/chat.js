@@ -475,7 +475,7 @@ function updateInputPlaceholder() {
   }
 }
 
-export function openChatWindow(conversationId, chatName, agentId = null, agentType = 'my', isFriendChat = 0, friendMode = 'normal') {
+export function openChatWindow(conversationId, chatName, agentId = null, agentType = 'my', isFriendChat = 0, friendMode = 'normal', targetUserId = null) {
 
   // 好友模式切换按钮（模拟）
   if (chatState && chatState.is_friend_chat == 1) {
@@ -489,7 +489,7 @@ export function openChatWindow(conversationId, chatName, agentId = null, agentTy
   chatState.conversationId = conversationId ? parseInt(conversationId) : null;
   chatState.agentId = agentId;
   chatState.agentType = agentType;
-  chatState.senderAgentId = localStorage.getItem('sases_sender_agent_id') || null;
+  chatState.senderAgentId = (isFriendChat === 1) ? null : (localStorage.getItem('sases_sender_agent_id') || null);
   chatState.mode = 'free';
   chatState.pendingQuote = null;
   chatState.lastMessageTime = null;
@@ -525,7 +525,7 @@ export function openChatWindow(conversationId, chatName, agentId = null, agentTy
             'Authorization': 'Bearer ' + token
           },
           body: JSON.stringify({ 
-            target_user_id: 13, // 注意：这里是你的测试用户B的ID，正式版建议从会话信息里取
+            target_user_id: targetUserId,
             mode: nextMode 
           })
         });

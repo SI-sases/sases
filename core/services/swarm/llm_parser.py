@@ -225,8 +225,15 @@ def _precheck_steps(steps):
         step_num = s.get("step", "?")
         if module_id == "file_patch":
             fp = params.get("file_path", "")
-            if not params.get("anchor_pattern") and not params.get("old_snippet") and not params.get("new_content"):
-                blocked.append(f"step {step_num}: file_patch 缺 new_content/old_snippet/anchor_pattern")
+            _has_placeholder = False
+            for _k in ('old_snippet', 'new_content', 'anchor_pattern', 'file_path'):
+                _v = params.get(_k, '')
+                if isinstance(_v, str) and ('{{step' in _v or '{step' in _v):
+                    _has_placeholder = True
+                    break
+            if not _has_placeholder:
+                if not params.get("anchor_pattern") and not params.get("old_snippet") and not params.get("new_content"):
+                    blocked.append(f"step {step_num}: file_patch 缺 new_content/old_snippet/anchor_pattern")
             if "file_patch/main.py" in fp or "executor_service.py" in fp:
                 blocked.append(f"step {step_num}: 目标是受保护文件")
         if module_id == "file_read":

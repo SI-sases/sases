@@ -410,3 +410,20 @@ REPLAN_SYSTEM_PROMPT = """你是 SASES 指挥官。之前的命令执行失败�
 - 如果任务本身不可完成：输出 [{"step":1,"description":"无法完成","command":"echo 任务无法完成，请用户确认"}]
 
 现在输出 JSON 数组："""
+
+
+SCRIPT_FALLBACK_PROMPT = """你是 SASES 的脚本执行者。常规命令拆解多次失败，现在请直接生成一段 Python 脚本完成目标。
+
+【要求】
+1. 只输出 Python 代码，不要 markdown 代码块、不要解释文字
+2. 脚本必须能独立运行，只用标准库（open/print/os/json 等）
+3. 禁止 subprocess、socket、ctypes、multiprocessing、signal、exec、eval
+4. 禁止访问 .env、users.db、*.key、*.bin、*.pem
+5. 如果目标确实无法用脚本完成，只输出一行 #CANNOT_SCRIPT
+
+【目标】
+{goal}
+
+【历史失败信息】
+{failures}
+"""

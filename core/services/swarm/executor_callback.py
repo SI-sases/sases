@@ -382,6 +382,27 @@ async def handle_step_done(
                 _delete_pending_from_db(task_id)
                 return {"status": "completed_with_failures", "task_id": task_id}
         else:
+            if failed and not task.get("_script_fallback_tried"):
+                task["_script_fallback_tried"] = True
+                print("[swarm] 重拆已达上限，尝试降级为脚本模式")
+                _script_fb = None
+                try:
+                    from .commander import generate_script_for_task
+                    _script_fb = await generate_script_for_task(
+                        task["user_id"], conversation_id, task["user_text"], failed
+                    )
+                except Exception as _e_sf:
+                    print("[swarm] 脚本降级异常: " + str(_e_sf))
+                if _script_fb:
+                    task["steps"] = [{"step": 1, "type": "harness", "module_id": "run_python", "params": {"code": _script_fb}}]
+                    task["results"] = []
+                    task["done"] = set()
+                    task["retry_count"] = 0
+                    _save_pending(task)
+                    _insert_message(conversation_id, "[SUPERVISOR_PROGRESS]:降级为脚本模式", sender_agent_id=task.get("commander_id"))
+                    print("[swarm] 脚本降级成功，已构造单步 run_python task")
+                    return {"status": "script_fallback", "task_id": task_id}
+                print("[swarm] 脚本降级失败，走原汇总路径")
             if failed:
                 print(f"[swarm] 重试次数已达上限，标记失败并汇总")
             else:

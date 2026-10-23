@@ -57,6 +57,19 @@ async def send_message(
 
     _att_str = json.dumps(attachments) if attachments else None
 
+    # 跨账号投递：好友会话的任何消息（文字/图片/文件）都投递
+    if conversation_id:
+        try:
+            with db_cursor() as _c_fc:
+                _c_fc.execute('SELECT is_friend_chat FROM conversations WHERE id=?', (conversation_id,))
+                _r_fc = _c_fc.fetchone()
+            if _r_fc and _r_fc['is_friend_chat'] == 1:
+                from core.services import cross_account_delivery as _cad_fc
+                _cad_fc.deliver_to_linked_accounts(user_id, conversation_id, content, sender_agent_id, msg_type, attachments)
+                print('[message] 好友投递: conv=' + str(conversation_id))
+        except Exception as _e_fc:
+            print('[message] 好友投递失败: ' + str(_e_fc))
+
     # #5 清锁（最先拦截，绕过所有锁检查）
     if isinstance(content, str) and content.strip().startswith('#0'):
         try:
@@ -222,11 +235,6 @@ async def send_message(
             _c.execute("INSERT INTO messages (conversation_id, sender, content, sender_agent_id, msg_type, attachments) VALUES (?, 'user', ?, ?, ?, ?)", (conversation_id, content, sender_agent_id, msg_type, _att_str))
             _c.execute('UPDATE conversations SET updated_at=? WHERE id=?', (datetime.now().isoformat(), conversation_id))
 
-            try:
-                from core.services import cross_account_delivery as _cad
-                _cad.deliver_to_linked_accounts(user_id, conversation_id, content, sender_agent_id, msg_type, attachments)
-            except Exception as _cade:
-                print('[message] 跨账号投递调用失败: ' + str(_cade))
 
         # 关键改动：把附件内容附加进来，不再 return，继续走正常问答
         try:
@@ -287,6 +295,21 @@ async def send_message(
                             supervisor_run_id=_run_id,
                             max_steps=max_steps,
                         )
+                        # v0.38.0: precheck 拦截时，自动重试一次（用 reason 修正 prompt）
+                        if _plan_result and isinstance(_plan_result, dict) and _plan_result.get('status') == 'no_plan' and 'precheck blocked' in str(_plan_result.get('reason', '')):
+                            print('[supervisor] precheck 拦截，自动重试一次')
+                            _retry_input = content + chr(10) + chr(10) + '【上次 precheck 拦截原因，请修正后重新生成】' + chr(10) + str(_plan_result.get('reason', ''))
+                            try:
+                                _plan_result = await swarm_service.plan_task(
+                                    user_id=user_id,
+                                    conversation_id=_cid_auto,
+                                    user_input=_retry_input,
+                                    supervisor_id=sender_agent_id or agent_id,
+                                    supervisor_run_id=_run_id,
+                                    max_steps=max_steps,
+                                )
+                            except Exception as _e_retry:
+                                print('[supervisor] precheck 重试失败: ' + str(_e_retry))
                         # v0.37.0: plan_task 返回 None 或 no_plan/error 时立即结束 run，避免卡死会话锁
                         if _plan_result is None or _plan_result.get('status') in ('no_plan', 'error'):
                             try:
