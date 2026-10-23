@@ -13,6 +13,46 @@ from .helpers import _insert_message, _get_conversation_history, pick_swarm_agen
 from .llm_parser import _call_llm, _parse_plan, _normalize_steps, _validate_steps_format, _precheck_steps
 from .task_state import _load_task_state
 
+async def generate_script_for_task(user_id, conversation_id, user_input, failed_results):
+    """常规拆解失败时，让 LLM 直接生成 Python 脚本。返回脚本代码或 None。"""
+    try:
+        from .prompts import SCRIPT_FALLBACK_PROMPT
+    except Exception as _e_imp:
+        print("[script_fallback] import SCRIPT_FALLBACK_PROMPT 失败: " + str(_e_imp))
+        return None
+    failures_lines = []
+    for r in failed_results[:5]:
+        _cmd = str(r.get('command') or r.get('module_id') or '')[:80]
+        _reason = str(r.get('reason') or r.get('output') or '')[:150]
+        failures_lines.append("- " + _cmd + " => " + _reason)
+    failures_text = chr(10).join(failures_lines) if failures_lines else "(无)"
+    prompt = SCRIPT_FALLBACK_PROMPT.replace('{goal}', str(user_input)[:500]).replace('{failures}', failures_text)
+    try:
+        raw = await _call_llm(prompt, max_tokens=4000)
+    except Exception as e:
+        print("[script_fallback] LLM 调用失败: " + str(e))
+        return None
+    if not raw or '#CANNOT_SCRIPT' in raw:
+        print("[script_fallback] LLM 判定无法用脚本完成")
+        return None
+    text = raw.strip()
+    if text.startswith('```'):
+        _lines = text.split(chr(10))
+        _lines = _lines[1:] if _lines[0].startswith('```') else _lines
+        if _lines and _lines[-1].strip() == '```':
+            _lines = _lines[:-1]
+        text = chr(10).join(_lines)
+    text = text.strip()
+    if len(text) > 50000:
+        print("[script_fallback] 脚本过长: " + str(len(text)))
+        return None
+    if not text:
+        return None
+    print("[script_fallback] 生成脚本 " + str(len(text)) + " 字符")
+    return text
+
+
+
 async def plan_task(
     user_id: int,
     conversation_id: int,

@@ -10,6 +10,21 @@ from .summarizer import _summarize, _summary_sender
 from .commander import plan_task, replan_failed_steps
 from .helpers import _insert_message
 
+
+def _push_script_output(conversation_id, task):
+    """推送 task results 的脚本实际输出（restart_pending 场景用）"""
+    try:
+        _raw = ''
+        for _r in (task.get('results', []) if isinstance(task, dict) else []):
+            _o = str(_r.get('output') or '')
+            if _o.strip():
+                _raw += _o + chr(10)
+        if _raw.strip():
+            _insert_message(conversation_id, '[SUMMARY]:' + _raw[:3000], sender_agent_id=_summary_sender(task))
+            print('[swarm] restart_pending 输出推送: ' + str(len(_raw)) + ' 字符')
+    except Exception as _e_po:
+        print('[swarm] restart_pending 输出推送失败: ' + str(_e_po))
+
 async def handle_step_done(
     conversation_id: int,
     payload: Dict[str, Any],
@@ -185,6 +200,7 @@ async def handle_step_done(
                                 )
                             except Exception as _e_rec3:
                                 print(f"[supervisor] record_round (pre-restart) 失败: {_e_rec3}")
+                            _push_script_output(conversation_id, task)
                             _sv_pre.finish_run(_run_id, 'restart_pending')
                             print(f"[supervisor] run {_run_id} 标记 restart_pending（改了 core/，需重启验证）")
                             _sv_pre.signal_restart(_run_id, 'restart_pending')
@@ -223,6 +239,7 @@ async def handle_step_done(
                         except Exception as _e_rec2:
                             print(f"[supervisor] record_round (restart_pending) 失败: {_e_rec2}")
                         try:
+                            _push_script_output(conversation_id, task)
                             supervisor_service.finish_run(_run_id, 'restart_pending')
                             print(f"[supervisor] run {_run_id} 标记 restart_pending（改了 core/，需重启验证）")
                             try:
@@ -328,6 +345,7 @@ async def handle_step_done(
                 except Exception as _e_rec4:
                     print(f"[supervisor] record_round (replan) 失败: {_e_rec4}")
                 try:
+                    _push_script_output(conversation_id, task)
                     _sv_replan.finish_run(_run_id, 'restart_pending')
                     print(f"[supervisor] run {_run_id} 重拆前发现 core/ 改动，优先触发 restart_pending")
                     try:
@@ -509,6 +527,7 @@ async def handle_step_done(
                                 )
                             except Exception as _e_rec3:
                                 print(f"[supervisor] record_round (pre-restart) 失败: {_e_rec3}")
+                            _push_script_output(conversation_id, task)
                             _sv_pre.finish_run(_run_id, 'restart_pending')
                             print(f"[supervisor] run {_run_id} 标记 restart_pending（改了 core/，需重启验证）")
                             _sv_pre.signal_restart(_run_id, 'restart_pending')
@@ -547,6 +566,7 @@ async def handle_step_done(
                         except Exception as _e_rec2:
                             print(f"[supervisor] record_round (restart_pending) 失败: {_e_rec2}")
                         try:
+                            _push_script_output(conversation_id, task)
                             supervisor_service.finish_run(_run_id, 'restart_pending')
                             print(f"[supervisor] run {_run_id} 标记 restart_pending（改了 core/，需重启验证）")
                             try:

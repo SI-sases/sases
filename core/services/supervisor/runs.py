@@ -115,6 +115,19 @@ def cancel_run(run_id, user_id):
 
 
 def finish_run(run_id, status='completed'):
+    _TERMINAL = ('completed', 'failed', 'cancelled', 'rejected', 'plan_failed',
+                 'no_progress', 'timeout', 'interrupted', 'error', 'waiting_user')
+    try:
+        with db_cursor() as _c_chk:
+            _c_chk.execute('SELECT status FROM supervisor_runs WHERE id=?', (run_id,))
+            _row_chk = _c_chk.fetchone()
+            if _row_chk:
+                _cur_status = _row_chk['status'] if isinstance(_row_chk, dict) else _row_chk[0]
+                if _cur_status in _TERMINAL:
+                    print('[supervisor] finish_run 跳过: run ' + str(run_id) + ' 已是终态 ' + str(_cur_status) + '，忽略 ' + str(status))
+                    return
+    except Exception as _e_chk:
+        print('[supervisor] finish_run 终态检查失败: ' + str(_e_chk))
     _conv_id = None
     _sup_id = None
     try:
