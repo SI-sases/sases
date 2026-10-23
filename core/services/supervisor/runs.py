@@ -2,6 +2,7 @@ import json
 from datetime import datetime
 from ...db import db_cursor
 from .. import credit_service
+from ..swarm.helpers import _insert_message as _im_fin
 from .context import _dict
 from .constants import MAX_ROUNDS, CREDITS_PER_ROUND
 
@@ -46,8 +47,28 @@ def get_proposed_run(user_id, conversation_id=None):
 
 def get_active_run(user_id):
     with db_cursor() as cur:
-        cur.execute("SELECT * FROM supervisor_runs WHERE user_id=? AND status IN ('running', 'running_resumed', 'restart_pending')")
+        cur.execute("SELECT * FROM supervisor_runs WHERE user_id=? AND status IN ('running', 'running_resumed', 'restart_pending') ORDER BY id DESC LIMIT 1", (user_id,))
         run = _dict(cur.fetchone())
+
+    if run and run.get('status') == 'running':
+        try:
+            from datetime import timedelta
+            history = json.loads(run['history'] or '[]')
+            last_at = None
+            if history:
+                last_at = history[-1].get('at')
+            if not last_at:
+                last_at = run.get('created_at')
+            if last_at:
+                last_dt = datetime.fromisoformat(last_at.replace('Z', '').replace(' ', 'T'))
+                if datetime.now() - last_dt > timedelta(minutes=5):
+                    print('[supervisor] run ' + str(run['id']) + ' timeout 5 min, auto abort')
+                    finish_run(run['id'], 'timeout')
+                    return None
+        except Exception as e:
+            print('[supervisor] timeout check failed: ' + str(e))
+
+    return run
 
     # 只有 running 状态才检查超时；proposed 等用户确认，不自动清
     if run and run.get('status') == 'running':
@@ -95,8 +116,8 @@ def cancel_run(run_id, user_id):
 
 def finish_run(run_id, status='completed'):
     with db_cursor(commit=True) as cur:
-        cur.execute('UPDATE supervisor_runs SET status=?, finished_at=? WHERE id=?', (status, datetime.now().isoformat(), run_id))
-
+        cur.execute("UPDATE supervisor_runs SET status=%s, finished_at=NOW() WHERE id=%s", (status, run_id))
+    print('[supervisor] finish_run: ' + str(run_id) + ' -> ' + status)
 
 # (旧版 build_context 已删除，用第 12 行版本)
 

@@ -814,14 +814,6 @@ async function handleScroll() {
 }
 
 window.addEventListener('sases_new_message', (e) => {
-
-        if (d.sender === 'friend') {
-            const container = document.getElementById('chat-messages');
-            if (container) {
-                container.innerHTML += `<div style="text-align:left;margin:10px;"><div style="display:inline-block;background:#fff;border:1px solid #ddd;padding:8px 12px;border-radius:8px;">${d.content}</div></div>`;
-                container.scrollTop = container.scrollHeight;
-            }
-        }
   const d = e.detail || {};
   // 忽略用户自己发的消息（本地已渲染）
   if (d.sender === 'user') return;
