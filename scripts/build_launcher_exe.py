@@ -34,4 +34,4 @@ cmd = [
 ]
 
 subprocess.run(cmd, check=True)
-print("✅ 打包成功！EXE 位于 launcher/dist/SASES启动器.exe")
+print("打包成功！EXE 位于 launcher/dist/SASES启动器.exe")
