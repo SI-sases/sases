@@ -5,7 +5,7 @@ a = Analysis(
     ['launcher.py'],
     pathex=[],
     binaries=[],
-    datas=[('launcher/ui', 'ui'), ('launcher/launcher_config.py', '.')],
+    datas=[('launcher/launcher_config.py', '.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

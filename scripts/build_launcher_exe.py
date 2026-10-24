@@ -15,7 +15,6 @@ cmd = [
     "--distpath", os.path.join("launcher", "dist"),
     "--workpath", os.path.join("launcher", "build"),
     "--specpath", "launcher",
-    "--add-data", "launcher/ui" + os.pathsep + "ui",
     "--add-data", "launcher/launcher_config.py" + os.pathsep + ".",
     "launcher/launcher.py"
 ]
