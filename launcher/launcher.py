@@ -2,7 +2,9 @@
 import os
 import sys
 import socket
+import subprocess
 from PyQt6.QtGui import QIcon
+from PyQt6.QtWidgets import QApplication, QInputDialog, QMessageBox
 
 # 单实例锁：绑定一个不对外开放的本地端口
 # 进程退出时端口自动释放，无需清理死锁文件
@@ -39,6 +41,37 @@ def main():
     # 延迟 import（PyQt 只在真要起窗口时才加载）
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     from PyQt6.QtWidgets import QApplication
+    # ====== 1. 端口残留清理 ======
+    try:
+        out = subprocess.check_output('wmic process where "commandline like \'%run_forever.py%\'" get processid', shell=True).decode('gbk', errors='ignore')
+        pids = [line.strip() for line in out.split('\n') if line.strip().isdigit()]
+        if pids:
+            for pid in pids:
+                subprocess.run(f"taskkill /F /PID {pid}", shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            print("[launcher] 已清理残留的后端进程")
+    except Exception:
+        pass
+
+    # ====== 2. 首次运行向导 ======
+    root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    env_path = os.path.join(root_dir, '.env')
+
+    if not os.path.exists(env_path):
+        app = QApplication(sys.argv)
+        text, ok = QInputDialog.getText(
+            None, 'SASES 首次配置',
+            '欢迎使用 SASES！\n\n请输入您的 DeepSeek API Key 以启动本地服务（直接回车跳过，稍后在网页配置）：',
+            echo=QInputDialog.EchoMode.Normal
+        )
+        if ok and text.strip():
+            with open(env_path, 'w', encoding='utf-8') as f:
+                f.write(f"DEEPSEEK_API_KEY={text.strip()}\n")
+            QMessageBox.information(None, '配置成功', 'API Key 已保存，即将启动 SASES！')
+        else:
+            with open(env_path, 'w', encoding='utf-8') as f:
+                f.write("DEEPSEEK_API_KEY=\n")
+
+
     from ui.main_window import MainWindow
 
     app = QApplication(sys.argv)
