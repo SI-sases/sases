@@ -61,7 +61,7 @@ def main():
         text, ok = QInputDialog.getText(
             None, 'SASES 首次配置',
             '欢迎使用 SASES！\n\n请输入您的 DeepSeek API Key 以启动本地服务（直接回车跳过，稍后在网页配置）：',
-            echo=QInputDialog.EchoMode.Normal
+            # 已移除 PyQt6 不兼容的 echo 参数
         )
         if ok and text.strip():
             with open(env_path, 'w', encoding='utf-8') as f:
