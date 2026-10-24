@@ -102,12 +102,6 @@ export function createMessageElement(role, content, senderName, messageId, timeI
     _pd.textContent = content.substring(22);
     return _pd;
   }
-  if (typeof content === 'string' && content.startsWith('[SUPERVISOR_PROGRESS]:')) {
-    const _pd = document.createElement('div');
-    _pd.style.cssText = 'text-align:center;font-size:12px;color:#888;margin:6px 12px;';
-    _pd.textContent = content.substring(22);
-    return _pd;
-  }
     // 多模态新增分支
     if (msg_type === 'image' && attachments && attachments.length > 0) {
         return renderImageBubble(`[IMAGE]:${attachments[0].url}`, role, senderName);
@@ -162,11 +156,8 @@ export function createMessageElement(role, content, senderName, messageId, timeI
     bubble.style.color = '#333';
   }
 
-  if (role === 'user' && senderName && senderName !== '我') {
-    bubble.innerHTML = `<span style="font-weight:600;">${escapeHtml(senderName)}:</span> ${escapeHtml(content)}`;
-  } else {
-    bubble.textContent = content;
-  }
+  // 移除发送者名字前缀，保持微信式纯气泡体验
+  bubble.textContent = content;
 
   if (role === 'user') {
     wrapper.appendChild(bubble);

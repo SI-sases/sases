@@ -107,14 +107,22 @@ async def accept_friend_request(body: AcceptRequest, user_id: int = Depends(get_
             cur.execute("UPDATE agent_friendships SET status='accepted' WHERE id=?", (body.request_id,))
             
             # 3. 为发起者建会话 (如果不存在)
+            cur.execute('SELECT username FROM users WHERE id=?', (receiver_id,))
+            _recv_row = cur.fetchone()
+            _recv_name = _recv_row[0] if _recv_row and _recv_row[0] else f'User{receiver_id}'
+
             cur.execute("SELECT id FROM conversations WHERE user_id=? AND target_user_id=? AND is_friend_chat=1", (sender_id, receiver_id))
             if not cur.fetchone():
-                cur.execute("INSERT INTO conversations (user_id, target_user_id, title, is_friend_chat, friend_mode) VALUES (?, ?, ?, 1, 'normal')", (sender_id, receiver_id, f"与 User{receiver_id} 聊天"))
+                cur.execute("INSERT INTO conversations (user_id, target_user_id, title, is_friend_chat, friend_mode) VALUES (?, ?, ?, 1, 'normal')", (sender_id, receiver_id, _recv_name))
                 
             # 4. 为接收者建会话 (如果不存在)
+            cur.execute('SELECT username FROM users WHERE id=?', (sender_id,))
+            _send_row = cur.fetchone()
+            _send_name = _send_row[0] if _send_row and _send_row[0] else f'User{sender_id}'
+
             cur.execute("SELECT id FROM conversations WHERE user_id=? AND target_user_id=? AND is_friend_chat=1", (receiver_id, sender_id))
             if not cur.fetchone():
-                cur.execute("INSERT INTO conversations (user_id, target_user_id, title, is_friend_chat, friend_mode) VALUES (?, ?, ?, 1, 'normal')", (receiver_id, sender_id, f"与 User{sender_id} 聊天"))
+                cur.execute("INSERT INTO conversations (user_id, target_user_id, title, is_friend_chat, friend_mode) VALUES (?, ?, ?, 1, 'normal')", (receiver_id, sender_id, _send_name))
                 
         return {"status": "accepted"}
     except PermissionError as e:

@@ -67,6 +67,15 @@ async def send_message(
                 from core.services import cross_account_delivery as _cad_fc
                 _cad_fc.deliver_to_linked_accounts(user_id, conversation_id, content, sender_agent_id, msg_type, attachments)
                 print('[message] 好友投递: conv=' + str(conversation_id))
+                if not sender_agent_id:
+                    return {
+                        'conversation_id': conversation_id,
+                        'user_message': content,
+                        'assistant_reply': '',
+                        'agent_id': agent_id,
+                        'sender_agent_id': sender_agent_id,
+                        'mode': mode,
+                    }
         except Exception as _e_fc:
             print('[message] 好友投递失败: ' + str(_e_fc))
 

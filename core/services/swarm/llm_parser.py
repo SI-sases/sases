@@ -231,9 +231,16 @@ def _precheck_steps(steps):
                 if isinstance(_v, str) and ('{{step' in _v or '{step' in _v):
                     _has_placeholder = True
                     break
-            if not _has_placeholder:
+            
+            # 检查前面是否有读文件操作，如果有，允许参数为空，推迟到执行后再补全
+            _has_prior_read = any(
+                (prev.get('module_id') == 'file_read' and prev.get('params', {}).get('file_path') == fp)
+                for prev in steps if prev.get('step', 0) < step_num
+            )
+            
+            if not _has_placeholder and not _has_prior_read:
                 if not params.get("anchor_pattern") and not params.get("old_snippet") and not params.get("new_content"):
-                    blocked.append(f"step {step_num}: file_patch 缺 new_content/old_snippet/anchor_pattern")
+                    blocked.append(f"step {step_num}: file_patch 缺参数且无前置读取")
             if "file_patch/main.py" in fp or "executor_service.py" in fp:
                 blocked.append(f"step {step_num}: 目标是受保护文件")
         if module_id == "file_read":
