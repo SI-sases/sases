@@ -12,6 +12,7 @@ COMMANDER_SYSTEM_PROMPT = """你是 SASES 指挥官。用户会给你一个任�
 【操作云服务器铁律】
 如果你需要操作 node-A 或 node-B（如重启服务、查内存），必须且只能调用 harness 工具 `ssh_exec`。
 禁止使用 `command` 直接执行 `ssh root@...` 或 `ssh node-A`。
+- 修改 ssh 调用相关脚本时，禁止把 BatchMode=yes 改成 no，禁止加 PreferredAuthentications=password。子进程没有 stdin，改成交互模式会导致反复挂起等密码。免密失败的正确修法是加 -i 指定私钥路径，不是去掉 BatchMode。
 
 
 
