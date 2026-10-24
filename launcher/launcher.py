@@ -75,7 +75,15 @@ def main():
     from ui.main_window import MainWindow
 
     app = QApplication(sys.argv)
-    app.setWindowIcon(QIcon(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'icon.ico')))
+    import sys
+    if getattr(sys, 'frozen', False):
+        base_dir = sys._MEIPASS
+    else:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+    ico_path = os.path.join(base_dir, 'icon.ico')
+    if not os.path.exists(ico_path):
+        ico_path = os.path.join(base_dir, 'launcher', 'icon.ico')
+    app.setWindowIcon(QIcon(ico_path))
     app.setQuitOnLastWindowClosed(False)  # 关键：关窗不退出，托盘还活着
     w = MainWindow()
     w.show()
