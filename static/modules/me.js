@@ -1,3 +1,46 @@
+
+function _showWxEditModal(title, defaultValue, isMultiline = false, options = null) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:flex-end;transition:opacity 0.3s;';
+    
+    const panel = document.createElement('div');
+    panel.style.cssText = 'width:100%;background:#fff;border-radius:16px 16px 0 0;padding:20px;transform:translateY(100%);transition:transform 0.3s;box-sizing:border-box;';
+    
+    let inputHtml = '';
+    if (options) {
+      inputHtml = `<select id="_wx_edit_input" style="width:100%;font-size:16px;padding:12px;border:1px solid #eee;border-radius:8px;outline:none;background:#f9f9f9;">` + 
+        options.map(o => `<option value="${o}" ${o===defaultValue?'selected':''}>${o}</option>`).join('') + `</select>`;
+    } else if (isMultiline) {
+      inputHtml = `<textarea id="_wx_edit_input" style="width:100%;height:100px;font-size:16px;padding:12px;border:1px solid #eee;border-radius:8px;outline:none;background:#f9f9f9;resize:none;">${defaultValue}</textarea>`;
+    } else {
+      inputHtml = `<input type="text" id="_wx_edit_input" value="${defaultValue}" style="width:100%;font-size:16px;padding:12px;border:1px solid #eee;border-radius:8px;outline:none;background:#f9f9f9;box-sizing:border-box;">`;
+    }
+
+    panel.innerHTML = `
+      <div style="text-align:center;font-size:16px;font-weight:600;margin-bottom:20px;">${title}</div>
+      ${inputHtml}
+      <div style="display:flex;gap:12px;margin-top:24px;">
+        <button id="_wx_edit_cancel" style="flex:1;padding:12px;border:none;border-radius:8px;background:#f2f2f2;color:#333;font-size:16px;">取消</button>
+        <button id="_wx_edit_save" style="flex:1;padding:12px;border:none;border-radius:8px;background:#07c160;color:#fff;font-size:16px;">保存</button>
+      </div>
+    `;
+    overlay.appendChild(panel);
+    document.body.appendChild(overlay);
+    
+    setTimeout(() => { panel.style.transform = 'translateY(0)'; }, 10);
+
+    const close = (val) => {
+      panel.style.transform = 'translateY(100%)';
+      overlay.style.opacity = '0';
+      setTimeout(() => { overlay.remove(); resolve(val); }, 300);
+    };
+
+    document.getElementById('_wx_edit_cancel').onclick = () => close(null);
+    document.getElementById('_wx_edit_save').onclick = () => close(document.getElementById('_wx_edit_input').value.trim());
+  });
+}
+
 // static/modules/me.js
 import { api } from './api.js';
 import { t } from './me_i18n.js';
@@ -149,7 +192,7 @@ async function openPersonalInfo() {
 
   setTimeout(() => {
     document.getElementById('edit-nickname').onclick = async () => {
-      const newName = prompt(t('nickname') + ':', username);
+      const newName = await _showWxEditModal(t('nickname'), username);
       if (newName && newName.trim()) {
         try {
           await api.updateUserProfile({ username: newName.trim() });
@@ -162,7 +205,7 @@ async function openPersonalInfo() {
     };
     document.getElementById('edit-sases-id').onclick = () => alert(t('sases_id') + ' ' + t('not_set'));
     document.getElementById('edit-gender').onclick = async () => {
-      const newGender = prompt(t('gender') + ':', gender);
+      const newGender = await _showWxEditModal(t('gender'), gender, false, ['男', '女', '保密']);
       if (newGender) {
         try {
           await api.updateUserProfile({ gender: newGender });
@@ -174,7 +217,7 @@ async function openPersonalInfo() {
       }
     };
     document.getElementById('edit-region').onclick = async () => {
-      const newRegion = prompt(t('region') + ':', region);
+      const newRegion = await _showWxEditModal(t('region'), region);
       if (newRegion) {
         try {
           await api.updateUserProfile({ region: newRegion });
@@ -186,7 +229,7 @@ async function openPersonalInfo() {
       }
     };
     document.getElementById('edit-signature').onclick = async () => {
-      const newSignature = prompt(t('signature') + ':', signature);
+      const newSignature = await _showWxEditModal(t('signature'), signature, true);
       if (newSignature) {
         try {
           await api.updateUserProfile({ signature: newSignature });

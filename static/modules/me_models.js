@@ -93,12 +93,7 @@ function openAddApiKeyForm() {
         </select>
         <input type="text" id="api-provider-custom-input" class="inline-input" placeholder="custom provider" style="display:none;">
 
-        <script>
-          document.getElementById('api-provider-input').addEventListener('change', function() {
-            var customInput = document.getElementById('api-provider-custom-input');
-            customInput.style.display = this.value === 'custom' ? 'block' : 'none';
-          });
-        </script>
+        
       </div>
       <div class="me-menu-item">
         <span class="menu-label">${t('api_key')}</span>
@@ -110,7 +105,16 @@ function openAddApiKeyForm() {
   window.openSubpage(t('add_api_key'), contentHtml);
 
   setTimeout(() => {
-    document.getElementById('save-api-key').onclick = async () => {
+    
+      const _sel = document.getElementById('api-provider-input');
+      const _cus = document.getElementById('api-provider-custom-input');
+      if (_sel && _cus) {
+        _sel.addEventListener('change', function() {
+          _cus.style.display = (this.value === 'custom') ? 'block' : 'none';
+        });
+      }
+
+      document.getElementById('save-api-key').onclick = async () => {
       const name = document.getElementById('api-name-input').value.trim();
       let provider = document.getElementById('api-provider-input').value.trim();
       if (provider === 'custom') {
