@@ -333,6 +333,7 @@ class MainWindow(QMainWindow):
         env.insert("SASES_PORT", str(self._chosen_port))
         
         self.proc = QProcess(self)
+        self.proc.setProcessEnvironment(env)
         self.proc.setProcessChannelMode(QProcess.ProcessChannelMode.MergedChannels)
         self.proc.readyReadStandardOutput.connect(self._read_out)
         self.proc.finished.connect(self._on_finished)
