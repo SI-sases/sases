@@ -34,7 +34,22 @@ def ensure_default_config():
     if not os.path.exists(path):
         with open(path, "w", encoding="utf-8") as f:
             json.dump(DEFAULT_CONFIG, f, ensure_ascii=False, indent=2)
-    return load_config()
+
+    cfg = load_config()
+    base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+    # 动态探测 Python 环境
+    embed_py = os.path.join(base, "python-embed", "python.exe")
+    venv_py = os.path.join(base, "venv312", "Scripts", "python.exe")
+
+    if os.path.exists(embed_py):
+        cfg["python_path"] = embed_py
+    elif os.path.exists(venv_py):
+        cfg["python_path"] = venv_py
+    else:
+        cfg["python_path"] = "python"  # 退回到系统环境变量
+
+    return cfg
 
 
 def resolve_path(p):
