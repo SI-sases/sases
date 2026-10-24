@@ -82,7 +82,16 @@ function openAddApiKeyForm() {
       </div>
       <div class="me-menu-item">
         <span class="menu-label">${t('provider')}</span>
-        <input type="text" id="api-provider-input" class="inline-input" placeholder="deepseek/openai/gpt/claude">
+        <select id="api-provider-input" class="inline-input">
+          <option value="deepseek">DeepSeek (deepseek)</option>
+          <option value="openai">OpenAI (openai)</option>
+          <option value="moonshot">Moonshot/Kimi (moonshot)</option>
+          <option value="claude">Claude/Anthropic (claude)</option>
+          <option value="zhipu">智谱 GLM (zhipu)</option>
+          <option value="qwen">阿里通义千问 (qwen)</option>
+          <option value="custom">自定义 (custom)</option>
+        </select>
+        <input type="text" id="api-provider-custom-input" class="inline-input" placeholder="custom provider" style="display:none;">
       </div>
       <div class="me-menu-item">
         <span class="menu-label">${t('api_key')}</span>
@@ -96,7 +105,10 @@ function openAddApiKeyForm() {
   setTimeout(() => {
     document.getElementById('save-api-key').onclick = async () => {
       const name = document.getElementById('api-name-input').value.trim();
-      const provider = document.getElementById('api-provider-input').value.trim();
+      let provider = document.getElementById('api-provider-input').value.trim();
+      if (provider === 'custom') {
+        provider = document.getElementById('api-provider-custom-input').value.trim();
+      }
       const api_key = document.getElementById('api-key-input').value.trim();
       if (!name || !provider || !api_key) { alert(t('enter_all')); return; }
       try {

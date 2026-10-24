@@ -548,6 +548,11 @@ export function openChatWindow(conversationId, chatName, agentId = null, agentTy
 
   if (titleEl) titleEl.textContent = chatName || '会话';
 
+  // 如果是新建会话（conversationId为空），清空聊天框历史
+  if (!conversationId) {
+    const msgBox = document.getElementById('chat-messages');
+    if (msgBox) msgBox.innerHTML = '';
+  }
   document.getElementById('view-chat-window').style.display = 'flex';
   document.querySelector('.bottom-nav').style.display = 'none';
   document.querySelector('.top-bar').style.display = 'none';
@@ -818,13 +823,14 @@ window.addEventListener('sases_new_message', (e) => {
   // 忽略用户自己发的消息（本地已渲染）
   if (d.sender === 'user') return;
     if (d.sender === 'friend') {
-      const _box = document.getElementById('chat-messages');
-      if (_box) {
-        const _el = document.createElement('div');
-        _el.className = 'message assistant';
-        _el.textContent = d.content || '';
-        _box.appendChild(_el);
-        if (typeof scrollToBottom === 'function') scrollToBottom();
+      // 修复：即使 message_id 为空也能触发渲染，且只要在聊天页就追加
+      if (chatState.conversationId && d.conversation_id && String(chatState.conversationId) === String(d.conversation_id)) {
+        const _box = document.getElementById('chat-messages');
+        if (_box) {
+          const _wrapper = createMessageElement('friend', d.content, '好友', d.message_id, new Date().toISOString(), false, false, chatState);
+          _box.appendChild(_wrapper);
+          if (typeof scrollToBottom === 'function') scrollToBottom();
+        }
       }
       return;
     }

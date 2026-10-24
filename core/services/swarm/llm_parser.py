@@ -247,6 +247,8 @@ def _precheck_steps(steps):
             fp = params.get("file_path", "")
             if "{{step" in fp or "{step" in fp:
                 blocked.append(f"step {step_num}: 路径含未替换占位符")
+        if s.get("type") == "harness" and module_id not in ("answer", "harness_reload") and not params:
+            blocked.append(f"step {step_num}: harness ({module_id}) 缺少 params 参数")
         if module_id == "run_python":
             code = params.get("code", "")
             for banned in ("subprocess", "socket", "ctypes", "multiprocessing", "signal"):

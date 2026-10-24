@@ -64,18 +64,10 @@ async def send_message(
                 _c_fc.execute('SELECT is_friend_chat FROM conversations WHERE id=?', (conversation_id,))
                 _r_fc = _c_fc.fetchone()
             if _r_fc and _r_fc['is_friend_chat'] == 1:
-                from core.services import cross_account_delivery as _cad_fc
-                _cad_fc.deliver_to_linked_accounts(user_id, conversation_id, content, sender_agent_id, msg_type, attachments)
-                print('[message] 好友投递: conv=' + str(conversation_id))
-                if not sender_agent_id:
-                    return {
-                        'conversation_id': conversation_id,
-                        'user_message': content,
-                        'assistant_reply': '',
-                        'agent_id': agent_id,
-                        'sender_agent_id': sender_agent_id,
-                        'mode': mode,
-                    }
+                from .friend_chat import handle_friend_message
+                _friend_res = await handle_friend_message(user_id, conversation_id, content, sender_agent_id, msg_type, attachments, _att_str, agent_id, mode)
+                if _friend_res is not None:
+                    return _friend_res
         except Exception as _e_fc:
             print('[message] 好友投递失败: ' + str(_e_fc))
 

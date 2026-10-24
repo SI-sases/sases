@@ -52,27 +52,69 @@ def list_my_agents(user_id: int):
     return agents
 
 def list_friend_agents(user_id: int):
+    friends = []
     with db_cursor() as cur:
+        # 1. 查询所有 accepted 的好友关系
         cur.execute("""
-            SELECT af.friend_agent_id, mc.name, mc.provider, mc.model_name, mc.capabilities, mc.model_type, u.username as owner_name, mc.price
+            SELECT af.friend_agent_id, af.target_user_id, af.friend_mode
             FROM agent_friendships af
-            JOIN model_configs mc ON af.friend_agent_id = mc.id
-            JOIN users u ON mc.user_id = u.id
             WHERE af.user_id=? AND af.status='accepted'
         """, (user_id,))
         rows = cur.fetchall()
-
-    friends = []
-    for row in rows:
-        friends.append({
-            "agent_id": row["friend_agent_id"],
-            "name": row["name"],
-            "owner": row["owner_name"],
-            "type": "local" if row["model_type"] == "local" else "api",
-            "capability": row["capabilities"] or "云端模型",
-            "detail": f"{row['provider'] or row['model_name']}",
-            "price": row["price"]
-        })
+        
+        for row in rows:
+            target_uid = row["target_user_id"]
+            friend_aid = row["friend_agent_id"]
+            
+            # 如果是真人好友
+            if target_uid:
+                cur.execute("SELECT username FROM users WHERE id=?", (target_uid,))
+                u_row = cur.fetchone()
+                name = u_row["username"] if u_row else f"User{target_uid}"
+                
+                # 查双向会话 ID
+                cur.execute("""
+                    SELECT id FROM conversations 
+                    WHERE (user_id=? AND target_user_id=?) OR (user_id=? AND target_user_id=?) 
+                    AND is_friend_chat=1 LIMIT 1
+                """, (user_id, target_uid, target_uid, user_id))
+                conv_row = cur.fetchone()
+                conv_id = conv_row["id"] if conv_row else None
+                
+                friends.append({
+                    "agent_id": f"user_{target_uid}",
+                    "name": name,
+                    "owner": "用户",
+                    "type": "friend",
+                    "conversation_id": conv_id,
+                    "target_user_id": target_uid,
+                    "capability": "真人好友",
+                    "detail": "普通用户",
+                    "price": 0,
+                    "friend_mode": row["friend_mode"]
+                })
+            # 如果是智能体好友
+            elif friend_aid:
+                cur.execute("""
+                    SELECT mc.name, mc.provider, mc.model_name, mc.capabilities, mc.model_type, mc.price, u.username as owner_name
+                    FROM model_configs mc
+                    JOIN users u ON mc.user_id = u.id
+                    WHERE mc.id=?
+                """, (friend_aid,))
+                mc_row = cur.fetchone()
+                if mc_row:
+                    friends.append({
+                        "agent_id": friend_aid,
+                        "name": mc_row["name"],
+                        "owner": mc_row["owner_name"],
+                        "type": "friend",
+                        "conversation_id": None,
+                        "target_user_id": None,
+                        "capability": mc_row["capabilities"] or "云端模型",
+                        "detail": f"{mc_row['provider'] or mc_row['model_name']}",
+                        "price": mc_row["price"],
+                        "friend_mode": row["friend_mode"]
+                    })
     return friends
 
 def search_agents(user_id: int, q: str, include_self: bool = False):

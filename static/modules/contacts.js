@@ -70,7 +70,7 @@ function generateAgentRow(agent, type) {
   `;
 
   return `
-    <div class="swipe-row" data-agent-id="${agent.agent_id}" data-agent-name="${agent.name}" data-agent-type="${type}">
+    <div class="swipe-row" data-agent-id="${agent.agent_id}" data-agent-name="${agent.name}" data-agent-type="${type}" ${type === 'friend' ? `data-conversation-id="${agent.conversation_id || ''}" data-target-user-id="${agent.target_user_id || ''}"` : ''}>
       <div class="agent-row">
         <div class="agent-avatar" style="background: ${bgColor};">
           ${agent.name.charAt(0)}
@@ -222,7 +222,16 @@ async function renderContacts(container) {
       const agentId = row.dataset.agentId;
       const agentName = row.dataset.agentName;
       const agentType = row.dataset.agentType;
-      openAgentInfo(agentId, agentName, agentType);
+      
+      if (agentType === 'friend') {
+        // 好友智能体：必须进入历史会话，不能传 null
+        const convId = row.dataset.conversationId ? parseInt(row.dataset.conversationId) : null;
+        const targetUserId = row.dataset.targetUserId ? parseInt(row.dataset.targetUserId) : null;
+        openChatWindow(convId, agentName, agentId, agentType, 1, 'normal', targetUserId);
+      } else {
+        // 我的智能体：新建空白会话（Claude 模式）
+        openChatWindow(null, agentName, agentId, agentType);
+      }
     });
 
     row.addEventListener('touchstart', handleTouchStart, { passive: true });

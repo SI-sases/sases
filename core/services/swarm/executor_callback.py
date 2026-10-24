@@ -292,7 +292,7 @@ async def handle_step_done(
                             _next_result = await plan_task(
                                 user_id=task["user_id"],
                                 conversation_id=conversation_id,
-                                user_input=_decision["task"],
+                                user_input=task["user_text"] + chr(10) + '[MODIFY] ' + _decision["task"],
                                 supervisor_id=task.get("supervisor_id"),
                                 supervisor_run_id=_run_id,
                             )
@@ -639,7 +639,7 @@ async def handle_step_done(
                             _next_result = await plan_task(
                                 user_id=task["user_id"],
                                 conversation_id=conversation_id,
-                                user_input=_decision["task"],
+                                user_input=task["user_text"] + chr(10) + '[MODIFY] ' + _decision["task"],
                                 supervisor_id=task.get("supervisor_id"),
                                 supervisor_run_id=_run_id,
                             )
