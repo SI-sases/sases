@@ -38,7 +38,8 @@ def run(params):
             "success": res.returncode == 0,
             "stdout": res.stdout,
             "stderr": res.stderr,
-            "returncode": res.returncode
+            "returncode": res.returncode,
+            "error": (res.stderr or "").strip()[:500] if res.returncode != 0 else ""
         }
     except subprocess.TimeoutExpired:
         return {"success": False, "error": "SSH 执行超时"}
