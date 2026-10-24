@@ -92,6 +92,13 @@ function openAddApiKeyForm() {
           <option value="custom">自定义 (custom)</option>
         </select>
         <input type="text" id="api-provider-custom-input" class="inline-input" placeholder="custom provider" style="display:none;">
+
+        <script>
+          document.getElementById('api-provider-input').addEventListener('change', function() {
+            var customInput = document.getElementById('api-provider-custom-input');
+            customInput.style.display = this.value === 'custom' ? 'block' : 'none';
+          });
+        </script>
       </div>
       <div class="me-menu-item">
         <span class="menu-label">${t('api_key')}</span>
