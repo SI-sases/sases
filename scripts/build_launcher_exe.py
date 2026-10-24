@@ -20,6 +20,12 @@ cmd = [
     "--name", "SASES启动器",
     "--distpath", os.path.join(ROOT, "launcher", "dist"),
     "--workpath", os.path.join(ROOT, "launcher", "build"),
+    "--hidden-import", "urllib.request",
+    "--hidden-import", "urllib.error",
+    "--hidden-import", "urllib.parse",
+    "--hidden-import", "http.client",
+    "--hidden-import", "ui.main_window",
+    "--hidden-import", "launcher_config",
     # 一定要放在前面的源脚本
     os.path.join(ROOT, "launcher", "launcher.py"),
     # 绝对路径注入依赖
