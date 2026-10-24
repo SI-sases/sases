@@ -240,7 +240,7 @@ async def task_summarizer(task):
             )
             if not _any_not_found:
                 print('[supervisor] task_summarizer 假完成拦截: 任务含修改动词但无 file_patch 成功')
-                return {'goal_achieved': False, 'goal_reason': '任务要求修改但无 file_patch 成功落地', 'missing': ['实际修改'], 'next_hint': '用 file_patch 实际执行修改，禁止只报告不修改'}
+                return {'goal_achieved': False, 'goal_reason': '任务要求修改但无 file_patch / ssh_exec / run_python / run_forever 任何写操作成功凭证', 'missing': ['实际修改'], 'next_hint': '用 file_patch 实际执行修改，禁止只报告不修改'}
     except Exception as _e_fake:
         print('[supervisor] 假完成判定异常: ' + str(_e_fake))
     
