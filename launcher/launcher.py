@@ -4,13 +4,11 @@ import sys
 import socket
 import subprocess
 from PyQt6.QtGui import QIcon
-from PyQt6.QtWidgets import QApplication, QInputDialog, QMessageBox
+from PyQt6.QtWidgets import QApplication, QMessageBox, QDialog, QVBoxLayout, QLabel, QLineEdit, QHBoxLayout, QPushButton
 
 # 单实例锁：绑定一个不对外开放的本地端口
-# 进程退出时端口自动释放，无需清理死锁文件
 _LOCK_PORT = 54821
 _lock_sock = None
-
 
 def _acquire_single_instance():
     global _lock_sock
@@ -23,25 +21,68 @@ def _acquire_single_instance():
     except OSError:
         return False
 
+class SetupDialog(QDialog):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle('SASES 首次配置')
+        self.setFixedSize(480, 240)
+        # 统一风格：背景深灰，字体白
+        self.setStyleSheet("background-color: #1e1e1e; color: #ffffff; font-family: 'Microsoft YaHei';")
+        
+        layout = QVBoxLayout(self)
+        layout.setSpacing(15)
+        layout.setContentsMargins(25, 25, 25, 25)
+        
+        title = QLabel("欢迎使用 SASES！")
+        title.setStyleSheet("font-size: 18px; font-weight: bold; color: #4a90e2;")
+        desc = QLabel("请输入您的 DeepSeek API Key 以启动本地服务\n（直接跳过则稍后在网页端配置）：")
+        desc.setStyleSheet("color: #aaaaaa; font-size: 13px;")
+        
+        self.input = QLineEdit()
+        self.input.setEchoMode(QLineEdit.EchoMode.Password)
+        self.input.setStyleSheet("background-color: #2b2b2b; border: 1px solid #3c3c3c; padding: 10px; color: white; border-radius: 4px; font-size: 14px;")
+        
+        btn_layout = QHBoxLayout()
+        btn_ok = QPushButton("保存并启动")
+        btn_ok.setStyleSheet("background-color: #4a90e2; color: white; padding: 8px 16px; border-radius: 4px; font-weight: bold;")
+        btn_ok.clicked.connect(self.accept)
+        btn_skip = QPushButton("跳过")
+        btn_skip.setStyleSheet("background-color: #3c3c3c; color: white; padding: 8px 16px; border-radius: 4px;")
+        btn_skip.clicked.connect(self.reject)
+        
+        btn_layout.addStretch(1)
+        btn_layout.addWidget(btn_skip)
+        btn_layout.addWidget(btn_ok)
+        
+        layout.addWidget(title)
+        layout.addWidget(desc)
+        layout.addWidget(self.input)
+        layout.addLayout(btn_layout)
+        
+        self.text = ""
+        self.ok = False
+        btn_ok.clicked.connect(self._on_ok)
+        btn_skip.clicked.connect(self._on_skip)
+        
+    def _on_ok(self):
+        self.text = self.input.text()
+        self.ok = True
+        self.accept()
+        
+    def _on_skip(self):
+        self.text = ""
+        self.ok = False
+        self.reject()
 
 def main():
     if not _acquire_single_instance():
-        # 已有实例在跑
         try:
-            from PyQt6.QtWidgets import QApplication, QMessageBox
             app = QApplication(sys.argv)
-            QMessageBox.warning(
-                None, 'SASES 启动器',
-                '启动器已在运行中。\n请检查任务栏或系统托盘。'
-            )
+            QMessageBox.warning(None, 'SASES 启动器', '启动器已在运行中。\n请检查任务栏或系统托盘。')
         except Exception:
             print('[launcher] 启动器已在运行中')
         sys.exit(1)
 
-    # 延迟 import（PyQt 只在真要起窗口时才加载）
-    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-    from PyQt6.QtWidgets import QApplication
-    # ====== 1. 端口残留清理 ======
     try:
         out = subprocess.check_output('wmic process where "commandline like \'%run_forever.py%\'" get processid', shell=True).decode('gbk', errors='ignore')
         pids = [line.strip() for line in out.split('\n') if line.strip().isdigit()]
@@ -52,43 +93,43 @@ def main():
     except Exception:
         pass
 
-    # ====== 2. 首次运行向导 ======
     root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     env_path = os.path.join(root_dir, '.env')
-
+    
     if not os.path.exists(env_path):
         app = QApplication(sys.argv)
-        text, ok = QInputDialog.getText(
-            None, 'SASES 首次配置',
-            '欢迎使用 SASES！\n\n请输入您的 DeepSeek API Key 以启动本地服务（直接回车跳过，稍后在网页配置）：',
-            # 已移除 PyQt6 不兼容的 echo 参数
-        )
-        if ok and text.strip():
+        dialog = SetupDialog()
+        dialog.exec()
+        if dialog.ok and dialog.text.strip():
             with open(env_path, 'w', encoding='utf-8') as f:
-                f.write(f"DEEPSEEK_API_KEY={text.strip()}\n")
+                f.write(f"DEEPSEEK_API_KEY={dialog.text.strip()}\n")
             QMessageBox.information(None, '配置成功', 'API Key 已保存，即将启动 SASES！')
         else:
             with open(env_path, 'w', encoding='utf-8') as f:
                 f.write("DEEPSEEK_API_KEY=\n")
 
-
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     from ui.main_window import MainWindow
 
     app = QApplication(sys.argv)
-    import sys
+    
     if getattr(sys, 'frozen', False):
         base_dir = sys._MEIPASS
     else:
         base_dir = os.path.dirname(os.path.abspath(__file__))
+    
     ico_path = os.path.join(base_dir, 'icon.ico')
     if not os.path.exists(ico_path):
         ico_path = os.path.join(base_dir, 'launcher', 'icon.ico')
-    app.setWindowIcon(QIcon(ico_path))
-    app.setQuitOnLastWindowClosed(False)  # 关键：关窗不退出，托盘还活着
+    
+    if os.path.exists(ico_path):
+        app.setWindowIcon(QIcon(ico_path))
+        
+    app.setQuitOnLastWindowClosed(False)
+    
     w = MainWindow()
     w.show()
     sys.exit(app.exec())
-
 
 if __name__ == '__main__':
     main()
