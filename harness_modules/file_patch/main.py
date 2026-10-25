@@ -419,10 +419,16 @@ def run(params):
                         _a.parse(fh.read())
                 else:
                     import subprocess as _sp
-                    _r = _sp.run(['node', '--check', fp], capture_output=True, text=True, timeout=10, encoding='utf-8', errors='replace')
-                    if _r.returncode != 0:
+                    try:
+                        _r = _sp.run(['node', '--check', fp], capture_output=True, text=True, timeout=10, encoding='utf-8', errors='replace')
+                        if _r.returncode != 0:
+                            ok = False
+                            err = (_r.stderr or '')[:300]
+                    except FileNotFoundError:
+                        pass # 忽略没装 node 的情况
+                    except Exception as _sub_e:
                         ok = False
-                        err = (_r.stderr or '')[:300]
+                        err = str(_sub_e)[:300]
             except Exception as _e:
                 ok = False
                 err = str(_e)[:300]

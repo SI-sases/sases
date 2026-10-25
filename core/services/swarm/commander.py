@@ -279,7 +279,7 @@ async def plan_task(
         _insert_message(conversation_id, err_msg, sender_agent_id=commander_id)
         return {"status": "error", "message": "LLM empty response"}
 
-    steps = _parse_plan(raw, max_steps=max_steps)
+    steps = _parse_plan(raw)
     if steps:
         steps = _normalize_steps(steps)
         steps, _fmt_errors = _validate_steps_format(steps)
@@ -575,7 +575,7 @@ async def replan_failed_steps(task: Dict[str, Any], max_steps: int = None) -> Op
         print(f"[swarm] 重拆 LLM 返回空，放弃重拆")
         return None
 
-    steps = _parse_plan(raw, max_steps=max_steps)
+    steps = _parse_plan(raw)
     if steps:
         steps = _normalize_steps(steps)
         steps, _fmt_errors = _validate_steps_format(steps)
