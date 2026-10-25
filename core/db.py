@@ -1136,6 +1136,12 @@ def init_db():
         """)
         cur.execute("CREATE INDEX IF NOT EXISTS idx_suprun_user ON supervisor_runs(user_id)")
         _ensure_column(cur, "supervisor_runs", "task_type", "TEXT")
+        _ensure_column(cur, 'conversations', 'target_user_id', 'INTEGER')
+        _ensure_column(cur, 'conversations', 'is_friend_chat', 'INTEGER')
+        _ensure_column(cur, 'conversations', 'friend_mode', 'TEXT')
+        _ensure_column(cur, 'conversations', 'target_user_id', 'INTEGER')
+        _ensure_column(cur, 'conversations', 'is_friend_chat', 'INTEGER')
+        _ensure_column(cur, 'conversations', 'friend_mode', 'TEXT')
 
 
         # ========== 积分库（v0.20） ==========

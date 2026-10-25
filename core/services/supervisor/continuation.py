@@ -7,6 +7,12 @@ from .runs import get_run, finish_run, record_round, deduct_round
 from .decider import decide_next_step, task_summarizer, build_next_input
 
 def signal_restart(run_id, reason=''):
+    import os, time
+    if os.path.exists('restart_cooling.lock'):
+        if time.time() - os.path.getmtime('restart_cooling.lock') < 180:
+            print('[supervisor] restart too frequent, ignored')
+            return False
+    with open('restart_cooling.lock', 'w') as f: f.write('lock')
     try:
         import time
         content = f"run_id={run_id}|reason={reason}|at={int(time.time())}"
