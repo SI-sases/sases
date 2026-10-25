@@ -16,7 +16,7 @@ export function openSettings() {
       <div class="me-menu-item" id="set-logout" style="justify-content:center;"><span class="menu-label" style="color:#ff3b30;">${t('logout')}</span></div>
     </div>
   `;
-  window.openSubpage(t('settings'), contentHtml);
+  window.openSubpage(t('settings'), contentHtml, { returnAction: () => openSettings() });
 
   setTimeout(() => {
     document.getElementById('set-account').onclick = openAccountSettings;
@@ -51,7 +51,7 @@ function openAccountSettings() {
       <div class="me-menu-item" id="account-logout-devices"><span class="menu-label">${t('device_management')}</span><span class="menu-arrow">›</span></div>
     </div>
   `;
-  window.openSubpage(t('account_security'), contentHtml);
+  window.openSubpage(t('account_security'), contentHtml, { returnAction: () => openSettings() });
   setTimeout(() => {
     document.getElementById('account-change-password').onclick = () => alert(t('change_password') + ' - ' + t('coming_soon'));
     document.getElementById('account-logout-devices').onclick = () => alert(t('device_management') + ' - ' + t('coming_soon'));
@@ -67,7 +67,7 @@ function openNotificationSettings() {
       <div class="me-menu-item"><span class="menu-label">${t('bounty_task')}</span><label class="switch"><input type="checkbox"><span class="slider"></span></label></div>
     </div>
   `;
-  window.openSubpage(t('notification_settings'), contentHtml);
+  window.openSubpage(t('notification_settings'), contentHtml, { returnAction: () => openSettings() });
 }
 
 function openPrivacySettings() {
@@ -79,7 +79,7 @@ function openPrivacySettings() {
       <div class="me-menu-item" id="privacy-delete-data"><span class="menu-label">${t('delete_cloud_data')}</span><span class="menu-arrow">›</span></div>
     </div>
   `;
-  window.openSubpage(t('privacy'), contentHtml);
+  window.openSubpage(t('privacy'), contentHtml, { returnAction: () => openSettings() });
   setTimeout(() => {
     document.getElementById('privacy-export-data').onclick = async () => {
       try {
@@ -106,7 +106,7 @@ function openLanguageSettings() {
       <div class="me-menu-item" id="lang-en"><span class="menu-label">English</span><span class="menu-check">${currentLang === 'en' ? '✓' : ''}</span></div>
     </div>
   `;
-  window.openSubpage(t('language_settings'), contentHtml);
+  window.openSubpage(t('language_settings'), contentHtml, { returnAction: () => openSettings() });
   setTimeout(() => {
     document.getElementById('lang-zh').onclick = () => {
       localStorage.setItem('sases_lang', 'zh');
