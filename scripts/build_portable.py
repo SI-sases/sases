@@ -7,7 +7,19 @@ EMBED_URL = "https://www.python.org/ftp/python/3.12.10/python-3.12.10-embed-amd6
 def build():
     print("1. 清理旧目录...")
     if os.path.exists(BUILD_DIR):
-        shutil.rmtree(BUILD_DIR)
+        # 强制清除可能被占用的 .git 目录
+        git_dir = os.path.join(BUILD_DIR, ".git")
+        if os.path.exists(git_dir):
+            import stat
+            def on_rm_error(func, path, exc_info):
+                os.chmod(path, stat.S_IWRITE)
+                func(path)
+            shutil.rmtree(git_dir, onerror=on_rm_error)
+        try:
+            shutil.rmtree(BUILD_DIR)
+        except Exception as e:
+            print(f"常规删除失败，尝试静默强杀: {e}")
+            os.system(f'rmdir /s /q "{BUILD_DIR}"')
     os.makedirs(BUILD_DIR)
 
     print("2. 下载并解压 Python Embeddable...")
