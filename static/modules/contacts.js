@@ -195,9 +195,17 @@ async function renderContacts(container) {
   container.querySelectorAll('[data-entry]').forEach(item => {
     item.addEventListener('click', () => {
       const type = item.dataset.entry;
-      if (type === 'new-agent') openNewAgentPage();
-      else if (type === 'api-agent') { if (window.openModelManagement) window.openModelManagement(() => window.activateMainView('contacts')); }
-      else if (type === 'group-chat') openGroupChatList();
+      if (type === 'new-agent') {
+          if (typeof openNewAgentPage === 'function') openNewAgentPage();
+          else window.openSubpage('添加朋友', '<div class="me-menu" style="margin-top:10px;"><div class="me-menu-item"><span class="menu-label" style="padding:20px; display:block; text-align:center; color:#888;">搜索账号功能开发中</span></div></div>', { returnAction: () => window.activateMainView('contacts') });
+      }
+      else if (type === 'api-agent') { 
+          if (window.openModelManagement) window.openModelManagement(() => window.activateMainView('contacts')); 
+      }
+      else if (type === 'group-chat') {
+          if (typeof openGroupChatList === 'function') openGroupChatList();
+          else window.openSubpage('群聊', '<div class="me-menu" style="margin-top:10px;"><div class="me-menu-item"><span class="menu-label" style="padding:20px; display:block; text-align:center; color:#888;">群聊列表开发中</span></div></div>', { returnAction: () => window.activateMainView('contacts') });
+      }
     });
   });
 
