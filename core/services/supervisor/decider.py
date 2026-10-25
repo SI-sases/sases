@@ -160,7 +160,8 @@ async def task_summarizer(task):
                 _has_block_success = True
             if _status in ('failed', 'blocked', 'timeout', 'error'):
                 _has_any_fail = True
-        if _has_block_success and not _has_any_fail:
+        _is_complex_task = any(k in user_text for k in ['并', '然后', '接着', '加', '改', '修复', '替换'])
+        if _has_block_success and not _has_any_fail and not _is_complex_task:
             print('[supervisor] task_summarizer block 工具成功判定 → 判完成')
             return {
                 'goal_achieved': True,
@@ -188,7 +189,9 @@ async def task_summarizer(task):
             if _cmd2 == 'answer' and _st2 == 'success':
                 if any(_sig in _out2 for _sig in _done_signals):
                     _has_done_answer = True
-        if _has_done_answer and _has_success_tool and not _has_any_fail2:
+        _fake_words = ['placeholder', '占位符', '待实现', 'TODO', '示例代码']
+        _is_fake = any(w in str(_ans_all).lower() for w in _fake_words)
+        if _has_done_answer and _has_success_tool and not _has_any_fail2 and not _is_fake:
             print('[supervisor] task_summarizer answer 含完成信号 → 判完成')
             return {
                 'goal_achieved': True,
@@ -221,7 +224,9 @@ async def task_summarizer(task):
         for _r in results:
             _ans_all += str(_r.get('answer') or _r.get('output') or '') + ' | '
         _fl_count = len(_re_final.findall(r'[\w/\.\-]+\.\w+:\d+|\b\d+行', _ans_all))
-        if _fl_count >= 3:
+        _is_modify = any(k in user_text for k in ['改', '修', '加', '删', '替换', '写'])
+        _has_patch = any(str(_r.get('command') or _r.get('module_id') or '') == 'file_patch' and _r.get('status') == 'success' for _r in results)
+        if _fl_count >= 3 and (not _is_modify or _has_patch):
             print(f'[supervisor] task_summarizer 终轮提示词命中: {_fl_count} 条 file:line')
             return {'goal_achieved': True, 'goal_reason': f'报告含 {_fl_count} 条 file:line 具体结论', 'missing': [], 'next_hint': ''}
 
