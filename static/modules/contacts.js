@@ -196,7 +196,7 @@ async function renderContacts(container) {
     item.addEventListener('click', () => {
       const type = item.dataset.entry;
       if (type === 'new-agent') openNewAgentPage();
-      else if (type === 'api-agent') { if (window.openModelManagement) window.openModelManagement(); }
+      else if (type === 'api-agent') { if (window.openModelManagement) window.openModelManagement(() => window.activateMainView('contacts')); }
       else if (type === 'group-chat') openGroupChatList();
     });
   });
