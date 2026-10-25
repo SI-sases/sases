@@ -338,7 +338,8 @@ function openNewAgentPage() {
   `;
   
   window.openSubpage('添加朋友', contentHtml, {
-    showMore: false
+    showMore: false,
+    returnAction: () => window.activateMainView('contacts')
   });
 
   setTimeout(() => {
