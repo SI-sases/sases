@@ -956,3 +956,9 @@ textarea#chat-input { field-sizing: fixed !important; }
   margin-left: auto;
   color: var(--text-muted, #999);
 }
+
+/* FIX_DOWNLOAD_OVERLAP */
+#download-client-btn {
+    z-index: 100;
+    top: 60px !important; /* 往下挪一点，避免遮挡顶部栏 */
+}

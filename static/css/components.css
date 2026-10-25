@@ -256,3 +256,4 @@
   margin-bottom: var(--space-md);
   opacity: 0.5;
 }
+#download-client-btn { top: 60px !important; z-index: 50 !important; }
