@@ -136,10 +136,6 @@ async def check_and_continue(run_id, last_summary, plan_text=None, exec_text=Non
         return False, None
 
     if not deduct_round(run_id):
-                    try:
-                with db_cursor(commit=True) as _c_c:
-                    _c_c.execute("INSERT INTO messages (conversation_id, sender, content, msg_type) VALUES (?, 'assistant', '⚠️ 系统提示：您的积分不足，任务已终止。', 'standard')", (conversation_id,))
-            except: pass
             finish_run(run_id, status='insufficient_credits')
         return False, None
     return True, build_next_input(run_id)
