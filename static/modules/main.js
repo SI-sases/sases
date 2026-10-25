@@ -232,7 +232,7 @@ function enterMainApp() {
   import('./ws_client.js').then(m => m.connectUserWs()).catch(() => {});
 }
 
-function activateMainView(viewName) {
+window.activateMainView = function activateMainView(viewName) {
   closeChatWindow();
   window.__currentReturnAction = null;
   closeSubpage();
