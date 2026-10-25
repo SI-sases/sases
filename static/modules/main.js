@@ -1,52 +1,4 @@
 // static/modules/main.js
-// ====== 智能节点测速分流 ======
-async function checkNodeSpeedAndRedirect() {
-    // 如果存在 hash 路由（说明可能在做特定操作，比如登录中），就不跳转，防止打断
-    if (window.location.hash && window.location.hash.length > 2) return;
-
-    const nodes = [
-        { host: '47.96.87.147:8001', protocol: 'http:', name: '国内节点' },
-        { host: '8.210.238.165:8443', protocol: 'https:', name: '香港节点' }
-    ];
-    
-    const currentHost = window.location.host;
-    let fastestNode = nodes.find(n => currentHost === n.host) || nodes[0];
-    let minTime = 9999;
-
-    for (const node of nodes) {
-        const start = performance.now();
-        try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 2000); // 2秒超时
-            
-            // 用 no-cors 模式测速，不关心返回内容，只测网络连通耗时
-            await fetch(`${node.protocol}//${node.host}/static/favicon.svg?t=${Date.now()}`, { 
-                mode: 'no-cors',
-                signal: controller.signal
-            });
-            clearTimeout(timeoutId);
-            const time = performance.now() - start;
-            if (time < minTime) {
-                minTime = time;
-                fastestNode = node;
-            }
-        } catch (e) {
-            // 节点不通，忽略
-        }
-    }
-    
-    // 如果测出的最快节点不是当前访问的节点，自动重定向
-    if (fastestNode.host !== currentHost) {
-        console.log(`[Node Selector] 自动切换至最优节点: ${fastestNode.name} (${minTime.toFixed(0)}ms)`);
-        window.location.href = `${fastestNode.protocol}//${fastestNode.host}/static/index.html${window.location.hash}`;
-    } else {
-        console.log(`[Node Selector] 当前已是最优节点: ${fastestNode.name} (${minTime.toFixed(0)}ms)`);
-    }
-}
-
-// 延迟 1.5 秒执行，避免影响网页首次渲染
-setTimeout(checkNodeSpeedAndRedirect, 1500);
-// ==============================
 import { login, register, isLoggedIn } from './auth.js';
 import { api } from './api.js';
 import { initMessages } from './messages.js';
@@ -331,3 +283,53 @@ function initTopActions() {
   if (searchBtn) searchBtn.addEventListener('click', openGlobalSearch);
   if (plusBtn) plusBtn.addEventListener('click', showPlusMenu);
 }
+
+
+// ====== 智能节点测速分流 ======
+async function checkNodeSpeedAndRedirect() {
+    // 1. 本地开发环境豁免
+    const currentHost = window.location.host;
+    if (currentHost.includes('127.0.0.1') || currentHost.includes('localhost')) {
+        console.log("[Node Selector] 本地开发环境，跳过测速跳转");
+        return;
+    }
+
+    // 2. 如果存在 hash 路由（说明可能在做特定操作，比如登录中），不跳转
+    if (window.location.hash && window.location.hash.length > 2) return;
+
+    const nodes = [
+        { host: '47.96.87.147:8001', protocol: 'http:', name: '国内节点' },
+        { host: '8.210.238.165:8443', protocol: 'https:', name: '香港节点' }
+    ];
+    
+    let fastestNode = nodes.find(n => currentHost === n.host) || nodes[0];
+    let minTime = 9999;
+
+    for (const node of nodes) {
+        const start = performance.now();
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 2000);
+            
+            await fetch(`${node.protocol}//${node.host}/static/favicon.svg?t=${Date.now()}`, { 
+                mode: 'no-cors',
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+            const time = performance.now() - start;
+            if (time < minTime) {
+                minTime = time;
+                fastestNode = node;
+            }
+        } catch (e) {}
+    }
+    
+    if (fastestNode.host !== currentHost) {
+        console.log(`[Node Selector] 自动切换至最优节点: ${fastestNode.name} (${minTime.toFixed(0)}ms)`);
+        window.location.href = `${fastestNode.protocol}//${fastestNode.host}/static/index.html${window.location.hash}`;
+    } else {
+        console.log(`[Node Selector] 当前已是最优节点: ${fastestNode.name} (${minTime.toFixed(0)}ms)`);
+    }
+}
+setTimeout(checkNodeSpeedAndRedirect, 1500);
+// ==============================
