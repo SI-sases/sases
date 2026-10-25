@@ -1,0 +1,23 @@
+{
+  "id": "string-utils",
+  "name": "字符串工具",
+  "description": "字符串反转、大小写转换等",
+  "version": "1.0.0",
+  "capabilities": [
+    "string",
+    "text_processing"
+  ],
+  "permissions": [],
+  "entrypoint": "main.py",
+  "node_type": "harness",
+  "params": {
+    "operation": {
+      "type": "string",
+      "desc": "必填"
+    },
+    "text": {
+      "type": "string",
+      "desc": "必填"
+    }
+  }
+}

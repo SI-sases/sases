@@ -1,0 +1,24 @@
+{
+  "id": "json-formatter",
+  "name": "JSON 格式化",
+  "description": "美化或压缩 JSON 字符串",
+  "version": "1.0.0",
+  "capabilities": [
+    "json",
+    "formatting"
+  ],
+  "permissions": [],
+  "entrypoint": "main.py",
+  "node_type": "harness",
+  "params": {
+    "json_string": {
+      "type": "string",
+      "desc": "必填"
+    },
+    "indent": {
+      "type": "int",
+      "default": 2,
+      "desc": "可选"
+    }
+  }
+}

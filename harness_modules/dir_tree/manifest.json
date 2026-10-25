@@ -1,0 +1,29 @@
+{
+  "id": "dir_tree",
+  "aliases": [
+    "list_files"
+  ],
+  "name": "目录树",
+  "description": "列出目录树结构",
+  "version": "1.0.0",
+  "capabilities": [
+    "dir_tree"
+  ],
+  "permissions": [
+    "restricted_file_write"
+  ],
+  "entrypoint": "main.py",
+  "node_type": "harness",
+  "params": {
+    "path": {
+      "type": "string",
+      "default": ".",
+      "desc": "可选"
+    },
+    "max_depth": {
+      "type": "int",
+      "default": 2,
+      "desc": "可选"
+    }
+  }
+}

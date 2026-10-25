@@ -1,0 +1,13 @@
+{
+  "id": "split_block",
+  "name": "安全拆分代码块",
+  "description": "把一段代码从源文件拆到新文件，全流程事务保护，失败自动回滚",
+  "params": {
+    "source_file": {"type": "string", "required": true},
+    "start_pattern": {"type": "string", "required": true},
+    "end_pattern": {"type": "string", "required": true},
+    "new_file": {"type": "string", "required": true},
+    "import_anchor": {"type": "string", "required": false},
+    "delete_replace_with": {"type": "string", "required": false}
+  }
+}

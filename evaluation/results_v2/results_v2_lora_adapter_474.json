@@ -1,0 +1,413 @@
+{
+  "model": "lora_adapter_474",
+  "format": "chat",
+  "syntax_ok": 46,
+  "syntax_rate": 0.92,
+  "test_pass": 13,
+  "test_total": 50,
+  "pass_at_1": 0.26,
+  "empty_count": 0,
+  "elapsed_seconds": 190.4,
+  "outputs": [
+    {
+      "benchmark_id": 0,
+      "task": "写一个Python函数，判断一个整数是否是素数",
+      "output": "def is_prime(n):\n    if n <= 1:\n        return False\n    for I in range(2, int(n**0.5)+1):\n        if n % I == 0:\n            return False\n    return True",
+      "syntax_ok": true,
+      "test_passed": true,
+      "test_msg": "全部通过"
+    },
+    {
+      "benchmark_id": 1,
+      "task": "写一个Python函数，将列表中的元素去重并保持原顺序",
+      "output": "def unique_elements(lst):\n    return sorted(set(lst))",
+      "syntax_ok": true,
+      "test_passed": false,
+      "test_msg": "调用异常: unique_elements() takes 1 positional argument but 4 were given"
+    },
+    {
+      "benchmark_id": 2,
+      "task": "写一个Python函数，判断一个字符串中的括号是否有效配对",
+      "output": "def is_valid_bracket(s):\n    if not s:\n        return False\n    if s[0] == '(':\n        return True\n    if s[-1] == ')':\n        return False\n    for I in range(1, len(s)):\n        if s[i] != s[i-1] and s[i] != '[':\n            return False\n    return True\n\nprint(is_valid_bracket('()'))\nprint(is_valid_bracket('[]'))\nprint(is_valid_bracket('{}'))\nprint(is_valid_bracket('{}[]'))\nprint(is_valid_bracket('{}()'))\nprint(is_valid_bracket('{}()'))\nprint(is_valid_bracket('{}()'))\nprint(is_valid_bracket('{}()'))\nprint(is_valid_bracket('{}()'))\nprint(is_valid_bracket('{}()'))\nprint(is_valid_bracket('{}()'))\nprint(is_valid_bracket('{}()'))\nprint(is_valid_bracket('{}()'))\nprint(is_valid_bracket('{}()'))\nprint(is_valid_bracket('{}()'))\nprint(is_valid_bracket('{}()'))\nprint(is_valid_bracket('{}()'))\nprin",
+      "syntax_ok": false,
+      "test_passed": false,
+      "test_msg": "执行异常: unterminated string literal (detected at line 36) (<string>, line 36)"
+    },
+    {
+      "benchmark_id": 3,
+      "task": "写一个Python函数，计算两个数的最大公约数",
+      "output": "def max_common_factor(a, b):\n    \"\"\"\n    计算两个数的最大公约数，返回两个数的最大公约数。\n    \"\"\"\n    if a == 0 or b == 0:\n        return 0\n    if a > b:\n        a, b = b, a\n    if a < 2:\n        return a\n    if b < 2:\n        return b\n    while a % b != 0:\n        a, b = b, a % b\n    return a\n\nprint(max_common_factor(10, 10))  # 10",
+      "syntax_ok": true,
+      "test_passed": false,
+      "test_msg": "输入[48, 18] 期望6 实际12"
+    },
+    {
+      "benchmark_id": 4,
+      "task": "写一个Python函数，计算一个整数的阶乘",
+      "output": "def factorial(n):\n    if n <= 1:\n        return 1\n    else:\n        return n * factorial(n-1)",
+      "syntax_ok": true,
+      "test_passed": true,
+      "test_msg": "全部通过"
+    },
+    {
+      "benchmark_id": 5,
+      "task": "写一个Python函数，判断一个字符串是否是回文",
+      "output": "def is_palindrome(s):\n    if len(s) < 2:\n        return True\n    elif s[0] == s[-1]:\n        return is_palindrome(s[1:-1])\n    else:\n        return False",
+      "syntax_ok": true,
+      "test_passed": false,
+      "test_msg": "输入Aba 期望True 实际False"
+    },
+    {
+      "benchmark_id": 6,
+      "task": "写一个Python函数，返回列表中的最大值",
+      "output": "def max_list(lst):\n    return max(lst)",
+      "syntax_ok": true,
+      "test_passed": false,
+      "test_msg": "调用异常: max_list() takes 1 positional argument but 3 were given"
+    },
+    {
+      "benchmark_id": 7,
+      "task": "写一个Python函数，计算斐波那契数列的第n项",
+      "output": "def fibonacci(n):\n    if n == 0:\n        return 0\n    elif n == 1:\n        return 1\n    else:\n        return fibonacci(n-1) + fibonacci(n-2)",
+      "syntax_ok": true,
+      "test_passed": true,
+      "test_msg": "全部通过"
+    },
+    {
+      "benchmark_id": 8,
+      "task": "写一个Python函数，反转一个字符串",
+      "output": "def reverse_string(s):\n    \"\"\"\n    反转一个字符串\n    :param s: 要反转的字符串\n    :return: 反转后的字符串\n    \"\"\"\n    if not s:\n        return \"\"\n    return ''.join(reversed(s))",
+      "syntax_ok": true,
+      "test_passed": true,
+      "test_msg": "全部通过"
+    },
+    {
+      "benchmark_id": 9,
+      "task": "写一个Python函数，判断一个数是否是偶数",
+      "output": "def is_odd(n):\n    return n % 2 != 0",
+      "syntax_ok": true,
+      "test_passed": false,
+      "test_msg": "输入4 期望True 实际False"
+    },
+    {
+      "benchmark_id": 10,
+      "task": "写一个Python函数，计算列表中所有元素的和",
+      "output": "def sum_list(lst):\n    return sum(lst)",
+      "syntax_ok": true,
+      "test_passed": false,
+      "test_msg": "调用异常: sum_list() takes 1 positional argument but 3 were given"
+    },
+    {
+      "benchmark_id": 11,
+      "task": "写一个Python函数，找出列表中的最小值",
+      "output": "def min_value(lst):\n    if not lst:\n        return None\n    return lst[0] if lst[0] < lst[1] else lst[1]\n\n\nprint(min_value([1, 2, 3, 4, 5]))  # 3",
+      "syntax_ok": true,
+      "test_passed": false,
+      "test_msg": "调用异常: min_value() takes 1 positional argument but 3 were given"
+    },
+    {
+      "benchmark_id": 12,
+      "task": "写一个Python函数，判断一个年份是否是闰年",
+      "output": "def is_leap_year(year):\n    if year % 4 == 0:\n        if year % 100 == 0:\n            if year % 400 == 0:\n                return True\n        else:\n            return True\n    else:\n        return False",
+      "syntax_ok": true,
+      "test_passed": false,
+      "test_msg": "输入1900 期望False 实际None"
+    },
+    {
+      "benchmark_id": 13,
+      "task": "写一个Python函数，将字符串中每个单词的首字母大写",
+      "output": "def capitalize_first_letter(s):\n    return s[0].upper() + s[1:]",
+      "syntax_ok": true,
+      "test_passed": false,
+      "test_msg": "输入hello world 期望Hello World 实际Hello world"
+    },
+    {
+      "benchmark_id": 14,
+      "task": "写一个Python函数，判断一个列表是否已排序（升序）",
+      "output": "def is_sorted(lst):\n    if len(lst) <= 1:\n        return True\n    elif any(lst[i] > lst[i+1] for I in range(len(lst)-1)):\n        return False\n    else:\n        return True\n\n\ndef is_sorted_asc(lst):\n    return all(lst[i] > lst[i+1] for I in range(len(lst)-1))\n\n\ndef is_sorted_desc(lst):\n    return all(lst[i] < lst[i+1] for I in range(len(lst)-1))",
+      "syntax_ok": true,
+      "test_passed": false,
+      "test_msg": "调用异常: is_sorted() takes 1 positional argument but 3 were given"
+    },
+    {
+      "benchmark_id": 15,
+      "task": "写一个Python函数，统计字符串中某个字符出现的次数",
+      "output": "def count_chars(s, char):\n    count = 0\n    for c in s:\n        if c == char:\n            count += 1\n    return count",
+      "syntax_ok": true,
+      "test_passed": true,
+      "test_msg": "全部通过"
+    },
+    {
+      "benchmark_id": 16,
+      "task": "写一个Python函数，找出两个列表的交集",
+      "output": "def intersect(a, b):\n    return list(set(a) & set(b))",
+      "syntax_ok": true,
+      "test_passed": true,
+      "test_msg": "全部通过"
+    },
+    {
+      "benchmark_id": 17,
+      "task": "写一个Python函数，判断一个字符串是否是全数字",
+      "output": "def is_digit(s):\n    for c in s:\n        if not c.isdigit():\n            return False\n    return True",
+      "syntax_ok": true,
+      "test_passed": false,
+      "test_msg": "输入 期望False 实际True"
+    },
+    {
+      "benchmark_id": 18,
+      "task": "写一个Python函数，计算两个列表的并集（去重）",
+      "output": "def union_set(a, b):\n    \"\"\"\n    两个列表的并集，去重。\n    :param a: 第一个列表\n    :param b: 第二个列表\n    :return: 两个列表的并集\n    \"\"\"\n    return list(set(a) & set(b))",
+      "syntax_ok": true,
+      "test_passed": false,
+      "test_msg": "输入[[1, 2], [2, 3]] 期望[1, 2, 3] 实际[2]"
+    },
+    {
+      "benchmark_id": 19,
+      "task": "写一个Python函数，判断一个数是否是正数",
+      "output": "def is_positive(num):\n    return num > 0",
+      "syntax_ok": true,
+      "test_passed": true,
+      "test_msg": "全部通过"
+    },
+    {
+      "benchmark_id": 20,
+      "task": "写一个Python函数，计算字符串的长度",
+      "output": "def length(s):\n    return len(s)",
+      "syntax_ok": true,
+      "test_passed": true,
+      "test_msg": "全部通过"
+    },
+    {
+      "benchmark_id": 21,
+      "task": "写一个Python函数，将二进制字符串转为十进制整数",
+      "output": "def binary_to_decimal(binary):\n    \"\"\"\n    将二进制字符串转为十进制整数\n    :param binary: 二进制字符串\n    :return: 十进制整数\n    \"\"\"\n    binary = binary.strip('01')\n    if len(binary) % 2 != 0:\n        raise ValueError('二进制字符串不够固定长度')\n    result = 0\n    for I in range(len(binary) // 2):\n        digit = int(binary[i])\n        if digit > 9:\n            raise ValueError('二进制字符串中不允许超过9位')\n        result += digit * (2 ** (len(binary) - 1 - i))\n    return result\n\n\ndef decimal_to_binary(decimal):\n    \"\"\"\n    将十进制整数转为二进制字符串\n    :param decimal: 十进制整数\n    :return: 二进制字符串\n    \"\"\"\n    binary = ''\n    while decimal > 0:\n        remainder = decimal % 2\n        binary += '1'\n        decimal //= 2\n    return binary\n",
+      "syntax_ok": true,
+      "test_passed": false,
+      "test_msg": "输入101 期望5 实际0"
+    },
+    {
+      "benchmark_id": 22,
+      "task": "写一个Python函数，判断两个字符串是否是变位词（字母相同顺序不同）",
+      "output": "def is_var_word(s1, s2):\n    if len(s1) != len(s2):\n        return False\n    for I in range(len(s1)):\n        if s1[i] != s2[i]:\n            return False\n    return True",
+      "syntax_ok": true,
+      "test_passed": false,
+      "test_msg": "调用异常: name 'i' is not defined"
+    },
+    {
+      "benchmark_id": 23,
+      "task": "写一个Python函数，求一个列表的平均值",
+      "output": "def avg(lst):\n    if not lst:\n        return 0\n    return sum(lst) / len(lst)",
+      "syntax_ok": true,
+      "test_passed": false,
+      "test_msg": "调用异常: avg() takes 1 positional argument but 3 were given"
+    },
+    {
+      "benchmark_id": 24,
+      "task": "写一个Python函数，返回字符串中出现次数最多的字符",
+      "output": "def max_occurrence(s):\n    count = {}\n    for c in s:\n        if c in count:\n            count[c] += 1\n        else:\n            count[c] = 1\n    return max(count.values())",
+      "syntax_ok": true,
+      "test_passed": false,
+      "test_msg": "输入aabbb 期望b 实际3"
+    },
+    {
+      "benchmark_id": 25,
+      "task": "写一个Python函数，判断一个整数是否为完全平方数",
+      "output": "def is_perfect_square(num):\n    if num < 0:\n        return False\n    if num == 1:\n        return True\n    if num % 2 != 0:\n        return False\n    for I in range(3, int(num ** 0.5) + 1, 2):\n        if num % I == 0:\n            return False\n    return True\n\nprint(is_perfect_square(12))  # True\nprint(is_perfect_square(16))  # True\nprint(is_perfect_square(25))  # False",
+      "syntax_ok": true,
+      "test_passed": true,
+      "test_msg": "全部通过"
+    },
+    {
+      "benchmark_id": 26,
+      "task": "写一个Python函数，将列表中的偶数筛选出来",
+      "output": "def odd_numbers(numbers):\n    return [n for n in numbers if n % 2 != 0]",
+      "syntax_ok": true,
+      "test_passed": false,
+      "test_msg": "调用异常: odd_numbers() takes 1 positional argument but 4 were given"
+    },
+    {
+      "benchmark_id": 27,
+      "task": "写一个Python函数，求一个整数的各位数字之和",
+      "output": "def sum_of_digits(n):\n    if n < 10:\n        return n\n    else:\n        return sum_of_digits(n // 10) + n % 10",
+      "syntax_ok": true,
+      "test_passed": true,
+      "test_msg": "全部通过"
+    },
+    {
+      "benchmark_id": 28,
+      "task": "写一个Python函数，判断字符串是否只包含字母",
+      "output": "def is_alpha(s):\n    return all(c.isalpha() for c in s)",
+      "syntax_ok": true,
+      "test_passed": false,
+      "test_msg": "输入 期望False 实际True"
+    },
+    {
+      "benchmark_id": 29,
+      "task": "写一个Python函数，将列表中的元素反转",
+      "output": "def reverse_list(lst):\n    \"\"\"\n    反转列表\n    :param lst: 列表\n    :return: 反转后的列表\n    \"\"\"\n    if not lst:\n        return []\n    return [lst[-1] if len(lst) > 1 else lst[0] for _ in range(len(lst) // 2)]",
+      "syntax_ok": true,
+      "test_passed": false,
+      "test_msg": "调用异常: reverse_list() takes 1 positional argument but 3 were given"
+    },
+    {
+      "benchmark_id": 30,
+      "task": "写一个Python函数，计算两个列表的差集（在a中不在b中）",
+      "output": "def difference(a, b):\n    return [x for x in a if x not in b]",
+      "syntax_ok": true,
+      "test_passed": true,
+      "test_msg": "全部通过"
+    },
+    {
+      "benchmark_id": 31,
+      "task": "写一个Python函数，判断一个字符串是否是有效的电话号码（11位数字）",
+      "output": "def is_valid_phone_number(phone_number):\n    \"\"\"\n    判断一个电话号码是否是有效的。\n    电话号码由11位数字组成，每位数字都是0或1，不能为00或01。\n    如果有效，则返回True；否则返回False。\n    :param phone_number: 电话号码\n    :return: True or False\n    \"\"\"\n    if not phone_number:\n        return False\n    if len(phone_number) != 11:\n        return False\n    for I in range(1, 11):\n        if not (phone_number[i] == '0' or phone_number[i] == '1'):\n            return False\n    return True\n\n\nprint(is_valid_phone_number('1111111111'))  # True\nprint(is_valid_phone_number('111111111111'))  # False",
+      "syntax_ok": true,
+      "test_passed": false,
+      "test_msg": "调用异常: name 'i' is not defined"
+    },
+    {
+      "benchmark_id": 32,
+      "task": "写一个Python函数，把一个正整数转成二进制字符串（不含前缀）",
+      "output": "def binary(n):\n    return ''.join(str(i) for I in range(n))",
+      "syntax_ok": true,
+      "test_passed": false,
+      "test_msg": "调用异常: name 'i' is not defined"
+    },
+    {
+      "benchmark_id": 33,
+      "task": "写一个Python函数，找出列表中第二大的数",
+      "output": "def second_largest(lst):\n    if len(lst) < 2:\n        return lst[0]\n    elif len(lst) == 2:\n        return lst[1]\n    else:\n        return min(lst[1:])\n\nprint(second_largest([1, 2, 3, 4, 5]))  # 3",
+      "syntax_ok": true,
+      "test_passed": false,
+      "test_msg": "调用异常: second_largest() takes 1 positional argument but 3 were given"
+    },
+    {
+      "benchmark_id": 34,
+      "task": "写一个Python函数，判断一个字符串是否是另一个字符串的子串",
+      "output": "def is_substring(s, t):\n    if len(s) != len(t):\n        return False\n    for I in range(len(s)):\n        if s[i] != t[i]:\n            return False\n    return True",
+      "syntax_ok": true,
+      "test_passed": false,
+      "test_msg": "输入['abc', 'xabcy'] 期望True 实际False"
+    },
+    {
+      "benchmark_id": 35,
+      "task": "写一个Python函数，计算列表中所有奇数的平方和",
+      "output": "def sum_of_square_numbers(numbers):\n    \"\"\"\n    计算列表中所有奇数的平方和\n    :param numbers: 列表\n    :return: 列表中所有奇数的平方和\n    \"\"\"\n    return sum([x**2 for x in numbers])",
+      "syntax_ok": true,
+      "test_passed": false,
+      "test_msg": "调用异常: sum_of_square_numbers() takes 1 positional argument but 3 were given"
+    },
+    {
+      "benchmark_id": 36,
+      "task": "写一个Python函数，返回字符串中第一个不重复的字符",
+      "output": "def first_uniques(s):\n    return s[0] if s.count(s[0]) == 1 else s[0]",
+      "syntax_ok": true,
+      "test_passed": false,
+      "test_msg": "输入aabbc 期望c 实际a"
+    },
+    {
+      "benchmark_id": 37,
+      "task": "写一个Python函数，判断一个整数是否为负数",
+      "output": "def is_negative(num):\n    return num < 0",
+      "syntax_ok": true,
+      "test_passed": true,
+      "test_msg": "全部通过"
+    },
+    {
+      "benchmark_id": 38,
+      "task": "写一个Python函数，计算一个列表中元素的个数",
+      "output": "def count_elements(lst):\n    return len(lst)",
+      "syntax_ok": true,
+      "test_passed": false,
+      "test_msg": "调用异常: count_elements() takes 1 positional argument but 3 were given"
+    },
+    {
+      "benchmark_id": 39,
+      "task": "写一个Python函数，判断一个字符串是否以指定前缀开头",
+      "output": "def is_prefix(prefix, s):\n    return s.startswith(prefix)",
+      "syntax_ok": true,
+      "test_passed": false,
+      "test_msg": "输入['hello', 'he'] 期望True 实际False"
+    },
+    {
+      "benchmark_id": 40,
+      "task": "写一个Python函数，求一个列表中所有元素的乘积",
+      "output": "def product(lst):\n    return reduce(lambda x, y: x * y, lst)",
+      "syntax_ok": true,
+      "test_passed": false,
+      "test_msg": "调用异常: product() takes 1 positional argument but 3 were given"
+    },
+    {
+      "benchmark_id": 41,
+      "task": "写一个Python函数，判断一个字符串是否是回文数（忽略非字母数字）",
+      "output": "def is_palindrome(s):\n    if not s:\n        return True\n    if len(s) < 2:\n        return True\n    for I in range(len(s) // 2):\n        if s[i] != s[len(s) - I - 1]:\n            return False\n    return True\n\nprint(is_palindrome(\"racecar\"))\nprint(is_palindrome(\"A man, a plan, a canal: Panama!\"))",
+      "syntax_ok": true,
+      "test_passed": false,
+      "test_msg": "执行异常: name 'i' is not defined"
+    },
+    {
+      "benchmark_id": 42,
+      "task": "写一个Python函数，实现二分查找，返回目标值的索引，找不到返回-1",
+      "output": "def binary_search(arr, target):\n    left, right = 0, len(arr) - 1\n    while left <= right:\n        mid = (left + right) // 2\n        if arr[mid] == target:\n            return mid\n        elif arr[mid] < target:\n            left = mid + 1\n        else:\n            right = mid - 1\n    return -1",
+      "syntax_ok": true,
+      "test_passed": true,
+      "test_msg": "全部通过"
+    },
+    {
+      "benchmark_id": 43,
+      "task": "写一个Python函数，实现冒泡排序",
+      "output": "def bubble_sort(arr):\n    n = len(arr)\n    for I in range(n):\n        for j in range(n-i-1):\n            if arr[j] > arr[j+1]:\n                arr[j], arr[j+1] = arr[j+1], arr[j]\n    return arr",
+      "syntax_ok": true,
+      "test_passed": false,
+      "test_msg": "调用异常: bubble_sort() takes 1 positional argument but 3 were given"
+    },
+    {
+      "benchmark_id": 44,
+      "task": "写一个Python函数，将罗马数字字符串转为整数",
+      "output": "def roman_to_int(s):\n    if not s:\n        return 0\n    num = 0\n    for c in s:\n        if c.isdigit():\n            num += int(c)\n        else:\n            if c == 'M':\n                num += 1000\n            elif c == 'CM':\n                num += 900\n            elif c == 'D':\n                num += 500\n            elif c == 'CD':\n                num += 400\n            elif c == 'C':\n                num += 100\n            elif c == 'XC':\n                num += 90\n            elif c == 'L':\n                num += 50\n            elif c == 'XL':\n                num += 40\n            elif c == 'X':\n                num += 10\n            elif c == 'IX':\n                num += 9\n            elif c == 'V':\n                num += 5\n            elif c == 'IV':\n                num += 4\n            e",
+      "syntax_ok": true,
+      "test_passed": false,
+      "test_msg": "输入IV 期望4 实际6"
+    },
+    {
+      "benchmark_id": 45,
+      "task": "写一个Python函数，找出列表中所有和为指定目标值的两个数的索引",
+      "output": "def find_indices(target, list_of_numbers):\n    \"\"\"\n    找出列表中所有和为目标值的两个数的索引\n    :param target: 目标值\n    :param list_of_numbers: 列表\n    :return: 索引列表\n    \"\"\"\n    if not list_of_numbers:\n        return []\n    if len(list_of_numbers) == 1:\n        return [0]\n    if target < list_of_numbers[0]:\n        return find_indices(target, list_of_numbers[1:])\n    return [i for I, num in enumerate(list_of_numbers) if num == target]\n\n\ndef find_indices_recursive(target, list_of_numbers):\n    \"\"\"\n    找出列表中所有和为目标值的两个数的索引\n    :param target: 目标值\n    :param list_of_numbers: 列表\n    :return: 索引列表\n    \"\"\"\n    if not list_of_numbers:\n        return []\n    if len(list_of_numbers) == 1:\n        return [0]\n    if target < list_of_numbers[0]:\n        return find_indices_recursive(target, list_of_numbers[1:])\n    return ",
+      "syntax_ok": false,
+      "test_passed": false,
+      "test_msg": "执行异常: unterminated triple-quoted string literal (detected at line 37) (<string>, line 34)"
+    },
+    {
+      "benchmark_id": 46,
+      "task": "写一个Python函数，判断一个整数是否为回文数",
+      "output": "def is_palindrome(num):\n    if num < 0:\n        num *= -1\n    return num == num[::-1]",
+      "syntax_ok": true,
+      "test_passed": false,
+      "test_msg": "调用异常: 'int' object is not subscriptable"
+    },
+    {
+      "benchmark_id": 47,
+      "task": "写一个Python函数，将两个有序列表合并为一个有序列表",
+      "output": "def merge_sorted_lists(l1, l2):\n    \"\"\"\n    两个有序列表合并为一个有序列表\n    :param l1: 第一个有序列表\n    :param l2: 第二个有序列表\n    :return: 合并后的有序列表\n    \"\"\"\n    if not l1 or not l2:\n        return l1 or l2\n    if len(l1) == 0:\n        return l2\n    if len(l2) == 0:\n        return l1\n    if l1[0] > l2[0]:\n        l1 = [l1[0]] + l1[1:]\n    else:\n        l2 = [l2[0]] + l2[1:]\n    while l1 and l2:\n        if l1[0] < l2[0]:\n            l1 = l1[1:]\n        else:\n            l2 = l2[1:]\n    return l1 + l2\n\n\ndef merge_sorted_lists_recursive(l1, l2):\n    \"\"\"\n    两个有序列表合并为一个有序列表\n    :param l1: 第一个有序列表\n    :param l2: 第二个有序列表\n    :return: 合并后的有序列表\n    \"\"\"\n    if not l1 or not l2:\n        return l1 or l2\n    if len(l1) == 0:\n        return l2\n    if len(l2) == 0:\n        return l1\n    if l1[0] > l2[0]:\n        l1 = [l",
+      "syntax_ok": false,
+      "test_passed": false,
+      "test_msg": "执行异常: '[' was never closed (<string>, line 40)"
+    },
+    {
+      "benchmark_id": 48,
+      "task": "写一个Python函数，找出列表中出现次数超过一半的元素",
+      "output": "def majority_element(numbers):\n    count = defaultdict(int)\n    for num in numbers:\n        count[num] += 1\n    for num in numbers:\n        if count[num] > len(numbers) / 2:\n            return num\n    return None",
+      "syntax_ok": true,
+      "test_passed": false,
+      "test_msg": "调用异常: majority_element() takes 1 positional argument but 3 were given"
+    },
+    {
+      "benchmark_id": 49,
+      "task": "写一个Python函数，计算最长连续递增子序列的长度",
+      "output": "def longest_increasing_subsequence(arr):\n    n = len(arr)\n    if n == 1:\n        return 1\n    if n == 2:\n        return 2\n    if n == 3:\n        return 3\n    if n == 4:\n        return 4\n    if n == 5:\n        return 5\n    if n == 6:\n        return 6\n    if n == 7:\n        return 7\n    if n == 8:\n        return 8\n    if n == 9:\n        return 9\n    if n == 10:\n        return 10\n    if n == 11:\n        return 11\n    if n == 12:\n        return 12\n    if n == 13:\n        return 13\n    if n == 14:\n        return 14\n    if n == 15:\n        return 15\n    if n == 16:\n        return 16\n    if n == 17:\n        return 17\n    if n == 18:\n        return 18\n    if n == 19:\n        return 19\n    if n == 20:\n        return 20\n    if n == 21:\n        return 21\n    if n == 22:\n        return 22\n    if n == ",
+      "syntax_ok": false,
+      "test_passed": false,
+      "test_msg": "执行异常: expected ':' (<string>, line 55)"
+    }
+  ]
+}

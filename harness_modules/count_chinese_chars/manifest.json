@@ -1,0 +1,1 @@
+{"id":"count_chinese_chars","name":"中文字符统计","description":"统计文本中中文字符数量","version":"1.0.0","capabilities":[],"permissions":[],"entrypoint":"main.py","node_type":"harness"}

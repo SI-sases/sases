@@ -1,0 +1,70 @@
+{
+  "id": "file_patch",
+  "aliases": [
+    "edit_file",
+    "file_write",
+    "write_file",
+    "fs_create",
+    "create_file",
+    "save_file"
+  ],
+  "name": "文件精确替换",
+  "description": "对项目文件进行精确片段替换或锚点插入。允许目录：static/ / core/ / scripts/ / docs/。禁止修改 users.db、.env、密钥文件和 file_patch 自身。每次写入自动备份到 .backups/。修改 core/ 下的文件后需要重启服务生效。",
+  "version": "2.7.0",
+  "capabilities": [
+    "file_patch",
+    "frontend_edit",
+    "backend_edit"
+  ],
+  "permissions": [
+    "restricted_file_write"
+  ],
+  "entrypoint": "main.py",
+  "node_type": "harness",
+  "params": {
+    "old_snippet": {
+      "type": "string",
+      "default": "",
+      "desc": "可选"
+    },
+    "new_snippet": {
+      "type": "string",
+      "default": "",
+      "desc": "可选"
+    },
+    "expected_count": {
+      "type": "int",
+      "default": 1,
+      "desc": "可选"
+    },
+    "anchor_pattern": {
+      "type": "string",
+      "default": "",
+      "desc": "可选"
+    },
+    "position": {
+      "type": "string",
+      "default": "after",
+      "desc": "可选"
+    },
+    "new_content": {
+      "type": "string",
+      "default": "",
+      "desc": "可选"
+    },
+    "file_path": {
+      "type": "string",
+      "desc": "必填"
+    },
+    "create_if_missing": {
+      "type": "bool",
+      "default": false,
+      "desc": "可选"
+    },
+    "overwrite": {
+      "type": "bool",
+      "default": false,
+      "desc": "可选"
+    }
+  }
+}

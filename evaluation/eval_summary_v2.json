@@ -1,0 +1,47 @@
+{
+  "base": {
+    "syntax_ok": 12,
+    "syntax_rate": 0.12,
+    "test_pass": 0,
+    "test_total": 13,
+    "pass_at_1": 0.0,
+    "empty_count": 0,
+    "elapsed": 904.0140135288239
+  },
+  "lora_root_0729": {
+    "syntax_ok": 22,
+    "syntax_rate": 0.22,
+    "test_pass": 1,
+    "test_total": 13,
+    "pass_at_1": 0.07692307692307693,
+    "empty_count": 0,
+    "elapsed": 1172.7846055030823
+  },
+  "lora_adapter": {
+    "syntax_ok": 36,
+    "syntax_rate": 0.36,
+    "test_pass": 3,
+    "test_total": 13,
+    "pass_at_1": 0.23076923076923078,
+    "empty_count": 0,
+    "elapsed": 917.9252848625183
+  },
+  "lora_adapter_v2": {
+    "syntax_ok": 58,
+    "syntax_rate": 0.58,
+    "test_pass": 1,
+    "test_total": 13,
+    "pass_at_1": 0.07692307692307693,
+    "empty_count": 0,
+    "elapsed": 1019.4500861167908
+  },
+  "lora_adapter_474": {
+    "syntax_ok": 88,
+    "syntax_rate": 0.88,
+    "test_pass": 5,
+    "test_total": 13,
+    "pass_at_1": 0.38461538461538464,
+    "empty_count": 0,
+    "elapsed": 549.7865447998047
+  }
+}

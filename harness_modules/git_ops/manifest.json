@@ -1,0 +1,61 @@
+{
+  "id": "git_ops",
+  "name": "Git 操作",
+  "description": "项目 Git 版本控制。支持 status/diff/log/add/commit/push/pull/snapshot/rollback/remote_add/remote_list。用于版本管理、异地备份和回滚。",
+  "version": "1.0.0",
+  "capabilities": [
+    "git",
+    "version_control"
+  ],
+  "permissions": [
+    "restricted_file_write"
+  ],
+  "entrypoint": "main.py",
+  "node_type": "harness",
+  "params": {
+    "action": {
+      "type": "any",
+      "desc": "必填"
+    },
+    "n": {
+      "type": "int",
+      "default": 10,
+      "desc": "可选"
+    },
+    "file": {
+      "type": "string",
+      "default": ".",
+      "desc": "可选"
+    },
+    "message": {
+      "type": "string",
+      "default": "",
+      "desc": "可选"
+    },
+    "branch": {
+      "type": "string",
+      "default": "main",
+      "desc": "可选"
+    },
+    "remote": {
+      "type": "string",
+      "default": "origin",
+      "desc": "可选"
+    },
+    "steps": {
+      "type": "int",
+      "default": 1,
+      "desc": "可选"
+    },
+    "name": {
+      "type": "string",
+      "default": "origin",
+      "desc": "可选"
+    },
+    "url": {
+      "type": "string",
+      "default": "",
+      "desc": "可选"
+    }
+  }
+}

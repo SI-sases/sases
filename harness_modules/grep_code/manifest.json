@@ -1,0 +1,38 @@
+{
+  "id": "grep_code",
+  "aliases": [
+    "search_text"
+  ],
+  "name": "代码搜索",
+  "description": "在项目中搜索关键词",
+  "version": "1.0.0",
+  "capabilities": [
+    "grep_code"
+  ],
+  "permissions": [
+    "restricted_file_write"
+  ],
+  "entrypoint": "main.py",
+  "node_type": "harness",
+  "params": {
+    "pattern": {
+      "type": "string",
+      "desc": "必填"
+    },
+    "path": {
+      "type": "string",
+      "default": ".",
+      "desc": "可选"
+    },
+    "file_ext": {
+      "type": "string",
+      "default": "",
+      "desc": "可选"
+    },
+    "max_results": {
+      "type": "int",
+      "default": 30,
+      "desc": "可选"
+    }
+  }
+}

@@ -1,0 +1,1 @@
+{"id":"is_prime","name":"质数判断","description":"判断一个整数是否是质数","version":"1.0.0","capabilities":[],"permissions":[],"entrypoint":"main.py","node_type":"harness"}

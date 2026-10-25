@@ -1,0 +1,26 @@
+{
+  "id": "read_user_doc",
+  "name": "读取用户个人文档",
+  "description": "从 project_docs 表读取用户投喂的个人知识库文档",
+  "version": "1.0.0",
+  "capabilities": [
+    "file_read"
+  ],
+  "permissions": [
+    "restricted_file_write"
+  ],
+  "entrypoint": "main.py",
+  "node_type": "harness",
+  "params": {
+    "source_file": {
+      "type": "string",
+      "default": "",
+      "desc": "可选"
+    },
+    "user_id": {
+      "type": "any",
+      "default": "DEFAULT_USER",
+      "desc": "可选"
+    }
+  }
+}

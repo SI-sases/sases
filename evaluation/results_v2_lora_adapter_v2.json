@@ -1,0 +1,711 @@
+{
+  "syntax_ok": 58,
+  "syntax_rate": 0.58,
+  "test_pass": 1,
+  "test_total": 13,
+  "pass_at_1": 0.07692307692307693,
+  "empty_count": 0,
+  "elapsed": 1019.4500861167908,
+  "outputs": [
+    {
+      "benchmark_id": 0,
+      "task": "写一个Python函数，判断一个整数是否是素数",
+      "output": "def is_prime(num):\n    if num <= 1:\n        return False\n    for I in range(2, int(num**0.5)+1):\n        if num % I == 0:\n            return False\n    return True\n\nprint(is_prime(10))  # True\nprint(is_prime(12))  # False\nprint(is_prime(16))  # True\nprint(is_prime(24))  # False\nprint(is_prime(36))  # True\nprint(is_prime(48))  # False\nprint(is_prime(54))  # True\nprint(is_prime(60))  # False\nprint(is_prime(72))  # True\nprint(is_prime(84))  # False\nprint(is_prime(96))  # True\nprint(is_prime(108)) # False\nprint(is_prime(120)) # True\nprint(is_prime(132)) # False\nprint(is_prime(144)) # True\nprint(is_prime(156)) # False\nprint(is_prime(168)) # True\nprint(is_prime(180)) # False\nprint(is_prime(19",
+      "syntax_ok": false,
+      "empty": false
+    },
+    {
+      "benchmark_id": 1,
+      "task": "写一个Python函数，将列表中的元素去重",
+      "output": "def remove_duplicates(lst):\n    \"\"\"\n    Remove duplicates from a list.\n\n    :param lst: A list of strings.\n    :return: A new list without duplicates.\n    \"\"\"\n    return list(set(lst))\n\n# Example usage:\nlst = ['apple', 'banana', 'cherry', 'grape', 'orange']\nprint(remove_duplicates(lst))  # Output: ['apple', 'banana', 'cherry', 'grape']",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 2,
+      "task": "写一个Python函数，判断一个只包含括号的字符串是否有效配对",
+      "output": "def is_valid_bracket_pair(s):\n    \"\"\"\n    :param s: 只包含括号的字符串\n    :return: 是否有效配对\n    \"\"\"\n    # 括号的位置\n    open_brackets = set()\n    close_brackets = set()\n    for c in s:\n        if c == '(':\n            open_brackets.add(c)\n        elif c == ')':\n            close_brackets.add(c)\n        else:\n            return False\n    # 括号的位置和配对的位置\n    open_brackets_pos = [i for i, c in enumerate(s) if c in open_brackets]\n    close_brackets_pos = [i for i, c in enumerate(s) if c in close_brackets]\n    # 括号的位置和配对的位置的长度\n    open_brackets_len = len(open_brackets_pos)\n    close_brackets_len = len(close_brackets_pos)\n    # 括号的位置和配对的位置的位置\n    open_brackets_pos_start = open_brackets_pos[0]",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 3,
+      "task": "写一个Python函数，判断一个整数是否是回文数",
+      "output": "def is_palindrome(num):\n    \"\"\"\n    :param num: 整数\n    :return: True or False\n    \"\"\"\n    if num < 0:\n        num *= -1\n    if num == 0:\n        return True\n    if num % 10 == 0:\n        return is_palindrome(num // 10)\n    return False\n\nprint(is_palindrome(121))  # True\nprint(is_palindrome(1001))  # False\nprint(is_palindrome(12345))  # True\nprint(is_palindrome(123))  # False\nprint(is_palindrome(1234))  # False\nprint(is_palindrome(123456789))  # True\nprint(is_palindrome(1234567890))  # False\nprint(is_palindrome(1234567890123456789))  # True\nprint(is_palindrome(12345678901234567890))  # False\nprint(is_palindrome(1234",
+      "syntax_ok": false,
+      "empty": false
+    },
+    {
+      "benchmark_id": 4,
+      "task": "写一个Python函数，判断一个整数是否是质数",
+      "output": "def is_prime(num):\n    if num <= 1:\n        return False\n    for I in range(2, int(num**0.5)+1):\n        if num % I == 0:\n            return False\n    return True\n\nprint(is_prime(10))  # True\nprint(is_prime(12))  # False\nprint(is_prime(16))  # True\nprint(is_prime(24))  # False\nprint(is_prime(36))  # True\nprint(is_prime(48))  # False\nprint(is_prime(54))  # True\nprint(is_prime(60))  # False\nprint(is_prime(72))  # True\nprint(is_prime(84))  # False\nprint(is_prime(96))  # True\nprint(is_prime(108)) # False\nprint(is_prime(120)) # True\nprint(is_prime(132)) # False\nprint(is_prime(144)) # True\nprint(is_prime(156)) # False\nprint(is_prime(168)) # True\nprint(is_prime(180)) # False\nprint(is_prime(19",
+      "syntax_ok": false,
+      "empty": false
+    },
+    {
+      "benchmark_id": 5,
+      "task": "写一个Python函数，判断一个数字是不是素数",
+      "output": "def is_prime(num):\n    if num <= 1:\n        return False\n    for I in range(2, int(num**0.5)+1):\n        if num % I == 0:\n            return False\n    return True\n\nprint(is_prime(10))  # True\nprint(is_prime(12))  # False\nprint(is_prime(16))  # True\nprint(is_prime(24))  # False\nprint(is_prime(36))  # True\nprint(is_prime(48))  # False\nprint(is_prime(54))  # True\nprint(is_prime(60))  # False\nprint(is_prime(72))  # True\nprint(is_prime(84))  # False\nprint(is_prime(96))  # True\nprint(is_prime(108)) # False\nprint(is_prime(120)) # True\nprint(is_prime(132)) # False\nprint(is_prime(144)) # True\nprint(is_prime(156)) # False\nprint(is_prime(168)) # True\nprint(is_prime(180)) # False\nprint(is_prime(19",
+      "syntax_ok": false,
+      "empty": false
+    },
+    {
+      "benchmark_id": 6,
+      "task": "写一个Python函数，判断一个字符串是否只包含字母和数字",
+      "output": "def is_alphanumeric(s):\n    return all(c.isalpha() or c.isdigit() for c in s)\n\nprint(is_alphanumeric(\"hello\"))  # True\nprint(is_alphanumeric(\"12345\"))  # True\nprint(is_alphanumeric(\"123456789\"))  # False\nprint(is_alphanumeric(\"\"))  # False",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 7,
+      "task": "写一个Python函数，检测一个字符串中是否仅由数字和英文字母组成",
+      "output": "def is_only_digits_and_letters(s):\n    \"\"\"\n    :param s: 要检测的字符串\n    :return: True 如果只有数字和英文字母，False 否则\n    \"\"\"\n    # 将字符串转换为字符串列表\n    s = list(s)\n    # 将字符串列表中的每个元素都转换为字符串\n    for I, c in enumerate(s):\n        if not c.isdigit() and not c.isalpha():\n            return False\n    return True\n\n# 测试\nprint(is_only_digits_and_letters(\"123456789\"))  # True\nprint(is_only_digits_and_letters(\"1234567890\"))  # False\nprint(is_only_digits_and_letters(\"1234567890123456789\"))  # True\nprint(is_only_digits_and_letters(\"12345678901234567890\"))  # False\nprint(is_only_digits_and_letters(\"123",
+      "syntax_ok": false,
+      "empty": false
+    },
+    {
+      "benchmark_id": 8,
+      "task": "写一个Python函数，判断一个列表是否包含重复元素",
+      "output": "def contains_duplicates(lst):\n    \"\"\"\n    :param lst: 一个列表\n    :return: 是否包含重复元素\n    \"\"\"\n    if not lst:\n        return False\n    seen = set()\n    for item in lst:\n        if item in seen:\n            return True\n        seen.add(item)\n    return False\n\nprint(contains_duplicates([1, 2, 3, 3, 4, 4, 5]))  # True\nprint(contains_duplicates([1, 2, 3, 3, 4, 4, 5, 6]))  # False",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 9,
+      "task": "写一个Python函数，检测一个列表里有没有重复项",
+      "output": "def is_duplicate(lst):\n    \"\"\"\n    :param lst: 一个列表\n    :return: 是否有重复项\n    \"\"\"\n    if not lst:\n        return False\n    seen = set()\n    for item in lst:\n        if item in seen:\n            return True\n        seen.add(item)\n    return False\n\nprint(is_duplicate([1, 2, 3, 3, 4, 5]))  # True\nprint(is_duplicate([1, 2, 3, 4, 5, 6]))  # False",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 10,
+      "task": "写一个Python函数，计算一个整数列表中所有元素的平均值",
+      "output": "def avg_list(lst):\n    total = sum(lst)\n    avg = total / len(lst)\n    return avg\n\nprint(avg_list([1, 2, 3, 4, 5]))  # 2.0\nprint(avg_list([1, 2, 3, 4, 5, 6]))  # 3.0\nprint(avg_list([1, 2, 3, 4, 5, 6, 7]))  # 3.5\nprint(avg_list([1, 2, 3, 4, 5, 6, 7, 8]))  # 4.0\nprint(avg_list([1, 2, 3, 4, 5, 6, 7, 8, 9]))  # 4.5\nprint(avg_list([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]))  # 5.0\nprint(avg_list([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]))  # 5.5\nprint(avg",
+      "syntax_ok": false,
+      "empty": false
+    },
+    {
+      "benchmark_id": 11,
+      "task": "写一个Python函数，返回给定数字列表的平均数",
+      "output": "def avg(lst):\n    total = sum(lst)\n    return total / len(lst)\n\nprint(avg([1, 2, 3, 4, 5]))  # 2.0\nprint(avg([1, 2, 3, 4]))  # 3.0\nprint(avg([1, 2, 3]))  # 3.0\nprint(avg([1, 2, 3, 4, 5, 6]))  # 3.5\nprint(avg([1, 2, 3, 4, 5, 6, 7]))  # 4.0\nprint(avg([1, 2, 3, 4, 5, 6, 7, 8]))  # 4.5\nprint(avg([1, 2, 3, 4, 5, 6, 7, 8, 9]))  # 5.0\nprint(avg([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]))  # 5.5\nprint(avg([1, 2, 3, 4, 5, 6, 7, 8, 9",
+      "syntax_ok": false,
+      "empty": false
+    },
+    {
+      "benchmark_id": 12,
+      "task": "写一个Python函数，判断一个整数是否为偶数",
+      "output": "def is_odd(num):\n    return num % 2 != 0\n\nprint(is_odd(12))  # True\nprint(is_odd(13))  # False\nprint(is_odd(14))  # True\nprint(is_odd(15))  # False\nprint(is_odd(16))  # True\nprint(is_odd(17))  # False\nprint(is_odd(18))  # True\nprint(is_odd(19))  # False\nprint(is_odd(20))  # True\nprint(is_odd(21))  # False\nprint(is_odd(22))  # True\nprint(is_odd(23))  # False\nprint(is_odd(24))  # True\nprint(is_odd(25))  # False\nprint(is_odd(26))  # True\nprint(is_odd(27))  # False\nprint(is_odd(28))  # True\nprint(is_odd(29))  # False\nprint(is_odd(30))  # True\nprint(is_odd(31))  # False\nprint(is_odd(32))  # True\nprint(is_odd(33",
+      "syntax_ok": false,
+      "empty": false
+    },
+    {
+      "benchmark_id": 13,
+      "task": "给定一段只包含 '('、')'、'{'、'}'、'['、']' 的字符串，怎么判断其中的括号是否配对正确且嵌套顺序合法？",
+      "output": "def is_balanced(s):\n    stack = []\n    for c in s:\n        if c == '(':\n            stack.append(c)\n        elif c == ')':\n            if stack:\n                if stack[-1] != '(':\n                    return False\n                stack.pop()\n            else:\n                return False\n        elif c == '[':\n            stack.append(c)\n        elif c == ']':\n            if stack:\n                if stack[-1] != '[':\n                    return False\n                stack.pop()\n            else:\n                return False\n        elif c == '{':\n            stack.append(c)\n        elif c == '}':\n            if stack:\n                if stack[-1] != '{':\n                    return False\n                stack.pop()\n            else:\n                return False\n    return True\n\nprint(is_ba",
+      "syntax_ok": false,
+      "empty": false
+    },
+    {
+      "benchmark_id": 14,
+      "task": "在物流公司的计费系统中，根据包裹重量（公斤，整数）和运输距离（公里，整数）计算总运费。首重1公斤内（含1公斤）收费10元，超过1公斤的部分每公斤加收5元；距离每",
+      "output": "def calculate_total_cost(weight, distance):\n    total_cost = 10 * weight + (weight * 10 + distance * 5)\n    return total_cost\n\n# 测试\nprint(calculate_total_cost(1, 100))  # 10 + 100 * 10 + 100 * 5 = 100 + 100 * 10 + 100 * 5 = 100 + 100 * 5 = 100 + 50 = 150\nprint(calculate_total_cost(1, 1000))  # 10 + 1000 * 10 + 1000 * 5 = 100 + 1000 * 10 + 1000 * 5 = 100 + 1000 * 5 = 100 + 500 = 150\nprint(calculate_total_cost(10, 100))  # 10 + 100 * 10 + 100 * 5 = 100 + 100 * 5 = 100 + 50 = 150\nprint(",
+      "syntax_ok": false,
+      "empty": false
+    },
+    {
+      "benchmark_id": 15,
+      "task": "如何判断一个字符串是否是回文（忽略空格、标点符号和大小写）？",
+      "output": "def is_palindrome(s):\n    s = s.lower()\n    if s.startswith('0') or s.endswith('0'):\n        return False\n    if s.count('0') != 1:\n        return False\n    for I in range(len(s) // 2):\n        if s[i] != s[len(s) - I - 1]:\n            return False\n    return True\n\nprint(is_palindrome('121'))\nprint(is_palindrome('racecar'))\nprint(is_palindrome('A man, a plan, a canal: Panama'))\nprint(is_palindrome('1234567890'))\nprint(is_palindrome('12345678901234567890'))\nprint(is_palindrome('123456789012345678901234567890'))\nprint(is_palindrome('1234567890123456789012345678901234567890123456789012345",
+      "syntax_ok": false,
+      "empty": false
+    },
+    {
+      "benchmark_id": 16,
+      "task": "如何判断一个字符串是不是合法的公历日期（格式为 YYYY-MM-DD），包括闰年判断？",
+      "output": "def is_leap_year(year):\n    if year % 4 == 0 and year % 100 != 0:\n        return True\n    elif year % 400 == 0:\n        return True\n    else:\n        return False\n\ndef is_valid_date(date):\n    return is_leap_year(int(date[0:4])) and int(date[4:6]) == int(date[6:8])\n\nif __name__ == '__main__':\n    print(is_valid_date('2021-01-01'))\n    print(is_valid_date('2021-01-02'))\n    print(is_valid_date('2021-01-03'))\n    print(is_valid_date('2021-01-04'))\n    print(is_valid_date('2021-01-05'))\n    print(is_valid_date('2021-01-06'))\n    print(is_valid_date('2021-01-07'))\n    print(is_valid_date('2021-01-08'))\n    print(is_valid_date('202",
+      "syntax_ok": false,
+      "empty": false
+    },
+    {
+      "benchmark_id": 17,
+      "task": "在快递公司的计费系统中，需要根据包裹重量（不足1kg按1kg计）和配送距离计算运费。首重1kg内收费10元，超过部分每kg加收2元；若配送距离超过50km，额外",
+      "output": "def calculate_delivery_cost(weight, distance):\n    if weight <= 1:\n        return 10\n    elif distance <= 50:\n        return 5\n    else:\n        return 1 + 5 * distance / 50\n\n# 测试\nprint(calculate_delivery_cost(1, 10))  # 10\nprint(calculate_delivery_cost(1, 50))  # 50\nprint(calculate_delivery_cost(10, 10))  # 10\nprint(calculate_delivery_cost(10, 50))  # 50\nprint(calculate_delivery_cost(100, 10))  # 100\nprint(calculate_delivery_cost(100, 50))  # 50\nprint(calculate_delivery_cost(1000, 10))  # 1000\nprint(calculate_delivery_cost(1000, 50))  # 500\nprint(calculate_delivery_cost(10000, 10))  # 10000\nprint(calculate_delivery_cost(1000",
+      "syntax_ok": false,
+      "empty": false
+    },
+    {
+      "benchmark_id": 18,
+      "task": "在宠物诊所的日常诊疗中，医生需要根据待注射药物的浓度和患病宠物的体重，计算应抽取的药液体积，以确保用药安全准确。",
+      "output": "def calculate_dosage(drug_amount, weight):\n    dosage = drug_amount / weight\n    return dosage\n\n# 测试\nprint(calculate_dosage(10, 10))  # 10\nprint(calculate_dosage(10, 20))  # 5\nprint(calculate_dosage(10, 30))  # 3\nprint(calculate_dosage(10, 40))  # 2\nprint(calculate_dosage(10, 50))  # 1.5\nprint(calculate_dosage(10, 60))  # 1\nprint(calculate_dosage(10, 70))  # 0.8\nprint(calculate_dosage(10, 80))  # 0.7\nprint(calculate_dosage(10, 90))  # 0.65\nprint(calculate_dosage(10, 100))  # 0.6\nprint(calculate_dosage(10, 110))  # 0.6\nprint(calculate_dosage(10, 120))",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 19,
+      "task": "在快递公司的计费系统中，需要根据包裹的实际重量（千克）和体积（立方米）计算运费。计费规则为：体积重量按体积×200换算，取实际重量与体积重量的较大值作为计费重量",
+      "output": "def calculate_cost(weight, volume):\n    if weight > volume:\n        return weight * 10 + volume * 5\n    else:\n        return weight * 1\n\n# 测试\nprint(calculate_cost(100, 1000))  # 1000\nprint(calculate_cost(100, 10000))  # 1000\nprint(calculate_cost(100, 100000))  # 10000\nprint(calculate_cost(100, 1000000))  # 100000\nprint(calculate_cost(100, 10000000))  # 1000000\nprint(calculate_cost(100, 100000000))  # 10000000\nprint(calculate_cost(100, 1000000000))  # 100000000\nprint(calculate_cost(100, 10000000000))  # 1000000000\nprint(calculate",
+      "syntax_ok": false,
+      "empty": false
+    },
+    {
+      "benchmark_id": 20,
+      "task": "在室内装修中，如何根据房间的长、宽、高以及每桶涂料的涂刷面积，快速估算所需涂料桶数（不考虑损耗，向上取整）？",
+      "output": "def calculate_bottle_needed(room_length, room_width, room_height, bottle_size):\n    bottle_area = room_width * room_height * bottle_size\n    bottle_volume = bottle_area * bottle_size\n    bottle_needed = bottle_volume / 1000\n    return bottle_needed\n\n# 测试\nprint(calculate_bottle_needed(10, 10, 10, 10))  # 10\nprint(calculate_bottle_needed(10, 10, 10, 100))  # 100\nprint(calculate_bottle_needed(10, 10, 10, 1000))  # 1000\nprint(calculate_bottle_needed(10, 10, 10, 10000))  # 10000\nprint(calculate_bottle_needed(10, 10, 10, 100000))  # 100000\nprint(calculate_bottle_needed(10, 10, ",
+      "syntax_ok": false,
+      "empty": false
+    },
+    {
+      "benchmark_id": 21,
+      "task": "如何判断一个给定的十进制数是否为快乐数（不断替换为其各位数字平方和，最终能否变为1）？",
+      "output": "def is_happiness_number(n):\n    \"\"\"\n    Check if a given number is a happiness number.\n\n    :param n: The number to check.\n    :return: True if the number is a happiness number, False otherwise.\n    \"\"\"\n    # 1. Check if the number is divisible by 100.\n    if n % 100 != 0:\n        return False\n\n    # 2. Check if the number is divisible by 10.\n    if n % 10 != 0:\n        return False\n\n    # 3. Check if the number is divisible by 1000.\n    if n % 1000 != 0:\n        return False\n\n    # 4. Check if the number is divisible by 10000.\n    if n % 10000 != 0:\n        return False\n\n    # 5. Check if the number is divisible by 100000.\n    if n % 100000 != 0:\n        return False\n\n    # 6. Check if the number is divisible by 1000000.\n    if n % 1000000 != 0:\n        return False\n\n   ",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 22,
+      "task": "在居民用电计费中，如何根据月用电量计算电费？执行阶梯电价：第一档每度0.5元（含200度），第二档每度0.7元（201-400度），第三档每度1.0元（401度",
+      "output": "def calculate_electric_bill(monthly_energy_consumption):\n    \"\"\"\n    Calculates the monthly electric bill based on the monthly energy consumption.\n\n    :param monthly_energy_consumption: The monthly energy consumption in kWh.\n    :return: The monthly electric bill in USD.\n    \"\"\"\n    # Calculate the first tier rate\n    first_tier_rate = 0.5 * monthly_energy_consumption\n\n    # Calculate the second tier rate\n    second_tier_rate = 0.7 * monthly_energy_consumption\n\n    # Calculate the third tier rate\n    third_tier_rate = 1.0 * monthly_energy_consumption\n\n    # Calculate the total electric bill\n    total_bill = first_tier_rate + second_tier_rate + third_tier_rate\n\n    # Calculate the monthly electric bill in USD\n    monthly_bill = total_bill * 30\n\n    return monthly_bill\n\n# Example usage\nmont",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 23,
+      "task": "怎么判断一个 IPv4 地址是不是内网保留地址？比如 10.0.0.1 和 192.168.1.1 应该算内网，8.8.8.8 不算。",
+      "output": "def is_internal_ip(ip):\n    \"\"\"\n    Check if an IPv4 address is a valid internal IP address.\n\n    :param ip: IPv4 address\n    :return: True if the IP is a valid internal IP address, False otherwise\n    \"\"\"\n    return ip.startswith(\"10.\") or ip.startswith(\"192.168.\") or ip.startswith(\"172.16.\") or ip.startswith(\"192.168.\") or ip.startswith(\"10.0.\") or ip.startswith(\"172.16.\") or ip.startswith(\"192.168.\") or ip.startswith(\"127.0.\") or ip.startswith(\"169.254.\") or ip.startswith(\"192.168.0.\") or ip.startswith(\"192.168.1.\") or ip.startswith(\"192.168.\") or ip.startswith(\"10.0.0.0\") or ip.startswith(\"10.0.1.0\") or ip.startswith(\"10.0.2.0\") or ip.startswith(\"10.0.3.0\") or ip.startswith(\"10.0.4.0\") or ip.",
+      "syntax_ok": false,
+      "empty": false
+    },
+    {
+      "benchmark_id": 24,
+      "task": "写一个Python函数，将字符串反转",
+      "output": "def reverse_string(s):\n    \"\"\"\n    Reverse a string.\n\n    :param s: The string to reverse.\n    :return: The reversed string.\n    \"\"\"\n    return s[::-1]\n\nprint(reverse_string(\"hello\"))  # Output: \"olleh\"",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 25,
+      "task": "如何判断一个数字是否为质数？",
+      "output": "def is_prime(num):\n    if num <= 1:\n        return False\n    for I in range(2, int(num**0.5)+1):\n        if num % I == 0:\n            return False\n    return True\n\nprint(is_prime(10))  # True\nprint(is_prime(12))  # False\nprint(is_prime(16))  # True\nprint(is_prime(24))  # False\nprint(is_prime(36))  # True\nprint(is_prime(48))  # False\nprint(is_prime(54))  # True\nprint(is_prime(60))  # False\nprint(is_prime(72))  # True\nprint(is_prime(84))  # False\nprint(is_prime(96))  # True\nprint(is_prime(108)) # False\nprint(is_prime(120)) # True\nprint(is_prime(132)) # False\nprint(is_prime(144)) # True\nprint(is_prime(156)) # False\nprint(is_prime(168)) # True\nprint(is_prime(180)) # False\nprint(is_prime(19",
+      "syntax_ok": false,
+      "empty": false
+    },
+    {
+      "benchmark_id": 26,
+      "task": "在物流配送系统中，根据配送距离（公里）和包裹重量（公斤）计算基础运费。规则：首重1公斤内收费10元，超过部分每公斤加收3元，距离每公里加收2元，但单笔订单运费最",
+      "output": "def calculate_delivery_cost(distance, weight):\n    base_rate = 10 * distance\n    extra_rate = 3 * distance\n    total_rate = 2 * distance + extra_rate\n    max_distance = 100\n    if distance > max_distance:\n        return max_distance\n    else:\n        return round(base_rate + extra_rate + (total_rate * distance) / max_distance)\n\n# 测试\nprint(calculate_delivery_cost(100, 10))  # 10元\nprint(calculate_delivery_cost(100, 20))  # 20元\nprint(calculate_delivery_cost(100, 30))  # 30元\nprint(calculate_delivery_cost(100, 40))  # 40元\nprint(calculate_delivery_cost(100, 50))  # 50元\nprint(calculate_delivery_cost(100, 60))  # 60元\nprint(calculate_delivery_cost(100, 70))  # 70元\nprint(calculate_delivery_cost(100, 80",
+      "syntax_ok": false,
+      "empty": false
+    },
+    {
+      "benchmark_id": 27,
+      "task": "如何检查一个密码是否足够强？规则是：长度至少8位，必须同时包含大写字母、小写字母、数字和特殊字符（如!@#$%^&*）。如果满足所有条件则返回true，否则返回",
+      "output": "def is_strong_password(password):\n    \"\"\"\n    Check if a given password is strong enough.\n\n    :param password: The password to check.\n    :return: True if the password is strong enough, False otherwise.\n    \"\"\"\n    # Check if password is too short\n    if len(password) < 8:\n        return False\n\n    # Check if password contains all required characters\n    for char in password:\n        if char not in string.ascii_letters + string.digits + string.punctuation:\n            return False\n\n    # Check if password contains all required characters and characters are not in special characters\n    for char in password:\n        if char in string.punctuation:\n            return False\n\n    # Check if password contains all required characters and characters are not in special characters and not in digits",
+      "syntax_ok": false,
+      "empty": false
+    },
+    {
+      "benchmark_id": 28,
+      "task": "在快递营业部，需要根据包裹重量（公斤）、运输距离（公里）和是否加急（1为加急，0为普通）迅速算出运费。基础运费10元覆盖3公斤，超出部分每公斤加3元；距离超过1",
+      "output": "def calculate_delivery_cost(weight, distance, urgency):\n    if urgency == 1:\n        return 10 + weight * 3\n    elif urgency == 0:\n        return weight * 3\n    else:\n        return (weight * 3 + 20) * urgency\n\n# 测试用例\nprint(calculate_delivery_cost(10, 100, 1))  # 10 + 10 * 1 = 20\nprint(calculate_delivery_cost(10, 100, 0))  # 10 + 10 * 0 = 10\nprint(calculate_delivery_cost(10, 100, 2))  # 10 + 10 * 2 = 20\nprint(calculate_delivery_cost(10, 100, 3))  # 10 + 10 * 3 = 20\nprint(calculate_delivery_cost(10, 100, 4))  # 10 + 10 * 4 = 20\nprint(calculate_delivery_cost(10, 100, 5))  # 10 + 10",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 29,
+      "task": "在拼字游戏里，要怎么判断两个单词是否由完全相同的字母组成？比如 'listen' 和 'silent' 就是，而 'hello' 和 'hell' 不是。注意忽",
+      "output": "def is_same_letter(word1, word2):\n    \"\"\"\n    Check if two words are composed of the same set of letters.\n    \"\"\"\n    # Remove spaces and punctuation\n    word1 = ''.join(word1.translate(str.maketrans('', '', string.punctuation + string.punctuation)))\n    word2 = ''.join(word2.translate(str.maketrans('', '', string.punctuation + string.punctuation)))\n\n    # Check if the words are the same length\n    if len(word1) != len(word2):\n        return False\n\n    # Check if the words are the same\n    return word1 == word2\n\n# Example usage:\nprint(is_same_letter('listen', 'silent'))  # True\nprint(is_same_letter('hello', 'hell'))  # False",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 30,
+      "task": "如何判断一个给定的字符串是否是有效的括号序列（包含小括号、中括号、大括号，且必须正确嵌套）？",
+      "output": "def is_valid_brackets(s):\n    stack = []\n    for c in s:\n        if c == '(':\n            stack.append(c)\n        elif c == ')':\n            if stack:\n                if stack[-1] == '(':\n                    stack.pop()\n                else:\n                    return False\n            else:\n                return False\n        elif c == '[':\n            stack.append(c)\n        elif c == ']':\n            if stack:\n                if stack[-1] == '[':\n                    stack.pop()\n                else:\n                    return False\n            else:\n                return False\n        else:\n            if stack:\n                if stack[-1] == c:\n                    stack.pop()\n                else:\n                    return False\n    return True\n\nprint(is_valid_brackets('()[]{}'))\np",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 31,
+      "task": "在图书馆的流通服务中，根据逾期天数、图书类别（0为普通图书，1为专业图书）以及读者是否持有会员卡（0非会员，1会员）计算逾期罚金。普通图书每日罚金0.5元，专业",
+      "output": "def calculate_overdue_fee(overdue_days, book_type, member_status):\n    if member_status == 0:\n        fee = 0.5 * overdue_days\n    elif member_status == 1:\n        fee = 1 * overdue_days\n    else:\n        fee = 0\n    if book_type == 0:\n        fee *= 0.5\n    elif book_type == 1:\n        fee *= 1\n    return fee\n\n# 测试\nprint(calculate_overdue_fee(10, 0, 0))  # 0.5\nprint(calculate_overdue_fee(10, 1, 0))  # 1\nprint(calculate_overdue_fee(10, 0, 1))  # 1.5\nprint(calculate_overdue_fee(10, 1, 1))  # 2\nprint(calculate_overdue_fee(10, 1, 0))  # 1.5\nprint(calculate_overdue_fee(10, 0, 0))  # 0.5\nprint(calculate_overdue_fee(10, 1, 1",
+      "syntax_ok": false,
+      "empty": false
+    },
+    {
+      "benchmark_id": 32,
+      "task": "在医院的烧伤科，根据Parkland公式，患者第一个24小时所需的补液总量为4毫升乘以体重（公斤）再乘以烧伤面积（%）。其中一半的液体在最初的8小时内输入。已知",
+      "output": "def parkinson_formula(weight, w_pct, t_pct, t_min):\n    \"\"\"\n    Calculates the initial rate of fluid intake for a given weight, weight loss percentage, and time to first fluid intake.\n\n    :param weight: the patient's weight in grams\n    :param w_pct: the weight loss percentage in percentage\n    :param t_pct: the time to first fluid intake in percent\n    :param t_min: the minimum time to first fluid intake in percent\n    :return: the initial rate of fluid intake in ml/min\n    \"\"\"\n    return (w_pct * weight) / (t_pct * t_min)\n\n\n# Example usage\nprint(parkinson_formula(100, 20, 50, 30))  # 100 ml/min\nprint(parkinson_formula(100, 20, 50, 60))  # 150 ml/min\nprint(parkinson_formula(100, 20, 50, 90))  # 200 ml/min\nprint(parkinson_formula(100, 20, 50, ",
+      "syntax_ok": false,
+      "empty": false
+    },
+    {
+      "benchmark_id": 33,
+      "task": "在律师事务所的计费系统中，需要根据案件标的额计算律师费，收费标准为：标的额不超过10万元的部分按5%收取；超过10万元至50万元的部分按3%收取；超过50万元的",
+      "output": "def calculate_fee(fee_amount):\n    if fee_amount <= 10000:\n        return 5\n    elif fee_amount <= 50000:\n        return 3\n    else:\n        return 1\n\n# 测试\nprint(calculate_fee(10000))  # 5\nprint(calculate_fee(50000))  # 3\nprint(calculate_fee(100000))  # 1\nprint(calculate_fee(1000000))  # 1",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 34,
+      "task": "如何从一段文本中识别并提取所有独立的、符合中国大陆手机号格式的11位数字（以1开头、第二位为3-9）？",
+      "output": "def extract_phone_numbers(text):\n    phone_regex = r'^1[3-9]\\d{8}$'\n    phone_numbers = re.findall(phone_regex, text)\n    phone_numbers = [int(n) for n in phone_numbers]\n    return phone_numbers\n\nprint(extract_phone_numbers(\"13812345678\"))\n# 返回[13812345678]",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 35,
+      "task": "有一批日志时间戳采用了 ISO 8601 格式（例如 2024-06-01T13:45:00Z），怎么把它们统一转换成 2024-06-01 13:45 这种可",
+      "output": "import datetime\n\ndef iso_to_datetime(iso_str):\n    try:\n        return datetime.datetime.strptime(iso_str, '%Y-%m-%dT%H:%M:%SZ')\n    except ValueError:\n        return None\n\ndef datetime_to_iso(dt):\n    return dt.strftime('%Y-%m-%dT%H:%M:%SZ')\n\ndef main():\n    iso_str = input(\"Enter ISO string: \")\n    dt = datetime.datetime.strptime(iso_str, '%Y-%m-%dT%H:%M:%SZ')\n    print(datetime_to_iso(dt))\n\nif __name__ == '__main__':\n    main()",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 36,
+      "task": "在订单处理系统中，需要检查一个给定的日期字符串（格式为YYYY-MM-DD）是否代表真实的日历日期，例如2月30日应该被拒绝，同时要正确处理闰年。",
+      "output": "def is_valid_date(date):\n    try:\n        datetime.strptime(date, '%Y-%m-%d')\n        return True\n    except ValueError:\n        return False\n\nprint(is_valid_date('2021-02-30'))  # True\nprint(is_valid_date('2021-03-01'))  # False\nprint(is_valid_date('2021-03-31'))  # True\nprint(is_valid_date('2021-04-01'))  # False\nprint(is_valid_date('2021-04-30'))  # True\nprint(is_valid_date('2021-05-01'))  # False\nprint(is_valid_date('2021-05-31'))  # True\nprint(is_valid_date('2021-06-01'))  # False\nprint(is_valid_date('2021-06-30'))  # True\nprint(is_valid_date('2021-07-01'))  # False\nprint(is_valid_date('2021-07-31'))  # True\nprint",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 37,
+      "task": "如何判断一个IP地址是否属于私有地址（IPv4私有网段包括10.0.0.0/8、172.16.0.0/12和192.168.0.0/16）？",
+      "output": "def is_private_ip(ip):\n    \"\"\"\n    Check if an IP address is a private IP address (IPv4 private network).\n\n    :param ip: IP address string\n    :return: True if the IP address is a private IP address, False otherwise\n    \"\"\"\n    if not ip.isdigit():\n        return False\n    if ip.startswith(\"10.\"):\n        return True\n    if ip.startswith(\"172.\"):\n        return True\n    if ip.startswith(\"192.\"):\n        return True\n    return False\n\nprint(is_private_ip(\"192.168.1.1\"))  # True\nprint(is_private_ip(\"192.168.0.1\"))  # False\nprint(is_private_ip(\"192.168.0.0\"))  # True\nprint(is_private_ip(\"192.168.0.100\"))  # False\nprint(is_private_ip(\"192.168.0.101\"))  # False\nprint(is_private_ip(\"192.168.0.102\"))  # False\nprint(is_private_ip(\"192.168.0.1",
+      "syntax_ok": false,
+      "empty": false
+    },
+    {
+      "benchmark_id": 38,
+      "task": "在车险理赔系统中，根据车辆维修费用和保险合同约定的免赔额，计算保险公司实际需要赔付的金额，规则为：当维修费用低于免赔额时赔付为0，否则赔付维修费用减去免赔额。",
+      "output": "def calculate_insurance_amount(repair_cost, insurance_amount):\n    if repair_cost < insurance_amount:\n        return 0\n    else:\n        return repair_cost - insurance_amount\n\n# 测试用例\nprint(calculate_insurance_amount(1000, 500))  # 0\nprint(calculate_insurance_amount(1500, 1000))  # 1500\nprint(calculate_insurance_amount(2000, 1500))  # 1500\nprint(calculate_insurance_amount(2500, 2000))  # 2500\nprint(calculate_insurance_amount(3000, 2500))  # 2500\nprint(calculate_insurance_amount(3500, 3000))  # 3500\nprint(calculate_insurance_amount(4000, 3500))  # 3500\nprint(calculate_insurance_amount(4500, 4000))  # 4500\nprint(calculate_insurance_amount(500",
+      "syntax_ok": false,
+      "empty": false
+    },
+    {
+      "benchmark_id": 39,
+      "task": "有一批登录日志，每条记录形如（用户ID，登录时间戳）。如何按用户汇总，得到每位用户的首次登录时间？",
+      "output": "def first_login_time(log_file):\n    # 读取日志文件\n    with open(log_file, 'r') as f:\n        # 读取每行的用户ID和登录时间戳\n        for line in f:\n            # 把每行的用户ID和登录时间戳分割成两个元组\n            user_id, timestamp = line.split()\n            # 把用户ID和登录时间戳排序\n            sorted_user_id_timestamp = sorted([(int(user_id), int(timestamp))])\n            # 找到第一个登录时间戳\n            first_timestamp = sorted_user_id_timestamp[0][1]\n            # 找到第一个登录用户\n            first_user_id = sorted_user_id_timestamp[0][0]\n            # 输出首次登录时间\n            print(f\"第{first_user_id}用户首次登录时间：{first_timestamp}\")",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 40,
+      "task": "如何判断一个字符串中的括号是否正确配对（包括 ()、[]、{}）？",
+      "output": "def is_correct_brackets(s):\n    \"\"\"\n    :param s: 要判断的字符串\n    :return: 是否正确配对\n    \"\"\"\n    # 将字符串转换为字符串列表\n    s = list(s)\n    # 将字符串列表中的每个元素转换为字符串\n    s = [s[i] for I in range(len(s))]\n    # 将字符串列表中的每个元素转换为字符串\n    s = [s[i] for I in range(len(s))]\n    # 将字符串列表中的每个元素转换为字符串\n    s = [s[i] for I in range(len(s))]\n    # 将字符串列表中的每个元素转换为字符串\n    s = [s[i] for I in range(len(s))]\n    # 将字符串列表中的每个元素转换为字符串\n    s = [s[i] for I in range(len(s))]\n    # 将字符串列表中的每个元素转换为字符串\n    s = [s[i] for I in",
+      "syntax_ok": false,
+      "empty": false
+    },
+    {
+      "benchmark_id": 41,
+      "task": "给定一个字符串表示的日期，格式为YYYY-MM-DD，如何判断它是否是一个真实存在的日历日期？",
+      "output": "def is_real_date(date):\n    try:\n        datetime.strptime(date, '%Y-%m-%d')\n        return True\n    except ValueError:\n        return False\n\nprint(is_real_date('2021-01-01'))  # True\nprint(is_real_date('2021-01-02'))  # False\nprint(is_real_date('2021-01-03'))  # False\nprint(is_real_date('2021-01-04'))  # False\nprint(is_real_date('2021-01-05'))  # False\nprint(is_real_date('2021-01-06'))  # False\nprint(is_real_date('2021-01-07'))  # False\nprint(is_real_date('2021-01-08'))  # False\nprint(is_real_date('2021-01-09'))  # False\nprint(is_real_date('2021-01-10'))  # False\nprint(is_real_date('2021-01-11'))  # False\nprint",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 42,
+      "task": "如何判断一个字符串是否为合法的IPv4地址？",
+      "output": "def is_valid_ipv4(ip):\n    \"\"\"\n    Check if an IPv4 address is valid.\n\n    :param ip: IPv4 address string\n    :return: True if valid, False otherwise\n    \"\"\"\n    try:\n        ip = ip.split('.')\n        for I in range(0, 4):\n            if not (0 <= int(ip[i]) <= 255):\n                return False\n        return True\n    except ValueError:\n        return False\n\n\nif __name__ == '__main__':\n    print(is_valid_ipv4('192.168.1.1'))  # True\n    print(is_valid_ipv4('192.168.1.256'))  # False\n    print(is_valid_ipv4('192.168.1.0'))  # False\n    print(is_valid_ipv4('192.168.1.1.256'))  # False\n    print(is_valid_ipv4('192.168.1.1.0'))  # False\n    print(is_valid_ipv4('192.168.1.1.257'))  #",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 43,
+      "task": "在某服装工厂的生产线上，每小时能生产固定数量的成衣，且存在一个已知的次品率。给定每小时的产量、次品率（百分比）和每日工作时长，计算一天生产出的合格成衣总数。",
+      "output": "def daily_production(q, p, h):\n    total = 0\n    for I in range(h):\n        total += q * p\n    return total\n\n# 测试\nprint(daily_production(10, 0.5, 6))  # 100\nprint(daily_production(10, 0.5, 8))  # 120\nprint(daily_production(10, 0.5, 12))  # 150\nprint(daily_production(10, 0.5, 16))  # 180\nprint(daily_production(10, 0.5, 24))  # 210\nprint(daily_production(10, 0.5, 32))  # 240\nprint(daily_production(10, 0.5, 48))  # 270\nprint(daily_production(10, 0.5, 60))  # 300\nprint(daily_production(10, 0.5, 72))  # 330\nprint(daily_production(10, 0.5, 84))  # 36",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 44,
+      "task": "在咖啡馆经营中，已知每月的固定成本（房租、工资等）、每杯咖啡的变动成本和售价，如何计算达到盈亏平衡所需的最低销量？",
+      "output": "def min_sales(cost, var, price):\n    \"\"\"\n    Calculates the minimum sales required to achieve profitability.\n\n    :param cost: The fixed cost per unit.\n    :param var: The variable cost per unit.\n    :param price: The selling price.\n    :return: The minimum sales required to achieve profitability.\n    \"\"\"\n    return cost * (var - price) / (var + price)\n\n# Example usage:\nmin_sales(100, 10, 10)  # Output: 50\nmin_sales(100, 10, 15)  # Output: 30\nmin_sales(100, 10, 20)  # Output: 20\nmin_sales(100, 10, 25)  # Output: 15\nmin_sales(100, 10, 30)  # Output: 10\nmin_sales(100, 10, 35)  # Output: 5\nmin_sales(100, 10, 40)  # Output: 0\nmin_sales(100, 10, 45)  # Output: 0",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 45,
+      "task": "在电力公司缴费系统中，如何根据用户当月的用电量（度）计算应缴电费？当地实行阶梯电价：月用电量在240度及以下部分按0.49元/度计费；241度至400度之间的部",
+      "output": "def calculate_monthly_bill(monthly_energy_consumption):\n    if monthly_energy_consumption <= 240:\n        return 0.49 * monthly_energy_consumption\n    elif monthly_energy_consumption <= 400:\n        return 0.54 * monthly_energy_consumption\n    else:\n        return 0.79 * monthly_energy_consumption\n",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 46,
+      "task": "怎样从一段每日步数记录中找出任意连续7天的最大步数总和？",
+      "output": "def find_max_step_sum(daily_steps):\n    max_step_sum = 0\n    for step in daily_steps:\n        if step > max_step_sum:\n            max_step_sum = step\n    return max_step_sum\n\n# 测试用例\ndaily_steps = [10, 15, 12, 18, 15, 10, 15, 12, 18, 15, 10, 15, 12, 18, 15, 10, 15, 12, 18, 15, 10, 15, 12, 18, 15, 10, 15, 12, 18, 15, 10, 15, 12, 18, 15, 10, 15, 12, 18, 15, 10, 15, 12, 18, 15, 10, 15, 12, 18, 15, 10, 15, 12, 18, 15, 10, ",
+      "syntax_ok": false,
+      "empty": false
+    },
+    {
+      "benchmark_id": 47,
+      "task": "在高校教务管理系统中，课程总评成绩由平时作业、期中考试和期末考试三部分按固定权重合成，其中平时作业占20%、期中考试占30%、期末考试占50%。如何根据三项原始",
+      "output": "def get_final_score(raw_score, weight_sum):\n    final_score = 0\n    for weight in weight_sum:\n        final_score += raw_score * weight\n    return final_score\n\n# 测试用例\nassert get_final_score(10, [0.2, 0.3, 0.4]) == 30\nassert get_final_score(10, [0.2, 0.3, 0.4]) == 30\nassert get_final_score(10, [0.2, 0.3, 0.4]) == 30\nassert get_final_score(10, [0.2, 0.3, 0.4]) == 30\nassert get_final_score(10, [0.2, 0.3, 0.4]) == 30\nassert get_final_score(10, [0.2, 0.3, 0.4]) == 30\nassert get_final_score(10, [0.2, 0.3, 0.4]) == 30\nassert get_final_score(10, [0.2, 0.3, 0.4]) == 30\nassert get",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 48,
+      "task": "怎么判断一个年份是不是闰年？",
+      "output": "def is_leap_year(year):\n    if year % 4 == 0 and year % 100 != 0:\n        return True\n    elif year % 400 == 0:\n        return True\n    else:\n        return False\n\nprint(is_leap_year(2021))",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 49,
+      "task": "写一个函数，接收字符串列表，返回其中首字母大写且长度大于3的单词组成的新列表，保持原顺序",
+      "output": "def first_letter_uppercase(words):\n    \"\"\"\n    :param words: list of strings\n    :return: list of strings, sorted by length\n    \"\"\"\n    return sorted(filter(lambda x: len(x) > 3, words), key=lambda x: x[0].upper())\n\nprint(first_letter_uppercase(['hello', 'world', 'apple', 'banana']))  # ['H', 'E', 'L', 'L', 'O']\nprint(first_letter_uppercase(['apple', 'banana', 'orange']))  # ['A', 'P', 'P', 'O', 'N', 'A']\nprint(first_letter_uppercase(['hello', 'world', 'apple', 'banana', 'orange']))  # ['H', 'E', 'L', 'L', 'O', 'A', 'N', 'A']",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 50,
+      "task": "有一串包含小括号、中括号、大括号的字符，怎么判断这些括号的嵌套顺序是否正确？",
+      "output": "def is_correct_nesting(s):\n    \"\"\"\n    :param s: 包含小括号、中括号、大括号的字符串\n    :return: 是否正确嵌套\n    \"\"\"\n    # 将字符串转换为字符串列表\n    s = list(s)\n    # 将字符串列表转换为字符串\n    s = ''.join(s)\n    # 将字符串转换为字符串列表\n    s = list(s)\n    # 将字符串列表转换为字符串\n    s = ''.join(s)\n    # 将字符串转换为字符串列表\n    s = list(s)\n    # 将字符串转换为字符串\n    s = ''.join(s)\n    # 将字符串转换为字符串列表\n    s = list(s)\n    # 将字符串转换为字符串\n    s = ''.join(s)\n    # 将字符串转换为字符串列表\n    s = list(s)\n    # 将字符串转换为字符串\n   ",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 51,
+      "task": "如何验证一个日期字符串（格式为YYYY-MM-DD）是否代表公历中的真实日期？需要考虑闰年规则。",
+      "output": "def is_real_solar_year(year):\n    \"\"\"\n    Check if a given year is a real solar year.\n\n    :param year: int\n    :return: bool\n    \"\"\"\n    # 1900-2099 是真实的年份\n    if year < 1900 or year > 2099:\n        return False\n    # 1900-2099 是闰年\n    elif year % 4 == 0 and year % 100 != 0 or year % 400 == 0:\n        return False\n    else:\n        return True\n\n# 测试\nassert is_real_solar_year(2020) == True\nassert is_real_solar_year(2021) == False\nassert is_real_solar_year(2022) == True\nassert is_real_solar_year(2023) == True\nassert is_real_solar_year(2024) == True\nassert is_real_solar_year(2025) == True\nassert is_real_solar_year(2026) == True\nassert is_real_solar_year(2027)",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 52,
+      "task": "在汽车装配厂的物料管理系统中，根据当日的生产计划量（辆）、每辆车所需的螺栓数（个）以及仓库当前库存螺栓数（个），计算需补充采购的螺栓数量（个），当库存充足时无需",
+      "output": "def calculate_supply(production_plan, car_needs, inventory):\n    \"\"\"\n    Calculates the number of screws needed to meet the production plan and the inventory.\n\n    :param production_plan: a list of production plans for each day\n    :param car_needs: a list of the number of cars needed per day\n    :param inventory: a list of the number of screws available in the inventory\n    :return: the number of screws needed to meet the production plan and the inventory\n    \"\"\"\n    # calculate the number of screws needed per day\n    screw_needs = [production_plan[i][0] * car_needs[i] for i in range(len(car_needs))]\n\n    # calculate the number of screws available in the inventory\n    inventory_needs = [inventory[i] for i in range(len(car_needs))]\n\n    # calculate the number of screws needed to meet the p",
+      "syntax_ok": false,
+      "empty": false
+    },
+    {
+      "benchmark_id": 53,
+      "task": "如何判断一个字符串是否为合法的 IPv4 地址？",
+      "output": "def is_valid_ipv4(ip):\n    \"\"\"\n    Check if an IPv4 address is valid.\n\n    :param ip: A string representing an IPv4 address.\n    :return: True if the address is valid, False otherwise.\n    \"\"\"\n    try:\n        ip = ip.split('.')\n        for I in range(0, 4):\n            if not (0 <= int(ip[i]) <= 255):\n                return False\n        return True\n    except ValueError:\n        return False\n\n\nif __name__ == '__main__':\n    print(is_valid_ipv4('192.168.1.1'))  # True\n    print(is_valid_ipv4('192.168.1.256'))  # False\n    print(is_valid_ipv4('192.168.1.0'))  # False\n    print(is_valid_ipv4('192.168.1.1.256'))  # False\n    print(is_valid_ipv4('192.168.1.1.0'))  # False\n    print(is_valid_ipv4('192.168.1.",
+      "syntax_ok": false,
+      "empty": false
+    },
+    {
+      "benchmark_id": 54,
+      "task": "如何解析罗马数字并转换成对应的阿拉伯整数？",
+      "output": "def roman_to_num(roman):\n    num = 0\n    for I in range(len(roman)):\n        if roman[i] == 'I':\n            num += 1\n        elif roman[i] == 'V':\n            num += 5\n        elif roman[i] == 'X':\n            num += 10\n        elif roman[i] == 'L':\n            num += 50\n        elif roman[i] == 'C':\n            num += 100\n        elif roman[i] == 'D':\n            num += 500\n        elif roman[i] == 'M':\n            num += 1000\n    return num\n\nif __name__ == '__main__':\n    print(roman_to_num('IV'))  # 4\n    print(roman_to_num('XL'))  # 90\n    print(roman_to_num('CM'))  # 900\n    print(roman_to_num('D'))  # 50\n    print(roman_to_num('CD'))  # 50\n    print(roman_to_num('CMX'))  # 9000\n    print(roman_to_num('CMXL')) ",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 55,
+      "task": "在图书出版流程中，编辑需要根据原稿的总字数、每页版面可容纳的行数和每行平均字数，快速估算出所需的印刷页数（向上取整），以便计算印刷成本。",
+      "output": "def estimate_print_pages(total_words, page_width, line_width):\n    \"\"\"\n    Estimate the number of pages needed for a given text.\n\n    :param total_words: The total number of words in the text.\n    :param page_width: The width of a typical page in inches.\n    :param line_width: The width of a typical line in characters.\n    :return: The number of pages needed.\n    \"\"\"\n    # Calculate the number of words per page\n    num_words_per_page = int(total_words / page_width)\n\n    # Calculate the number of lines per page\n    num_lines_per_page = int(num_words_per_page / line_width)\n\n    # Calculate the number of pages needed\n    num_pages = num_lines_per_page * num_words_per_page\n\n    return num_pages\n\n# Example usage:\nprint(estimate_print_pages(1000, 10, 1))  # Output: 10\nprint(estimate_print_pages(",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 56,
+      "task": "如何判断一段文本中的圆括号、方括号和花括号是否都正确配对且没有交叉错位？",
+      "output": "def is_correct_pair(text):\n    \"\"\"\n    Check if a given text is a correct pair of parentheses, brackets, and braces.\n    Returns True if the text is correct, False otherwise.\n    \"\"\"\n    # Remove any leading or trailing whitespace\n    text = text.strip()\n\n    # Split the text into a list of words\n    words = text.split()\n\n    # Check if the text contains only one pair of parentheses, brackets, and braces\n    if len(words) == 1:\n        # Check if the first word is a pair of parentheses\n        if words[0] == \"(\" or words[0] == \"[\" or words[0] == \"{\" or words[0] == \"(\" or words[0] == \"[\" or words[0] == \"{\" or words[0] == \"(\" or words[0] == \"[\" or words[0] == \"{\" or words[0] == \"(\" or words[0] == \"[\" or words[0] == \"{\" or words[0] == \"(\" or words[0] == \"[\" or words[0] == \"{\" or words[0] == \"",
+      "syntax_ok": false,
+      "empty": false
+    },
+    {
+      "benchmark_id": 57,
+      "task": "在服装厂的成本核算中，已知每米面料的单价、每件衣服的用料米数，以及每件的加工费，如何计算单件衣服的总成本？",
+      "output": "def calculate_cost(material_price, fabric_cost, sewing_cost):\n    total_cost = material_price * fabric_cost * sewing_cost\n    return total_cost\n\n# 测试\nprint(calculate_cost(10, 10, 10))  # 100\nprint(calculate_cost(10, 10, 10))  # 100\nprint(calculate_cost(10, 10, 10))  # 100\nprint(calculate_cost(10, 10, 10))  # 100\nprint(calculate_cost(10, 10, 10))  # 100\nprint(calculate_cost(10, 10, 10))  # 100\nprint(calculate_cost(10, 10, 10))  # 100\nprint(calculate_cost(10, 10, 10))  # 100\nprint(calculate_cost(10, 10, 10))  # 100\nprint(calculate_cost(10, 10, 10))  # 100\nprint",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 58,
+      "task": "在零售门店的定价工作中，已知商品的进货成本与期望的毛利率（以小数表示），应如何计算最终的销售价格，以确保利润达标？",
+      "output": "def calculate_sales_price(profit_rate, purchase_cost):\n    return purchase_cost * (1 + profit_rate) ** (1 / profit_rate)\n\n# 测试\nprint(calculate_sales_price(0.1, 100))  # 100\nprint(calculate_sales_price(0.1, 1000))  # 1000\nprint(calculate_sales_price(0.1, 10000))  # 10000\nprint(calculate_sales_price(0.1, 100000))  # 100000\nprint(calculate_sales_price(0.1, 1000000))  # 1000000\nprint(calculate_sales_price(0.1, 10000000))  # 10000000\nprint(calculate_sales_price(0.1, 100000000))  # 100000000\nprint(calculate_sales_price(0.1, 1000000000))  # 1",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 59,
+      "task": "如何判断一个身份证号码中的出生日期是否合法，并返回对应的日期字符串（格式为YYYY-MM-DD）？如果出生日期不存在（如2月30日），则返回null。",
+      "output": "def is_valid_date(id_card):\n    try:\n        year, month, day = [int(x) for x in id_card.split('-')]\n        if month < 1 or month > 12:\n            return None\n        if day < 1 or day > 31:\n            return None\n        return f'{year}-{month:02}-{day:02}'\n    except ValueError:\n        return None\n\nprint(is_valid_date('1990-01-01'))  # 2021-01-01\nprint(is_valid_date('1990-01-02'))  # 2021-01-02\nprint(is_valid_date('1990-01-03'))  # 2021-01-03\nprint(is_valid_date('1990-01-04'))  # 2021-01-04\nprint(is_valid_date('1990-01-05'))  # 2021-01-05\nprint(is_valid_date('1990-01-06'))  # 2021-",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 60,
+      "task": "在农产品电商平台的物流结算中，需要根据订单重量和快递计费规则（首重1公斤内固定费用，续重每公斤费用，不足1公斤按1公斤计）快速计算每笔订单的运费，以解决人工核算",
+      "output": "def calculate_delivery_cost(order_weight, delivery_fee):\n    if order_weight <= 1:\n        return delivery_fee\n    else:\n        return order_weight * delivery_fee\n\n# 测试\nprint(calculate_delivery_cost(10, 1))  # 10 * 1 = 10\nprint(calculate_delivery_cost(100, 1))  # 100 * 1 = 100\nprint(calculate_delivery_cost(1000, 1))  # 1000 * 1 = 1000\nprint(calculate_delivery_cost(10000, 1))  # 10000 * 1 = 10000\nprint(calculate_delivery_cost(100000, 1))  # 100000 * 1 = 100000\nprint(calculate_delivery_cost(1000000, 1))  # 1000000 * 1 = 1000000\nprint(calculate_delivery_cost(10000000, 1))  # ",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 61,
+      "task": "如何从一个字符串列表中筛选出那些首字母和末字母相同的单词？",
+      "output": "def filter_words(words):\n    return [word for word in words if word.startswith(words[0]) and word.endswith(words[-1])]\n\nprint(filter_words(['apple', 'banana', 'cherry', 'grape', 'orange']))  # ['apple', 'cherry']",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 62,
+      "task": "已知某地阶梯电价：每月用电量不超过200度时每度0.5元；超过200度但不超过400度时，超出部分每度0.6元；超过400度时，超出部分每度0.8元。如何根据给",
+      "output": "def calculate_bill(electricity_usage):\n    if electricity_usage <= 200:\n        return electricity_usage * 0.5\n    elif electricity_usage <= 400:\n        return electricity_usage * 0.6\n    else:\n        return electricity_usage * 0.8\n\nprint(calculate_bill(200))  # 0.5\nprint(calculate_bill(400))  # 0.6\nprint(calculate_bill(600))  # 0.8\nprint(calculate_bill(800))  # 0.8\nprint(calculate_bill(1000))  # 0.8\nprint(calculate_bill(1200))  # 0.8\nprint(calculate_bill(1400))  # 0.8\nprint(calculate_bill(1600))  # 0.8\nprint(calculate_bill(1800))  # 0.8\nprint(calculate_bill(2000))  # 0.8\nprint(calculate_bill(2200))  # 0.8\nprint(calculate",
+      "syntax_ok": false,
+      "empty": false
+    },
+    {
+      "benchmark_id": 63,
+      "task": "在农业灌溉调度中，如何根据土壤当前有效含水量比例、作物日需水量、计划灌溉间隔天数和未来降雨量预报，计算出需要补充的灌溉水量（mm），以确保土壤含水量恢复到田间持",
+      "output": "def calculate_water_requirement(current_water_content, plant_need_water, target_water_content, rainfall_forecast, soil_effective_water_content, soil_water_content_at_planting):\n    # 计算需要补充的灌溉水量（mm）\n    water_requirement = (current_water_content - soil_effective_water_content) * (target_water_content - soil_water_content_at_planting) / (100 - soil_water_content_at_planting)\n    return water_requirement\n\n# 测试\nprint(calculate_water_requirement(100, 100, 100, 100, 100, 100))  # 100mm\nprint(calculate_water_requirement(100, 100, 100, 100, 100, 100))  # 100mm\nprint(calculate_water_requirement(100, 100, 100, 100, 100, 100))  # 100mm\nprint(calculate_water_",
+      "syntax_ok": false,
+      "empty": false
+    },
+    {
+      "benchmark_id": 64,
+      "task": "在社区垃圾分类回收站，每天需要根据回收的塑料、纸板和玻璃的重量（公斤）计算支付给居民的回收金额，其中塑料每公斤2元，纸板每公斤1.5元，玻璃每公斤0.8元。",
+      "output": "def calculate_revenue(weight_of_materials):\n    revenue = 0\n    if weight_of_materials.get('plastic') > 0:\n        revenue += 2 * weight_of_materials['plastic']\n    if weight_of_materials.get('paper') > 0:\n        revenue += 1.5 * weight_of_materials['paper']\n    if weight_of_materials.get('glass') > 0:\n        revenue += 0.8 * weight_of_materials['glass']\n    return revenue\n\n# 测试\nweight_of_materials = {'plastic': 10, 'paper': 20, 'glass': 30}\nprint(calculate_revenue(weight_of_materials))  # 20.0",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 65,
+      "task": "在医疗保险理赔审核中，如何根据医疗总费用、免赔额和赔付比例计算最终赔付给客户的金额？",
+      "output": "def calculate_final_payment(total_cost, discount_rate, deductible, coinsurance, copay):\n    final_payment = total_cost * (1 - discount_rate)\n    if deductible > 0:\n        final_payment -= deductible\n    if coinsurance > 0:\n        final_payment -= coinsurance\n    if copay > 0:\n        final_payment += copay\n    return final_payment\n\n# 测试\ntotal_cost = 1000\ndiscount_rate = 0.1\ndeductible = 100\ncoinsurance = 20\ncopay = 100\nprint(calculate_final_payment(total_cost, discount_rate, deductible, coinsurance, copay))",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 66,
+      "task": "在食品营养标签编制过程中，根据每100克食品的蛋白质、脂肪、碳水化合物含量（克），计算该食品的总热量（千卡），其中蛋白质和碳水化合物每克提供4千卡，脂肪每克提供",
+      "output": "def calculate_total_heat(protein_content, fat_content, carbohydrate_content):\n    total_heat = protein_content * 4000 + fat_content * 9000 + carbohydrate_content * 1000\n    return total_heat\n\nprint(calculate_total_heat(100, 10, 10))  # 4000 + 9000 + 1000 = 4000 + 1000 + 1000 = 4000 + 1000 = 5000",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 67,
+      "task": "如何校验一个13位ISBN书号是否有效？",
+      "output": "def isbn_valid(isbn):\n    try:\n        isbn = int(isbn)\n        return True\n    except ValueError:\n        return False\n\nprint(isbn_valid(\"131313131313\"))\nprint(isbn_valid(\"13131313131313\"))\nprint(isbn_valid(\"1313131313131313\"))\nprint(isbn_valid(\"13131313131313131313\"))\nprint(isbn_valid(\"131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313",
+      "syntax_ok": false,
+      "empty": false
+    },
+    {
+      "benchmark_id": 68,
+      "task": "在电力公司的用户账单系统中，根据工厂的月用电量（千瓦时）计算电费。费率规则：首20000千瓦时按0.8元/千瓦时计费，超过部分按1.2元/千瓦时计费。若月用电量",
+      "output": "def calculate_bill(factory_energy, rate_per_unit):\n    total_energy = factory_energy * rate_per_unit\n    total_bill = total_energy * 0.8 + total_energy * 1.2 + (total_energy - 50000) * 0.5\n    return total_bill\n\n# 测试\nprint(calculate_bill(100000, 0.8))  # 0.8 * 100000 = 80000\nprint(calculate_bill(150000, 0.8))  # 80000 * 0.8 = 60000\nprint(calculate_bill(200000, 0.8))  # 60000 * 0.8 = 40000\nprint(calculate_bill(250000, 0.8))  # 40000 * 0.8 = 30000\nprint(calculate_bill(300000, 0.8))  # 30000 * 0.8 = 24000\nprint(calculate_bill",
+      "syntax_ok": false,
+      "empty": false
+    },
+    {
+      "benchmark_id": 69,
+      "task": "如何判断两个单词是否由完全相同的字母组成，只是字母顺序不同？",
+      "output": "def is_same_letter_combination(word1, word2):\n    \"\"\"\n    :param word1: 第一个单词\n    :param word2: 第二个单词\n    :return: True if the two words are the same, False otherwise\n    \"\"\"\n    # 将单词转换为字符串\n    word1 = ''.join(sorted(word1))\n    word2 = ''.join(sorted(word2))\n\n    # 将单词转换为字典\n    word1_dict = {}\n    for char in word1:\n        word1_dict[char] = 1\n\n    word2_dict = {}\n    for char in word2:\n        word2_dict[char] = 1\n\n    # 遍历字典\n    for char in word1:\n        if char not in word2_dict:\n            return False\n        word2_dict[char] -= 1\n\n    # 遍历字典\n    for char in word2:\n        if char not in word1_dict:\n            return False\n        word1_dict[char] -= 1\n\n    return True\n\n\n# 测试\nprint(is_same_letter",
+      "syntax_ok": false,
+      "empty": false
+    },
+    {
+      "benchmark_id": 70,
+      "task": "如何计算两个日期之间相隔的天数？给定两个日期字符串，格式为 YYYY-MM-DD，需要返回后面的日期减去前面的日期所得到的天数。",
+      "output": "def diff_days(start_date, end_date):\n    start_date = datetime.strptime(start_date, '%Y-%m-%d')\n    end_date = datetime.strptime(end_date, '%Y-%m-%d')\n    return end_date - start_date\n\nprint(diff_days('2021-01-01', '2021-01-02'))  # 返回2021-01-01到2021-01-02之间的天数\nprint(diff_days('2021-01-01', '2021-01-03'))  # 返回2021-01-02到2021-01-03之间的天数\nprint(diff_days('2021-01-01', '2021-01-04'))  # 返回2021-01-01到2021-01-04之间的天数\nprint(diff_days('2021-01-01', '2021-01-05'))  # 返回2021-01-01到2",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 71,
+      "task": "在居民电表抄录后，需按阶梯电价核算电费：第一档0.5元/度（≤200度），第二档0.6元/度（201-400度），第三档0.8元/度（>400度）。给定月用电量",
+      "output": "def calculate_electricity_bill(monthly_energy_consumption):\n    \"\"\"\n    Calculates the electricity bill for a given monthly energy consumption.\n\n    :param monthly_energy_consumption: The monthly energy consumption in kWh.\n    :return: The electricity bill in euros.\n    \"\"\"\n    # Calculate the number of hours in a month\n    month_hours = 24 * 30\n\n    # Calculate the number of days in a month\n    month_days = month_hours / 24 / 30\n\n    # Calculate the number of days in a year\n    year_days = 365\n\n    # Calculate the number of days in a quarter\n    quarter_days = year_days / 4\n\n    # Calculate the number of days in a quarter\n    quarter_hours = quarter_days * 24 * 30\n\n    # Calculate the number of hours in a quarter\n    quarter_hours = quarter_hours / 24\n\n    # Calculate the number of hours ",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 72,
+      "task": "如何判断一个给定的字符串是否为回文排列（忽略空格、标点符号和大小写）？",
+      "output": "def is_palindrome(s):\n    \"\"\"\n    :param s: a string\n    :return: True if s is a palindrome, False otherwise\n    \"\"\"\n    s = s.lower()\n    if s.startswith('0') or s.endswith('0'):\n        return False\n    if s.count('0') != 1:\n        return False\n    for I in range(len(s) // 2):\n        if s[i] != s[len(s) - I - 1]:\n            return False\n    return True\n\nprint(is_palindrome('121'))  # True\nprint(is_palindrome('racecar'))  # False\nprint(is_palindrome('A man, a plan, a canal: Panama'))  # True",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 73,
+      "task": "在供水公司的客服中心，需要根据家庭月用水量计算阶梯水费，以快速答复客户查询。水价分为三档：15立方米以内（含）每立方米2.5元，15至25立方米部分每立方米3.",
+      "output": "def calculate_water_bill(household_water_usage):\n    water_usage = household_water_usage.split()\n    water_usage = [float(x) for x in water_usage]\n    water_usage.sort()\n    water_usage = [float(x) / 1000 for x in water_usage]\n    water_usage = [float(x) * 0.025 for x in water_usage]\n    water_usage = [float(x) * 0.035 for x in water_usage]\n    water_usage = [float(x) * 0.05 for x in water_usage]\n    water_usage = [float(x) * 0.05 for x in water_usage]\n    water_usage = [float(x) * 0.05 for x in water_usage]\n    water_usage = [float(x) * 0.05 for x in water_usage]\n    water_usage = [float(x) * 0.05 for x in water_usage]\n    water_usage = [float(x) * 0.05 for x in water_usage]\n    water_usage = [float(x) * 0.05 for x in water_usage]\n    water",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 74,
+      "task": "在房屋装修过程中，根据墙面的涂刷面积、每升油漆的覆盖面积以及每桶油漆的容量，计算需要购买多少桶油漆才能满足需求？",
+      "output": "def calculate_needed_oil(wall_area, floor_cover_area, floor_cover_volume):\n    oil_needed = wall_area * floor_cover_area * floor_cover_volume / 1000\n    return oil_needed\n\n# 测试\nwall_area = 1000\nfloor_cover_area = 1000\nfloor_cover_volume = 1000\noil_needed = calculate_needed_oil(wall_area, floor_cover_area, floor_cover_volume)\nprint(f\"需要 {oil_needed} 桶油漆才能满足需求。\")",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 75,
+      "task": "在药房日常管理中，根据某种药品的日均销售量、采购提前期和当前库存量，计算需要补充的采购数量。",
+      "output": "def daily_sales(sales_per_day, purchase_date, current_stock):\n    \"\"\"\n    Calculate the daily sales quantity needed to meet the demand for a given drug.\n\n    :param sales_per_day: the daily sales quantity for the drug\n    :param purchase_date: the date of the purchase\n    :param current_stock: the current stock level\n    :return: the daily sales quantity needed to meet the demand for the drug\n    \"\"\"\n    # calculate the daily sales quantity needed to meet the demand for the drug\n    daily_sales = sales_per_day * (purchase_date - current_stock) / (purchase_date - purchase_date.replace(day=1))\n    return daily_sales\n\n# Example usage\ndaily_sales(100, \"2021-01-01\", 100)",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 76,
+      "task": "怎么检查一段文本中的圆括号是否配对正确？",
+      "output": "def is_correct_brackets(text):\n    bracket_count = 0\n    for char in text:\n        if char == \"(\":\n            bracket_count += 1\n        elif char == \")\":\n            bracket_count -= 1\n        if bracket_count == 0:\n            return False\n    return True\n\nprint(is_correct_brackets(\"()\"))  # True\nprint(is_correct_brackets(\"()[]{}\"))  # True\nprint(is_correct_brackets(\"()[]{}[]\"))  # False\nprint(is_correct_brackets(\"()[]{}[]\"))  # False\nprint(is_correct_brackets(\"()[]{}[]\"))  # False\nprint(is_correct_brackets(\"()[]{}[]\"))  # False\nprint(is_correct_brackets(\"()[]{}[]\"))  # False\nprint(is_correct_brackets(\"()[]{}[]\"))  # False\nprint(is_correct_brackets(\"()[]{}[]\"))  # False\nprint(is_correct_brackets(\"()[]{}[]\"))  # False\nprint(is_correct_brackets(\"()[]{}[]\"))  # False\nprint(is_correct_brack",
+      "syntax_ok": false,
+      "empty": false
+    },
+    {
+      "benchmark_id": 77,
+      "task": "在电力公司的客户计费系统中，需要根据用户每月的用电量自动计算电费。当地实行阶梯电价：第一档为每月用电量不超过200度，每度0.5元；第二档为201度至400度，",
+      "output": "def calculate_total_bill(monthly_energy_consumption):\n    \"\"\"\n    Calculates the total bill for a monthly energy consumption.\n\n    :param monthly_energy_consumption: The monthly energy consumption in units of kWh.\n    :return: The total bill in euros.\n    \"\"\"\n    # Calculate the total energy consumption in kWh\n    total_energy_consumption = monthly_energy_consumption * 365 * 24 * 60 * 60\n\n    # Calculate the daily energy consumption in kWh\n    daily_energy_consumption = total_energy_consumption / 24\n\n    # Calculate the monthly energy consumption in kWh\n    monthly_energy_consumption = daily_energy_consumption * 30\n\n    # Calculate the monthly bill in euros\n    monthly_bill = monthly_energy_consumption * 0.0009\n\n    return monthly_bill\n\n# Example usage\nmonthly_energy_consumption = 2000\nmon",
+      "syntax_ok": false,
+      "empty": false
+    },
+    {
+      "benchmark_id": 78,
+      "task": "需要统计一组订单号中出现次数最多的订单号，如果有多个订单号出现次数一样多，则取其中数值最小的那个，该怎么做？",
+      "output": "def max_count(orders):\n    max_count = 0\n    for order in orders:\n        count = 0\n        for num in order:\n            count += num\n        if count > max_count:\n            max_count = count\n    return max_count\n\norders = [\n    \"1234567890\",\n    \"1234567890\",\n    \"1234567890\",\n    \"1234567890\",\n    \"1234567890\",\n    \"1234567890\",\n    \"1234567890\",\n    \"1234567890\",\n    \"1234567890\",\n    \"1234567890\",\n    \"1234567890\",\n    \"1234567890\",\n    \"1234567890\",\n    \"1234567890\",\n    \"1234567890\",\n    \"1234567890\",\n    \"123456",
+      "syntax_ok": false,
+      "empty": false
+    },
+    {
+      "benchmark_id": 79,
+      "task": "如何从一段英文文本中统计每个单词出现的次数，并忽略大小写和标点符号？",
+      "output": "def count_words(text):\n    words = text.split()\n    counts = {}\n    for word in words:\n        if word.lower() not in counts:\n            counts[word] = 1\n        else:\n            counts[word] += 1\n    return counts\n\nprint(count_words(\"hello world\"))",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 80,
+      "task": "在汽车制造工厂的质量检测环节，根据金属零件的硬度（HRC）、表面粗糙度（Ra）和内部裂纹长度（mm），判断该零件是否满足出厂标准。标准要求：硬度在50-60之间",
+      "output": "def check_quality(hrc, ra, length):\n    if hrc >= 50 and ra <= 1.6 and length <= 0.5:\n        return True\n    else:\n        return False\n\n# 测试\nprint(check_quality(50, 1.6, 0.5))  # True\nprint(check_quality(50, 1.7, 0.5))  # False\nprint(check_quality(50, 1.8, 0.5))  # False\nprint(check_quality(50, 1.9, 0.5))  # False\nprint(check_quality(50, 2.0, 0.5))  # False\nprint(check_quality(50, 2.1, 0.5))  # False\nprint(check_quality(50, 2.2, 0.5))  # False\nprint(check_quality(50, 2.3, 0.5))  # False\nprint(check_quality(50, 2.4, 0.5))  # False\nprint(check_quality(50, 2.5, 0.5))  # False\nprint(check_quality(50, 2.6, ",
+      "syntax_ok": false,
+      "empty": false
+    },
+    {
+      "benchmark_id": 81,
+      "task": "如何判断一个 IPv4 地址是否合法？",
+      "output": "def is_valid_ipv4(ip):\n    \"\"\"\n    Check if an IPv4 address is valid.\n\n    :param ip: IPv4 address string\n    :return: True if valid, False otherwise\n    \"\"\"\n    try:\n        ip = ip.split('.')\n        for I in range(0, 4):\n            if not int(ip[i]) <= 255:\n                return False\n        return True\n    except ValueError:\n        return False\n\n\nif __name__ == '__main__':\n    print(is_valid_ipv4('192.168.1.1'))  # True\n    print(is_valid_ipv4('192.168.1.256'))  # False\n    print(is_valid_ipv4('192.168.1.0'))  # False\n    print(is_valid_ipv4('192.168.1.1.256'))  # False\n    print(is_valid_ipv4('192.168.1.1.0'))  # False\n    print(is_valid_ipv4('192.168.1.1.257'))  # False\n   ",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 82,
+      "task": "在健身工作室中，根据客户的年龄、静息心率和目标训练强度百分比，计算目标心率，以制定有氧运动方案。",
+      "output": "def calculate_target_heart_rate(age, resting_heart_rate, target_heart_rate_percent):\n    \"\"\"\n    Calculates the target heart rate based on the client's age, resting heart rate, and target heart rate percentage.\n\n    :param age: the client's age in years\n    :param resting_heart_rate: the client's resting heart rate in beats per minute\n    :param target_heart_rate_percent: the target heart rate percentage in beats per minute\n    :return: the target heart rate in beats per minute\n    \"\"\"\n    target_heart_rate = target_heart_rate_percent * resting_heart_rate / 100\n    target_heart_rate = round(target_heart_rate, 2)\n    return target_heart_rate\n\n# Example usage:\nage = 25\nresting_heart_rate = 70\ntarget_heart_rate_percent = 60\ntarget_heart_rate = calculate_target_heart_rate(age, resting_heart_ra",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 83,
+      "task": "怎样判断给定的字符串在忽略大小写和非字母数字字符后是否为回文？",
+      "output": "def is_palindrome(s):\n    s = s.lower()\n    if s.isalpha():\n        s = s.replace(' ', '')\n    return s == s[::-1]\n\nprint(is_palindrome(\"racecar\"))\nprint(is_palindrome(\"A man, a plan, a canal: Panama!\"))\nprint(is_palindrome(\"A man, a plan, a canal: Panama!\"))\nprint(is_palindrome(\"racecar\"))\nprint(is_palindrome(\"racecar\"))\nprint(is_palindrome(\"racecar\"))\nprint(is_palindrome(\"racecar\"))\nprint(is_palindrome(\"racecar\"))\nprint(is_palindrome(\"racecar\"))\nprint(is_palindrome(\"racecar\"))\nprint(is_palindrome(\"racecar\"))\nprint(is_palindrome(\"racecar\"))\nprint(is_palindrome(\"racecar\"))\nprint(is_palindrome(\"racecar\"))\nprint(is_palindrome(\"racecar\"))\nprint(is_palindrome(\"racecar\"))\nprint(is_palindrome(\"racecar\"))\nprint(is_palindrome(\"racecar\"))\nprint(is_palindrome(\"racecar\"))\nprint(is_",
+      "syntax_ok": false,
+      "empty": false
+    },
+    {
+      "benchmark_id": 84,
+      "task": "在机械加工厂的订单报价系统中，定制一批法兰盘的总成本由三部分组成：每件材料费、每件机加工时费和一次性的生产准备费。已知订单总材料费超过5000元时，机加工时费享",
+      "output": "def custom_order_cost(material_cost, machine_cost, prep_cost, order_quantity):\n    total_cost = material_cost + machine_cost + prep_cost * order_quantity\n    discount = 0.09 if material_cost > 5000 else 0\n    return total_cost - discount\n\n# Example usage:\ncustom_order_cost(3000, 1000, 1000, 10)",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 85,
+      "task": "如何判断一个给定的字符串是否是回文排列（忽略空格和大小写）？",
+      "output": "def is_palindrome(s):\n    \"\"\"\n    :param s: a string\n    :return: True if s is a palindrome, False otherwise\n    \"\"\"\n    s = s.lower()\n    if s.startswith('0') or s.endswith('0'):\n        return False\n    if s.count('0') != 1:\n        return False\n    return s == s[::-1]\n\nprint(is_palindrome('123456789'))  # True\nprint(is_palindrome('racecar'))  # False",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 86,
+      "task": "如何根据月度用电量（千瓦时）和阶梯电价规则计算电费：第一档0-200度每度0.5元，第二档201-400度每度0.6元，第三档401度及以上每度0.8元？",
+      "output": "def calculate_electric_bill(monthly_energy_consumption, step_price):\n    \"\"\"\n    Calculates the electric bill based on monthly energy consumption and step price.\n\n    :param monthly_energy_consumption: The monthly energy consumption in kWh.\n    :param step_price: The step price in USD per kWh.\n    :return: The electric bill in USD.\n    \"\"\"\n    # Calculate the total energy consumption in kWh\n    total_energy_consumption = monthly_energy_consumption * 365\n\n    # Calculate the total cost in USD\n    total_cost = total_energy_consumption * step_price\n\n    # Calculate the monthly cost in USD\n    monthly_cost = total_cost / 30\n\n    # Calculate the monthly bill in USD\n    monthly_bill = monthly_cost * 30\n\n    return monthly_bill\n\n# Example usage\nmonthly_energy_consumption = 10000\nstep_price = 0.08",
+      "syntax_ok": false,
+      "empty": false
+    },
+    {
+      "benchmark_id": 87,
+      "task": "在儿科临床用药中，药物说明书标注为按体重给药（mg/kg）。已知药物注射液浓度（mg/ml），护士需要根据患儿体重快速计算应抽取的药液体积（ml）。例如：某药浓",
+      "output": "def calculate_dose(mg_per_kg, mg_per_ml):\n    return mg_per_kg * mg_per_ml / 1000\n\nprint(calculate_dose(10, 5))  # 5 mg/kg",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 88,
+      "task": "在车间生产排程中，如何根据订单需求件数、当前库存件数和每日产量，准确计算完成订单所需的工作日数？当库存足以满足订单时，所需工作日数为0。",
+      "output": "def calculate_work_days(order_num, current_stock, daily_production):\n    \"\"\"\n    Calculate the number of work days required to fulfill an order.\n\n    :param order_num: the order number\n    :param current_stock: the current stock of the order\n    :param daily_production: the daily production rate\n    :return: the number of work days required\n    \"\"\"\n    # calculate the number of work days required\n    if current_stock >= daily_production:\n        return 0\n    else:\n        return int(current_stock / daily_production) + 1\n\n# Example usage:\norder_num = 1000\ncurrent_stock = 1000\ndaily_production = 100\nprint(calculate_work_days(order_num, current_stock, daily_production))",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 89,
+      "task": "怎样将句子中的单词按长度从小到大排序，并保持相同长度的单词在句子中的原始顺序？",
+      "output": "def sort_words(sentence):\n    words = sentence.split()\n    sorted_words = sorted(words, key=len, reverse=True)\n    return ' '.join(sorted_words)\n\nprint(sort_words(\"I love you\"))  # Output: \"you love me\"",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 90,
+      "task": "如何判断一个字符串是否符合中国大陆手机号码的格式（11位，以1开头，第二位为3-9）？",
+      "output": "def is_china_phone_number(s):\n    if len(s) != 11:\n        return False\n    for I in range(2, 11):\n        if s[i] not in '123456789':\n            return False\n    return True\n\nprint(is_china_phone_number('13888888888'))\nprint(is_china_phone_number('138888888888'))\nprint(is_china_phone_number('1388888888888'))\nprint(is_china_phone_number('13888888888888'))\nprint(is_china_phone_number('138888888888888'))\nprint(is_china_phone_number('1388888888888888'))\nprint(is_china_phone_number('13888888888888888'))\nprint(is_china_phone_number('138888888888888888'))\nprint(is_china_phone_",
+      "syntax_ok": false,
+      "empty": false
+    },
+    {
+      "benchmark_id": 91,
+      "task": "在合同管理流程中，根据合同金额和逾期履行天数，按照每日万分之五的标准计算违约金。",
+      "output": "def calculate_overdue_penalty(contract_amount, overdue_days):\n    penalty_amount = contract_amount * 0.05 / 10000\n    return penalty_amount * overdue_days\n\n# 测试\nprint(calculate_overdue_penalty(10000, 3))  # 10000 * 0.05 / 10000 = 1000\nprint(calculate_overdue_penalty(10000, 5))  # 10000 * 0.05 / 10000 = 1000\nprint(calculate_overdue_penalty(10000, 10))  # 10000 * 0.05 / 10000 = 1000\nprint(calculate_overdue_penalty(10000, 15))  # 10000 * 0.05 / 10000 = 1000\nprint(calculate_overdue_penalty(10000, 20))  # 10000 * 0.05 / 10000 = 100",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 92,
+      "task": "有时从网页或PDF复制文本时，会夹杂很多零散的空格和特殊符号，导致句子变得难以阅读。有没有办法把一段文本里连续出现的多个空格合并成一个空格，同时移除所有非字母数",
+      "output": "def merge_spaces(text):\n    # 将空格合并成一个空格\n    text = text.replace(' ', '').replace('\\n', '').replace('\\r', '').replace('\\t', '').replace('\\\\', '').replace('\"', '').replace('\\'', '')\n    # 移除非字母数字的字符\n    text = ''.join(c for c in text if c.isalnum())\n    return text\n\n# 测试\nprint(merge_spaces('  123   a   b   c   d   e   f   g   h   i   j   k   l   m   n   o   p   q   r   s   t   u   v   w   x   y   z   A   B   C   D   E   F   G   H   I   J   K   L   M   N   O   P   Q   R   S   T   U   V   W   X   Y   Z  0  1  2  3  4  5  6  7  8  9   '))",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 93,
+      "task": "整理图书时，需要快速确认一串 ISBN-10 编号是否合法。校验规则是：前9位数字分别乘以10到2，第10位校验码（可能是X，代表10）乘以1，把所有乘积相加，",
+      "output": "def isbn10_check(isbn):\n    try:\n        isbn = isbn.replace('-', '')\n        isbn = isbn.replace(' ', '')\n        isbn = isbn.replace('(', '')\n        isbn = isbn.replace(')', '')\n        isbn = isbn.replace('[', '')\n        isbn = isbn.replace(']', '')\n        isbn = isbn.replace(' ', '')\n        isbn = isbn.replace('(', '')\n        isbn = isbn.replace(')', '')\n        isbn = isbn.replace('[', '')\n        isbn = isbn.replace(']', '')\n        isbn = isbn.replace(' ', '')\n        isbn = isbn.replace('(', '')\n        isbn = isbn.replace(')', '')\n        isbn = isbn.replace('[', '')\n        isbn = isbn.replace(']', '')\n        isbn = isbn.replace(' ', '')\n        isbn = isbn.replace('(', '')\n        isbn = isbn.replace(')', '')\n        isbn = isbn.replace('[', '')\n        isbn = isbn.replace",
+      "syntax_ok": false,
+      "empty": false
+    },
+    {
+      "benchmark_id": 94,
+      "task": "在教育培训机构中，根据课程时长（小时）和教师等级（初级或高级）计算培训总费用：初级每小时100元，高级每小时180元，若总时长超过20小时，超出部分按原价的80",
+      "output": "def calculate_fee(course_time, teacher_level):\n    if teacher_level == '初级':\n        fee = 100 * course_time\n    elif teacher_level == '高级':\n        fee = 180 * course_time\n    else:\n        fee = 80 * course_time\n    return fee\n\n# 测试\nprint(calculate_fee(20, '高级'))  # 800\nprint(calculate_fee(20, '初级'))  # 1000\nprint(calculate_fee(20, '高级'))  # 800\nprint(calculate_fee(20, '高级'))  # 800\nprint(calculate_fee(20, '高级'))  # 800\nprint(calculate_fee(20, '高级'))  # 800\nprint(calculate_fee(20, '高级'))  # 800\nprint(calculate_fee(20, '高级'))  # 800\nprint(calculate_fee(20, '高级'))",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 95,
+      "task": "怎样验证一个密码是否满足安全要求（至少8位，且同时包含字母和数字）？",
+      "output": "def is_secure_password(password):\n    \"\"\"\n    Check if a given password is secure.\n\n    :param password: The password to check.\n    :return: True if the password is secure, False otherwise.\n    \"\"\"\n    # Remove any leading or trailing whitespace\n    password = password.strip()\n\n    # Check if the password is at least 8 characters long\n    if len(password) < 8:\n        return False\n\n    # Check if the password contains at least one letter and one digit\n    for char in password:\n        if not char.isalpha() or not char.isdigit():\n            return False\n\n    return True\n\n# Example usage:\nprint(is_secure_password('1234567890'))  # True\nprint(is_secure_password('12345678901234567890'))  # False\nprint(is_secure_password('123456789012345678901234567890'))  # True",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 96,
+      "task": "在临床营养科，需要根据患者的体重和每公斤体重所需的热量系数，计算每日总热量需求，以制定个性化膳食方案。",
+      "output": "def calculate_total_heat_requirement(weight, daily_calories):\n    daily_calories_per_pound = daily_calories / 4.45\n    daily_calories_per_pound_per_kg = daily_calories_per_pound / 2.2\n    daily_calories_per_pound_per_lb = daily_calories_per_pound_per_kg * 0.453592\n    daily_calories_per_pound_per_lb_per_kg = daily_calories_per_pound_per_lb_per_kg * 0.453592\n    daily_calories_per_pound_per_lb_per_lb = daily_calories_per_pound_per_lb_per_lb * 0.453592\n    daily_calories_per_pound_per_lb_per_lb_per_kg = daily_calories_per_pound_per_lb_per_lb_per_kg * 0.453592\n    daily_calories_per_pound_per_lb_per_lb_per_lb_per_kg = daily_calories_per_pound_per_lb_",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 97,
+      "task": "在电子元件生产线的质量检测环节中，电阻的标称值标注为N欧姆，允许误差为±5%。质检系统需根据实测值R自动判断该电阻是否合格，若合格则返回1，否则返回0。",
+      "output": "def check_resistance(r):\n    if r < 1000000000:\n        return 1\n    else:\n        return 0\n\nprint(check_resistance(1000000000))",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 98,
+      "task": "在纺织工厂的布料质检环节，需要根据每卷布的长度（米）和检测出的疵点数量，计算每百米疵点数（即每100米的疵点数），以判断该卷布是否达到一等品标准。一等品要求每百",
+      "output": "def check_punctuation(text):\n    punctuation = set(string.punctuation)\n    return ''.join(filter(lambda x: x not in punctuation, text.lower()))\n\ndef check_length(text, length):\n    return len(text) >= length\n\ndef check_punctuation_and_length(text, length):\n    return check_punctuation(text) and check_length(text, length)\n\ndef check_punctuation_and_length_and_punctuation_level(text, length, level):\n    return check_punctuation(text) and check_length(text, length) and check_punctuation_level(text, level)\n\ndef check_punctuation_level(text, level):\n    return check_punctuation(text) and level == 'one'\n\ndef check_punctuation_level_and_length(text, length, level):\n    return check_punctuation(text) and check_length(text, length) and check_punctuation_level(text, level)\n\ndef check_punctuation_lev",
+      "syntax_ok": true,
+      "empty": false
+    },
+    {
+      "benchmark_id": 99,
+      "task": "在居民电费核算中，根据月度用电量（千瓦时）计算应缴电费，采用阶梯定价：每度电0.6元，但超过200度的部分加收0.2元（即0.8元/度），超过400度的部分再加",
+      "output": "def calculate_monthly_bill(monthly_energy_consumption):\n    hourly_price = 0.6 * 1000\n    daily_price = 0.2 * 1000\n    monthly_price = hourly_price * 24 * 30\n    total_price = daily_price + monthly_price\n    return total_price * monthly_energy_consumption\n\n# 测试\nprint(calculate_monthly_bill(1000))  # 1000.0\nprint(calculate_monthly_bill(10000))  # 10000.0\nprint(calculate_monthly_bill(100000))  # 100000.0\nprint(calculate_monthly_bill(1000000))  # 1000000.0\nprint(calculate_monthly_bill(10000000))  # 1000000.0\nprint(calculate_monthly_bill(100000000))  # 1000000.0\nprint(calculate_monthly_bill(10",
+      "syntax_ok": false,
+      "empty": false
+    }
+  ]
+}

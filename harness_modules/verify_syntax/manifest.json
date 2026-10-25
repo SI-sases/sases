@@ -1,0 +1,30 @@
+{
+  "id": "verify_syntax",
+  "name": "语法验证",
+  "description": "验证 .py / .js 文件语法。参数：file_path（必填）。.py 用 ast.parse，.js 用 node --check。返回是否通过、错误详情。",
+  "version": "1.0.0",
+  "capabilities": [
+    "verify_syntax"
+  ],
+  "permissions": [
+    "restricted_file_write"
+  ],
+  "entrypoint": "main.py",
+  "node_type": "harness",
+  "params": {
+    "file_path": {
+      "type": "string",
+      "desc": "必填"
+    },
+    "check_undefined": {
+      "type": "bool",
+      "default": true,
+      "desc": "可选"
+    },
+    "auto_rollback": {
+      "type": "bool",
+      "default": true,
+      "desc": "可选"
+    }
+  }
+}
