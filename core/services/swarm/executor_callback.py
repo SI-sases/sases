@@ -286,8 +286,15 @@ async def handle_step_done(
                     
                     # 强制拦截：如果总结器判定未完成，无视 _continue 的返回值，直接强制续轮
                     if _review and isinstance(_review, dict) and _review.get('goal_achieved') is False:
-                        _continue = True
-                        print('[supervisor] FORCE_RETRY: 判定未完成，强制覆盖为 True 进入下一轮')
+                        _force_retry_count = task.get('_force_retry_count', 0)
+                        if _force_retry_count < 2:
+                            task['_force_retry_count'] = _force_retry_count + 1
+                            _continue = True
+                            print(f'[supervisor] FORCE_RETRY: 判定未完成，强制覆盖为 True 进入下一轮（第 {_force_retry_count + 1} 次）')
+                        else:
+                            print('[supervisor] FORCE_RETRY 已达上限（2次），强制终止任务并报错')
+                            supervisor_service.finish_run(_run_id, 'max_force_retry_exceeded')
+                            return {"status": "failed", "task_id": task_id, "summary": "由于代码修改连续失败，任务已被强制终止，以防止无意义死循环。"}
 
                     if _continue:
                         if _review and getattr(supervisor_service, 'USE_STRUCTURED_REVIEW', False):
@@ -649,8 +656,15 @@ async def handle_step_done(
                     
                     # 强制拦截：如果总结器判定未完成，无视 _continue 的返回值，直接强制续轮
                     if _review and isinstance(_review, dict) and _review.get('goal_achieved') is False:
-                        _continue = True
-                        print('[supervisor] FORCE_RETRY: 判定未完成，强制覆盖为 True 进入下一轮')
+                        _force_retry_count = task.get('_force_retry_count', 0)
+                        if _force_retry_count < 2:
+                            task['_force_retry_count'] = _force_retry_count + 1
+                            _continue = True
+                            print(f'[supervisor] FORCE_RETRY: 判定未完成，强制覆盖为 True 进入下一轮（第 {_force_retry_count + 1} 次）')
+                        else:
+                            print('[supervisor] FORCE_RETRY 已达上限（2次），强制终止任务并报错')
+                            supervisor_service.finish_run(_run_id, 'max_force_retry_exceeded')
+                            return {"status": "failed", "task_id": task_id, "summary": "由于代码修改连续失败，任务已被强制终止，以防止无意义死循环。"}
 
                     if _continue:
                         if _review and getattr(supervisor_service, 'USE_STRUCTURED_REVIEW', False):
