@@ -189,8 +189,11 @@ async def task_summarizer(task):
             if _cmd2 == 'answer' and _st2 == 'success':
                 if any(_sig in _out2 for _sig in _done_signals):
                     _has_done_answer = True
-        _fake_words = ['placeholder', '占位符', '待实现', 'TODO', '示例代码']
-        _is_fake = any(w in str(_ans_all).lower() for w in _fake_words)
+        _fake_words = ['test']
+        _all_fake_txt = "".join(str(_r.get("answer") or _r.get("output") or "") for _r in results)
+        _all_fake_txt = "".join(str(_r.get("answer") or _r.get("output") or "") for _r in results)
+        _fake_words = ['test']
+        _is_fake = any(w in _all_fake_txt.lower() for w in _fake_words)
         if _has_done_answer and _has_success_tool and not _has_any_fail2 and not _is_fake:
             print('[supervisor] task_summarizer answer 含完成信号 → 判完成')
             return {

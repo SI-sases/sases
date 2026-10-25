@@ -1,6 +1,5 @@
 // static/modules/subpage.js
 
-// ==================== 二级页面控制 ====================
 export function openSubpage(title, contentHtml, options = {}) {
   const subpageTitle = document.getElementById('subpage-title');
   const subpageContent = document.getElementById('subpage-content');
@@ -48,19 +47,9 @@ export function openSubpage(title, contentHtml, options = {}) {
       rightBtn.onclick = null;
     }
   }
-
-
-  const backBtn = document.getElementById('subpage-back-btn');
-  if (backBtn) {
-    backBtn.onclick = closeSubpage;
-  }
-
-  const subpage = document.getElementById('view-subpage');
-  if (subpage) subpage.style.display = 'flex';
 }
 
-
-export function closeSubpage() { window.__currentReturnAction = null; if (typeof window.activateMainView === 'function') { window.activateMainView('me'); } const viewSubpage = document.getElementById('view-subpage'); if (viewSubpage) { viewSubpage.classList.remove('active'); viewSubpage.style.display = 'none'; } }
+export function closeSubpage() {
   const viewSubpage = document.getElementById('view-subpage');
   if (viewSubpage) viewSubpage.classList.remove('active');
   
@@ -69,15 +58,12 @@ export function closeSubpage() { window.__currentReturnAction = null; if (typeof
   if (bottomNav) bottomNav.style.display = 'flex';
   if (topBar) topBar.style.display = 'flex';
 
-  // 核心修复：如果之前设置了自定义返回回调，在这里执行它
-  if (window.__currentReturnAction && typeof window.__currentReturnAction === 'function') {
-    const action = window.__currentReturnAction;
-    window.__currentReturnAction = null;
-    action();
+  window.__currentReturnAction = null; 
+  
+  if (window.activateMainView) {
+    window.activateMainView('me'); 
   }
 }
 
-
-// 挂载到全局，供其他模块调用
 window.openSubpage = openSubpage;
 window.closeSubpage = closeSubpage;
