@@ -54,3 +54,24 @@ async def deliver_to_linked_accounts(user_id, conversation_id, content, sender_a
                 print(f"[投递广播失败] {ex}")
     except Exception as e:
         print(f"[message] 跨账号投递失败: {e}")
+
+
+async def deliver_via_relay(sender_sases_id, target_sases_id, content, sender_agent_id=None, msg_type='standard', attachments=None):
+    try:
+        import httpx
+        from ... import config
+        if not getattr(config, 'HIVE_PEERS', None):
+            return
+        peer = config.HIVE_PEERS[0]
+        payload = {
+            "sender_sases_id": sender_sases_id,
+            "target_sases_id": target_sases_id,
+            "content": content,
+            "sender_agent_id": sender_agent_id,
+            "msg_type": msg_type,
+            "attachments": attachments
+        }
+        async with httpx.AsyncClient() as client:
+            await client.post(f"{peer}/hive/relay", json=payload, timeout=5.0)
+    except Exception as e:
+        print(f"[relay] error: {e}")

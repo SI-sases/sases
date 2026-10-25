@@ -1,3 +1,4 @@
+from fastapi import Request
 """蜂群节点信息路由（阶段 1）"""
 from fastapi import APIRouter
 from .. import config
@@ -164,3 +165,40 @@ def sync_group(body: dict):
         return {'ok': True, 'created': True, 'global_group_id': _gid, 'owner_added': _owner_uid is not None}
     except Exception as e:
         return {'ok': False, 'error': str(e)}
+
+
+@router.post("/relay")
+async def hive_relay(request: Request):
+    try:
+        body = await request.json()
+        from ..db import db_cursor
+        import datetime
+        from ..broadcast.ws_hub import broadcast_to_user
+        target_sases_id = body.get("target_sases_id")
+        sender_sases_id = body.get("sender_sases_id")
+        content = body.get("content", "")
+        sender_agent_id = body.get("sender_agent_id")
+        msg_type = body.get("msg_type", "standard")
+        
+        with db_cursor() as cur:
+            cur.execute("SELECT id FROM users WHERE sases_id=?", (target_sases_id,))
+            u = cur.fetchone()
+            if not u:
+                return {"success": False, "error": "user not found"}
+            uid = u["id"]
+            cur.execute("SELECT id FROM conversations WHERE user_id=? AND target_user_id=? LIMIT 1", (uid, sender_sases_id))
+            conv = cur.fetchone()
+            if not conv:
+                cur.execute("INSERT INTO conversations (user_id, target_user_id, title, updated_at) VALUES (?, ?, ?, ?)", (uid, sender_sases_id, f"好友 {sender_sases_id}", datetime.datetime.now().isoformat()))
+                conv_id = cur.lastrowid
+            else:
+                conv_id = conv["id"]
+                cur.execute("UPDATE conversations SET updated_at=? WHERE id=?", (datetime.datetime.now().isoformat(), conv_id))
+            
+            cur.execute("INSERT INTO messages (conversation_id, sender, content, sender_agent_id, msg_type) VALUES (?, 'friend', ?, ?, ?)", (conv_id, content, sender_agent_id, msg_type))
+            msg_id = cur.lastrowid
+            
+        asyncio.create_task(broadcast_to_user(uid, {"type": "sases_new_message", "message": {"id": msg_id, "sender": "friend", "content": content, "msg_type": msg_type, "conversation_id": conv_id}}))
+        return {"success": True}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
