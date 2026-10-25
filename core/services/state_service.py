@@ -130,17 +130,25 @@ def append_recent_fixes_to_doc(max_count: int = 3, days: int = 7) -> int:
 
 
 async def periodic_state_sync(interval_hours: int = 24):
+    import os as _os
+    _debug = (_os.environ.get("DEBUG", "").lower() == "true")
     await asyncio.sleep(5 * 60)
     while True:
         try:
             added = await asyncio.to_thread(append_recent_fixes_to_doc, 3, 7)
-            if added > 0:
+            if added > 0 and _debug:
                 print(f"[state] 追加 {added} 条最近修复到文档")
             r = await asyncio.to_thread(sync_state_doc)
-            if r['ok']:
-                print(f"[state] SASES_STATE.md 同步 {r['chunks']} 个分片")
+            if r.get('ok'):
+                if _debug:
+                    print(f"[state] SASES_STATE.md 同步 {r['chunks']} 个分片")
             else:
-                print(f"[state] 同步失败: {r['error']}")
+                if _debug:
+                    print(f"[state] 同步失败: {r.get('error')}")
+        except FileNotFoundError:
+            if _debug:
+                print("[state] 状态文件不存在，静默跳过")
         except Exception as e:
-            print(f"[state] 周期任务异常: {e}")
+            if _debug:
+                print(f"[state] 周期任务异常: {e}")
         await asyncio.sleep(interval_hours * 3600)

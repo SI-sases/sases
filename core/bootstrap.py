@@ -83,6 +83,12 @@ async def periodic_git_push():
     import os as _os
     await asyncio.sleep(300)
     repo = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+    import shutil as _shutil
+    _debug = (_os.environ.get("DEBUG", "").lower() == "true")
+    if _shutil.which("git") is None:
+        if _debug:
+            print("[git-push] 未检测到 git，静默跳过")
+        return
     while True:
         try:
             r = subprocess.run(
@@ -92,14 +98,17 @@ async def periodic_git_push():
             )
             out = (r.stdout or "") + (r.stderr or "")
             if r.returncode == 0:
-                if "Everything up-to-date" in out:
-                    print("[git-push] 无新提交")
-                else:
-                    print(f"[git-push] 推送成功: {out.strip()[:200]}")
+                if _debug:
+                    if "Everything up-to-date" in out:
+                        print("[git-push] 无新提交")
+                    else:
+                        print(f"[git-push] 推送成功: {out.strip()[:200]}")
             else:
-                print(f"[git-push] 推送失败: {out.strip()[:200]}")
+                if _debug:
+                    print(f"[git-push] 推送失败: {out.strip()[:200]}")
         except Exception as e:
-            print(f"[git-push] 异常: {e}")
+            if _debug:
+                print(f"[git-push] 异常: {e}")
         await asyncio.sleep(3600)
 
 
@@ -142,10 +151,15 @@ async def periodic_hlc_health():
     script = _os.path.join(repo, "scripts", "hlc_health.py")
     out_dir = _os.path.join(repo, "docs", "hlc_health")
 
+    _debug = (_os.environ.get("DEBUG", "").lower() == "true")
+    _profile = _os.environ.get("SASES_PROFILE", "").lower()
+    if _profile == "personal" and not _debug:
+        return
     while True:
         try:
             if not _os.path.exists(script):
-                print("[hlc-health] 脚本不存在，跳过")
+                if _debug:
+                    print("[hlc-health] 脚本不存在，跳过")
             else:
                 r = subprocess.run(
                     [_sys.executable, script],
@@ -153,15 +167,19 @@ async def periodic_hlc_health():
                     encoding="utf-8", errors="replace", timeout=120
                 )
                 if r.returncode == 0:
-                    print("[hlc-health] ✅ 健康检查通过")
+                    if _debug:
+                        print("[hlc-health] ✅ 健康检查通过")
                 else:
-                    print(f"[hlc-health] ⚠️ 健康检查有问题: {(r.stdout or '')[-500:]}")
-                    if r.stderr:
-                        print(f"[hlc-health] stderr: {(r.stderr or '')[:300]}")
+                    if _debug:
+                        print(f"[hlc-health] ⚠️ 健康检查有问题: {(r.stdout or '')[-500:]}")
+                        if r.stderr:
+                            print(f"[hlc-health] stderr: {(r.stderr or '')[:300]}")
         except subprocess.TimeoutExpired:
-            print("[hlc-health] 超时 120 秒")
+            if _debug:
+                print("[hlc-health] 超时 120 秒")
         except Exception as e:
-            print(f"[hlc-health] 异常: {e}")
+            if _debug:
+                print(f"[hlc-health] 异常: {e}")
 
         # 清理 30 天前的报告
         try:
