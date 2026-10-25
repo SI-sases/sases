@@ -58,11 +58,7 @@ export function closeSubpage() {
   if (bottomNav) bottomNav.style.display = 'flex';
   if (topBar) topBar.style.display = 'flex';
 
-  window.__currentReturnAction = null; 
-  
-}
-    window.activateMainView('me'); 
-  }
+  window.__currentReturnAction = null;
 }
 
 window.openSubpage = openSubpage;
