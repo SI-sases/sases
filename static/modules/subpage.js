@@ -3,12 +3,19 @@
 export function openSubpage(title, contentHtml, options = {}) {
   const subpageTitle = document.getElementById('subpage-title');
   const subpageContent = document.getElementById('subpage-content');
+  const viewSubpage = document.getElementById('view-subpage');
+  
   if (!subpageTitle || !subpageContent) return;
 
   window.__currentReturnAction = options.returnAction || null;
 
   subpageTitle.textContent = title;
   subpageContent.innerHTML = contentHtml;
+  
+  if (viewSubpage) {
+      viewSubpage.classList.add('active');
+      viewSubpage.style.display = 'flex';
+  }
 
   const bottomNav = document.querySelector('.bottom-nav');
   const topBar = document.querySelector('.top-bar');
