@@ -3,7 +3,7 @@ import { api } from './api.js';
 import { t } from './me_i18n.js';
 
 // ==================== 模型管理 ====================
-export async function openModelManagement() {
+export async function openModelManagement(returnAction = null) {
   let modelsHtml = '';
   try {
     const data = await api.listModels();
@@ -51,7 +51,7 @@ export async function openModelManagement() {
     </div>
     ${modelsHtml}
   `;
-  window.openSubpage(t('model_management'), contentHtml, { showMore: false });
+  window.openSubpage(t('model_management'), contentHtml, { showMore: false, returnAction: returnAction || (() => window.activateMainView('me')) });
 
   setTimeout(() => {
     const addApiKeyBtn = document.getElementById('add-api-key');
