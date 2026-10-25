@@ -78,6 +78,7 @@ async def check_and_continue(run_id, last_summary, plan_text=None, exec_text=Non
     from ... import config
     run = get_run(run_id)
     if not run or run['status'] != 'running':
+        print(f'[DIAG] 状态异常! run={run}, status={run.get("status") if run else None}')
         return False, None
 
     # 死循环检测：连续 3 轮 plan 高度相似 → 强制停止
@@ -132,6 +133,7 @@ async def check_and_continue(run_id, last_summary, plan_text=None, exec_text=Non
     record_round(run_id, plan_text or run.get('goal', ''), exec_text or last_summary, review=review)
     run = get_run(run_id)
     if not run or ((run['current_round'] or 0) >= (run['max_rounds'] or 5) and run['max_rounds'] != -1):
+        print(f'[DIAG] 轮次用尽! current={run.get("current_round")}, max={run.get("max_rounds")}')
         return False, None
     if (run['credits_used'] or 0) >= 16:
         print('[supervisor] 成本达到 16 积分，提前停止')
@@ -139,6 +141,7 @@ async def check_and_continue(run_id, last_summary, plan_text=None, exec_text=Non
         return False, None
 
     if not deduct_round(run_id):
+        print('[DIAG] 积分不足，无法扣费!')
         finish_run(run_id, status='insufficient_credits')
         return False, None
     return True, build_next_input(run_id)

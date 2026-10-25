@@ -1,3 +1,13 @@
+
+# FORCE_RETRY_CHECK
+def _force_retry_if_not_achieved(run_id, review):
+    if isinstance(review, dict) and review.get('goal_achieved') is False:
+        print('[supervisor] FORCE_RETRY: 任务未完成，强制触发下一轮')
+        from .runs import get_run, finish_run
+        run = get_run(run_id)
+        if run and run['status'] == 'running':
+            # 不改状态，直接在外部调度
+            pass
 import json
 from datetime import datetime
 from typing import Optional, Dict, Any
@@ -140,7 +150,16 @@ async def handle_step_done(
                         _ans_rev = await _sv_a.task_summarizer(task)
                         if _ans_rev and not _ans_rev.get('goal_achieved'):
                             _ans_ok = False
-                            print('[supervisor] answer 产出但目标未达成，继续下一轮')
+                            print('[supervisor] answer 产出但目标未达成，强制发起下一轮')
+                            _next_task = '[MODIFY] ' + (_ans_rev.get('next_hint') or '继续完成目标')
+                            await plan_task(
+                                user_id=task["user_id"],
+                                conversation_id=conversation_id,
+                                user_input=task["user_text"] + chr(10) + _next_task,
+                                supervisor_id=task.get("supervisor_id"),
+                                supervisor_run_id=_run_id,
+                            )
+                            return {"status": "continue", "task_id": task_id}
                         else:
                             _sv_a.record_round(_run_id, plan_summary='', exec_summary='', review=_ans_rev) if _run_id else None
                     except Exception as _ae:
@@ -264,6 +283,12 @@ async def handle_step_done(
                         except Exception as _e_rec:
                             print(f"[supervisor] record_round 失败: {_e_rec}")
                     _continue, _ = await supervisor_service.check_and_continue(_run_id, summary, plan_text=_steps_text, exec_text=_exec_text, review=_review)
+                    
+                    # 强制拦截：如果总结器判定未完成，无视 _continue 的返回值，直接强制续轮
+                    if _review and isinstance(_review, dict) and _review.get('goal_achieved') is False:
+                        _continue = True
+                        print('[supervisor] FORCE_RETRY: 判定未完成，强制覆盖为 True 进入下一轮')
+
                     if _continue:
                         if _review and getattr(supervisor_service, 'USE_STRUCTURED_REVIEW', False):
                             if _review.get('goal_achieved'):
@@ -488,7 +513,16 @@ async def handle_step_done(
                         _ans_rev = await _sv_a.task_summarizer(task)
                         if _ans_rev and not _ans_rev.get('goal_achieved'):
                             _ans_ok = False
-                            print('[supervisor] answer 产出但目标未达成，继续下一轮')
+                            print('[supervisor] answer 产出但目标未达成，强制发起下一轮')
+                            _next_task = '[MODIFY] ' + (_ans_rev.get('next_hint') or '继续完成目标')
+                            await plan_task(
+                                user_id=task["user_id"],
+                                conversation_id=conversation_id,
+                                user_input=task["user_text"] + chr(10) + _next_task,
+                                supervisor_id=task.get("supervisor_id"),
+                                supervisor_run_id=_run_id,
+                            )
+                            return {"status": "continue", "task_id": task_id}
                         else:
                             _sv_a.record_round(_run_id, plan_summary='', exec_summary='', review=_ans_rev) if _run_id else None
                     except Exception as _ae:
@@ -612,6 +646,12 @@ async def handle_step_done(
                         except Exception as _e_rec:
                             print(f"[supervisor] record_round 失败: {_e_rec}")
                     _continue, _ = await supervisor_service.check_and_continue(_run_id, summary, plan_text=_steps_text, exec_text=_exec_text, review=_review)
+                    
+                    # 强制拦截：如果总结器判定未完成，无视 _continue 的返回值，直接强制续轮
+                    if _review and isinstance(_review, dict) and _review.get('goal_achieved') is False:
+                        _continue = True
+                        print('[supervisor] FORCE_RETRY: 判定未完成，强制覆盖为 True 进入下一轮')
+
                     if _continue:
                         if _review and getattr(supervisor_service, 'USE_STRUCTURED_REVIEW', False):
                             if _review.get('goal_achieved'):
