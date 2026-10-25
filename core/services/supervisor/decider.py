@@ -104,7 +104,7 @@ async def task_summarizer(task):
             str(_r.get('command') or _r.get('module_id') or '') == 'file_patch'
             for _r in results
         )
-        if _action_pat and _any_grep_empty and not _has_any_file_patch:
+        if False and _action_pat and _any_grep_empty and not _has_any_file_patch:
             print('[supervisor] task_summarizer 目标不存在判定: grep 空 + 含改/删动词 + 无 file_patch → 判完成')
             return {
                 'goal_achieved': True,
@@ -136,7 +136,7 @@ async def task_summarizer(task):
         _create_words = ['创建', '写入', '生成', '写一个', '写个', '新建', '覆盖']
         _is_create_task = any(w in user_text for w in _create_words)
 
-        if _is_create_task and _has_file_patch_success and not _has_any_retry:
+        if False and _is_create_task and _has_file_patch_success and not _has_any_retry:
             print('[supervisor] task_summarizer file_patch 成功判定 → 判完成')
             return {
                 'goal_achieved': True,

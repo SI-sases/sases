@@ -314,7 +314,7 @@ async function openMyDoc(sourceFile) {
     const d = await r.json();
     const content = d.content || '(空)';
     const html = '<div style="padding:12px;"><div style="font-size:13px;color:#888;margin-bottom:12px;">' + (d.source_file || '') + ' · ' + (d.chunk_count || 0) + ' 分片</div><pre style="white-space:pre-wrap;word-break:break-word;font-size:14px;line-height:1.6;font-family:inherit;">' + content.replace(/</g, '&lt;') + '</pre></div>';
-    window.openSubpage(sourceFile, html, { returnAction: function() { openKnowledgeBase(); } });
+    window.openSubpage(sourceFile, html);
   } catch (e) {
     alert('打开失败：' + e.message);
   }
@@ -411,6 +411,6 @@ document.addEventListener('click', function(e) {
                 '<p><strong>商业化说明：</strong>个人学习、研究及企业内部使用完全免费。如需作为商业产品对外提供服务，必须获得官方商业授权。</p>' +
             '</div>' +
         '</div>';
-        window.openSubpage('关于 SASES', html, { returnAction: function() { if (window.closeSubpage) window.closeSubpage(); } });
+        window.openSubpage('关于 SASES', html);
     }
 }, true);

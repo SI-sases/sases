@@ -1,3 +1,24 @@
+import os, sys
+# SASES_PATH_INJECT
+_py_dir = os.path.dirname(sys.executable)
+_git_bin = r"C:\\Program Files\\Git\\usr\\bin"
+_git_cmd = r"C:\\Program Files\\Git\\cmd"
+_env_path = os.environ.get("PATH", "")
+if _py_dir not in _env_path:
+    _env_path = _py_dir + os.pathsep + _env_path
+if _git_bin not in _env_path:
+    _env_path = _git_bin + os.pathsep + _env_path
+if _git_cmd not in _env_path:
+    _env_path = _git_cmd + os.pathsep + _env_path
+os.environ["PATH"] = _env_path
+
+import sys
+import os
+
+_py_dir = os.path.dirname(sys.executable)
+if _py_dir not in os.environ.get("PATH", ""):
+    os.environ["PATH"] = _py_dir + os.pathsep + os.environ.get("PATH", "")
+
 # core/services/executor_service.py
 """
 后端进程内的蜂群执行器
@@ -272,7 +293,7 @@ async def _execute_task(task: Dict[str, Any]):
     results = task.get("results", [])
 
     # 找未完成的步骤
-    pending_steps = [s for s in steps if s.get("step") not in done_set]
+    pending_steps = [s for s in steps if isinstance(s, dict) and s.get("step") not in done_set]
     if not pending_steps:
         try:
             with db_cursor(commit=True) as _cur:

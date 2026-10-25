@@ -16,7 +16,7 @@ export function openSettings() {
       <div class="me-menu-item" id="set-logout" style="justify-content:center;"><span class="menu-label" style="color:#ff3b30;">${t('logout')}</span></div>
     </div>
   `;
-  window.openSubpage(t('settings'), contentHtml, { returnAction: () => openSettings() });
+  window.openSubpage(t('settings'), contentHtml);
 
   setTimeout(() => {
     document.getElementById('set-account').onclick = openAccountSettings;
@@ -51,7 +51,7 @@ function openAccountSettings() {
       <div class="me-menu-item" id="account-logout-devices"><span class="menu-label">${t('device_management')}</span><span class="menu-arrow">›</span></div>
     </div>
   `;
-  window.openSubpage(t('account_security'), contentHtml, { returnAction: () => openSettings() });
+  window.openSubpage(t('account_security'), contentHtml);
   setTimeout(() => {
     document.getElementById('account-change-password').onclick = () => alert(t('change_password') + ' - ' + t('coming_soon'));
     document.getElementById('account-logout-devices').onclick = () => alert(t('device_management') + ' - ' + t('coming_soon'));
@@ -67,7 +67,7 @@ function openNotificationSettings() {
       <div class="me-menu-item"><span class="menu-label">${t('bounty_task')}</span><label class="switch"><input type="checkbox"><span class="slider"></span></label></div>
     </div>
   `;
-  window.openSubpage(t('notification_settings'), contentHtml, { returnAction: () => openSettings() });
+  window.openSubpage(t('notification_settings'), contentHtml);
 }
 
 function openPrivacySettings() {
@@ -79,7 +79,7 @@ function openPrivacySettings() {
       <div class="me-menu-item" id="privacy-delete-data"><span class="menu-label">${t('delete_cloud_data')}</span><span class="menu-arrow">›</span></div>
     </div>
   `;
-  window.openSubpage(t('privacy'), contentHtml, { returnAction: () => openSettings() });
+  window.openSubpage(t('privacy'), contentHtml);
   setTimeout(() => {
     document.getElementById('privacy-export-data').onclick = async () => {
       try {
@@ -106,7 +106,7 @@ function openLanguageSettings() {
       <div class="me-menu-item" id="lang-en"><span class="menu-label">English</span><span class="menu-check">${currentLang === 'en' ? '✓' : ''}</span></div>
     </div>
   `;
-  window.openSubpage(t('language_settings'), contentHtml, { returnAction: () => openSettings() });
+  window.openSubpage(t('language_settings'), contentHtml);
   setTimeout(() => {
     document.getElementById('lang-zh').onclick = () => {
       localStorage.setItem('sases_lang', 'zh');
@@ -134,7 +134,7 @@ function openAboutPage() {
         '<p><strong>项目地址：</strong><a href="https://github.com/SI-sases/sases" target="_blank" style="color: #007aff; text-decoration: none;">github.com/SI-sases/sases</a></p>' +
     '</div>' +
   '</div>';
-  window.openSubpage(t('about_sases'), contentHtml, { returnAction: () => openSettings() });
+  window.openSubpage(t('about_sases'), contentHtml);
 }
 
 // ==================== 授粉计划 ====================
@@ -156,7 +156,7 @@ function openPollinationPlan() {
       ${t('group_pollination_rule')}
     </div>
   `;
-  window.openSubpage(t('pollination_plan'), contentHtml, { showMore: false, returnAction: () => openSettings() });
+  window.openSubpage(t('pollination_plan'), contentHtml, { showMore: false });
 }
 
 // 挂载到全局

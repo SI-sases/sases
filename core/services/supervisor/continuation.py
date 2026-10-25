@@ -122,6 +122,9 @@ async def check_and_continue(run_id, last_summary, plan_text=None, exec_text=Non
                 if _similar:
                     print('[supervisor] no_progress stop')
                     finish_run(run_id, 'no_progress')
+                    return False, None
+                    print('[supervisor] no_progress stop')
+                    finish_run(run_id, 'no_progress')
         return False, None
     except Exception as _pe:
         print('[supervisor] check failed: ' + str(_pe))
