@@ -17,6 +17,11 @@ export function openSubpage(title, contentHtml, options = {}) {
       viewSubpage.style.display = 'flex';
   }
 
+  const backBtn = document.getElementById('subpage-back-btn');
+  if (backBtn) {
+      backBtn.onclick = closeSubpage;
+  }
+
   const bottomNav = document.querySelector('.bottom-nav');
   const topBar = document.querySelector('.top-bar');
   if (bottomNav) bottomNav.style.display = 'none';
