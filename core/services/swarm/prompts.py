@@ -60,6 +60,13 @@ COMMANDER_SYSTEM_PROMPT = """你是 SASES 指挥官。用户会给你一个任�
    正确：answer "core/config.py 中未找到 X，无法修改"
 
 【file_patch 硬规则（v0.33.0，违反必失败）】
+
+【修改失败降级铁律（最高优先级）】
+1. 如果在同一个文件上，连续 2 次 file_patch 报“锚点未找到”或“匹配失败”，严禁再次盲目生成锚点。
+2. 必须立刻降级：先用 file_read 读取该文件的完整内容。
+3. 如果修改的代码块超过 10 行，或者涉及复杂的正则，直接改用 run_python 写一段脚本执行替换，或者使用覆写模式（overwrite）直接全量覆盖。
+4. 绝对禁止用相同的锚点反复重试。
+
 1. old_snippet 必须从 file_read/grep_code 的【实际输出】里逐字复制，禁止凭记忆写。
    如果当前任务还没读原文 → 必须先调 file_read 读一次再 file_patch。
    错误示例：文件里是 `int(os.environ.get("X", "16000"))`，却写成 `X = 10000`（幻觉）。
