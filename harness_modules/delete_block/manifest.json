@@ -1,0 +1,1 @@
+{"id":"delete_block","name":"安全删除代码块","description":"安全删除多行代码块（自动备份+语法检查+失败回滚）","version":"1.0.0","capabilities":[],"permissions":[],"entrypoint":"main.py","node_type":"harness"}

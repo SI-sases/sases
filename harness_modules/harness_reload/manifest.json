@@ -1,0 +1,10 @@
+{
+  "id": "harness_reload",
+  "name": "重载 Harness 工具",
+  "description": "重新扫描 harness_modules 目录，使新写入的工具立即可用",
+  "version": "1.0.0",
+  "capabilities": ["harness_reload"],
+  "permissions": ["restricted_file_write"],
+  "entrypoint": "main.py",
+  "node_type": "harness"
+}

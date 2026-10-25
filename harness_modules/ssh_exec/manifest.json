@@ -1,0 +1,17 @@
+{
+  "id": "ssh_exec",
+  "name": "远程服务器操作",
+  "description": "通过SSH控制云服务器。host填 node-A 或 node-B，command填要执行的Linux命令。",
+  "version": "1.0.0",
+  "entrypoint": "main.py",
+  "params": {
+    "host": {
+      "type": "string",
+      "description": "node-A 或 node-B"
+    },
+    "command": {
+      "type": "string",
+      "description": "Linux 命令"
+    }
+  }
+}

@@ -1,0 +1,191 @@
+/* ============================================
+   主布局：顶部栏、内容区、底部导航、视图切换
+   ============================================ */
+.main-app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ===== 顶部栏（微信风格：白底、细线、居中标题） ===== */
+.top-bar {
+  height: var(--topbar-height);
+  background: var(--bg-card);
+  border-bottom: 0.5px solid var(--border-base);
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-md);
+  font-size: var(--font-xl);
+  font-weight: 500;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 5;
+}
+
+.top-left {
+  display: flex;
+  align-items: center;
+  min-width: 40px;
+}
+
+.hamburger-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px 4px 0;
+  display: flex;
+  align-items: center;
+  color: var(--text-primary);
+}
+
+.top-title {
+  flex: 1;
+  text-align: center;
+  font-size: var(--font-xl);
+  font-weight: 500;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.top-actions {
+  display: flex;
+  gap: var(--space-md);
+  min-width: 40px;
+  justify-content: flex-end;
+}
+
+.top-action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  color: var(--text-primary);
+}
+
+/* ===== 内容区 ===== */
+.main-content {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-page);
+}
+
+/* ===== 视图切换 ===== */
+.view {
+  display: none;
+  flex: 1;
+  flex-direction: column;
+  overflow-y: auto;
+  height: 100%;
+  background: var(--bg-page);
+}
+
+.view.active {
+  display: flex;
+}
+
+/* ===== 底部导航（微信风格：白底、顶部细线） ===== */
+.bottom-nav {
+  height: var(--bottombar-height);
+  background: #f7f7f7;
+  border-top: 0.5px solid var(--border-base);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  flex-shrink: 0;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.nav-btn {
+  flex: 1;
+  height: 100%;
+  background: none;
+  border: none;
+  font-size: var(--font-base);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.15s;
+  position: relative;
+}
+
+.nav-btn.active {
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+/* ===== 通用列表容器 ===== */
+.list-container {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.list-item {
+  background: var(--bg-card);
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 0.5px solid var(--border-base);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.list-item:last-child { border-bottom: none; }
+
+/* ===== 聊天窗口容器（占满内容区） ===== */
+.chat-window {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg-page);
+  display: flex;
+  flex-direction: column;
+  z-index: 10;
+}
+
+/* ===== 二级页面容器 ===== */
+.subpage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg-page);
+  display: flex;
+  flex-direction: column;
+  z-index: 20;
+}
+
+.subpage-header {
+  display: flex;
+  align-items: center;
+  padding: 10px var(--space-md);
+  background: var(--bg-card);
+  border-bottom: 0.5px solid var(--border-base);
+  flex-shrink: 0;
+}
+
+.subpage-title {
+  font-size: var(--font-xl);
+  font-weight: 500;
+  flex: 1;
+  text-align: center;
+  color: var(--text-primary);
+}
+
+.subpage-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-md);
+}
+
+/* ===== 响应式 ===== */
+@media (max-width: 600px) {
+  .top-bar { font-size: var(--font-lg); }
+  .nav-btn { font-size: var(--font-sm); }
+}

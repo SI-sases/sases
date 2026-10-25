@@ -1,0 +1,21 @@
+{
+  "id": "answer",
+  "name": "输出文本回答",
+  "description": "向用户输出一段文本回答（不表示任务完成）。当需要给用户展示总结/分析/说明时使用。参数 content（必填）是回答文本。注意：调用此工具不代表整个任务结束，task_summarizer 会独立判断目标是否真正达成。",
+  "version": "1.1.0",
+  "capabilities": [
+    "answer",
+    "output"
+  ],
+  "permissions": [
+    "restricted_file_write"
+  ],
+  "entrypoint": "main.py",
+  "node_type": "harness",
+  "params": {
+    "content": {
+      "type": "string",
+      "desc": "必填"
+    }
+  }
+}

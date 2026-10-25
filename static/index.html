@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SASES Test</title>
+<link rel="stylesheet" href="/static/css/variables.css?v=82">
+<link rel="stylesheet" href="/static/css/base.css?v=82">
+<link rel="stylesheet" href="/static/css/login.css?v=83">
+<link rel="stylesheet" href="/static/css/layout.css?v=82">
+<link rel="stylesheet" href="/static/css/components.css?v=82">
+<link rel="stylesheet" href="/static/css/chat.css?v=82">
+<link rel="stylesheet" href="/static/css/contacts.css?v=82">
+<link rel="stylesheet" href="/static/css/discover.css?v=82">
+<link rel="stylesheet" href="/static/css/me.css?v=82">
+<link rel="stylesheet" href="/static/css/game.css?v=82">
+  <link rel="manifest" href="/static/manifest.json">
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#007aff">
+  <!-- 拼音库，用于智能体列表分组 -->
+  <script src="/static/modules/pinyin-pro.js"></script>
+</head>
+<body>
+<a href="#" id="download-client-btn" style="position:fixed;top:12px;right:16px;z-index:9999;background:#2563eb;color:#fff;padding:8px 14px;border-radius:8px;text-decoration:none;font-size:14px;box-shadow:0 2px 8px rgba(0,0,0,.2);">📥 下载桌面版</a>
+
+
+  <div id="app">
+
+    <!-- 登录视图 -->
+    <section id="view-login" class="login-view" style="display:none;">
+      <div class="login-container">
+        <div class="login-box">
+          <div class="lang-switch">
+            <button class="lang-btn active" data-lang="zh">中文</button>
+            <span class="lang-divider">|</span>
+            <button class="lang-btn" data-lang="en">English</button>
+          </div>
+<div id="form-login" class="login-form active">
+            <h2 class="login-title" id="login-title">SASES</h2>
+            <p class="login-subtitle" id="login-subtitle">登录你的账号</p>
+            <input type="text" id="login-username" class="login-input" placeholder="用户名" autocomplete="username">
+            <input type="password" id="login-password" class="login-input" placeholder="密码" autocomplete="current-password">
+            <button id="login-btn" class="login-btn">登录</button>
+            <div class="agreement-row">
+              <input type="checkbox" id="agree-checkbox">
+              <label for="agree-checkbox" class="agreement-text" id="agreement-text">我已阅读并同意 <a href="#" id="user-agreement-link">用户协议</a> 和 <a href="#" id="privacy-policy-link">隐私政策</a></label>
+            </div>
+            <div class="login-links">
+              <a href="#" id="go-register">注册新账号</a>
+              <span class="link-divider">·</span>
+              <a href="#" id="forgot-password">找回密码</a>
+            </div>
+          </div>
+          <div id="form-register" class="login-form">
+            <h2 class="login-title">SASES</h2>
+            <p class="login-subtitle">创建新账号</p>
+            <input type="text" id="reg-username" class="login-input" placeholder="用户名（3-20位，字母/数字/下划线）">
+            <input type="password" id="reg-password" class="login-input" placeholder="密码（8-32位，必须含字母和数字）">
+            <input type="password" id="reg-password2" class="login-input" placeholder="确认密码">
+            <input type="email" id="reg-email" class="login-input" placeholder="邮箱（选填）">
+            <button id="reg-submit" class="login-btn">注册</button>
+            <div class="login-links">
+              <a href="#" id="reg-back">← 返回登录</a>
+            </div>
+          </div>
+          <div id="form-reset" class="login-form">
+            <h2 class="login-title">SASES</h2>
+            <p class="login-subtitle">重置密码</p>
+            <input type="text" id="reset-username" class="login-input" placeholder="用户名">
+            <input type="email" id="reset-email" class="login-input" placeholder="注册邮箱">
+            <input type="password" id="reset-password" class="login-input" placeholder="新密码（8-32位）">
+            <button id="reset-submit" class="login-btn">重置密码</button>
+            <div class="login-links">
+              <a href="#" id="reset-back">← 返回登录</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 主界面 -->
+    <div id="main-app" class="main-app" style="display:none;">
+      <header class="top-bar">
+        <div class="top-left" id="top-left" style="display:none;">
+          <button id="hamburger-btn" class="hamburger-btn" aria-label="菜单">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="1.5" stroke-linecap="round">
+              <path d="M3 6h18M3 12h18M3 18h18" />
+            </svg>
+          </button>
+        </div>
+        <div class="top-title" id="top-title">消息</div>
+        <div class="top-actions" id="top-actions">
+          <button id="top-search-btn" class="top-action-btn" aria-label="搜索">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="1.5" stroke-linecap="round">
+              <circle cx="11" cy="11" r="7" />
+              <path d="M21 21l-4.35-4.35" />
+            </svg>
+          </button>
+          <button id="top-plus-btn" class="top-action-btn" aria-label="添加">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="1.5" stroke-linecap="round">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <main class="main-content">
+        <section id="view-messages" class="view active">
+          <div id="messages-list" class="list-container"></div>
+        </section>
+
+        <section id="view-contacts" class="view">
+          <div id="contacts-list" class="list-container"></div>
+        </section>
+
+        <section id="view-discover" class="view">
+          <div id="discover-content" class="list-container"></div>
+        </section>
+
+        <section id="view-me" class="view">
+          <div id="me-content" class="list-container"></div>
+        </section>
+
+        <!-- 聊天窗口 -->
+        <section id="view-chat-window" class="chat-window" style="display:none;">
+          <div class="chat-window-header">
+            <button id="chat-back-btn" class="back-btn" aria-label="返回">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 12H5M12 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <div class="chat-title-area" id="chat-title-area">
+              <div class="chat-window-title" id="chat-window-title">会话名称</div>
+              <button id="chat-mode-btn" class="chat-mode-btn">
+                <span id="chat-mode-text">自由模式</span>
+                <span class="mode-arrow">▾</span>
+              </button>
+            </div>
+            <button id="chat-info-btn" class="chat-info-btn" style="display:none;" aria-label="聊天信息">⋯</button>
+            <button id="group-settings-btn" class="group-settings-btn" style="display:none;" aria-label="群设置">⋯</button>
+          </div>
+
+          <div id="group-task-bar" class="group-task-bar" style="display:none;">
+            <span class="group-task-bar-text" id="group-task-bar-text">进行中任务</span>
+            <span class="group-task-bar-arrow">▾</span>
+          </div>
+          <div id="group-red-packet-bar" class="group-task-bar" style="display:none;background:linear-gradient(135deg,#f59e0b,#ef4444);">
+            <span class="group-task-bar-text" id="group-red-packet-bar-text">待抢红包</span>
+            <span class="group-task-bar-arrow">▾</span>
+          </div>
+
+
+          <div id="chat-messages" class="chat-messages"></div>
+
+          <div id="param-bar" class="param-bar">
+            <span id="param-rounds" class="param-pill" title="点击设置本轮最大步数">⚙️ 8步</span>
+          </div>
+          <div class="chat-input-area">
+            <button id="toggle-voice-btn" class="voice-toggle-btn" aria-label="语音切换">🎤</button>
+            <div class="chat-input-wrapper">
+              <textarea id="chat-input" placeholder="输入消息..." rows="1"></textarea>
+            </div>
+            <button id="identity-btn" class="identity-btn" aria-label="切换身份">🤖</button>
+            <button id="input-plus-btn" class="input-plus-btn" aria-label="更多">＋</button>
+            <button id="send-btn" class="send-btn" style="display:none;">发送</button>
+            <button id="stop-btn" class="send-btn" style="display:none;background:#ff3b30;">⏹</button>
+          </div>
+
+          <!-- 聊天加号面板 -->
+          <div id="chat-plus-panel" class="chat-plus-panel" style="display:none;">
+            <div class="chat-plus-overlay" id="chat-plus-overlay"></div>
+            <div class="chat-plus-content" id="chat-plus-content"></div>
+          </div>
+        </section>
+
+        <section id="view-subpage" class="subpage" style="display:none;">
+          <div class="subpage-header">
+            <button id="subpage-back-btn" class="back-btn" aria-label="返回">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 12H5M12 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <div id="subpage-avatar" class="subpage-avatar" style="display:none;"></div>
+            <div class="subpage-title" id="subpage-title">页面</div>
+            <button id="subpage-more-btn" class="subpage-more-btn" style="display:none;" aria-label="更多">⋯</button>
+            <button id="subpage-right-btn" class="subpage-right-btn" style="display:none;background:none;border:none;color:#007aff;font-size:15px;padding:4px 12px;cursor:pointer;"></button>
+          </div>
+          <div id="subpage-content" class="subpage-content"></div>
+        </section>
+      </main>
+
+      <nav class="bottom-nav">
+        <button class="nav-btn active" data-view="messages">消息</button>
+        <button class="nav-btn" data-view="contacts">智能体</button>
+        <button class="nav-btn" data-view="discover">发现</button>
+        <button class="nav-btn" data-view="me">我的</button>
+      </nav>
+    </div>
+
+    <!-- 侧边栏抽屉 -->
+    <div id="side-drawer" class="side-drawer" style="display:none;">
+      <div class="side-drawer-overlay" id="side-drawer-overlay"></div>
+      <div class="side-drawer-content">
+        <div class="side-drawer-header">
+          <span>菜单</span>
+        </div>
+        <div class="side-menu">
+          <div class="side-menu-item" id="menu-harness">
+            <span class="menu-icon">🔧</span>
+            <span>Harness 工具</span>
+            <span class="menu-arrow">›</span>
+          </div>
+          <div class="side-menu-item" id="menu-market">
+            <span class="menu-icon">🏪</span>
+            <span>交易市场</span>
+            <span class="menu-arrow">›</span>
+          </div>
+          <div class="side-menu-item" id="menu-mini-apps">
+            <span class="menu-icon">🧩</span>
+            <span>小程序</span>
+            <span class="menu-arrow">›</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右上角加号弹出菜单 -->
+    <div id="plus-menu" class="plus-menu" style="display:none;">
+      <div class="plus-menu-overlay" id="plus-menu-overlay"></div>
+      <div class="plus-menu-content">
+        <!-- 菜单项由 JS 动态生成 -->
+      </div>
+    </div>
+
+    <!-- 模式切换弹出菜单 -->
+    <div id="mode-menu" class="plus-menu" style="display:none;">
+      <div class="plus-menu-overlay" id="mode-menu-overlay"></div>
+      <div class="plus-menu-content" id="mode-menu-content">
+        <!-- 模式选项由 JS 动态生成 -->
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    if ('serviceWorker' in navigator && location.hostname !== '127.0.0.1' && location.hostname !== 'localhost') {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/static/service-worker.js', {
+          scope: '/static/',
+          updateViaCache: 'none'
+        })
+          .then((registration) => {
+            console.log('Service Worker registered:', registration.scope);
+            registration.update();
+          })
+          .catch((error) => console.error('Service Worker registration failed:', error));
+      });
+    }
+  </script>
+
+  <script type="module" src="/static/modules/main.js?v=81"></script>
+<!-- test1 -->
+<!-- test2 -->
+<!-- test3 -->
+
+</body>
+</html>

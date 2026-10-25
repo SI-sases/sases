@@ -1,0 +1,10 @@
+{
+  "id": "file_write",
+  "name": "文件写入（长文本）",
+  "description": "直接写入文件内容，无长度限制。用于长文件创建/覆写。",
+  "version": "1.0.0",
+  "capabilities": ["file_write"],
+  "permissions": ["restricted_file_write"],
+  "entrypoint": "main.py",
+  "node_type": "harness"
+}

@@ -1,0 +1,33 @@
+{
+  "id": "file_replace_range",
+  "name": "按行号替换",
+  "description": "按行号范围替换或插入文件内容，绕开字符串匹配的锚点问题",
+  "version": "1.0.0",
+  "capabilities": [
+    "file_write"
+  ],
+  "permissions": [
+    "restricted_file_write"
+  ],
+  "entrypoint": "main.py",
+  "node_type": "harness",
+  "params": {
+    "file_path": {
+      "type": "string",
+      "desc": "必填"
+    },
+    "start_line": {
+      "type": "int",
+      "desc": "必填"
+    },
+    "end_line": {
+      "type": "int",
+      "desc": "必填"
+    },
+    "new_content": {
+      "type": "string",
+      "default": "",
+      "desc": "可选"
+    }
+  }
+}

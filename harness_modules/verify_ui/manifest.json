@@ -1,0 +1,40 @@
+{
+  "id": "verify_ui",
+  "name": "UI 验证",
+  "description": "用 Playwright 访问本地页面并验证。支持 action：screenshot（截图存 static/_ui_shots/）、check_element（检查元素是否存在）、get_text（获取元素文本）、click（点击元素）。仅允许 http://127.0.0.1:8001/ 与 http://localhost:8001/。",
+  "version": "1.0.0",
+  "capabilities": [
+    "verify_ui",
+    "playwright"
+  ],
+  "permissions": [
+    "restricted_file_write"
+  ],
+  "entrypoint": "main.py",
+  "node_type": "harness",
+  "params": {
+    "action": {
+      "type": "any",
+      "desc": "必填"
+    },
+    "url": {
+      "type": "string",
+      "default": "http://127.0.0.1:8001/static/index.html",
+      "desc": "可选"
+    },
+    "timeout": {
+      "type": "int",
+      "default": 10000,
+      "desc": "可选"
+    },
+    "filename": {
+      "type": "any",
+      "desc": "可选"
+    },
+    "selector": {
+      "type": "string",
+      "default": "",
+      "desc": "可选"
+    }
+  }
+}

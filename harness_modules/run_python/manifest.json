@@ -1,0 +1,24 @@
+{
+  "id": "run_python",
+  "aliases": [
+    "run_script"
+  ],
+  "name": "受限Python执行",
+  "description": "执行受限的 Python 代码。禁止 os.system/subprocess/open 等危险操作，只允许纯计算/数据处理。超时 5 秒。",
+  "version": "1.0.0",
+  "capabilities": [
+    "run_python",
+    "compute"
+  ],
+  "permissions": [
+    "restricted_file_write"
+  ],
+  "entrypoint": "main.py",
+  "node_type": "harness",
+  "params": {
+    "code": {
+      "type": "string",
+      "desc": "必填"
+    }
+  }
+}

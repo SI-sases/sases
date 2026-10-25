@@ -1,0 +1,37 @@
+{
+  "id": "file_copy",
+  "name": "文件复制",
+  "description": "在文件系统间复制文件。支持跨盘（非C盘全开）。源和目的都可以是项目内相对路径或绝对路径。自动创建目标目录。",
+  "version": "1.0.0",
+  "capabilities": [
+    "file_copy"
+  ],
+  "permissions": [
+    "restricted_file_write"
+  ],
+  "entrypoint": "main.py",
+  "node_type": "harness",
+  "params": {
+    "src": {
+      "type": "any",
+      "desc": "必填"
+    },
+    "src_path": {
+      "type": "any",
+      "desc": "可选"
+    },
+    "dst": {
+      "type": "any",
+      "desc": "必填"
+    },
+    "dst_path": {
+      "type": "any",
+      "desc": "可选"
+    },
+    "overwrite": {
+      "type": "bool",
+      "default": false,
+      "desc": "可选"
+    }
+  }
+}

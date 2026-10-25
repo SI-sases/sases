@@ -1,0 +1,19 @@
+{
+  "_comment": "复制此文件到 hive-nodes/{node_id}/config.json，按需修改",
+  "enable_hive": true,
+  "role": "master",
+  "master": "http://127.0.0.1:8001",
+  "masters": [
+    "http://127.0.0.1:8001",
+    "http://127.0.0.1:8002",
+    "http://127.0.0.1:8003"
+  ],
+  "peers": [],
+  "mode": "alert",
+  "token": "",
+  "degrade_threshold": 3,
+  "anchor_interval": 3600,
+  "heartbeat_interval": 60,
+  "vote_interval": 120,
+  "sync_interval": 30
+}

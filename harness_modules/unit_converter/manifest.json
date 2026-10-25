@@ -1,0 +1,11 @@
+{
+  "id": "unit-converter",
+  "name": "Unit Converter",
+  "description": "Convert temperature between Celsius and Fahrenheit",
+  "version": "1.0.0",
+  "capabilities": ["temperature_conversion"],
+  "permissions": [],
+  "entrypoint": "main.py",
+  "icon": "🌡️",
+  "node_type": "harness"
+}

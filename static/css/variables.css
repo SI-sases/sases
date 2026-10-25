@@ -1,0 +1,86 @@
+/* ============================================
+   SASES 设计变量
+   参考微信风格：克制、清晰、层级分明
+   ============================================ */
+:root {
+  /* ===== 主色 ===== */
+  --color-primary: #007aff;
+  --color-primary-hover: #0066d6;
+  --color-primary-light: #f0f7ff;
+  --color-success: #07c160;
+  --color-danger: #fa5151;
+  --color-warning: #fa9d3b;
+  --color-gold: #ffd700;
+
+  /* ===== 背景 ===== */
+  --bg-page: #ededed;
+  --bg-card: #ffffff;
+  --bg-hover: #f5f5f5;
+  --bg-pressed: #ebebeb;
+  --bg-input: #f7f7f7;
+  --bg-overlay: rgba(0, 0, 0, 0.4);
+  --bg-overlay-light: rgba(0, 0, 0, 0.1);
+
+  /* ===== 文字 ===== */
+  --text-primary: #191919;
+  --text-secondary: #576b95;
+  --text-regular: #4a4a4a;
+  --text-muted: #888888;
+  --text-faint: #b2b2b2;
+  --text-white: #ffffff;
+
+  /* ===== 边框（微信风格：#e5e5e5 细线） ===== */
+  --border-light: #f0f0f0;
+  --border-base: #e5e5e5;
+  --border-strong: #d9d9d9;
+
+  /* ===== 圆角（微信偏克制，多用 4~8px） ===== */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-round: 999px;
+
+  /* ===== 间距 ===== */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 20px;
+  --space-xxl: 24px;
+
+  /* ===== 字号（微信常用 14/15/17） ===== */
+  --font-xs: 11px;
+  --font-sm: 12px;
+  --font-base: 14px;
+  --font-md: 15px;
+  --font-lg: 16px;
+  --font-xl: 17px;
+  --font-title: 20px;
+
+  /* ===== 行高 ===== */
+  --line-tight: 1.3;
+  --line-base: 1.5;
+  --line-loose: 1.7;
+
+  /* ===== 阴影（微信极少用重阴影） ===== */
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04);
+  --shadow-menu: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --shadow-modal: 0 8px 32px rgba(0, 0, 0, 0.16);
+
+  /* ===== 渐变 ===== */
+  --gradient-wallet: linear-gradient(135deg, #007aff, #00c6ff);
+  --gradient-compute: linear-gradient(135deg, #667eea, #764ba2);
+  --gradient-map: radial-gradient(circle at center, #1a1a3e 0%, #0a0a1e 100%);
+  --gradient-yunchong: linear-gradient(135deg, #667eea, #764ba2);
+
+  /* ===== 尺寸 ===== */
+  --topbar-height: 44px;
+  --bottombar-height: 50px;
+  --avatar-sm: 32px;
+  --avatar-md: 40px;
+  --avatar-lg: 48px;
+  --avatar-xl: 64px;
+  --avatar-xxl: 80px;
+}

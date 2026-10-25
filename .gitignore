@@ -1,0 +1,153 @@
+# ========== Python ==========
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+venv312/
+.venv/
+ENV/
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ========== 密钥与配置 ==========
+secret_key.bin
+api_key_encryption.key
+.env
+.env.local
+*.db
+users.db
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+
+# ========== 日志与临时文件 ==========
+*.log
+*.tmp
+*.swp
+*.bak
+*.backup.*
+.DS_Store
+Thumbs.db
+apollo_weather.log
+safety_log.jsonl
+contribution_log.jsonl
+shared_pollinate_log.jsonl
+seed_tasks_new.jsonl.bak
+seed_tasks_new_backup.jsonl
+
+# ========== 编辑器 ==========
+.vscode/
+.idea/
+
+# ========== Node / 前端 ==========
+node_modules/
+
+# ========== ChromaDB ==========
+kb/
+*.sqlite3
+
+# ========== 数据库备份 ==========
+backups/
+backup/
+.backups/
+snapshots/
+pre-cleanup/
+
+# ========== 本地 Embedding 模型 ==========
+bge-small-zh-onnx/
+
+# ========== 模型适配器 ==========
+lora_adapter/
+lora/
+hf_upload/
+
+# ========== Harness 模块 ==========
+harness_modules/auto_*/
+harness_modules/*/__pycache__/
+
+# ========== Evaluation artifacts ==========
+evaluation/sases_milestone_1.zip
+evaluation/upload_pack/
+/eval_benchmark_v2.jsonl
+
+# ========== Training ==========
+finetune_*.jsonl
+test_manifest_output/
+training_data/
+
+# ========== 项目整理后的分类目录 ==========
+logs/
+seeds/
+archive/
+archive_v1/
+
+# ========== 用户上传（含隐私） ==========
+uploads/
+upload_pack.zip
+
+# ========== Wrapper 信号与临时文件 ==========
+restart_signal.txt
+_restart_flag.txt
+wrapper.lock
+server.log
+nohup.out
+*.out
+
+# ========== 诊断与临时脚本 ==========
+新建 Python Script.py
+setup.bat
+setup.sh
+diagnose_*.py
+_diag_*.py
+_test_*.md
+clean_last.py
+query_last_msgs.py
+tmp_*.py
+*.tmp.txt
+
+# ========== Script 输出 ==========
+scripts/*/output/
+
+# ========== 测试 artifacts ==========
+test_reviews_api.zip
+
+# ========== 状态快照（含账号信息，不上传） ==========
+docs/SASES_STATE.md
+data/tool_usage.jsonl
+
+# ========== Launcher ==========
+launcher_config.json
+launcher.lockusers.db.bak* 
+*.db.bak* 
+hive-nodes/*/key.pem 
+hive-nodes/*/*.key 
+hive-nodes/ 
+
+data/direct_channel.jsonl
+data/*.jsonl
+
+docs/feedback_weekly/
+
+
+# ========== 一次性修复/测试脚本 ==========
+/fix_*.py
+/diag_*.py
+/analyze_*.py
+/measure_*.py
+/dump_*.py
+/test_feedback.py*.bin
+sases-backup-*.tar.gz 
+
+# 忽略打包产物
+static/downloads/*.zip
+*.zip

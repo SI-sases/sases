@@ -1,0 +1,19 @@
+{
+  "id": "text-stats",
+  "name": "文本统计",
+  "description": "统计文本的字符数、单词数、行数和词频",
+  "version": "1.0.0",
+  "capabilities": [
+    "text_analysis",
+    "statistics"
+  ],
+  "permissions": [],
+  "entrypoint": "main.py",
+  "node_type": "harness",
+  "params": {
+    "text": {
+      "type": "string",
+      "desc": "必填"
+    }
+  }
+}

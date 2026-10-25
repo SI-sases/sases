@@ -1,0 +1,20 @@
+{
+  "id": "structure_check",
+  "name": "结构检查",
+  "description": "扫描 Python 文件，输出所有函数/类的名称、行号，并检测同名定义、函数截断、孤立字符串等异常",
+  "version": "1.0.0",
+  "capabilities": [
+    "structure_check"
+  ],
+  "permissions": [
+    "restricted_file_write"
+  ],
+  "entrypoint": "main.py",
+  "node_type": "harness",
+  "params": {
+    "file_path": {
+      "type": "string",
+      "desc": "必填"
+    }
+  }
+}

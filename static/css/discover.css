@@ -1,0 +1,427 @@
+/* ============================================
+   发现页、智维空间地图、云宠战役、任务预览
+   ============================================ */
+
+/* ===== 发现页入口 ===== */
+.discover-entry {
+  display: flex;
+  align-items: center;
+  padding: 14px var(--space-lg);
+  background: var(--bg-card);
+  border-bottom: 0.5px solid var(--border-base);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.discover-entry:hover { background: var(--bg-hover); }
+.discover-entry-icon {
+  width: 28px;
+  height: 28px;
+  margin-right: var(--space-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+.discover-entry-text {
+  font-size: var(--font-md);
+  color: var(--text-primary);
+}
+
+/* ===== AI 圈 ===== */
+.ai-post-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+.ai-post-item {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md) var(--space-lg);
+  box-shadow: var(--shadow-card);
+}
+.ai-post-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--font-sm);
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+.ai-post-agent { font-weight: 500; color: var(--color-primary); }
+.ai-post-owner { font-size: var(--font-xs); }
+.ai-post-content {
+  font-size: var(--font-md);
+  line-height: var(--line-loose);
+  margin-bottom: var(--space-sm);
+  color: var(--text-primary);
+}
+.ai-post-time {
+  font-size: var(--font-xs);
+  color: var(--text-faint);
+  text-align: right;
+}
+.ai-publish-area {
+  display: flex;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+  padding: var(--space-md);
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+}
+.ai-post-input {
+  flex: 1;
+  padding: 8px 12px;
+  background: var(--bg-input);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-base);
+  resize: vertical;
+  min-height: 60px;
+  outline: none;
+  font-family: inherit;
+}
+
+/* ===== 排行榜 ===== */
+.leaderboard-item {
+  display: flex;
+  align-items: center;
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 0.5px solid var(--border-base);
+  background: var(--bg-card);
+}
+.leaderboard-avatar {
+  width: var(--avatar-sm);
+  height: var(--avatar-sm);
+  border-radius: var(--radius-sm);
+  background: var(--color-primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-base);
+  margin-right: var(--space-md);
+  flex-shrink: 0;
+}
+
+/* ===== 智维空间地图 ===== */
+.wisdom-map {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 100px);
+  background: var(--gradient-map);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.map-header {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px var(--space-lg);
+  background: rgba(0, 0, 0, 0.3);
+  color: #fff;
+  font-size: var(--font-sm);
+  z-index: 10;
+}
+.map-stat { display: flex; align-items: center; gap: 6px; }
+.map-stat-label { color: #aaa; }
+.map-stat-value { color: #fff; font-weight: 600; }
+
+.map-canvas {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 环形装饰 */
+.map-ring {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  pointer-events: none;
+}
+.map-ring-near { width: 100px; height: 100px; }
+.map-ring-mid { width: 180px; height: 180px; }
+.map-ring-far { width: 260px; height: 260px; }
+.map-ring-remote { width: 340px; height: 340px; }
+
+/* 用户中心 */
+.map-user {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  z-index: 5;
+}
+.map-user-avatar {
+  width: 44px; height: 44px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  box-shadow: 0 0 16px rgba(102, 126, 234, 0.7);
+  animation: mapPulse 2s infinite;
+}
+@keyframes mapPulse {
+  0%, 100% { box-shadow: 0 0 16px rgba(102, 126, 234, 0.7); }
+  50% { box-shadow: 0 0 26px rgba(102, 126, 234, 1); }
+}
+.map-user-label {
+  color: #fff;
+  font-size: var(--font-xs);
+  margin-top: 2px;
+  opacity: 0.7;
+}
+
+#map-nodes-container {
+  position: absolute;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+}
+
+/* 任务节点 */
+.map-node {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: transform 0.2s;
+}
+.map-node:hover {
+  transform: translate(-50%, -50%) scale(1.3);
+  z-index: 20;
+}
+.map-node-icon {
+  width: 28px; height: 28px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  border: 2px solid;
+  backdrop-filter: blur(4px);
+}
+.map-node-near .map-node-icon { border-color: #34c759; box-shadow: 0 0 8px rgba(52,199,89,0.6); }
+.map-node-mid .map-node-icon { border-color: #007aff; box-shadow: 0 0 8px rgba(0,122,255,0.6); }
+.map-node-far .map-node-icon { border-color: #9c27b0; box-shadow: 0 0 8px rgba(156,39,176,0.6); }
+.map-node-remote .map-node-icon { border-color: #ff9800; box-shadow: 0 0 8px rgba(255,152,0,0.6); }
+
+.map-node-level {
+  font-size: 9px;
+  font-weight: 700;
+  margin-top: 1px;
+  text-shadow: 0 0 3px rgba(0,0,0,0.8);
+}
+
+/* 云宠战役节点 */
+.map-yunchong-node {
+  position: absolute;
+  left: 50%; top: 20px;
+  transform: translateX(-50%);
+  text-align: center;
+  cursor: pointer;
+  z-index: 10;
+}
+.map-yunchong-icon {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(255,215,0,0.4), rgba(255,152,0,0.4));
+  border: 2px solid var(--color-gold);
+  box-shadow: 0 0 20px rgba(255,215,0,0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  transition: transform 0.2s;
+  margin: 0 auto;
+}
+.map-yunchong-node:hover .map-yunchong-icon { transform: scale(1.1); }
+.map-yunchong-label {
+  color: var(--color-gold);
+  font-size: var(--font-xs);
+  font-weight: 600;
+  margin-top: 4px;
+  text-shadow: 0 0 6px rgba(255,215,0,0.8);
+}
+
+.map-empty-hint {
+  position: absolute;
+  left: 50%; top: 65%;
+  transform: translateX(-50%);
+  color: rgba(255,255,255,0.5);
+  font-size: var(--font-sm);
+  text-align: center;
+}
+
+/* 图例 */
+.map-legend {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-md);
+  padding: var(--space-sm) var(--space-lg);
+  background: rgba(0, 0, 0, 0.3);
+  font-size: var(--font-xs);
+  color: #ccc;
+  flex-wrap: wrap;
+}
+.legend-item { display: flex; align-items: center; gap: 4px; }
+.legend-dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  border: 1px solid;
+}
+.legend-dot.near { border-color: #34c759; background: rgba(52,199,89,0.3); }
+.legend-dot.mid { border-color: #007aff; background: rgba(0,122,255,0.3); }
+.legend-dot.far { border-color: #9c27b0; background: rgba(156,39,176,0.3); }
+.legend-dot.remote { border-color: #ff9800; background: rgba(255,152,0,0.3); }
+
+.map-footer {
+  padding: 10px var(--space-lg);
+  display: flex;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.3);
+}
+.map-refresh-btn {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 8px 20px;
+  border-radius: var(--radius-round);
+  font-size: var(--font-base);
+  cursor: pointer;
+}
+.map-refresh-btn:hover { background: rgba(255, 255, 255, 0.25); }
+
+/* ===== 任务预览卡片 ===== */
+.task-preview { padding: var(--space-xl); }
+
+.task-preview-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-xl);
+}
+.task-preview-icon {
+  width: 64px; height: 64px;
+  border: 3px solid;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  flex-shrink: 0;
+}
+.task-preview-title {
+  font-size: var(--font-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.task-preview-info {
+  background: var(--bg-input);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+.task-preview-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: var(--font-base);
+}
+.task-preview-label { color: var(--text-muted); }
+.task-preview-value { color: var(--text-primary); font-weight: 500; }
+
+.task-preview-desc {
+  background: var(--bg-card);
+  border: 0.5px solid var(--border-base);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+  font-size: var(--font-sm);
+  color: var(--text-regular);
+  line-height: var(--line-loose);
+  margin-bottom: var(--space-xl);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.task-preview-actions {
+  display: flex;
+  gap: var(--space-md);
+}
+.task-preview-btn-cancel {
+  flex: 1;
+  padding: var(--space-md);
+  background: var(--bg-input);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-base);
+  color: var(--text-regular);
+  cursor: pointer;
+}
+.task-preview-btn-start {
+  flex: 2;
+  padding: var(--space-md);
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-md);
+  font-weight: 600;
+  cursor: pointer;
+}
+.task-preview-btn-start:hover { background: var(--color-primary-hover); }
+
+/* ===== 云宠战役主页 ===== */
+.yunchong-hub { padding: var(--space-xl); }
+.yunchong-banner {
+  background: var(--gradient-yunchong);
+  border-radius: var(--radius-xl);
+  padding: 30px 20px;
+  text-align: center;
+  margin-bottom: var(--space-xxl);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+}
+.yunchong-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 2px;
+}
+.yunchong-subtitle {
+  font-size: var(--font-sm);
+  color: rgba(255, 255, 255, 0.85);
+  margin-top: var(--space-sm);
+}
+
+.yunchong-nodes {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+.yunchong-node {
+  background: var(--bg-card);
+  border-radius: var(--radius-xl);
+  padding: 22px 16px;
+  text-align: center;
+  cursor: pointer;
+  border: 2px solid var(--border-light);
+  transition: transform 0.15s, border-color 0.15s;
+}
+.yunchong-node:hover {
+  transform: translateY(-3px);
+  border-color: #667eea;
+}
+.yunchong-node-icon { font-size: 42px; margin-bottom: var(--space-sm); }
+.yunchong-node-name {
+  font-size: var(--font-md);
+  font-weight: 600;
+  color: var(--text-primary);
+}

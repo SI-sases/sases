@@ -1,0 +1,28 @@
+{
+  "id": "verify_patch",
+  "name": "验证文件修改",
+  "description": "重读文件验证修改是否生效。参数：file_path（必填），expect_contains（可选，字符串或数组），expect_not_contains（可选，字符串或数组）。",
+  "version": "1.0.0",
+  "capabilities": [
+    "verify_patch"
+  ],
+  "permissions": [
+    "restricted_file_write"
+  ],
+  "entrypoint": "main.py",
+  "node_type": "harness",
+  "params": {
+    "file_path": {
+      "type": "string",
+      "desc": "必填"
+    },
+    "expect_contains": {
+      "type": "any",
+      "desc": "可选"
+    },
+    "expect_not_contains": {
+      "type": "any",
+      "desc": "可选"
+    }
+  }
+}

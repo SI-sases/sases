@@ -1,0 +1,23 @@
+{
+  "id": "base64-codec",
+  "name": "Base64 编解码",
+  "description": "对文本进行 Base64 编码或解码",
+  "version": "1.0.0",
+  "capabilities": [
+    "encoding",
+    "base64"
+  ],
+  "permissions": [],
+  "entrypoint": "main.py",
+  "node_type": "harness",
+  "params": {
+    "action": {
+      "type": "string",
+      "desc": "必填"
+    },
+    "text": {
+      "type": "string",
+      "desc": "必填"
+    }
+  }
+}

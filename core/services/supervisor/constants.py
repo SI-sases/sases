@@ -1,0 +1,10 @@
+MAX_ROUNDS = 30
+CREDITS_PER_ROUND = 2
+USE_STRUCTURED_REVIEW = True
+
+
+
+import time as _ctx_time
+_CTX_CACHE = {}
+_CTX_TTL = 1
+_CTX_MAX = 200

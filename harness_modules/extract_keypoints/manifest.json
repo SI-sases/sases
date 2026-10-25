@@ -1,0 +1,32 @@
+{
+  "id": "extract_keypoints",
+  "name": "提取要点",
+  "description": "从文件或文本中提取关键要点",
+  "version": "1.0.0",
+  "capabilities": [
+    "file_read",
+    "llm_call"
+  ],
+  "permissions": [
+    "network"
+  ],
+  "entrypoint": "main.py",
+  "node_type": "harness",
+  "params": {
+    "source_file": {
+      "type": "string",
+      "default": "",
+      "desc": "可选"
+    },
+    "text": {
+      "type": "string",
+      "default": "",
+      "desc": "可选"
+    },
+    "max": {
+      "type": "int",
+      "default": 10,
+      "desc": "可选"
+    }
+  }
+}

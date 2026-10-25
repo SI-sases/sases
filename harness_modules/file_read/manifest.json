@@ -1,0 +1,46 @@
+{
+  "id": "file_read",
+  "aliases": [
+    "read_file"
+  ],
+  "name": "读取文件",
+  "description": "读取项目内文件内容",
+  "version": "1.0.0",
+  "capabilities": [
+    "file_read"
+  ],
+  "permissions": [
+    "restricted_file_write"
+  ],
+  "entrypoint": "main.py",
+  "node_type": "harness",
+  "params": {
+    "file_path": {
+      "type": "string",
+      "desc": "必填"
+    },
+    "lines": {
+      "type": "any",
+      "desc": "可选"
+    },
+    "grep": {
+      "type": "any",
+      "desc": "可选"
+    },
+    "max_results": {
+      "type": "int",
+      "default": 50,
+      "desc": "可选"
+    },
+    "max_lines": {
+      "type": "int",
+      "default": 300,
+      "desc": "可选"
+    },
+    "offset": {
+      "type": "int",
+      "default": 0,
+      "desc": "可选"
+    }
+  }
+}

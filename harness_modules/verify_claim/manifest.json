@@ -1,0 +1,24 @@
+{
+  "id": "verify_claim",
+  "name": "核实引用",
+  "description": "核查某说法或引用是否在源文件中出现",
+  "version": "1.0.0",
+  "capabilities": [
+    "file_read"
+  ],
+  "permissions": [
+    "restricted_file_write"
+  ],
+  "entrypoint": "main.py",
+  "node_type": "harness",
+  "params": {
+    "source_file": {
+      "type": "string",
+      "desc": "必填"
+    },
+    "claim": {
+      "type": "string",
+      "desc": "必填"
+    }
+  }
+}
