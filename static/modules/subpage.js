@@ -60,7 +60,7 @@ export function closeSubpage() {
 
   window.__currentReturnAction = null; 
   
-  if (window.activateMainView) {
+}
     window.activateMainView('me'); 
   }
 }
