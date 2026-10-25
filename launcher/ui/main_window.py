@@ -353,31 +353,29 @@ class MainWindow(QMainWindow):
 
     def _export_diag(self):
         import datetime
-        path = os.path.join(os.path.dirname(__file__), "diag.txt")
-        lines = [f"=== SASES 诊断报告 {datetime.datetime.now()} ==="]
+        import zipfile
+        import glob
+        
+        ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        zip_name = f"diag_{ts}.zip"
+        
         try:
-            out = subprocess.check_output(["netstat", "-ano"], text=True, timeout=10, encoding='gbk', errors='ignore')
-            port_lines = [l for l in out.splitlines() if f":{self._chosen_port}" in l]
-            lines.append(f"[端口 {self._chosen_port}]")
-            lines.extend(port_lines or ["未监听"])
-        except Exception as e:
-            lines.append(f"[端口] 检测失败: {e}")
-        
-        lines.append(f"[版本] {self.version_label.text()}")
-        
-        log_path = os.path.join(os.getcwd(), "logs", "latest.log")
-        if os.path.exists(log_path):
-            try:
-                with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
-                    tail = f.readlines()[-50:]
-                lines.append("[日志尾部]")
-                lines.extend(tail)
-            except Exception as e:
-                lines.append(f"[日志] 读取失败: {e}")
+            with zipfile.ZipFile(zip_name, 'w') as z:
+                # 打包 fatal_error.log
+                if os.path.exists("fatal_error.log"):
+                    z.write("fatal_error.log")
+                # 打包诊断信息
+                diag_txt = "diag_info.txt"
+                with open(diag_txt, "w", encoding="utf-8") as f:
+                    f.write(f"SASES Diag Report\nTime: {ts}\n")
+                    f.write(f"CWD: {os.getcwd()}\n")
+                    f.write(f"Python: {sys.executable}\n")
+                z.write(diag_txt)
+                os.remove(diag_txt)
                 
-        with open(path, "w", encoding="utf-8") as f:
-            f.write("\n".join(lines))
-        QMessageBox.information(self, "导出成功", f"诊断报告已生成：\n{path}")
+            QMessageBox.information(self, "成功", f"诊断包已生成：{zip_name}\n请将此文件发给开发者。")
+        except Exception as e:
+            QMessageBox.warning(self, "失败", f"生成诊断包失败: {e}")
 
     def _check_update(self):
         QMessageBox.information(self, "自动更新", "SASES 采用全自动热更新机制。\n\n您无需手动检查，每次点击右下角“▶”启动服务时，系统会自动与云端同步最新代码并拉取更新。")
