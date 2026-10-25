@@ -58,14 +58,23 @@ export function openSubpage(title, contentHtml, options = {}) {
 
 export function closeSubpage() {
   const viewSubpage = document.getElementById('view-subpage');
-  if (viewSubpage) viewSubpage.classList.remove('active');
+  if (viewSubpage) {
+    viewSubpage.classList.remove('active');
+    viewSubpage.style.display = 'none';
+  }
   
   const bottomNav = document.querySelector('.bottom-nav');
   const topBar = document.querySelector('.top-bar');
   if (bottomNav) bottomNav.style.display = 'flex';
   if (topBar) topBar.style.display = 'flex';
 
-  window.__currentReturnAction = null;
+  if (window.__currentReturnAction && typeof window.__currentReturnAction === 'function') {
+    const action = window.__currentReturnAction;
+    window.__currentReturnAction = null;
+    action();
+  } else {
+    window.__currentReturnAction = null;
+  }
 }
 
 window.openSubpage = openSubpage;
