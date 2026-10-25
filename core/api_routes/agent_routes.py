@@ -48,6 +48,25 @@ async def search_agents(q: str, include_self: bool = False, user_id: int = Depen
     return {"results": results}
 
 @router.post("/friend-request")
+async def send_friend_request(request: Request):
+    try:
+        body = await request.json()
+        target = body.get("target_sases_id")
+        from ..db import db_cursor
+        with db_cursor(commit=True) as cur:
+            cur.execute("SELECT id FROM users WHERE sases_id=?", (target,))
+            u = cur.fetchone()
+            if not u:
+                return {"status": "error", "message": "找不到该 SASES ID 的用户"}
+            t_uid = u["id"]
+            sender_id = body.get("sender_sases_id", "unknown")
+            cur.execute("INSERT OR IGNORE INTO conversations (user_id, target_user_id, title, is_friend_chat, updated_at) VALUES (?, ?, ?, 1, datetime('now'))", (t_uid, sender_id, f"好友 {sender_id}"))
+            return {"status": "success", "message": "添加成功"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@router.post("/friend-request")
 async def send_friend_request(body: FriendRequest, user_id: int = Depends(get_current_user)):
     # 1. 如果传了 target_sases_id，说明是加真人好友
     if body.target_sases_id:

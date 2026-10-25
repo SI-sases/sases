@@ -200,6 +200,12 @@ def init_db():
             )
         """)
         _ensure_column(cur, "messages", "sender_agent_id", "TEXT")
+        _ensure_column(cur, "messages", "msg_type", "TEXT")
+        _ensure_column(cur, "messages", "hlc_ts", "TEXT")
+        _ensure_column(cur, "messages", "origin_node", "TEXT")
+        _ensure_column(cur, "conversations", "hlc_ts", "TEXT")
+        _ensure_column(cur, "conversations", "origin_node", "TEXT")
+        _ensure_column(cur, "messages", "attachments", "TEXT")
 
         # ========== 好友关系表 ==========
         cur.execute("""

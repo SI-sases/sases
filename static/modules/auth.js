@@ -7,6 +7,7 @@ export async function login(username, password) {
   if (!token) {
     throw new Error('登录响应缺少 token');
   }
+  const _dlBtn = document.getElementById('download-client-btn'); if(_dlBtn) _dlBtn.style.display='none';
   localStorage.setItem('sases_token', token);
   localStorage.setItem('sases_username', username);
   localStorage.setItem('sases_user_id', data.user_id);
@@ -20,6 +21,7 @@ export async function register(username, password) {
   if (!token) {
     throw new Error('注册响应缺少 token');
   }
+  const _dlBtn = document.getElementById('download-client-btn'); if(_dlBtn) _dlBtn.style.display='none';
   localStorage.setItem('sases_token', token);
   localStorage.setItem('sases_username', username);
   localStorage.setItem('sases_user_id', data.user_id);
@@ -32,6 +34,7 @@ export function isLoggedIn() {
 }
 
 export function logout() {
+  const _dlBtn2 = document.getElementById('download-client-btn'); if(_dlBtn2) _dlBtn2.style.display='flex';
   localStorage.removeItem('sases_token');
   localStorage.removeItem('sases_username');
   localStorage.removeItem('sases_user_id');
