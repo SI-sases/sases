@@ -256,14 +256,9 @@ async function renderContacts(container) {
         }, 100);
       }
     } else {
-        // 好友智能体：必须进入历史会话，不能传 null
-        const convId = row.dataset.conversationId ? parseInt(row.dataset.conversationId) : null;
-        const targetUserId = row.dataset.targetUserId ? parseInt(row.dataset.targetUserId) : null;
-        openChatWindow(convId, agentName, agentId, agentType, 1, 'normal', targetUserId);
-      } else {
-        // 我的智能体：新建空白会话（Claude 模式）
-        openChatWindow(null, agentName, agentId, agentType);
-      }
+      // 我的智能体：强开空白会话，不传历史
+      openChatWindow(null, agentName, agentId, agentType);
+    }
     });
 
     row.addEventListener('touchstart', handleTouchStart, { passive: true });
