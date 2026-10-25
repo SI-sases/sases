@@ -258,30 +258,6 @@ async function renderContacts(container) {
         }, 100);
       }
     } else {
-      // 好友智能体：弹出名片页
-      const convId = row.dataset.conversationId ? parseInt(row.dataset.conversationId) : null;
-      const targetUserId = row.dataset.targetUserId ? parseInt(row.dataset.targetUserId) : null;
-      let html = '<div style="padding: 40px 20px; text-align: center; background: #fff; min-height: 100vh;">';
-      html += '<div style="width: 80px; height: 80px; background: #007aff; color: white; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; font-size: 36px; font-weight: bold; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,122,255,0.3);">' + agentName.charAt(0) + '</div>';
-      html += '<h2 style="margin: 0; font-size: 22px; color: #333;">' + agentName + '</h2>';
-      html += '<p style="color: #888; margin-top: 8px; font-size: 14px;">好友智能体</p>';
-      html += '<button id="btn-start-chat-from-info" style="margin-top: 40px; width: 100%; padding: 12px; background: #007aff; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;">发消息</button>';
-      html += '</div>';
-      if (window.openSubpage) {
-        window.openSubpage('详细资料', html, { returnAction: () => window.activateMainView('contacts') });
-        setTimeout(() => {
-          const btn = document.getElementById('btn-start-chat-from-info');
-          if (btn) {
-            btn.onclick = () => {
-              if (window.closeSubpage) window.closeSubpage();
-              setTimeout(() => {
-                openChatWindow(convId, agentName, agentId, agentType, 1, 'normal', targetUserId);
-              }, 100);
-            };
-          }
-        }, 100);
-      }
-    } else {
       // 我的智能体：强开空白会话，不传历史
       openChatWindow(null, agentName, agentId, agentType);
     }
