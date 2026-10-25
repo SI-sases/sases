@@ -462,6 +462,11 @@ async def lifespan(app: FastAPI):
             try:
                 if _os_w.path.exists(_fp):
                     print('[bootstrap] restart_signal detected, exiting for wrapper to restart')
+                    try:
+                        _os_w.remove(_fp)
+                        print('[bootstrap] restart_signal removed')
+                    except Exception as _e_rm:
+                        print('[bootstrap] restart_signal remove err: ' + str(_e_rm))
                     _os_w._exit(0)
             except Exception as _e_w:
                 print('[bootstrap] restart watch err: ' + str(_e_w))
