@@ -94,7 +94,7 @@ async def check_and_continue(run_id, last_summary, plan_text=None, exec_text=Non
                 if _s12 >= 0.9 and _s23 >= 0.9:
                     print('[supervisor] 检测到死循环（连续3轮相似度 ' + str(round(_s12, 2)) + '/' + str(round(_s23, 2)) + '），强制停止')
                     finish_run(run_id, 'loop_detected')
-        return False, None
+                    return False, None
     except Exception as _le:
         print('[supervisor] 死循环检测异常: ' + str(_le))
 
