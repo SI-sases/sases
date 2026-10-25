@@ -313,7 +313,7 @@ async def send_message(
                                 _title_auto = _rq_auto['name']
                         _cid_auto = create_conversation(user_id, agent_id, _title_auto)
                         print(f"[supervisor] auto_run 无会话，新建 conversation_id={_cid_auto}")
-                    _run_id = supervisor_service.create_run(user_id, _cid_auto, sender_agent_id or agent_id, content, task_type=_classify_task_type(content))
+                    _run_id = supervisor_service.create_run(user_id, _cid_auto, sender_agent_id or agent_id, content, task_type=_classify_task_type(content), max_rounds=max_steps if max_steps is not None else None)
                     print("[supervisor] 已创建 run_id=" + str(_run_id) + " goal=" + content[:50])
                     _force_swarm = True
                     _supervisor_run_id = _run_id

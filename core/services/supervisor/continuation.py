@@ -128,7 +128,7 @@ async def check_and_continue(run_id, last_summary, plan_text=None, exec_text=Non
 
     record_round(run_id, plan_text or run.get('goal', ''), exec_text or last_summary, review=review)
     run = get_run(run_id)
-    if not run or (run['current_round'] or 0) >= (run['max_rounds'] or 5):
+    if not run or ((run['current_round'] or 0) >= (run['max_rounds'] or 5) and run['max_rounds'] != -1):
         return False, None
     if (run['credits_used'] or 0) >= 16:
         print('[supervisor] 成本达到 16 积分，提前停止')
