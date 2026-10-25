@@ -1,24 +1,30 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>隐私政策 - SASES</title>
-  <link rel="stylesheet" href="/static/style.css">
+    <meta charset="UTF-8">
+    <title>SASES 隐私政策</title>
+    <style>body { padding: 30px; font-family: 'Microsoft YaHei', sans-serif; line-height: 1.8; color: #333; max-width: 800px; margin: 0 auto; background-color: #f9f9f9; } h2 { color: #4a90e2; border-bottom: 2px solid #ddd; padding-bottom: 10px; } p { margin-bottom: 15px; }</style>
 </head>
-<body style="padding:20px;background:#fff;">
-  <h1>隐私政策</h1>
-  <p>SASES 非常重视您的隐私。本政策说明我们如何处理您的数据。</p>
-  <h2>1. 数据收集</h2>
-  <p>我们仅收集必要信息：用户名、密码哈希、SASES ID、积分余额。API Key 和聊天记录默认存储在本地。</p>
-  <h2>2. 数据使用</h2>
-  <p>数据用于提供核心服务、排行榜、积分结算。不会出售给第三方。</p>
-  <h2>3. 数据存储</h2>
-  <p>您的私有数据保存在您的设备上。公开数据（如排行榜）仅包含脱敏信息。</p>
-  <h2>4. 用户权利</h2>
-  <p>您可以导出、删除自己的数据，或注销账号。</p>
-  <h2>5. 联系我们</h2>
-  <p>如有隐私问题，请联系我们。</p>
-  <p style="margin-top:30px;color:#888;">更新日期：2026年9月2日</p>
+<body>
+    <h2>SASES 隐私政策</h2>
+    <p>SASES 非常重视您的隐私，我们的核心设计理念是“本地优先，数据主权归于用户”。本政策说明我们如何处理您的数据。</p>
+
+    <h3>1. 本地优先与数据收集</h3>
+    <p><strong>默认离线：</strong>本系统默认情况下完全在您的本地设备上运行。您的聊天记录、知识库、个人隐私数据默认仅存储在本地设备（如 users.db），不会自动上传至任何官方服务器。</p>
+    <p><strong>API Key 安全：</strong>您配置的大模型 API Key 通过本地环境变量加密存储，绝不会以明文形式离开您的设备。</p>
+
+    <h3>2. 第三方调用说明</h3>
+    <p>当您与 AI 对话时，您的输入数据将直接发送至您配置的第三方大模型厂商（如 DeepSeek）。本系统不中转、不截留这些数据，请查阅对应厂商的隐私条款以了解其数据使用规范。</p>
+
+    <h3>3. 分布式网络（蜂巢）与中继</h3>
+    <p>若您主动开启跨设备/跨节点通讯，节点间通讯采用 WireGuard 加密与内网穿透，保证传输链路的安全。中继节点（如 Node-A）仅处理加密的转发请求，不存储您的私密聊天内容。</p>
+
+    <h3>4. 用户权利</h3>
+    <p>由于数据完全归您所有，您可以随时通过本地文件管理直接导出或删除您的数据。若您在官方节点注册了账号，您也有权要求注销账号及清理云端中继缓存。</p>
+
+    <h3>5. 免责条款</h3>
+    <p>请注意防范本地网络环境安全。因用户自身设备中病毒、木马导致的数据泄露，本系统无法承担责任。</p>
+    
+    <p>更新日期：2026年10月25日</p>
 </body>
 </html>

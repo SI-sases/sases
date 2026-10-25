@@ -89,8 +89,8 @@ function applyLanguage() {
     if (userAgreementLink) userAgreementLink.textContent = isEn ? 'User Agreement' : '用户协议';
     if (privacyPolicyLink) privacyPolicyLink.textContent = isEn ? 'Privacy Policy' : '隐私政策';
     agreementText.innerHTML = isEn
-      ? `I have read and agree to <a href="#" id="user-agreement-link">User Agreement</a> and <a href="#" id="privacy-policy-link">Privacy Policy</a>`
-      : `我已阅读并同意 <a href="#" id="user-agreement-link">用户协议</a> 和 <a href="#" id="privacy-policy-link">隐私政策</a>`;
+      ? `I have read and agree to <a href="/static/agreement.html" target="_blank" id="user-agreement-link" style="color:#4a90e2;">User Agreement</a> and <a href="/static/privacy.html" target="_blank" id="privacy-policy-link" style="color:#4a90e2;">Privacy Policy</a>`
+      : `我已阅读并同意 <a href="/static/agreement.html" target="_blank" id="user-agreement-link" style="color:#4a90e2;">用户协议</a> 和 <a href="/static/privacy.html" target="_blank" id="privacy-policy-link" style="color:#4a90e2;">隐私政策</a>`;
   }
 
   // ========== 底部导航 ==========

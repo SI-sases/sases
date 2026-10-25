@@ -389,3 +389,28 @@ function showDocContextMenu(x, y, sourceFile) {
     document.addEventListener('click', _close);
   }, 50);
 }
+
+// ====== 安全接管关于SASES ======
+document.addEventListener('click', function(e) {
+    var target = e.target;
+    var isAbout = false;
+    while (target && target !== document) {
+        if (target.innerText && target.innerText.trim() === '关于 SASES') {
+            isAbout = true;
+            break;
+        }
+        target = target.parentNode;
+    }
+    if (isAbout && typeof window.openSubpage === 'function') {
+        var html = '<div style="padding: 30px 20px; text-align: center; color: #333;">' +
+            '<h2 style="color: #007aff; margin-bottom: 5px;">SASES</h2>' +
+            '<p style="color: #888; font-size: 14px; margin-bottom: 30px;">v1.0.0-Release</p>' +
+            '<div style="text-align: left; background: #fff; padding: 15px; border-radius: 8px; line-height: 1.8; font-size: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">' +
+                '<p><strong>开源协议：</strong>MIT License</p>' +
+                '<p><strong>项目地址：</strong><a href="https://github.com/SI-sases/sases" target="_blank" style="color: #007aff; text-decoration: none;">github.com/SI-sases/sases</a></p>' +
+                '<p><strong>商业化说明：</strong>个人学习、研究及企业内部使用完全免费。如需作为商业产品对外提供服务，必须获得官方商业授权。</p>' +
+            '</div>' +
+        '</div>';
+        window.openSubpage('关于 SASES', html, { returnAction: function() { if (window.closeSubpage) window.closeSubpage(); } });
+    }
+}, true);
