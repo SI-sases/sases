@@ -533,63 +533,7 @@ del "%~f0"
         if self.proc is not None:
             return
             
-        # ====== 更新检测逻辑：优先 Git，降级中转 ======
-        git_success = False
-        try:
-            git_dir = os.path.join(self.work_dir, ".git")
-            if os.path.exists(git_dir):
-                self._log("[启动器] 优先尝试 Git 增量更新...")
-                res = subprocess.run("git pull origin main", cwd=self.work_dir, shell=True, capture_output=True, timeout=5)
-                if res.returncode == 0:
-                    self._log("[启动器] Git 更新成功，当前已是最新版本。")
-                    git_success = True
-                else:
-                    self._log("[启动器] Git 更新失败，准备降级。")
-            else:
-                self._log("[启动器] 本地无 Git 环境，准备降级。")
-        except Exception as e:
-            self._log(f"[启动器] Git 更新超时（无 VPN 网络），触发降级。")
 
-        if not git_success:
-            self._log("[启动器] 正在通过国内中转服务器拉取更新...")
-            try:
-                import urllib.request
-                import zipfile
-                import io
-                import ssl
-
-                # 简易双线优选：默认用国内，如果异常再切香港
-                update_url = "http://47.96.87.147:8001/static/downloads/code_update.zip"
-                try:
-                    import urllib.request
-                    urllib.request.urlopen(update_url, timeout=2)
-                except Exception:
-                    update_url = "https://8.210.238.165:8443/downloads/code_update.zip"
-                req = urllib.request.Request(update_url)
-                ctx = ssl.create_default_context()
-                ctx.check_hostname = False
-                ctx.verify_mode = ssl.CERT_NONE
-
-                with urllib.request.urlopen(req, timeout=10, context=ctx) as response:
-                    zip_data = response.read()
-
-                self._log("[启动器] 下载更新包成功，正在解压...")
-                with zipfile.ZipFile(io.BytesIO(zip_data)) as z:
-                    z.extractall(self.work_dir)
-                self._log("[启动器] 中转同步完成，代码已更新！")
-            except Exception as e:
-                self._log(f"[启动器] 中转更新跳过（可能是首次运行或网络异常）")
-        # ==================================================
-
-        # 启动前尝试静默拉取最新代码（防报错：如果没装 git 或非 git 仓库则跳过）
-        self._log("[启动器] 正在检查代码更新...")
-        try:
-            git_dir = os.path.join(self.work_dir, ".git")
-            if os.path.exists(git_dir):
-                subprocess.run("git pull origin main", cwd=self.work_dir, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5)
-                self._log("[启动器] 代码同步完成")
-            else:
-                self._log("[启动器] 当前为非 git 环境，跳过自动更新")
         except Exception:
             self._log("[启动器] 更新检查超时或被跳过")
 

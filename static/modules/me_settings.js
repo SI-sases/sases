@@ -125,25 +125,16 @@ function openLanguageSettings() {
 }
 
 function openAboutPage() {
-  const contentHtml = `
-    <div style="text-align:center;padding:30px 20px;">
-      <div style="font-size:40px;margin-bottom:16px;">🌱</div>
-      <div style="font-size:20px;font-weight:600;">SASES</div>
-      <div style="color:#888;font-size:14px;margin-top:8px;">${t('version')} v0.12.1</div>
-      <div style="color:#888;font-size:13px;margin-top:4px;">${t('privacy_tagline')}</div>
-    </div>
-    <div class="me-menu">
-      <div class="me-menu-item" id="about-docs"><span class="menu-label">${t('docs')}</span><span class="menu-arrow">›</span></div>
-      <div class="me-menu-item" id="about-license"><span class="menu-label">${t('license')}</span><span class="menu-arrow">›</span></div>
-      <div class="me-menu-item" id="about-feedback"><span class="menu-label">${t('feedback')}</span><span class="menu-arrow">›</span></div>
-    </div>
-  `;
-  window.openSubpage(t('about_sases'), contentHtml);
-  setTimeout(() => {
-    document.getElementById('about-docs').onclick = () => window.openSubpage(t('docs'), `<div class="subpage-placeholder">${t('coming_soon')}</div>`);
-    document.getElementById('about-license').onclick = () => window.openSubpage(t('license'), '<div class="subpage-placeholder">MIT License</div>');
-    document.getElementById('about-feedback').onclick = () => window.openSubpage(t('feedback'), `<div class="subpage-placeholder">${t('coming_soon')}</div>`);
-  }, 100);
+  const contentHtml = '<div style="padding: 30px 20px; text-align: center; color: #333;">' +
+    '<div style="font-size:50px; margin-bottom: 10px;">🌱</div>' +
+    '<h2 style="color: #007aff; margin-bottom: 5px;">SASES</h2>' +
+    '<p style="color: #888; font-size: 14px; margin-bottom: 30px;">v1.0.0-Release</p>' +
+    '<div style="text-align: left; background: #fff; padding: 15px; border-radius: 8px; line-height: 1.8; font-size: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">' +
+        '<p><strong>开源协议：</strong>MIT License</p>' +
+        '<p><strong>项目地址：</strong><a href="https://github.com/SI-sases/sases" target="_blank" style="color: #007aff; text-decoration: none;">github.com/SI-sases/sases</a></p>' +
+    '</div>' +
+  '</div>';
+  window.openSubpage(t('about_sases'), contentHtml, { returnAction: () => openSettings() });
 }
 
 // ==================== 授粉计划 ====================
@@ -165,7 +156,7 @@ function openPollinationPlan() {
       ${t('group_pollination_rule')}
     </div>
   `;
-  window.openSubpage(t('pollination_plan'), contentHtml, { showMore: false });
+  window.openSubpage(t('pollination_plan'), contentHtml, { showMore: false, returnAction: () => openSettings() });
 }
 
 // 挂载到全局

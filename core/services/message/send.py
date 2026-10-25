@@ -49,8 +49,8 @@ async def send_message(
     content: str,
     sender_agent_id: str = None,
     mode: str = "normal",
-    max_steps: int = None,
     msg_type: str = "standard",
+    max_steps: int = None,
     attachments: list = None
 ):
     print(f"[MSG_DEBUG] content={content!r} | mode={mode!r} | agent_id={agent_id!r} | msg_type={msg_type}")
@@ -313,7 +313,7 @@ async def send_message(
                                 _title_auto = _rq_auto['name']
                         _cid_auto = create_conversation(user_id, agent_id, _title_auto)
                         print(f"[supervisor] auto_run 无会话，新建 conversation_id={_cid_auto}")
-                    _run_id = supervisor_service.create_run(user_id, _cid_auto, sender_agent_id or agent_id, content, task_type=_classify_task_type(content), max_rounds=max_steps if max_steps is not None else None)
+                    _run_id = supervisor_service.create_run(user_id, _cid_auto, sender_agent_id or agent_id, content, task_type=_classify_task_type(content), max_rounds=max_steps)
                     print("[supervisor] 已创建 run_id=" + str(_run_id) + " goal=" + content[:50])
                     _force_swarm = True
                     _supervisor_run_id = _run_id
@@ -325,7 +325,6 @@ async def send_message(
                             user_input=content,
                             supervisor_id=sender_agent_id or agent_id,
                             supervisor_run_id=_run_id,
-                            max_steps=max_steps,
                         )
                         # v0.38.0: precheck 拦截时，自动重试一次（用 reason 修正 prompt）
                         if _plan_result and isinstance(_plan_result, dict) and _plan_result.get('status') == 'no_plan' and 'precheck blocked' in str(_plan_result.get('reason', '')):
@@ -338,7 +337,6 @@ async def send_message(
                                     user_input=_retry_input,
                                     supervisor_id=sender_agent_id or agent_id,
                                     supervisor_run_id=_run_id,
-                                    max_steps=max_steps,
                                 )
                             except Exception as _e_retry:
                                 print('[supervisor] precheck 重试失败: ' + str(_e_retry))
@@ -815,8 +813,7 @@ async def send_message(
                     user_input=content,
                     require_confirmation=require_confirmation,
                     supervisor_id=sender_agent_id,
-                    supervisor_run_id=locals().get('_supervisor_run_id'),
-                    max_steps=max_steps
+                    supervisor_run_id=locals().get('_supervisor_run_id')
                 )
                 print(f"[MSG_DEBUG] plan_result={plan_result}")
 
