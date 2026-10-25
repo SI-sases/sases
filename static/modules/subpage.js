@@ -59,22 +59,24 @@ export function openSubpage(title, contentHtml, options = {}) {
   if (subpage) subpage.style.display = 'flex';
 }
 
-export function closeSubpage() {
-  if (typeof window.__currentReturnAction === 'function') {
-    const action = window.__currentReturnAction;
-    window.__currentReturnAction = null;
-    action();
-    return;
-  }
 
-  const subpage = document.getElementById('view-subpage');
-  if (subpage) subpage.style.display = 'none';
+export function closeSubpage() { window.__currentReturnAction = null; if (typeof window.activateMainView === 'function') { window.activateMainView('me'); } const viewSubpage = document.getElementById('view-subpage'); if (viewSubpage) { viewSubpage.classList.remove('active'); viewSubpage.style.display = 'none'; } }
+  const viewSubpage = document.getElementById('view-subpage');
+  if (viewSubpage) viewSubpage.classList.remove('active');
+  
   const bottomNav = document.querySelector('.bottom-nav');
   const topBar = document.querySelector('.top-bar');
   if (bottomNav) bottomNav.style.display = 'flex';
   if (topBar) topBar.style.display = 'flex';
-  window.__currentReturnAction = null;
+
+  // 核心修复：如果之前设置了自定义返回回调，在这里执行它
+  if (window.__currentReturnAction && typeof window.__currentReturnAction === 'function') {
+    const action = window.__currentReturnAction;
+    window.__currentReturnAction = null;
+    action();
+  }
 }
+
 
 // 挂载到全局，供其他模块调用
 window.openSubpage = openSubpage;
