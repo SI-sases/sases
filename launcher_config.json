@@ -1,0 +1,6 @@
+{
+  "port": 8001,
+  "python_path": "venv312/Scripts/python.exe",
+  "script_path": "scripts/run_forever.py",
+  "work_dir": "."
+}

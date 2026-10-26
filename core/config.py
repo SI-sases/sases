@@ -1,3 +1,10 @@
+import httpx
+_orig_init = httpx.Client.__init__
+def _new_init(self, *args, **kwargs):
+    kwargs["default_encoding"] = "utf-8"
+    _orig_init(self, *args, **kwargs)
+httpx.Client.__init__ = _new_init
+
 # core/config.py
 # core/config.py
 import os
