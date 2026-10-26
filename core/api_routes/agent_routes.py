@@ -1,3 +1,4 @@
+from fastapi import Request
 # core/api_routes/agent_routes.py
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
