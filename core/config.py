@@ -1,10 +1,3 @@
-import httpx
-_orig_init = httpx.Client.__init__
-def _new_init(self, *args, **kwargs):
-    kwargs["default_encoding"] = "utf-8"
-    _orig_init(self, *args, **kwargs)
-httpx.Client.__init__ = _new_init
-
 # core/config.py
 # core/config.py
 import os
@@ -13,7 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ========== DeepSeek API 配置（系统默认） ==========
-DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY", "")
+DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY", "") or "sk-dummy-key-for-startup"
 DEEPSEEK_BASE_URL = os.environ.get("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1")
 MODEL_NAME = os.environ.get("MODEL_NAME", "deepseek-v4-flash")
 

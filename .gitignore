@@ -28,3 +28,5 @@ venv312/
 python312/
 python-embed/
 .backups/
+bge-small-zh-onnx/
+fix_*.py

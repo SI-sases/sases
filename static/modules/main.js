@@ -26,25 +26,15 @@ window.initMe = initMe;
 document.addEventListener('DOMContentLoaded', function () {
   var dlBtn = document.getElementById('download-client-btn');
   if (!dlBtn) return;
+  
+  // 直接修改 href 为相对路径，避免写死 IP 导致跨域或 404
+  dlBtn.href = '/static/downloads/sases.zip';
+  dlBtn.setAttribute('download', 'sases.zip');
+  
+  // 移除之前拦截点击并弹窗的黑框逻辑，让浏览器直接下载
   dlBtn.addEventListener('click', function (e) {
-    e.preventDefault();
-    if (document.getElementById('dl-client-modal')) return;
-    var mask = document.createElement('div');
-    mask.id = 'dl-client-modal';
-    mask.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10000;display:flex;align-items:center;justify-content:center;';
-    mask.innerHTML = '<div style="background:#fff;border-radius:10px;padding:24px;max-width:420px;width:90%;box-shadow:0 8px 30px rgba(0,0,0,.2);">' +
-      '<h3 style="margin:0 0 12px;font-size:18px;">下载 SASES 桌面客户端</h3>' +
-      '<ol style="margin:0 0 16px;padding-left:20px;line-height:1.9;font-size:14px;color:#333;">' +
-      '<li>下载并解压 zip</li>' +
-      '<li>双击运行“启动SASES.bat”</li>' +
-      '<li>首次运行按提示输入 API Key</li>' +
-      '</ol>' +
-      '<a href="https://8.210.238.165:8443/downloads/sases-portable.zip" style="display:block;text-align:center;background:#2563eb;color:#fff;padding:10px;border-radius:6px;text-decoration:none;font-size:14px;">下载 Windows 绿色版 (v1.0)</a>' +
-      '<button id="dl-client-close" style="margin-top:12px;width:100%;background:#eee;border:none;padding:8px;border-radius:6px;cursor:pointer;">关闭</button>' +
-      '</div>';
-    document.body.appendChild(mask);
-    document.getElementById('dl-client-close').onclick = function () { mask.remove(); };
-    mask.addEventListener('click', function (ev) { if (ev.target === mask) mask.remove(); });
+    // 不再 preventDefault，直接走 <a> 标签的原生下载
+    console.log("[Download] 开始下载客户端...");
   });
 });
 
@@ -223,11 +213,20 @@ function checkAuthState() {
 function showLogin() {
   document.getElementById('view-login').style.display = 'flex';
   document.getElementById('main-app').style.display = 'none';
+  
+  // 显示下载按钮
+  var dlBtn = document.getElementById('download-client-btn');
+  if (dlBtn) dlBtn.style.display = 'block';
 }
 
 function enterMainApp() {
   document.getElementById('view-login').style.display = 'none';
   document.getElementById('main-app').style.display = 'flex';
+  
+  // 隐藏下载按钮，防止遮挡聊天界面或影响手机端操作
+  var dlBtn = document.getElementById('download-client-btn');
+  if (dlBtn) dlBtn.style.display = 'none';
+
   activateMainView('messages');
   import('./ws_client.js').then(m => m.connectUserWs()).catch(() => {});
 }

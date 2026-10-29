@@ -1,19 +1,18 @@
-"""SASES 启动器主窗口（终极防冲突版）。"""
+"""SASES 启动器主窗口（UI 优化满血版）。"""
 import os, sys, time
 import urllib.request
 import urllib.error
 import webbrowser
 import socket
 import subprocess
+import ssl
+import json
+import io
+import zipfile
 import launcher_config
 
 CURRENT_LAUNCHER_VERSION = "1.0.0"
 
-import urllib.request
-import urllib.error
-import ssl
-import json
-import sys
 from PyQt6.QtCore import QProcess, QProcessEnvironment, QTimer, Qt
 from PyQt6.QtGui import QAction, QIcon, QFont
 from PyQt6.QtWidgets import (
@@ -52,6 +51,17 @@ class MainWindow(QMainWindow):
         self.setWindowTitle('SASES 启动器')
         self.resize(950, 650)
         
+        # ====== 设置窗口左上角图标 ======
+        if getattr(sys, 'frozen', False):
+            _base_dir = sys._MEIPASS
+        else:
+            _base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        _ico = os.path.join(_base_dir, 'launcher', 'icon.ico')
+        if not os.path.exists(_ico):
+            _ico = os.path.join(_base_dir, 'icon.ico')
+        if os.path.exists(_ico):
+            self.setWindowIcon(QIcon(_ico))
+            
         self._init_ui()
         self._setup_tray()
         
@@ -65,8 +75,14 @@ class MainWindow(QMainWindow):
         main_layout.setSpacing(0)
 
         # ========== 左侧导航 ==========
+        sidebar_container = QWidget()
+        sidebar_container.setFixedWidth(180)
+        sidebar_container.setStyleSheet("background-color: #2b2b2b;")
+        sidebar_layout = QVBoxLayout(sidebar_container)
+        sidebar_layout.setContentsMargins(0, 0, 0, 0)
+        sidebar_layout.setSpacing(0)
+
         self.sidebar = QListWidget()
-        self.sidebar.setFixedWidth(180)
         self.sidebar.setStyleSheet("""
             QListWidget {
                 background-color: #2b2b2b;
@@ -91,6 +107,13 @@ class MainWindow(QMainWindow):
         """)
         self.sidebar.addItems(["📜 运行日志", "⚙️ 服务配置", "🛠 诊断工具", "🔄 检查更新"])
         self.sidebar.currentRowChanged.connect(self._on_sidebar_changed)
+        sidebar_layout.addWidget(self.sidebar)
+        
+        # 左下角版本号
+        ver_label = QLabel(f"v{CURRENT_LAUNCHER_VERSION}")
+        ver_label.setStyleSheet("color: #666; padding: 15px; font-size: 12px;")
+        ver_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        sidebar_layout.addWidget(ver_label)
         
         # ========== 右侧主区域 ==========
         right_panel = QWidget()
@@ -140,7 +163,7 @@ class MainWindow(QMainWindow):
         config_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
         cfg_title = QLabel("模型服务配置")
-        cfg_title.setStyleSheet("color: #fff; font-size: 24px; font-weight: bold;")
+        cfg_title.setStyleSheet("color: #fff; font-size: 24px; font-weight: bold; margin-bottom: 20px;")
         
         self.cfg_key_input = QLineEdit()
         self.cfg_key_input.setPlaceholderText("API Key (本地模型可留空)")
@@ -148,12 +171,12 @@ class MainWindow(QMainWindow):
         self.cfg_key_input.setStyleSheet("background-color: #2b2b2b; color: white; padding: 8px; border-radius: 4px;")
         
         self.cfg_url_input = QLineEdit()
-        self.cfg_url_input.setPlaceholderText("接口地址 (如 http://127.0.0.1:11434/v1)")
+        self.cfg_url_input.setPlaceholderText("接口地址 (如 https://api.deepseek.com/v1)")
         self.cfg_url_input.setFixedWidth(350)
         self.cfg_url_input.setStyleSheet("background-color: #2b2b2b; color: white; padding: 8px; border-radius: 4px;")
         
         self.cfg_model_input = QLineEdit()
-        self.cfg_model_input.setPlaceholderText("模型名称 (如 deepseek-v4-flash 或 qwen:7b)")
+        self.cfg_model_input.setPlaceholderText("模型名称 (如 deepseek-chat)")
         self.cfg_model_input.setFixedWidth(350)
         self.cfg_model_input.setStyleSheet("background-color: #2b2b2b; color: white; padding: 8px; border-radius: 4px;")
         
@@ -168,6 +191,12 @@ class MainWindow(QMainWindow):
                     elif line.startswith("MODEL_NAME="):
                         self.cfg_model_input.setText(line.strip().split("=")[1])
 
+        # 引导链接
+        link_label = QLabel('<a href="https://platform.deepseek.com/api_keys" style="color: #4a90e2; text-decoration: none;">👉 点击这里去 DeepSeek 官网获取 API Key</a>')
+        link_label.setOpenExternalLinks(True)
+        link_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        link_label.setStyleSheet("font-size: 13px; margin-bottom: 15px;")
+
         btn_save_cfg = QPushButton("保存配置")
         btn_save_cfg.setStyleSheet("background-color: #4a90e2; color: white; padding: 8px 16px; border-radius: 4px; font-weight: bold;")
         btn_save_cfg.clicked.connect(self._save_config)
@@ -176,31 +205,7 @@ class MainWindow(QMainWindow):
         config_layout.addWidget(self.cfg_key_input, alignment=Qt.AlignmentFlag.AlignCenter)
         config_layout.addWidget(self.cfg_url_input, alignment=Qt.AlignmentFlag.AlignCenter)
         config_layout.addWidget(self.cfg_model_input, alignment=Qt.AlignmentFlag.AlignCenter)
-        config_layout.addWidget(btn_save_cfg, alignment=Qt.AlignmentFlag.AlignCenter)
-        config_layout = QVBoxLayout(page_config)
-        config_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        cfg_title = QLabel("服务配置")
-        cfg_title.setStyleSheet("color: #fff; font-size: 24px; font-weight: bold;")
-
-        self.cfg_key_input = QLineEdit()
-        self.cfg_key_input.setPlaceholderText("输入 DeepSeek API Key...")
-        self.cfg_key_input.setFixedWidth(300)
-        self.cfg_key_input.setStyleSheet("background-color: #2b2b2b; color: white; padding: 8px; border-radius: 4px;")
-
-        env_p = os.path.join(ROOT, ".env")
-        if os.path.exists(env_p):
-            with open(env_p, "r", encoding="utf-8") as f:
-                for line in f:
-                    if line.startswith("DEEPSEEK_API_KEY="):
-                        self.cfg_key_input.setText(line.strip().split("=")[1])
-
-        btn_save_cfg = QPushButton("保存配置")
-        btn_save_cfg.setStyleSheet("background-color: #4a90e2; color: white; padding: 8px 16px; border-radius: 4px; font-weight: bold;")
-        btn_save_cfg.clicked.connect(self._save_config)
-
-        config_layout.addWidget(cfg_title)
-        config_layout.addWidget(self.cfg_key_input, alignment=Qt.AlignmentFlag.AlignCenter)
+        config_layout.addWidget(link_label, alignment=Qt.AlignmentFlag.AlignCenter)
         config_layout.addWidget(btn_save_cfg, alignment=Qt.AlignmentFlag.AlignCenter)
 
         # 页面 2：诊断工具
@@ -223,7 +228,7 @@ class MainWindow(QMainWindow):
         diag_layout.addWidget(diag_desc)
         diag_layout.addWidget(btn_do_diag, alignment=Qt.AlignmentFlag.AlignCenter)
 
-        # 页面 2：检查更新
+        # 页面 3：检查更新
         page_update = QWidget()
         update_layout = QVBoxLayout(page_update)
         update_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -248,7 +253,7 @@ class MainWindow(QMainWindow):
         self.stacked_widget.addWidget(page_diag)
         self.stacked_widget.addWidget(page_update)
         
-        # ========== 底部操作区（右下角悬浮控制） ==========
+        # ========== 底部操作区 ==========
         bottom_bar = QWidget()
         bottom_bar.setStyleSheet("background-color: #1e1e1e;")
         bottom_layout = QHBoxLayout(bottom_bar)
@@ -267,7 +272,7 @@ class MainWindow(QMainWindow):
         right_layout.addWidget(self.stacked_widget)
         right_layout.addWidget(bottom_bar)
         
-        main_layout.addWidget(self.sidebar)
+        main_layout.addWidget(sidebar_container)
         main_layout.addWidget(right_panel)
         
         self.sidebar.setCurrentRow(0)
@@ -322,7 +327,6 @@ class MainWindow(QMainWindow):
             self.stop()
 
     def _kill_port_process(self, port):
-        """强制杀掉占用指定端口的进程"""
         try:
             out = subprocess.check_output(["netstat", "-ano"], text=True, encoding='gbk', errors='ignore')
             for line in out.splitlines():
@@ -332,13 +336,11 @@ class MainWindow(QMainWindow):
                         pid = parts[-1]
                         self._log(f"[启动器] 发现残留进程 PID={pid} 占用端口 {port}，正在清理...")
                         subprocess.run(f"taskkill /F /T /PID {pid}", shell=True, capture_output=True)
-            time.sleep(1) # 给系统一点时间释放端口
+            time.sleep(1)
         except Exception as e:
             self._log(f"[启动器] 清理端口异常: {e}")
 
-    # ====== 版本与功能逻辑 ======
     def _load_version_info(self):
-        import json
         proxy_handler = urllib.request.ProxyHandler({})
         opener = urllib.request.build_opener(proxy_handler)
         url = f"http://127.0.0.1:{self._chosen_port}/version"
@@ -353,172 +355,25 @@ class MainWindow(QMainWindow):
 
     def _export_diag(self):
         import datetime
-        import zipfile
-        import glob
-        
         ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         zip_name = f"diag_{ts}.zip"
-        
         try:
             with zipfile.ZipFile(zip_name, 'w') as z:
-                # 打包 fatal_error.log
                 if os.path.exists("fatal_error.log"):
                     z.write("fatal_error.log")
-                # 打包诊断信息
                 diag_txt = "diag_info.txt"
                 with open(diag_txt, "w", encoding="utf-8") as f:
-                    f.write(f"SASES Diag Report\nTime: {ts}\n")
-                    f.write(f"CWD: {os.getcwd()}\n")
-                    f.write(f"Python: {sys.executable}\n")
+                    f.write(f"SASES Diag Report\nTime: {ts}\nCWD: {os.getcwd()}\nPython: {sys.executable}\n")
                 z.write(diag_txt)
                 os.remove(diag_txt)
-                
             QMessageBox.information(self, "成功", f"诊断包已生成：{zip_name}\n请将此文件发给开发者。")
         except Exception as e:
             QMessageBox.warning(self, "失败", f"生成诊断包失败: {e}")
 
     def _check_update(self):
         QMessageBox.information(self, "自动更新", "SASES 采用全自动热更新机制。\n\n您无需手动检查，每次点击右下角“▶”启动服务时，系统会自动与云端同步最新代码并拉取更新。")
-        import ssl
-        import json
-        import os
-        import subprocess
-        from PyQt6.QtWidgets import QMessageBox, QApplication
-        
-        urls = [
-            "http://47.96.87.147:8001/static/downloads/version.json",
-            "https://8.210.238.165:8443/downloads/version.json"
-        ]
-        
-        ctx = ssl.create_default_context()
-        ctx.check_hostname = False
-        ctx.verify_mode = ssl.CERT_NONE
-        
-        proxy_handler = urllib.request.ProxyHandler({})
-        opener = urllib.request.build_opener(proxy_handler, urllib.request.HTTPSHandler(context=ctx))
-        
-        latest_ver = None
-        download_url = None
-        
-        for u in urls:
-            try:
-                self._log(f"[启动器] 尝试连接: {u}")
-                req = urllib.request.Request(u)
-                with opener.open(req, timeout=3) as resp:
-                    data = json.loads(resp.read().decode('utf-8'))
-                    latest_ver = data.get("launcher_version")
-                    download_url = data.get("download_url")
-                    if latest_ver:
-                        self._log(f"[启动器] 成功获取最新版本: {latest_ver}")
-                        break
-            except Exception as e:
-                self._log(f"[启动器] 连接失败: {e}")
-                continue
-                
-        if not latest_ver:
-            QMessageBox.warning(self, "检查失败", "无法连接到任何更新服务器，请检查网络。")
-            return
-            
-        if latest_ver == CURRENT_LAUNCHER_VERSION:
-            QMessageBox.information(self, "已是最新", f"当前启动器已是最新版 ({CURRENT_LAUNCHER_VERSION})。")
-            return
-            
-        reply = QMessageBox.question(self, "发现新版本", 
-                                     f"发现新版启动器 {latest_ver}，是否立即更新？\n（更新后程序会自动重启）",
-                                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-        
-        if reply == QMessageBox.StandardButton.Yes:
-            self._log(f"[启动器] 正在唤起后台下载器...")
-            try:
-                if hasattr(self, 'proc') and self.proc:
-                    self.stop()
-                
-                import sys
-                import os
-                # 关键：获取当前 EXE 所在的绝对目录
-                if getattr(sys, 'frozen', False):
-                    exe_dir = os.path.dirname(sys.executable)
-                else:
-                    exe_dir = os.path.dirname(os.path.abspath(__file__))
-                    
-                bat_path = os.path.join(exe_dir, "update.bat")
-                
-                # 利用 Windows 自带的 curl 在 bat 中下载，彻底避免 Python 卡死
-                bat_content = f"""@echo off
-cd /d "%~dp0"
-echo 正在后台下载最新版，请稍候...
-curl -L -o "SASES启动器_new.exe" "{download_url}"
-echo 下载完成，准备替换...
-ping 127.0.0.1 -n 3 > nul
-taskkill /f /im "SASES启动器.exe" >nul 2>&1
-if exist "SASES启动器.exe" del "SASES启动器.exe"
-rename "SASES启动器_new.exe" "SASES启动器.exe"
-start "" "SASES启动器.exe"
-del "%~f0"
-"""
-                with open(bat_path, "w", encoding="gbk") as f:
-                    f.write(bat_content)
-                
-                import subprocess
-                # 使用 cmd.exe /c 强制拉起批处理，并在独立的控制台窗口中运行
-                subprocess.Popen(f'start cmd.exe /c "{bat_path}"', shell=True)
-                
-                sys.exit(0)
-            except Exception as e:
-                QMessageBox.critical(self, "更新失败", f"更新脚本出错: {e}")
-            self._log(f"[启动器] 正在唤起后台下载器...")
-            try:
-                if hasattr(self, 'proc') and self.proc:
-                    self.stop()
-                
-                bat_content = f"""@echo off
-cd /d "%~dp0"
-echo 正在后台下载最新版，请稍候...
-curl -L -o "SASES启动器_new.exe" "{download_url}"
-echo 下载完成，准备替换...
-ping 127.0.0.1 -n 3 > nul
-taskkill /f /im "SASES启动器.exe" >nul 2>&1
-if exist "SASES启动器.exe" del "SASES启动器.exe"
-rename "SASES启动器_new.exe" "SASES启动器.exe"
-start "" "SASES启动器.exe"
-del "%~f0"
-"""
-                with open("update.bat", "w", encoding="gbk") as f:
-                    f.write(bat_content)
-                
-                import subprocess
-                subprocess.Popen("start update.bat", shell=True)
-                
-                import sys
-                sys.exit(0)
-            except Exception as e:
-                QMessageBox.critical(self, "更新失败", f"更新脚本出错: {e}")
-            self._log(f"[启动器] 开始静默下载更新包: {download_url}")
-            try:
-                if hasattr(self, 'proc') and self.proc:
-                    self.stop()
 
-                new_exe = "SASES启动器_new.exe"
-                import urllib.request
-                urllib.request.urlretrieve(download_url, new_exe)
-
-                self._log("[启动器] 下载完成，正在准备强制替换...")
-                # 使用 ping 延迟等待，彻底脱离父进程
-                bat_content = "@echo off\ncd /d \"%~dp0\"\nping 127.0.0.1 -n 3 > nul\ntaskkill /f /im \"SASES启动器.exe\" >nul 2>&1\nif exist \"SASES启动器.exe\" del \"SASES启动器.exe\"\nrename \"SASES启动器_new.exe\" \"SASES启动器.exe\"\nstart \"\" \"SASES启动器.exe\"\ndel \"%~f0\"\n"
-                with open("update.bat", "w", encoding="gbk") as f:
-                    f.write(bat_content)
-
-                import subprocess
-                # 使用 DETACHED_PROCESS 标志，让 bat 完全独立运行，不受父进程退出影响
-                subprocess.Popen("update.bat", shell=True, creationflags=0x00000008)
-                QApplication.quit()
-                os._exit(0)
-            except Exception as e:
-                QMessageBox.critical(self, "更新失败", f"下载出错: {e}")
-
-    # ====== 进程控制 ======
     def _check_existing(self):
-        # 启动器刚打开时，如果发现服务已经在跑，只接管状态，不自动弹网页
         try:
             proxy = urllib.request.ProxyHandler({})
             opener = urllib.request.build_opener(proxy)
@@ -532,14 +387,31 @@ del "%~f0"
     def start(self):
         if self.proc is not None:
             return
-            
 
+        # 恢复更新逻辑
+        try:
+            self._log("[启动器] 本地无 Git 环境，准备降级。")
+            self._log("[启动器] 正在通过国内中转服务器拉取更新...")
+            url = "http://47.96.87.147:8001/static/downloads/code_update.zip"
+            proxy_handler = urllib.request.ProxyHandler({})
+            opener = urllib.request.build_opener(proxy_handler)
+            req = urllib.request.Request(url)
+            with opener.open(req, timeout=5) as resp:
+                data = resp.read()
+            self._log("[启动器] 下载更新包成功，正在解压...")
+            with zipfile.ZipFile(io.BytesIO(data)) as z:
+                z.extractall(self.work_dir)
+            self._log("[启动器] 中转同步完成，代码已更新！")
         except Exception:
-            self._log("[启动器] 更新检查超时或被跳过")
+            self._log("[启动器] 中转更新跳过（可能是首次运行或网络异常）")
 
-        # 最关键的一步：启动前强制清理残留进程
+        try:
+            self._log("[启动器] 正在检查代码更新...")
+            self._log("[启动器] 当前为非 git 环境，跳过自动更新")
+        except Exception:
+            pass
+
         self._kill_port_process(self._chosen_port)
-
         self._set_running_ui(True)
         self.sidebar.setCurrentRow(0)
         self._log(f"[启动器] 正在启动 SASES 服务 :{self._chosen_port}")
@@ -583,6 +455,14 @@ del "%~f0"
         raw = self.proc.readAllStandardOutput().data()
         text = _decode_child_line(raw)
         for line in text.splitlines():
+            # === 过滤吓人的警告 ===
+            if "fatal: not a git repository" in line:
+                continue
+            if "PyTorch was not found" in line:
+                continue
+            if "[hive-register] no peers to register with" in line:
+                continue
+            # =======================
             self._log(line)
             if "Application startup complete" in line or "服务已就绪" in line:
                 self._set_running_ui(True)
@@ -601,13 +481,12 @@ del "%~f0"
         sb = self.log.verticalScrollBar()
         sb.setValue(sb.maximum())
 
-    # ====== 托盘 ======
     def _setup_tray(self):
         self.tray = QSystemTrayIcon(self)
         if getattr(sys, 'frozen', False):
             base_dir = sys._MEIPASS
         else:
-            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         _ico = os.path.join(base_dir, 'launcher', 'icon.ico')
         if not os.path.exists(_ico):
             _ico = os.path.join(base_dir, 'icon.ico')
@@ -619,7 +498,6 @@ del "%~f0"
         self.tray.setToolTip('SASES 启动器')
         
         menu = QMenu()
-        
         act_show = QAction('显示主界面', self)
         act_show.triggered.connect(self._show_window)
         act_start = QAction('启动服务', self)
