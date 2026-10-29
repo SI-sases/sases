@@ -4,7 +4,8 @@ import tempfile
 import os
 import sys
 
-MAX_CODE_LEN = 50000
+MAX_CODE_LEN = 5000
+TIMEOUT = 150
 TIMEOUT = 120
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

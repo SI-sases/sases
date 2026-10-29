@@ -6,7 +6,22 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ========== DeepSeek API 配置（系统默认） ==========
-DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY", "") or "sk-dummy-key-for-startup"
+def _get_db_api_key():
+    try:
+        import sqlite3
+        _db = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "users.db")
+        if os.path.exists(_db):
+            _c = sqlite3.connect(_db)
+            _row = _c.execute("SELECT api_key_encrypted FROM model_configs WHERE model_type='api_key' LIMIT 1").fetchone()
+            _c.close()
+            if _row and _row[0]:
+                from core.security import decrypt_api_key
+                return decrypt_api_key(_row[0])
+    except Exception:
+        pass
+    return ""
+
+DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY") or _get_db_api_key() or "sk-dummy-key-for-startup"
 DEEPSEEK_BASE_URL = os.environ.get("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1")
 MODEL_NAME = os.environ.get("MODEL_NAME", "deepseek-v4-flash")
 
