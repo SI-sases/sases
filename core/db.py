@@ -186,6 +186,9 @@ def init_db():
         _ensure_column(cur, "conversations", "mode", "TEXT DEFAULT 'normal'")
         _ensure_column(cur, "conversations", "unread_count", "INTEGER DEFAULT 0")
         _ensure_column(cur, "conversations", "is_pinned", "INTEGER DEFAULT 0")
+        _ensure_column(cur, "conversations", "target_user_id", "INTEGER")
+        _ensure_column(cur, "conversations", "is_friend_chat", "INTEGER DEFAULT 0")
+        _ensure_column(cur, "conversations", "friend_mode", "TEXT DEFAULT 'normal'")
 
         # ========== 消息表 ==========
         cur.execute("""
@@ -200,12 +203,10 @@ def init_db():
             )
         """)
         _ensure_column(cur, "messages", "sender_agent_id", "TEXT")
-        _ensure_column(cur, "messages", "msg_type", "TEXT")
-        _ensure_column(cur, "messages", "hlc_ts", "TEXT")
-        _ensure_column(cur, "messages", "origin_node", "TEXT")
-        _ensure_column(cur, "conversations", "hlc_ts", "TEXT")
-        _ensure_column(cur, "conversations", "origin_node", "TEXT")
+        _ensure_column(cur, "messages", "msg_type", "TEXT DEFAULT 'standard'")
         _ensure_column(cur, "messages", "attachments", "TEXT")
+        _ensure_column(cur, "group_messages", "msg_type", "TEXT DEFAULT 'standard'")
+        _ensure_column(cur, "group_messages", "attachments", "TEXT")
 
         # ========== 好友关系表 ==========
         cur.execute("""
@@ -1142,12 +1143,6 @@ def init_db():
         """)
         cur.execute("CREATE INDEX IF NOT EXISTS idx_suprun_user ON supervisor_runs(user_id)")
         _ensure_column(cur, "supervisor_runs", "task_type", "TEXT")
-        _ensure_column(cur, 'conversations', 'target_user_id', 'INTEGER')
-        _ensure_column(cur, 'conversations', 'is_friend_chat', 'INTEGER')
-        _ensure_column(cur, 'conversations', 'friend_mode', 'TEXT')
-        _ensure_column(cur, 'conversations', 'target_user_id', 'INTEGER')
-        _ensure_column(cur, 'conversations', 'is_friend_chat', 'INTEGER')
-        _ensure_column(cur, 'conversations', 'friend_mode', 'TEXT')
 
 
         # ========== 积分库（v0.20） ==========

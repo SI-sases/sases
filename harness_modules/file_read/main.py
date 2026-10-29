@@ -50,11 +50,13 @@ def _resolve_path(safe):
     _total = 0
     for dirpath, dirnames, filenames in os.walk(REPO_ROOT):
         dirnames[:] = [d for d in dirnames if d not in _RESOLVE_SKIP_DIRS]
-        if safe in filenames:
-            _total += 1
-            if len(candidates) < 5:
-                rel = os.path.relpath(os.path.join(dirpath, safe), REPO_ROOT).replace(BACKSLASH, '/')
-                candidates.append(rel)
+        for f in filenames:
+            if f == safe or (not os.path.splitext(safe)[1] and os.path.splitext(f)[0] == safe):
+                _total += 1
+                if len(candidates) < 5:
+                    rel = os.path.relpath(os.path.join(dirpath, f), REPO_ROOT).replace(BACKSLASH, '/')
+                    candidates.append(rel)
+                break
     if _total == 1:
         return candidates[0], None, candidates
     elif _total > 1:
