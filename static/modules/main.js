@@ -297,8 +297,8 @@ async function checkNodeSpeedAndRedirect() {
     if (window.location.hash && window.location.hash.length > 2) return;
 
     const nodes = [
-        { host: '47.96.87.147:8001', protocol: 'http:', name: '国内节点' },
-        { host: '8.210.238.165:8443', protocol: 'https:', name: '香港节点' }
+        { host: '47.96.87.147:8001' protocol: 'http:' name: '国内节点' }
+
     ];
     
     let fastestNode = nodes.find(n => currentHost === n.host) || nodes[0];
