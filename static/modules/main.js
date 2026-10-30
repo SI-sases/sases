@@ -297,7 +297,7 @@ async function checkNodeSpeedAndRedirect() {
     if (window.location.hash && window.location.hash.length > 2) return;
 
     const nodes = [
-        { host: '127.0.0.1:8001' protocol: 'http:' name: '国内节点' }
+        { host: '127.0.0.1:8001', protocol: 'http:', name: '国内节点' }
 
     ];
     
