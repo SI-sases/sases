@@ -139,9 +139,10 @@ def main():
     else:
         base_dir = os.path.dirname(os.path.abspath(__file__))
     
-    ico_path = os.path.join(base_dir, 'icon.ico')
+    _base = sys._MEIPASS if getattr(sys, 'frozen', False) else base_dir
+    ico_path = os.path.join(_base, 'launcher', 'icon.ico')
     if not os.path.exists(ico_path):
-        ico_path = os.path.join(base_dir, 'launcher', 'icon.ico')
+        ico_path = os.path.join(_base, 'icon.ico')
     
     if os.path.exists(ico_path):
         app.setWindowIcon(QIcon(ico_path))

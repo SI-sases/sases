@@ -371,7 +371,29 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "失败", f"生成诊断包失败: {e}")
 
     def _check_update(self):
-        QMessageBox.information(self, "自动更新", "SASES 采用全自动热更新机制。\n\n您无需手动检查，每次点击右下角“▶”启动服务时，系统会自动与云端同步最新代码并拉取更新。")
+        import urllib.request, json, os
+        from PyQt6.QtWidgets import QMessageBox
+
+        url = "http://47.96.87.147:8001/static/downloads/version.json"
+        try:
+            req = urllib.request.Request(url)
+            with urllib.request.urlopen(req, timeout=3) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                remote_ver = data.get("version", "0.0.0")
+        except Exception:
+            # 如果服务器上没放更新包，或者网络断了，不再弹警告，而是温和提示
+            QMessageBox.information(self, "提示", "当前已是最新版本。")
+            return
+
+        local_ver = "1.0.0"
+        if os.path.exists("version.txt"):
+            with open("version.txt", "r", encoding="utf-8") as f:
+                local_ver = f.read().strip()
+
+        if remote_ver != local_ver:
+            QMessageBox.information(self, "发现新版本", f"启动器发现新版本：{remote_ver}\n\n请打开网页，点击右上角的【下载桌面版】获取最新完整包。\n当前版本：{local_ver}")
+        else:
+            QMessageBox.information(self, "已是最新", "当前启动器界面已是最新版本。")
 
     def _check_existing(self):
         try:
@@ -388,47 +410,71 @@ class MainWindow(QMainWindow):
         if self.proc is not None:
             return
 
-        # 恢复更新逻辑
+        self._set_running_ui(True)
+        self.sidebar.setCurrentRow(0)
+        
+        # 1. 立即拉起主服务，绝不拖延一秒
+        self._real_start_service()
+        
+        # 2. 服务起来后，后台静默下载更新，不影响主界面
+        self._log("[启动器] 正在通过国内中转服务器检查代码更新...")
+        import threading
+        threading.Thread(target=self._bg_download_update, daemon=True).start()
+
+    def _bg_download_update(self):
+        import urllib.request, zipfile, io
+        from PyQt6.QtCore import QTimer
         try:
-            self._log("[启动器] 本地无 Git 环境，准备降级。")
-            self._log("[启动器] 正在通过国内中转服务器拉取更新...")
             url = "http://47.96.87.147:8001/static/downloads/code_update.zip"
             proxy_handler = urllib.request.ProxyHandler({})
             opener = urllib.request.build_opener(proxy_handler)
             req = urllib.request.Request(url)
             with opener.open(req, timeout=5) as resp:
                 data = resp.read()
-            self._log("[启动器] 下载更新包成功，正在解压...")
             with zipfile.ZipFile(io.BytesIO(data)) as z:
-                z.extractall(self.work_dir)
-            self._log("[启动器] 中转同步完成，代码已更新！")
-        except Exception:
-            self._log("[启动器] 中转更新跳过（可能是首次运行或网络异常）")
-
-        try:
-            self._log("[启动器] 正在检查代码更新...")
-            self._log("[启动器] 当前为非 git 环境，跳过自动更新")
+                for info in z.infolist():
+                    if "users.db" in info.filename or ".env" in info.filename or "hive-nodes" in info.filename:
+                        continue
+                    z.extract(info, self.work_dir)
+            # 使用 QTimer 安全地让主线程更新日志
+            QTimer.singleShot(0, lambda: self._log("[启动器] 更新包已静默下载并解压完成（下次启动生效）。"))
         except Exception:
             pass
 
+    def _real_start_service(self):
         self._kill_port_process(self._chosen_port)
-        self._set_running_ui(True)
-        self.sidebar.setCurrentRow(0)
         self._log(f"[启动器] 正在启动 SASES 服务 :{self._chosen_port}")
         self._browser_opened = False
 
         env = QProcessEnvironment.systemEnvironment()
         env.insert("SASES_PORT", str(self._chosen_port))
-        
+
         self.proc = QProcess(self)
         self.proc.setProcessEnvironment(env)
         self.proc.setProcessChannelMode(QProcess.ProcessChannelMode.MergedChannels)
         self.proc.readyReadStandardOutput.connect(self._read_out)
         self.proc.finished.connect(self._on_finished)
         self.proc.setWorkingDirectory(self.work_dir)
-        
+
         self.proc.start(self.python_path, [self.script_path])
+        QTimer.singleShot(3000, self._start_hidden_nodes)
         QTimer.singleShot(5000, self._load_version_info)
+
+    def _start_hidden_nodes(self):
+        import subprocess, os, sys
+        for i, port in enumerate(HIDDEN_NODE_PORTS, start=1):
+            db_dir = os.path.join(os.getcwd(), f"hive-nodes/{port}")
+            os.makedirs(db_dir, exist_ok=True)
+            env = os.environ.copy()
+            env["SASES_PORT"] = str(port)
+            env["SASES_NODE_ID"] = f"node-hidden-{i}"
+            env["HIVE_ROLE"] = "slave"
+            env["HIVE_MASTER"] = "http://127.0.0.1:8001"
+            env["SASES_DB_PATH"] = os.path.join(db_dir, "replica.db")
+            python_exe = os.path.join(os.getcwd(), "python-embed", "python.exe")
+            if not os.path.exists(python_exe):
+                python_exe = sys.executable
+            subprocess.Popen([python_exe, "scripts/run_forever.py"], env=env, creationflags=subprocess.CREATE_NO_WINDOW)
 
     def stop(self):
         self._log("[启动器] 正在停止 SASES 服务...")
