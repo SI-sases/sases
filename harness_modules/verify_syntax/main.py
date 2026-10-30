@@ -4,6 +4,8 @@ import ast
 
 def run(params):
     file_path = params.get("file_path", "")
+    if file_path.lower().endswith((".html", ".css", ".md", ".json")):
+        return {"success": True, "message": "Skip AST for non-python file"}
     if not file_path or not os.path.exists(file_path):
         return {"success": False, "error": "File not found"}
     try:
