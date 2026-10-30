@@ -205,8 +205,8 @@ def init_db():
         _ensure_column(cur, "messages", "sender_agent_id", "TEXT")
         _ensure_column(cur, "messages", "msg_type", "TEXT DEFAULT 'standard'")
         _ensure_column(cur, "messages", "attachments", "TEXT")
-        _ensure_column(cur, "group_messages", "msg_type", "TEXT DEFAULT 'standard'")
-        _ensure_column(cur, "group_messages", "attachments", "TEXT")
+        _ensure_column(cur, "messages", "hlc_ts", "TEXT")
+        _ensure_column(cur, "messages", "origin_node", "TEXT")
 
         # ========== 好友关系表 ==========
         cur.execute("""
@@ -222,6 +222,8 @@ def init_db():
             )
         """)
         _ensure_column(cur, "agent_friendships", "target_user_id", "INTEGER")
+        _ensure_column(cur, "agent_friendships", "friend_mode", "TEXT DEFAULT 'normal'")
+        _ensure_column(cur, "agent_friendships", "auth_token", "TEXT")
 
         # ========== 群组表 ==========
         cur.execute("""
@@ -388,6 +390,9 @@ def init_db():
         _ensure_column(cur, "group_messages", "extra_data", "TEXT")
 
         _ensure_column(cur, "group_messages", "logical_clock", "INTEGER DEFAULT 0")
+        _ensure_column(cur, "group_messages", "msg_type", "TEXT DEFAULT 'standard'")
+        _ensure_column(cur, "group_messages", "attachments", "TEXT")
+        _ensure_column(cur, "group_messages", "hlc_ts", "TEXT")
 
 
         # ========== 统一知识库文档表（群知识库/工具手册/项目文档） ==========

@@ -520,10 +520,23 @@ def create_app() -> FastAPI:
 
     @app.middleware("http")
     async def _replica_read_only_middleware(request, call_next):
-        """副本拦截 + 主节点验签。"""
+        """副本拦截 + 主节点验签 + 业务日志黑匣子。"""
+        import time, logging
+        start_t = time.time()
+        path = request.url.path
+        # 只有这些关键业务路径和报错才会被记录，心跳和静态资源将被无视
+        is_business = any(k in path for k in ["/messages/", "/commander/", "/swarm/", "/work/", "/agent/"])
+        
+        def _log_result(resp):
+            process_t = time.time() - start_t
+            if is_business or resp.status_code >= 400:
+                log_msg = f"[API] {request.method} {path} - {resp.status_code} ({process_t:.3f}s)"
+                print(log_msg, flush=True)
+                logging.getLogger("business").info(log_msg)
+            return resp
+
         from core.hive.config import REPLICA_MODE, FORWARD_MODE, HIVE_ROLE
         from fastapi.responses import JSONResponse
-
 
         # 动态判断当前角色（选举后可能已变更）
         try:
@@ -536,24 +549,43 @@ def create_app() -> FastAPI:
         # ========== 主节点：转发请求验证 ==========
         # 当选 master：本地处理（转发请求需先验签）
         if _current_role == "master" and request.headers.get("X-Hive-Forwarded") != "true":
-            return await call_next(request)
+            try:
+                response = await call_next(request)
+            except Exception as e:
+                logging.getLogger("business").error(f"[API ERROR] {request.method} {path} - {str(e)}")
+                print(f"[API ERROR] {request.method} {path} - {str(e)}", flush=True)
+                raise
+            return _log_result(response)
 
         if _current_role == "master" and request.headers.get("X-Hive-Forwarded") == "true":
             from core.node.forwarder import verify_forward_signature, check_and_record_request
             ok, err = verify_forward_signature(request.headers)
             if not ok:
-                return JSONResponse({"error": "forward verification failed", "reason": err}, status_code=401)
+                return _log_result(JSONResponse({"error": "forward verification failed", "reason": err}, status_code=401))
             request_id = request.headers.get("X-Hive-Request-Id")
             node_id = request.headers.get("X-Hive-From-Node")
             if request_id and check_and_record_request(request_id, node_id):
-                return JSONResponse({"error": "duplicate request"}, status_code=409)
-            return await call_next(request)
+                return _log_result(JSONResponse({"error": "duplicate request"}, status_code=409))
+            
+            try:
+                response = await call_next(request)
+            except Exception as e:
+                logging.getLogger("business").error(f"[API ERROR] {request.method} {path} - {str(e)}")
+                print(f"[API ERROR] {request.method} {path} - {str(e)}", flush=True)
+                raise
+            return _log_result(response)
 
         # ========== 副本：拦截写操作并转发 ==========
         if not REPLICA_MODE:
-            return await call_next(request)
+            try:
+                response = await call_next(request)
+            except Exception as e:
+                logging.getLogger("business").error(f"[API ERROR] {request.method} {path} - {str(e)}")
+                print(f"[API ERROR] {request.method} {path} - {str(e)}", flush=True)
+                raise
+            return _log_result(response)
+            
         if request.method in ("POST", "PUT", "PATCH", "DELETE"):
-            path = request.url.path
             if not (path.startswith("/token")
                     or path.startswith("/auth")
                     or path.startswith("/hive")):
@@ -565,14 +597,21 @@ def create_app() -> FastAPI:
                         dict(request.headers), request.url.query
                     )
                     if status is not None:
-                        return JSONResponse(resp, status_code=status)
-                return JSONResponse(
+                        return _log_result(JSONResponse(resp, status_code=status))
+                return _log_result(JSONResponse(
                     {"error": "read-only replica",
                      "message": "本节点为只读副本，写操作请到主节点",
                      "code": 403},
                     status_code=403,
-                )
-        return await call_next(request)
+                ))
+                
+        try:
+            response = await call_next(request)
+        except Exception as e:
+            logging.getLogger("business").error(f"[API ERROR] {request.method} {path} - {str(e)}")
+            print(f"[API ERROR] {request.method} {path} - {str(e)}", flush=True)
+            raise
+        return _log_result(response)
 
     app.include_router(auth_routes.router)
     app.include_router(seed_routes.router)
