@@ -332,7 +332,7 @@ async function openContributions() {
     else {
       contribHtml = '<div class="me-menu">';
       history.forEach(item => {
-        const date = new Date(item.created_at).toLocaleString('zh-CN');
+        const date = new Date(item.created_at).toLocaleString('en-US');
         contribHtml += `<div class="me-menu-item"><span class="menu-label">${item.action || t('my_contributions')}</span><span class="menu-value">${item.points > 0 ? '+' : ''}${item.points}</span></div><div style="padding:0 12px 8px;font-size:12px;color:#999;">${date} · ${item.detail || ''}</div>`;
       });
       contribHtml += '</div>';
@@ -349,10 +349,10 @@ window.openContributions = openContributions;
 async function deleteDocAndRefresh(sourceFile) {
   try {
     await api.deleteMyDoc(sourceFile);
-    alert('已删除');
+    alert(t('me.deleted'));
     openKnowledgeBase();
   } catch (e) {
-    alert('删除失败：' + e.message);
+    alert(t('me.delete_failed') + e.message);
   }
 }
 
@@ -367,7 +367,7 @@ function showDocContextMenu(x, y, sourceFile) {
   _menu.style.left = x + 'px';
   _menu.style.top = y + 'px';
   _menu.style.display = 'block';
-  _menu.innerHTML = '<div class="context-menu-item" data-action="open">打开文档</div>' + '<div class="context-menu-item" data-action="delete" style="color:#e64340;">删除</div>';
+  _menu.innerHTML = '<div class="context-menu-item" data-action="open">' + t('open_document') + '</div>' + '<div class="context-menu-item" data-action="delete" style="color:#e64340;">' + t('delete') + '</div>';
   document.body.appendChild(_menu);
   _menu.querySelector('[data-action="open"]').addEventListener('click', function() {
     _menu.remove();
@@ -375,7 +375,7 @@ function showDocContextMenu(x, y, sourceFile) {
   });
   _menu.querySelector('[data-action="delete"]').addEventListener('click', function() {
     _menu.remove();
-    if (confirm('确定删除《' + sourceFile + '》？删除后不可恢复。')) {
+    if (confirm(t('confirm_delete_doc') + sourceFile + t('delete_irreversible'))) {
       deleteDocAndRefresh(sourceFile);
     }
   });
@@ -395,7 +395,7 @@ document.addEventListener('click', function(e) {
     var target = e.target;
     var isAbout = false;
     while (target && target !== document) {
-        if (target.innerText && target.innerText.trim() === '关于 SASES') {
+        if (target.innerText && target.innerText.trim() === t('about_sases')) {
             isAbout = true;
             break;
         }
@@ -406,7 +406,7 @@ document.addEventListener('click', function(e) {
             '<h2 style="color: #007aff; margin-bottom: 5px;">SASES</h2>' +
             '<p style="color: #888; font-size: 14px; margin-bottom: 30px;">v1.0.0-Release</p>' +
             '<div style="text-align: left; background: #fff; padding: 15px; border-radius: 8px; line-height: 1.8; font-size: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">' +
-                '<p><strong>开源协议：</strong>MIT License</p>' +
+                '<p><strong>' + t('open_source_license') + '：</strong>MIT License</p>' +
                 '<p><strong>项目地址：</strong><a href="https://github.com/SI-sases/sases" target="_blank" style="color: #007aff; text-decoration: none;">github.com/SI-sases/sases</a></p>' +
                 '<p><strong>商业化说明：</strong>个人学习、研究及企业内部使用完全免费。如需作为商业产品对外提供服务，必须获得官方商业授权。</p>' +
             '</div>' +
