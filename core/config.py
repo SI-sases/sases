@@ -1,18 +1,18 @@
-# core/config.py
+﻿# core/config.py
 # core/config.py
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# ========== DeepSeek API 配置（系统默认） ==========
+# ========== DeepSeek API 閰嶇疆锛堢郴缁熼粯璁わ級 ==========
 def _get_db_api_key():
     try:
         import sqlite3
         _db = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "users.db")
         if os.path.exists(_db):
             _c = sqlite3.connect(_db)
-            _row = _c.execute("SELECT api_key_encrypted FROM model_configs WHERE model_type='api_key' LIMIT 1").fetchone()
+            _row = _c.execute("SELECT api_key_encrypted FROM model_configs WHERE model_type IN ('api', 'api_key') LIMIT 1").fetchone()
             _c.close()
             if _row and _row[0]:
                 from core.security import decrypt_api_key
@@ -25,18 +25,18 @@ DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY") or _get_db_api_key() or "s
 DEEPSEEK_BASE_URL = os.environ.get("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1")
 MODEL_NAME = os.environ.get("MODEL_NAME", "deepseek-v4-flash")
 
-# ========== 蜂群/节点标识 ==========
+# ========== 铚傜兢/鑺傜偣鏍囪瘑 ==========
 NODE_ID = os.environ.get("SASES_NODE_ID", "node-A")
 
 # anchor-check: restart-signal-path-fix
 
-# ========== Embedding 配置（用于知识库语义检索） ==========
-# 优先用专用 Embedding API，未配置时回退到 DeepSeek 配置
+# ========== Embedding 閰嶇疆锛堢敤浜庣煡璇嗗簱璇箟妫€绱級 ==========
+# 浼樺厛鐢ㄤ笓鐢?Embedding API锛屾湭閰嶇疆鏃跺洖閫€鍒?DeepSeek 閰嶇疆
 EMBEDDING_API_KEY = os.environ.get("EMBEDDING_API_KEY", DEEPSEEK_API_KEY)
 EMBEDDING_BASE_URL = os.environ.get("EMBEDDING_BASE_URL", DEEPSEEK_BASE_URL)
 EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "deepseek-embedding")
 
-# ========== 视觉/多模态模型配置 ==========
+# ========== 瑙嗚/澶氭ā鎬佹ā鍨嬮厤缃?==========
 VISION_MODEL_NAME = os.environ.get("VISION_MODEL_NAME", "deepseek-v4-flash-vision-exp")
 
 VISION_MODEL_BY_PROVIDER = {
@@ -61,12 +61,12 @@ VIDEO_MODEL_BY_PROVIDER = {
     "qwen": "qwen-vl-plus",
 }
 
-# ========== 文件大小限制 ==========
+# ========== 鏂囦欢澶у皬闄愬埗 ==========
 MAX_IMAGE_SIZE = int(os.environ.get("MAX_IMAGE_SIZE", 5 * 1024 * 1024))
 MAX_AUDIO_SIZE = int(os.environ.get("MAX_AUDIO_SIZE", 10 * 1024 * 1024))
 MAX_VIDEO_SIZE = int(os.environ.get("MAX_VIDEO_SIZE", 25 * 1024 * 1024))
 
-# ========== 提供商映射 ==========
+# ========== 鎻愪緵鍟嗘槧灏?==========
 PROVIDER_BASE_URLS = {
     "deepseek": "https://api.deepseek.com/v1",
     "openai": "https://api.openai.com/v1",
@@ -87,13 +87,13 @@ PROVIDER_ALIASES = {
     "tongyi": "qwen",
 }
 
-# ========== 安全与密钥 ==========
+# ========== 瀹夊叏涓庡瘑閽?==========
 SASES_SECRET_KEY = os.environ.get("SASES_SECRET_KEY", "sases-dev-secret-key")
 SIGN_KEY_FILE = os.environ.get("SIGN_KEY_FILE", "secret_key.bin")
 API_KEY_ENCRYPTION_KEY_FILE = os.environ.get("API_KEY_ENCRYPTION_KEY_FILE", "api_key_encryption.key")
 NODE_TOKEN = os.environ.get("SASES_NODE_TOKEN", "")
 
-# ========== 数据库与文件路径 ==========
+# ========== 鏁版嵁搴撲笌鏂囦欢璺緞 ==========
 DB_FILE = os.environ.get("DB_FILE", "users.db")
 KB_FILE = os.environ.get("KB_FILE", "success_kb.json")
 SEED_POOL_FILE = os.environ.get("SEED_POOL_FILE", "seed_tasks_external.jsonl")
@@ -101,25 +101,25 @@ MAIN_SEED_FILE = os.environ.get("MAIN_SEED_FILE", "seed_tasks_new.jsonl")
 SHARED_LOG_FILE = os.environ.get("SHARED_LOG_FILE", "shared_pollinate_log.jsonl")
 CONTRIBUTION_LOG_DB = os.environ.get("CONTRIBUTION_LOG_DB", "users.db")
 
-# ========== 相似度与积分规则 ==========
-# 注意：SIMILARITY_THRESHOLD 是旧版 TF-IDF 使用的阈值
-# 新版 knowledge_service 使用 embedding 时会用独立的阈值，不使用这个值
+# ========== 鐩镐技搴︿笌绉垎瑙勫垯 ==========
+# 娉ㄦ剰锛歋IMILARITY_THRESHOLD 鏄棫鐗?TF-IDF 浣跨敤鐨勯槇鍊?
+# 鏂扮増 knowledge_service 浣跨敤 embedding 鏃朵細鐢ㄧ嫭绔嬬殑闃堝€硷紝涓嶄娇鐢ㄨ繖涓€?
 SIMILARITY_THRESHOLD = float(os.environ.get("SIMILARITY_THRESHOLD", "0.30"))
 EXTERNAL_SEED_REWARD = int(os.environ.get("EXTERNAL_SEED_REWARD", "5"))
 MANUAL_POLLINATE_BASIC_REWARD = int(os.environ.get("MANUAL_POLLINATE_BASIC_REWARD", "3"))
 MANUAL_POLLINATE_EXPERT_REWARD = int(os.environ.get("MANUAL_POLLINATE_EXPERT_REWARD", "10"))
 QUERY_DEDUCTION = int(os.environ.get("QUERY_DEDUCTION", "2"))
 
-# ========== 节点与发现 ==========
+# ========== 鑺傜偣涓庡彂鐜?==========
 NODE_ID = os.environ.get("SASES_NODE_ID", "node-001")
 NODE_NAME = os.environ.get("SASES_NODE_NAME", "SASES Node")
 PEER_NODES = [x.strip() for x in os.environ.get("SASES_PEERS", "").split(",") if x.strip()]
 
-# mDNS 发现
+# mDNS 鍙戠幇
 ENABLE_MDNS = os.environ.get("SASES_ENABLE_MDNS", "false").lower() == "true"
 MDNS_SERVICE_TYPE = "_sases._tcp.local."
 
-# ========== DashScope Embedding（用于混合模式） ==========
+# ========== DashScope Embedding锛堢敤浜庢贩鍚堟ā寮忥級 ==========
 DASHSCOPE_API_KEY = os.environ.get("DASHSCOPE_API_KEY", "")
 DASHSCOPE_BASE_URL = os.environ.get(
     "DASHSCOPE_BASE_URL",
@@ -130,22 +130,22 @@ DASHSCOPE_EMBEDDING_MODEL = os.environ.get(
     "text-embedding-v3"
 )
 
-# Embedding 模式：local / api / hybrid
+# Embedding 妯″紡锛歭ocal / api / hybrid
 EMBEDDING_MODE = os.environ.get("EMBEDDING_MODE", "hybrid")
 
-# 混合模式的边界阈值
+# 娣峰悎妯″紡鐨勮竟鐣岄槇鍊?
 HYBRID_LOW_THRESHOLD = float(os.environ.get("HYBRID_LOW_THRESHOLD", "0.35"))
 HYBRID_HIGH_THRESHOLD = float(os.environ.get("HYBRID_HIGH_THRESHOLD", "0.88"))
 
-# ========== 指挥官/审核员 LLM 参数 ==========
+# ========== 鎸囨尌瀹?瀹℃牳鍛?LLM 鍙傛暟 ==========
 COMMANDER_MAX_TOKENS = int(os.environ.get("COMMANDER_MAX_TOKENS", "30000"))
 REPLAN_MAX_TOKENS = int(os.environ.get("REPLAN_MAX_TOKENS", "16000"))
 SUMMARY_MAX_TOKENS = 41003
 
-# ========== 蜂群模式（防篡改） ==========
-# off: 关闭（单用户，默认）
-# alert: 只告警（联邦早期，多信任方）
-# enforce: 强制（积分挂钩真实价值时）
+# ========== 铚傜兢妯″紡锛堥槻绡℃敼锛?==========
+# off: 鍏抽棴锛堝崟鐢ㄦ埛锛岄粯璁わ級
+# alert: 鍙憡璀︼紙鑱旈偊鏃╂湡锛屽淇′换鏂癸級
+# enforce: 寮哄埗锛堢Н鍒嗘寕閽╃湡瀹炰环鍊兼椂锛?
 HIVE_MODE = os.environ.get("SASES_HIVE_MODE", "off").lower().strip()
 if HIVE_MODE not in ("off", "alert", "enforce"):
     HIVE_MODE = "off"
@@ -155,5 +155,6 @@ HIVE_NODE_ID = os.environ.get("SASES_HIVE_NODE_ID", "")
 HIVE_ANCHOR_INTERVAL = int(os.environ.get("SASES_HIVE_ANCHOR_INTERVAL", "3600"))
 HIVE_HEARTBEAT_INTERVAL = int(os.environ.get("SASES_HIVE_HEARTBEAT_INTERVAL", "300"))
 
-# 每轮最大拆解步数（环境变量可调）
+# 姣忚疆鏈€澶ф媶瑙ｆ鏁帮紙鐜鍙橀噺鍙皟锛?
 MAX_STEPS = int(os.environ.get("SASES_MAX_STEPS", "8"))
+
