@@ -227,7 +227,15 @@ async def task_summarizer(task):
         for _r in results:
             _ans_all += str(_r.get('answer') or _r.get('output') or '') + ' | '
         _fl_count = len(_re_final.findall(r'[\w/\.\-]+\.\w+:\d+|\b\d+行', _ans_all))
-        _is_modify = any(k in user_text for k in ['改', '修', '加', '删', '替换', '写'])
+        _is_readonly_task = any(k in user_text for k in ['探测', '只读', '禁止修改', '不要修改', '只做探测', '仅只读', '排查'])
+        _is_modify = any(k in user_text for k in ['改', '修', '加', '删', '替换', '写']) and not _is_readonly_task
+        
+        # ========== 新增：只读任务物理豁免 ==========
+        if _is_readonly_task and any(r.get("status") == "success" and r.get("module_id") in ("grep_code", "file_read", "dir_tree") for r in results):
+            print("[supervisor] 只读探测任务已成功执行，直接判定完成！")
+            return {"goal_achieved": True, "goal_reason": "只读任务工具已返回结果", "missing": [], "next_hint": ""}
+        # ============================================
+
         _has_patch = any(str(_r.get('command') or _r.get('module_id') or '') == 'file_patch' and _r.get('status') == 'success' for _r in results)
         if _fl_count >= 3 and (not _is_modify or _has_patch):
             print(f'[supervisor] task_summarizer 终轮提示词命中: {_fl_count} 条 file:line')
@@ -236,7 +244,7 @@ async def task_summarizer(task):
     # v0.38.0: 假完成拦截 —— 任务含修改动词但无 file_patch 成功
     try:
         _action_kws = ['改成', '改为', '修改', '删除', '删掉', '新增', '添加', '创建', '写入', '替换', '移动', '插入', '修复']
-        _need_patch = any(k in user_text for k in _action_kws)
+        _need_patch = any(k in user_text for k in _action_kws) and not _is_readonly_task
         _has_patch_ok = any(
             str(r.get('command') or r.get('module_id') or '') == 'file_patch' and r.get('status') == 'success'
             for r in results
@@ -309,7 +317,7 @@ async def decide_next_step(run_id):
     except Exception:
         _tool_line = '可用工具：file_read / file_patch'
     _sys_prompt = '你是 SASES 自主调度者。请判断下一步，只输出 JSON：{"action": "probe" 或 "build_harness" 或 "execute" 或 "done", "task": "一句话描述"}' + chr(10) + 'probe=先读代码；build_harness=缺工具先建；execute=可以改代码；done=目标达成' + chr(10) + '注意：如果最近的执行结果里有 blocked 或 retry，说明上一步失败，不能判定 done，应继续 probe 或 execute 修正。' + chr(10) + '另外：只有确认用户目标的所有子任务都完成，才能判定 done。只改了 1 处不代表全部完成时，应继续 execute 改其他地方。判断标准：回顾原始目标的每一个关键词，逐一确认是否已实现。' + chr(10) + '关键规则：如果用户目标包含实现/打通/改/加/建/修复等动作词，而 history 里从来没有出现过 file_patch 或 harness_reload，说明只做了探测没做实际修改，此时不能 done，必须输出 execute。' + chr(10) + '补充规则：如果 history 里已经读到目标文件的具体行号/代码片段/参数格式，说明探测够了，下一步必须输出 execute，不要再 probe。饱和判定：如果最近 2 轮的 exec 内容高度相似（同一路径、同一文件、同一结果），说明探测饱和，应输出 done。不要因为没总结就继续探测。'
-    _user_prompt = '【目标】' + run['goal'] + chr(10) + chr(10) + '【已完成】' + chr(10) + (history_text or '(无)') + chr(10) + _tool_line
+    _user_prompt = '【目标】' + run['goal'] + chr(10) + chr(10) + '【已完成】' + chr(10) + (history_text or '(无)') + chr(10) + '⚠️【系统警告】如果你发现最近两轮执行的工具和参数完全一样且都在报错，请立刻停止调用该工具，直接使用 answer 输出失败结论！' + chr(10) + _tool_line
     client = openai.OpenAI(api_key=config.DEEPSEEK_API_KEY, base_url=config.DEEPSEEK_BASE_URL, timeout=30)
     try:
         resp = await asyncio.to_thread(
