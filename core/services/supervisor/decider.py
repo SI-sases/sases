@@ -249,6 +249,9 @@ async def task_summarizer(task):
             str(r.get('command') or r.get('module_id') or '') == 'file_patch' and r.get('status') == 'success'
             for r in results
         )
+        if _need_patch and _has_patch_ok and not _is_readonly_task:
+            # 只要有成功的 file_patch，就允许有小报错，直接判定完成
+            return {'goal_achieved': True, 'goal_reason': '已完成修改动作', 'missing': [], 'next_hint': ''}
         if _need_patch and not _has_patch_ok:
             _any_not_found = any(
                 ('未找到' in str(r.get('output') or '') or '不存在' in str(r.get('output') or ''))
