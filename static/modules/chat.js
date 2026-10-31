@@ -39,6 +39,7 @@ function handleSend() {
   if (!text && !hasAttach) return;
 
   if (chatState.mode === 'free') {
+    // 执行 / Execute
     const execMatch = text.match(/^(?:执行|#1)[：:]\s*(.+)$/);
     if (execMatch) {
       const command = execMatch[1].trim();
@@ -50,6 +51,7 @@ function handleSend() {
       return;
     }
 
+    // 任务 / Task
     const taskMatch = text.match(/^(?:任务|#2)[：:]\s*(.+)$/);
     if (taskMatch) {
       const taskText = taskMatch[1].trim();
@@ -72,7 +74,7 @@ async function sendTransfer(receiver_id, amount, message, conversation_id) {
 }
 
 
-// ===== 停止按钮（v0.38.0）=====
+// ===== 停止按钮 / Stop Button（ / 停止按钮 / Stop Button（v0.38.0）=====
 function _showStopBtn(taskId) {
   if (window.chatState) window.chatState.currentTaskId = taskId;
   const sendBtn = document.getElementById('send-btn');
@@ -87,7 +89,7 @@ function _showStopBtn(taskId) {
 }
 
 async function _pollTaskStatus(taskId) {
-  // 轮询任务状态，任务完成后自动隐藏停止按钮
+  // 轮询任务 / Task状态，任务 / Task完成后自动隐藏停止按钮 / 轮询任务 / Task状态，任务 / Task完成后自动隐藏停止按钮
   if (!window.chatState || window.chatState.currentTaskId !== taskId) return;
   try {
     const token = localStorage.getItem('sases_token');
@@ -99,17 +101,17 @@ async function _pollTaskStatus(taskId) {
     const reviews = data.reviews || [];
     if (!reviews.length) return;
     const last = reviews[0];
-    // 任务已完结（pass 或 done）
+    // 任务 / Task已完结（ / 任务 / Task已完结（pass 或 done）
     if (last && last.review_result && !['retry', 'pending'].includes(last.review_result)) {
       _hideStopBtn();
-      // v0.39.1: 任务完成 → 延迟 2 秒显示反馈条（等 AI 回复先落位）
+      // v0.39.1: 任务 / Task完成 / 任务 / Task完成 → 延迟 2 秒显示反馈条（等 AI 回复先落位） / delay 2s to show feedback bar (wait for AI reply to land)
       setTimeout(() => {
         try {
           _renderFeedbackBar(taskId, (window.chatState && window.chatState.conversationId) || null);
-        } catch (e) { console.warn('[feedback] 轮询触发失败', e); }
+        } catch (e) { console.warn('[feedback] 轮询触发失败 / Failed', e); }
       }, 2000);
     }
-  } catch (e) { /* 忽略 */ }
+  } catch (e) { /* 忽略 / 忽略 */ }
 }
 
 function _startPollTimer(taskId) {
@@ -139,34 +141,34 @@ function _hideStopBtn() {
 }
 
 function _tryFlushPendingFeedback() {
-  // 检查是否该渲染挂起的反馈条
+  // 检查是否该渲染挂起的反馈条 / 检查是否该渲染挂起的反馈条
   const st = window.chatState;
   if (!st || !st._pendingFeedback) return;
   const container = document.getElementById('chat-messages');
   if (!container) return;
-  // v0.39.4: 消息元素用 data-role 属性标记，不是 class
+  // v0.39.4: 消息 / Message元素用 data-role 属性标记，不是 class / elements are marked with data-role attribute, not class
   const rows = container.querySelectorAll('[data-role]');
   if (!rows.length) return;
   const lastRow = rows[rows.length - 1];
   const _role = lastRow.dataset.role || '';
-  // 最后一条是用户消息 → AI 还没回复，不渲染
+  // 最后一条是用户消息 / Message → AI 还没回复，不渲染
   if (_role === 'user') return;
-  // 渲染
+  // 渲染 / 渲染
   const { taskId, conversationId } = st._pendingFeedback;
   st._pendingFeedback = null;
-  console.log('[feedback] AI 回复落位，渲染反馈条', taskId, '最后消息 role=', _role);
+  console.log('[feedback] AI 回复落位，渲染反馈条', taskId, '最后消息 / Message role=', _role);
   _renderFeedbackBar(taskId, conversationId);
 }
 
 function _renderFeedbackBar(taskId, conversationId) {
   const container = document.getElementById('chat-messages');
   if (!container) return;
-  // 同任务已有反馈条则不重复
+  // 同任务 / Task已有反馈条则不重复 / 同任务 / Task已有反馈条则不重复
   if (container.querySelector('.feedback-bar[data-task-id="' + taskId + '"]')) return;
   const bar = document.createElement('div');
   bar.className = 'feedback-bar';
   bar.dataset.taskId = taskId;
-  bar.innerHTML = '<span class="feedback-label">这次结果满意吗？</span>'
+  bar.innerHTML = '<span class="feedback-label">这次结果满意吗？ / 这次结果满意吗？</span>'
     + '<button class="feedback-btn" data-rating="up">👍</button>'
     + '<button class="feedback-btn" data-rating="down">👎</button>'
     + '<button class="feedback-btn" data-rating="neutral">🤷</button>';
@@ -186,27 +188,27 @@ function _renderFeedbackBar(taskId, conversationId) {
         },
         body: JSON.stringify(_body)
       });
-      console.log('[feedback] 提交返回', resp.status);
+      console.log('[feedback] 提交返回 / 提交返回', resp.status);
       if (bar.parentNode) {
-        bar.innerHTML = '<span class="feedback-done">已记录，谢谢 🙏</span>';
+        bar.innerHTML = '<span class="feedback-done">已记录，谢谢 / 已记录，谢谢 🙏</span>';
       }
       setTimeout(() => {
         try { if (bar.parentNode) bar.parentNode.removeChild(bar); } catch (e) {}
       }, 3000);
     } catch (e) {
-      console.warn('[feedback] 提交失败', e);
-      bar.innerHTML = '<span style="color:#ff3b30;">提交失败，请重试</span>';
+      console.warn('[feedback] 提交失败 / Failed', e);
+      bar.innerHTML = '<span style="color:#ff3b30;">提交失败 / Failed，请重试</span>';
     }
   };
 
   const _showReasonPanel = () => {
-    // 用二级小条替换主条内容
-    bar.innerHTML = '<span class="feedback-label">哪里不满意？</span>'
-      + '<button class="feedback-reason-btn" data-rt="understood_wrong">理解错了</button>'
-      + '<button class="feedback-reason-btn" data-rt="decomposed_wrong">拆解乱了</button>'
-      + '<button class="feedback-reason-btn" data-rt="exec_failed">执行失败</button>'
-      + '<button class="feedback-reason-btn" data-rt="output_poor">结果不好看</button>'
-      + '<button class="feedback-reason-btn feedback-skip-btn" data-rt="">跳过</button>';
+    // 用二级小条替换主条内容 / 用二级小条替换主条内容
+    bar.innerHTML = '<span class="feedback-label">哪里不满意？ / 哪里不满意？</span>'
+      + '<button class="feedback-reason-btn" data-rt="understood_wrong">理解错了 / 理解错了</button>'
+      + '<button class="feedback-reason-btn" data-rt="decomposed_wrong">拆解乱了 / 拆解乱了</button>'
+      + '<button class="feedback-reason-btn" data-rt="exec_failed">执行 / Execute失败 / Failed</button>'
+      + '<button class="feedback-reason-btn" data-rt="output_poor">结果不好看 / 结果不好看</button>'
+      + '<button class="feedback-reason-btn feedback-skip-btn" data-rt="">跳过 / 跳过</button>';
     bar.querySelectorAll('.feedback-reason-btn').forEach(rb => {
       rb.onclick = () => {
         const rt = rb.dataset.rt || null;
@@ -219,9 +221,9 @@ function _renderFeedbackBar(taskId, conversationId) {
     btn.onclick = () => {
       const rating = btn.dataset.rating;
       if (bar._autoRemoveTimer) { clearTimeout(bar._autoRemoveTimer); bar._autoRemoveTimer = null; }
-      console.log('[feedback] 点击', rating, 'task_id=', taskId);
+      console.log('[feedback] 点击 / 点击', rating, 'task_id=', taskId);
       if (rating === 'down') {
-        // 弹归因面板
+        // 弹归因面板 / 弹归因面板
         _showReasonPanel();
       } else {
         _submit(rating, null, '');
@@ -234,7 +236,7 @@ function _renderFeedbackBar(taskId, conversationId) {
   bar._autoRemoveTimer = setTimeout(() => {
     try {
       if (bar.parentNode) bar.parentNode.removeChild(bar);
-      console.log('[feedback] 30 秒未操作，自动移除');
+      console.log('[feedback] 30 秒未操作，自动移除 / 秒未操作，自动移除');
     } catch (e) {}
   }, 30000);
 }
@@ -250,7 +252,7 @@ async function _stopCurrentTask() {
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
       body: JSON.stringify({ task_id: tid })
     });
-  } catch (e) { console.warn('[stop] 取消失败', e); }
+  } catch (e) { console.warn('[stop] 取消 / Cancel失败 / Failed', e); }
 }
 
 window._renderFeedbackBar = _renderFeedbackBar;
@@ -261,7 +263,7 @@ window._stopCurrentTask = _stopCurrentTask;
 async function sendMessage() {
   const input = document.getElementById('chat-input');
 
-  // 附件：每个独立发一条消息（参考微信）
+  // 附件：每个独立发一条消息 / Message（参考微信）
   if (chatState.pendingAttachments && chatState.pendingAttachments.length) {
     const atts = [...chatState.pendingAttachments];
     chatState.pendingAttachments = [];
@@ -277,7 +279,7 @@ async function sendMessage() {
           if (res && res.url) content = '[FILE]:' + res.url + '|' + att.name + '|' + att.size;
         }
         if (content) {
-          appendMessage('user', content, chatState.senderAgentId ? '智能体' : '我', null, new Date().toISOString(), false, chatState);
+          appendMessage('user', content, chatState.senderAgentId ? '智能体 / 智能体' : '我', null, new Date().toISOString(), false, chatState);
           await api.sendMessage({
             conversation_id: chatState.conversationId,
             agent_id: chatState.agentId,
@@ -287,7 +289,7 @@ async function sendMessage() {
           });
         }
       } catch (e) {
-        alert('上传失败: ' + (e.message || ''));
+        alert('上传失败 / Failed: ' + (e.message || ''));
       }
     }
   }
@@ -299,7 +301,7 @@ async function sendMessage() {
   }
 
   const tempId = 'temp-' + Date.now();
-  appendMessage('user', text, chatState.senderAgentId ? '智能体' : '我', tempId, new Date().toISOString(), true, chatState);
+  appendMessage('user', text, chatState.senderAgentId ? '智能体 / 智能体' : '我', tempId, new Date().toISOString(), true, chatState);
   input.value = '';
   updateSendButtonVisibility();
 
@@ -328,7 +330,7 @@ async function sendMessage() {
       chatState.conversationId = data.conversation_id;
     }
 
-    // v0.38.0: 记录写入 HLC，供读己之写检查
+    // v0.38.0: 记录写入 / 记录写入 HLC，供读己之写检查
     try {
       if (data.write_hlc && data.conversation_id) {
         sessionStorage.setItem('last_write_hlc_' + data.conversation_id, data.write_hlc);
@@ -345,12 +347,12 @@ async function sendMessage() {
       showProposedRunCard(data.proposed_run_id);
     }
 
-    // ========== 草稿模式：渲染可编辑任务编辑器 ==========
+    // ========== 草稿模式：渲染可编辑任务 / Task编辑器 / 草稿模式：渲染可编辑任务 / Task编辑器 ==========
     if (data.swarm && data.swarm_status === 'draft' && data.task_id) {
       const steps = data.steps || [];
       showTaskDraftEditor(data.task_id, steps);
     }
-    // ========== 普通蜂群任务：显示操作按钮 ==========
+    // ========== 普通蜂群任务 / Task：显示操作按钮 / 普通蜂群任务 / Task：显示操作按钮 ==========
     else if (data.swarm && data.task_id) {
       showSwarmActionButtons(data.task_id, text, data.swarm_status);
       _showStopBtn(data.task_id);
@@ -364,7 +366,7 @@ async function sendMessage() {
   }
 }
 
-// ========== 草稿任务编辑器 ==========
+// ========== 草稿任务 / Task编辑器 / 草稿任务 / Task编辑器 ==========
 function handleBack() {
   if (window.currentGroupChat) {
     closeGroupChat();
@@ -398,17 +400,17 @@ window.__sasesClearAttachment = function() {
 window.__sasesUploadFile = async (file) => {
   if (!file) return;
   if (!chatState.conversationId) {
-    alert('请先进入会话');
+    alert('请先进入会话 / 请先进入会话');
     return;
   }
   try {
     const res = await api.uploadFile(file);
     if (!res || !res.url) {
-      alert('上传失败');
+      alert('上传失败 / Failed');
       return;
     }
     const _content = '[FILE]:' + res.url + '|' + (file.name || 'file') + '|' + (file.size || 0);
-    appendMessage('user', _content, chatState.senderAgentId ? '智能体' : '我', null, new Date().toISOString(), false, chatState);
+    appendMessage('user', _content, chatState.senderAgentId ? '智能体 / 智能体' : '我', null, new Date().toISOString(), false, chatState);
     await api.sendMessage({
       conversation_id: chatState.conversationId,
       agent_id: chatState.agentId,
@@ -417,20 +419,20 @@ window.__sasesUploadFile = async (file) => {
       mode: chatState.mode
     });
   } catch (e) {
-    alert('上传失败：' + (e.message || '未知错误'));
+    alert('上传失败 / Failed：' + (e.message || '未知错误'));
   }
 };
 
 window.__sasesUploadImage = async (file) => {
   if (!file) return;
   if (!chatState.conversationId) {
-    alert('请先进入会话');
+    alert('请先进入会话 / 请先进入会话');
     return;
   }
   try {
     const res = await api.uploadImage(file);
     if (!res || !res.url) {
-      alert('上传失败');
+      alert('上传失败 / Failed');
       return;
     }
     await api.sendMessage({
@@ -442,7 +444,7 @@ window.__sasesUploadImage = async (file) => {
     });
     await loadMessages(chatState.conversationId);
   } catch (e) {
-    alert('上传失败：' + (e.message || '未知错误'));
+    alert('上传失败 / Failed：' + (e.message || '未知错误'));
   }
 };
 
@@ -455,7 +457,7 @@ function toggleVoiceMode() {
   if (chatState.voiceMode) {
     input.style.display = 'none';
     toggleBtn.textContent = '⌨️';
-    input.placeholder = '按住说话（模拟）';
+    input.placeholder = '按住说话（模拟） / 按住说话（模拟）';
   } else {
     input.style.display = 'block';
     toggleBtn.textContent = '🎤';
@@ -467,21 +469,21 @@ function updateInputPlaceholder() {
   const input = document.getElementById('chat-input');
   if (!input) return;
   if (chatState.mode === 'normal') {
-    input.placeholder = '输入消息...';
+    input.placeholder = '输入消息 / Message...';
   } else if (chatState.mode === 'free') {
-    input.placeholder = '聊天、执行：命令 或 任务：描述';
+    input.placeholder = '聊天、执行 / Execute：命令 / 聊天、执行 / Execute：命令 或 任务 / Task：描述';
   } else {
-    input.placeholder = '输入消息...';
+    input.placeholder = '输入消息 / Message...';
   }
 }
 
 export function openChatWindow(conversationId, chatName, agentId = null, agentType = 'my', isFriendChat = 0, friendMode = 'normal', targetUserId = null) {
 
-  // 好友模式切换按钮（模拟）
+  // 好友 / Friend模式切换按钮（模拟）
   if (chatState && chatState.is_friend_chat == 1) {
     var bar = document.createElement('div');
     bar.className = 'friend-mode-bar';
-    bar.innerHTML = '<button onclick="alert(\'好友模式切换（模拟）\')">切换好友模式</button>';
+    bar.innerHTML = '<button onclick="alert(\'好友 / Friend模式切换（模拟）\')">切换好友 / Friend模式</button>';
     var host = document.getElementById('chat-header') || document.body;
     host.insertBefore(bar, host.firstChild);
   }
@@ -500,10 +502,10 @@ export function openChatWindow(conversationId, chatName, agentId = null, agentTy
   updateModeText();
   updateInputPlaceholder();
   updateIdentityButton(chatState);
-  try { initParamBar(); } catch (e) { console.warn('[chat] param_bar 初始化失败', e); }
+  try { initParamBar(); } catch (e) { console.warn('[chat] param_bar 初始化失败 / Failed', e); }
 
   const titleEl = document.getElementById('chat-window-title');
-  // ====== 好友模式按钮 ======
+  // ====== 好友 / Friend模式按钮 ======
   const topBar = document.querySelector('.top-actions') || document.querySelector('.top-bar');
   const oldBtn = document.getElementById('friend-mode-btn');
   if (oldBtn) oldBtn.remove();
@@ -512,7 +514,7 @@ export function openChatWindow(conversationId, chatName, agentId = null, agentTy
     const btn = document.createElement('button');
     btn.id = 'friend-mode-btn';
     btn.style.cssText = 'margin-right: 8px; padding: 4px 8px; font-size: 12px; border-radius: 4px; border: none; color: #fff; cursor: pointer; background: ' + (friendMode === 'free' ? '#ff9500' : '#007aff') + ';';
-    btn.textContent = friendMode === 'free' ? '⚡ 自由模式' : '💬 普通模式';
+    btn.textContent = friendMode === 'free' ? '⚡ 自由模式 / 自由模式' : '💬 普通模式';
 
     btn.onclick = async () => {
       const nextMode = friendMode === 'free' ? 'normal' : 'free';
@@ -532,23 +534,23 @@ export function openChatWindow(conversationId, chatName, agentId = null, agentTy
         
         if (res.ok) {
           friendMode = nextMode;
-          btn.textContent = friendMode === 'free' ? '⚡ 自由模式' : '💬 普通模式';
+          btn.textContent = friendMode === 'free' ? '⚡ 自由模式 / 自由模式' : '💬 普通模式';
           btn.style.background = friendMode === 'free' ? '#ff9500' : '#007aff';
           btn.dataset.mode = friendMode;
         } else {
-          alert('切换失败，请检查后端日志');
+          alert('切换失败 / Failed，请检查后端日志');
         }
       } catch (err) {
-        console.error('切换好友模式失败:', err);
+        console.error('切换好友 / Friend模式失败 / Failed:', err);
       }
     };
     
     topBar.insertBefore(btn, topBar.firstChild);
   }
 
-  if (titleEl) titleEl.textContent = chatName || '会话';
+  if (titleEl) titleEl.textContent = chatName || '会话 / 会话';
 
-  // 如果是新建会话（conversationId为空），清空聊天框历史
+  // 如果是新建会话（ / 如果是新建会话（conversationId为空），清空聊天框历史
   if (!conversationId) {
     const msgBox = document.getElementById('chat-messages');
     if (msgBox) msgBox.innerHTML = '';
@@ -630,10 +632,10 @@ export function openChatWindow(conversationId, chatName, agentId = null, agentTy
       const _existing = _list.find(c => c.agent_id === _targetAgentId);
       if (_existing && _existing.id) {
         chatState.conversationId = parseInt(_existing.id);
-        console.log('[chat] 复用已有会话', chatState.conversationId);
+        console.log('[chat] 复用已有会话 / 复用已有会话', chatState.conversationId);
         loadMessages(chatState.conversationId);
       }
-    }).catch(e => { console.warn('[chat] 查已有会话失败', e); });
+    }).catch(e => { console.warn('[chat] 查已有会话失败 / Failed', e); });
   }
 }
 
@@ -667,8 +669,8 @@ function updateModeText() {
   const modeTextEl = document.getElementById('chat-mode-text');
   if (!modeTextEl) return;
   const modeMap = {
-    'free': '自由模式',
-    'normal': '普通模式'
+    'free': '自由模式 / 自由模式',
+    'normal': '普通模式 / 普通模式'
   };
   modeTextEl.textContent = modeMap[chatState.mode] || chatState.mode;
 }
@@ -680,12 +682,12 @@ function openModeMenu() {
 
   content.innerHTML = `
     <div class="plus-menu-item mode-item ${chatState.mode === 'normal' ? 'active-mode' : ''}" data-mode="normal">
-      <span class="plus-menu-label">普通模式</span>
-      <span class="plus-menu-desc" style="font-size:12px;color:#888;">纯聊天，不触发任何功能</span>
+      <span class="plus-menu-label">普通模式 / 普通模式</span>
+      <span class="plus-menu-desc" style="font-size:12px;color:#888;">纯聊天，不触发任何功能 / 纯聊天，不触发任何功能</span>
     </div>
     <div class="plus-menu-item mode-item ${chatState.mode === 'free' ? 'active-mode' : ''}" data-mode="free">
-      <span class="plus-menu-label">自由模式</span>
-      <span class="plus-menu-desc" style="font-size:12px;color:#888;">可执行指令、任务协作、分析图片</span>
+      <span class="plus-menu-label">自由模式 / 自由模式</span>
+      <span class="plus-menu-desc" style="font-size:12px;color:#888;">可执行 / Execute指令、任务 / Task协作、分析图片 / Image</span>
     </div>
   `;
 
@@ -719,7 +721,7 @@ async function loadMessages(conversationId, force = false) {
   chatState.hasMore = true;
   const container = document.getElementById('chat-messages');
   if (!container) return;
-  // 检查是否有新消息：无新消息则跳过重建
+  // 检查是否有新消息 / Message：无新消息 / Message则跳过重建
   try {
     const _check = await api.getConversationMessages(conversationId, 1, 0);
     const _latest = (_check.messages && _check.messages[0]) ? _check.messages[0].id : null;
@@ -727,7 +729,7 @@ async function loadMessages(conversationId, force = false) {
       return;
     }
     chatState._lastMsgId = _latest;
-  } catch (e) { /* 检查失败则继续走原逻辑 */ }
+  } catch (e) { /* 检查失败 / Failed则继续走原逻辑 */ }
   container.style.visibility = 'hidden';
   container.innerHTML = '';
   try {
@@ -737,7 +739,7 @@ async function loadMessages(conversationId, force = false) {
       chatState.hasMore = false;
     }
 
-    // v0.38.0: 读己之写检查 —— 本地最新消息 HLC 落后于写入 HLC 时自动重载一次
+    // v0.38.0: 读己之写检查 —— 本地最新消息 / Message HLC 落后于写入 HLC 时自动重载一次
     try {
       const _lastWrite = sessionStorage.getItem('last_write_hlc_' + conversationId);
       if (_lastWrite && messages.length > 0) {
@@ -745,14 +747,14 @@ async function loadMessages(conversationId, force = false) {
         const _latestHlc = _latest && _latest.hlc_ts;
         if (_latestHlc && _latestHlc < _lastWrite && !chatState._rywRetried) {
           chatState._rywRetried = true;
-          console.warn('[读己之写] 最新消息 HLC 落后于本地写入，1 秒后重载');
+          console.warn('[读己之写] 最新消息 / Message HLC 落后于本地写入，1 秒后重载');
           setTimeout(() => {
             chatState._rywRetried = false;
             loadMessages(conversationId, true);
           }, 1000);
           return;
         }
-        // 已追上，清除标记
+        // 已追上，清除标记 / 已追上，清除标记
         chatState._rywRetried = false;
       }
     } catch (e) {}
@@ -785,7 +787,7 @@ async function loadMessages(conversationId, force = false) {
     }
   } catch (err) {
     container.style.visibility = 'visible';
-    appendMessage('assistant', `加载历史消息失败：${err.message}`, 'AI', null, new Date().toISOString(), false, chatState);
+    appendMessage('assistant', `加载历史消息 / Message失败 / Failed：${err.message}`, 'AI', null, new Date().toISOString(), false, chatState);
   }
 }
 
@@ -811,7 +813,7 @@ async function handleScroll() {
       }
       chatState.offset += olderMessages.length;
     } catch (e) {
-      console.error('加载更多消息失败', e);
+      console.error('加载更多 / More消息 / Message失败 / Failed', e);
     } finally {
       chatState.loadingMore = false;
     }
@@ -820,14 +822,14 @@ async function handleScroll() {
 
 window.addEventListener('sases_new_message', (e) => {
   const d = e.detail || {};
-  // 忽略用户自己发的消息（本地已渲染）
+  // 忽略 / ignore用户自己发的消息 / Message（本地已渲染）
   if (d.sender === 'user') return;
     if (d.sender === 'friend') {
-      // 修复：即使 message_id 为空也能触发渲染，且只要在聊天页就追加
+      // 修复：即使 / 修复：即使 message_id 为空也能触发渲染，且只要在聊天页就追加
       if (chatState.conversationId && d.conversation_id && String(chatState.conversationId) === String(d.conversation_id)) {
         const _box = document.getElementById('chat-messages');
         if (_box) {
-          const _wrapper = createMessageElement('friend', d.content, '好友', d.message_id, new Date().toISOString(), false, false, chatState);
+          const _wrapper = createMessageElement('friend', d.content, '好友 / Friend', d.message_id, new Date().toISOString(), false, false, chatState);
           _box.appendChild(_wrapper);
           if (typeof scrollToBottom === 'function') scrollToBottom();
         }
@@ -836,7 +838,7 @@ window.addEventListener('sases_new_message', (e) => {
     }
   const _cid = d.conversation_id;
   if (_cid && chatState.conversationId && String(_cid) !== String(chatState.conversationId)) return;
-  // 收到最终结果（非协议消息）时，自动移除任务按钮卡片
+  // 收到最终结果（非协议消息 / Message）时，自动移除任务 / Task按钮卡片
   const _content_ws = (d.content || '').trim();
   if (_content_ws) {
     document.querySelectorAll('[id^="swarm-actions-"]').forEach(el => el.remove());
@@ -845,7 +847,7 @@ window.addEventListener('sases_new_message', (e) => {
   if (!_content) return;
   const _proto = ['[TASK]:', '[STEP_DONE]:', '[RETRY_TASK]:', '[TASK_DRAFT]:', '[SUPERVISOR_PROGRESS]:'];
   if (_proto.some(p => _content.startsWith(p))) return;
-  // 去重
+  // 去重 / 去重
   if (d.message_id) {
     if (!chatState._seenMsgIds) chatState._seenMsgIds = new Set();
     if (chatState._seenMsgIds.has(d.message_id)) return;
@@ -898,7 +900,7 @@ export function initChat() {
 
   if (messagesContainer) {
     messagesContainer.addEventListener('scroll', handleScroll);
-    // v0.39.3: 监听消息区变化，自动 flush 挂起的反馈条
+    // v0.39.3: 监听消息 / Message区变化，自动 flush 挂起的反馈条
     if (!messagesContainer._sasesFeedbackObserver) {
       const _obs = new MutationObserver(() => {
         try { _tryFlushPendingFeedback(); } catch (e) {}
