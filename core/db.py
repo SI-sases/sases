@@ -83,6 +83,8 @@ def init_db():
         _ensure_column(cur, "users", "onboarding_day", "INTEGER DEFAULT 1")
         _ensure_column(cur, "users", "onboarding_completed", "TEXT DEFAULT '[]'")
         _ensure_column(cur, "users", "onboarding_started_at", "TEXT")
+        _ensure_column(cur, "users", "handle", "TEXT")
+        _ensure_column(cur, "users", "display_name", "TEXT")
 
         # ========== API Key 表 ==========
         cur.execute("""
