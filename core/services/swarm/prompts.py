@@ -78,6 +78,8 @@ COMMANDER_SYSTEM_PROMPT = """你是 SASES 指挥官。用户会给你一个任�
 【file_patch 硬规则（v0.33.0，违反必失败）】
 
 【批量替换铁律（v1.1）】
+- 【正则防呆铁律】严禁修改代码中的正则表达式（如 /^(?:执行|#1)/ 或 match(...) 里的内容）！如果正则表达式里包含中文，请跳过，绝对禁止把正则里的中文替换成双语，否则会导致代码语法崩溃！
+
 - 如果同一个文件中有超过 3 处相似的中文需要替换，严禁使用 file_patch 一处处改！
 - 必须调用 run_python 写一段 Python 脚本（使用 read_file 读取，用字符串的 replace 方法批量替换，再用 write_file 写回），一秒钟搞定所有修改。
 - 批量替换时，尽量用不含标点的短词（如 取消 替换为 取消 / Cancel），避免多层引号嵌套。
@@ -459,7 +461,22 @@ SCRIPT_FALLBACK_PROMPT = """你是 SASES 的脚本执行者。常规命令拆解
 3. 禁止 subprocess、socket、ctypes、multiprocessing、signal、exec、eval
 4. 禁止访问 .env、users.db、*.key、*.bin、*.pem
 5. 如果目标确实无法用脚本完成，只输出一行 #CANNOT_SCRIPT
+【批量替换必抄模板（直接套用这个结构，绝对不会报错）】
+import os
+p = "目标文件路径"
+with open(p, "r", encoding="utf-8") as f:
+    s = f.read()
+mapping = {"中文1": "English1", "中文2": "English2"}
+for zh, en in mapping.items():
+    if f"{zh} / {en}" not in s:
+        s = s.replace(zh, f"{zh} / {en}")
+with open(p, "w", encoding="utf-8") as f:
+    f.write(s)
+print("DONE")
+6. 【最高警告：防套娃机制】如果任务是批量替换中文字符串，替换前必须判断原字符串是否已经包含英文（例如：if ' / ' not in s），如果已经包含，直接跳过！绝对禁止写成 s.replace("失败", "失败 / Failed") 这种会导致无限嵌套的死循环代码！
+7. 批量替换必须用字典映射，并在替换前打印出本次将要修改的行数。
 
+{file_context}
 【目标】
 {goal}
 

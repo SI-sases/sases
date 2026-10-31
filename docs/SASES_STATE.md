@@ -702,7 +702,6 @@ import os,
 2. 网页
 
 执
-- 2026-10-25: 先读取 core/services/supervisor/decider.py，然后在这个文件里找一个叫 "_is_fake" 的变量，最后把它的判断逻辑改成 
 - 2026-10-25: 排查并修复前端白屏问题。必须提供 file:line 和错误原因。
 
 【背景】
@@ -802,6 +801,9 @@ ROOT = r'C:\Use
 背景：
 目前在登录页有“下载桌面版”按钮，但登录进入主界面后，这个按钮依然存在，影响界面美观，需
 - 2026-10-30: 扫描 static/modules/ 下的 .js 文件和 static/ 目录下的 .html 文件，找出所有包含中文的行。必须先 grep_code 搜索。
+- 2026-10-31: 任务：将 static/modules/contacts.js 中暴露给用户的硬编码中文，批量改成中英双语（例如 搜索 -> 搜索 / Search）。
+
+要求
 
 
 
