@@ -306,14 +306,8 @@ async function sendMessage() {
   updateSendButtonVisibility();
 
   try {
-    if (chatState.agentType === 'friend' && chatState.agentId) {
-      try {
-        await api.callAgent(chatState.agentId, text);
-      } catch (err) {
-        updateMessageStatus(tempId, 'failed');
-        return;
-      }
-    }
+    // [A2A 物理切除] 移除了强行调本地接口的死代码
+
 
     let _maxSteps = null;
     try { _maxSteps = getParamMaxSteps(); } catch (e) {}
@@ -479,20 +473,12 @@ function updateInputPlaceholder() {
 
 export function openChatWindow(conversationId, chatName, agentId = null, agentType = 'my', isFriendChat = 0, friendMode = 'normal', targetUserId = null) {
 
-  // 好友 / Friend模式切换按钮（模拟）
-  if (chatState && chatState.is_friend_chat == 1) {
-    var bar = document.createElement('div');
-    bar.className = 'friend-mode-bar';
-    bar.innerHTML = '<button onclick="alert(\'好友 / Friend模式切换（模拟）\')">切换好友 / Friend模式</button>';
-    var host = document.getElementById('chat-header') || document.body;
-    host.insertBefore(bar, host.firstChild);
-  }
 
   chatState.conversationId = conversationId ? parseInt(conversationId) : null;
   chatState.agentId = agentId;
   chatState.agentType = agentType;
   chatState.senderAgentId = (isFriendChat === 1) ? null : (localStorage.getItem('sases_sender_agent_id') || null);
-  chatState.mode = 'free';
+  chatState.friendMode = 'normal';
   chatState.pendingQuote = null;
   chatState.lastMessageTime = null;
   chatState.offset = 0;
@@ -515,33 +501,34 @@ export function openChatWindow(conversationId, chatName, agentId = null, agentTy
     btn.id = 'friend-mode-btn';
     btn.style.cssText = 'margin-right: 8px; padding: 4px 8px; font-size: 12px; border-radius: 4px; border: none; color: #fff; cursor: pointer; background: ' + (friendMode === 'free' ? '#ff9500' : '#007aff') + ';';
     btn.textContent = friendMode === 'free' ? '⚡ 自由模式' : '💬 普通模式';
-
+    
     btn.onclick = async () => {
       const nextMode = friendMode === 'free' ? 'normal' : 'free';
       try {
         const token = localStorage.getItem('sases_token');
+        console.log('[切换模式] 发送请求', targetUserId, nextMode);
         const res = await fetch('/agents/friend-mode', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + token
           },
-          body: JSON.stringify({ 
-            target_user_id: targetUserId,
-            mode: nextMode 
-          })
+          body: JSON.stringify({ conversation_id: conversationId, mode: nextMode })
         });
         
         if (res.ok) {
           friendMode = nextMode;
           btn.textContent = friendMode === 'free' ? '⚡ 自由模式' : '💬 普通模式';
           btn.style.background = friendMode === 'free' ? '#ff9500' : '#007aff';
-          btn.dataset.mode = friendMode;
+          alert('模式已切换为：' + (nextMode === 'free' ? '自由模式' : '普通模式'));
+          if (window.loadConversations) window.loadConversations(); // 强制刷新左侧列表
         } else {
-          alert('切换失败 / Failed，请检查后端日志');
+          const errData = await res.json();
+          alert('切换失败: ' + (errData.detail || '未知错误'));
         }
       } catch (err) {
-        console.error('切换好友 / Friend模式失败 / Failed:', err);
+        console.error('[切换模式] 报错:', err);
+        alert('网络错误，切换失败');
       }
     };
     
@@ -644,7 +631,7 @@ export function closeChatWindow() {
   chatState.agentId = null;
   chatState.agentType = 'my';
   chatState.senderAgentId = null;
-  chatState.mode = 'free';
+  chatState.friendMode = 'normal';
   chatState.pendingQuote = null;
   chatState.lastMessageTime = null;
   chatState.offset = 0;
@@ -827,12 +814,20 @@ window.addEventListener('sases_new_message', (e) => {
     if (d.sender === 'friend') {
       // 修复：即使 / 修复：即使 message_id 为空也能触发渲染，且只要在聊天页就追加
       if (chatState.conversationId && d.conversation_id && String(chatState.conversationId) === String(d.conversation_id)) {
-        const _box = document.getElementById('chat-messages');
-        if (_box) {
-          const _wrapper = createMessageElement('friend', d.content, '好友 / Friend', d.message_id, new Date().toISOString(), false, false, chatState);
-          _box.appendChild(_wrapper);
-          if (typeof scrollToBottom === 'function') scrollToBottom();
+        if (d.proposed_run_id) {
+            // 如果带有黄卡 ID，直接渲染黄卡
+            if (typeof showProposedRunCard === 'function') {
+                showProposedRunCard(d.proposed_run_id);
+            }
+        } else {
+            // 普通消息渲染
+            const _box = document.getElementById('chat-messages');
+            if (_box) {
+              const _wrapper = createMessageElement('friend', d.content, '好友 / Friend', d.message_id, new Date().toISOString(), false, false, chatState);
+              _box.appendChild(_wrapper);
+            }
         }
+        if (typeof scrollToBottom === 'function') scrollToBottom();
       }
       return;
     }

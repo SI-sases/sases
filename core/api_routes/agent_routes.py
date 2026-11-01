@@ -168,8 +168,11 @@ async def api_suggest_reply(body: CallAgentRequest, user_id: int = Depends(get_c
         raise HTTPException(status_code=400, detail=str(e))
 
 # ================= 好友代理模式切换 =================
+from typing import Optional
+
 class FriendModeRequest(BaseModel):
-    target_user_id: int
+    target_user_id: Optional[int] = None
+    conversation_id: Optional[int] = None
     mode: str
 
 @router.post("/friend-mode")
@@ -179,16 +182,27 @@ async def set_friend_mode(body: FriendModeRequest, user_id: int = Depends(get_cu
     
     try:
         with db_cursor(commit=True) as cur:
+            # 【核心修复】如果传了 conversation_id，直接反查目标用户
+            real_target_id = body.target_user_id
+            if body.conversation_id:
+                cur.execute("SELECT target_user_id FROM conversations WHERE id=? AND user_id=?", (body.conversation_id, user_id))
+                row = cur.fetchone()
+                if row:
+                    real_target_id = row["target_user_id"]
+            
+            if not real_target_id:
+                raise HTTPException(status_code=400, detail="缺少目标用户ID或会话ID")
+
             # 检查好友关系
-            cur.execute("SELECT id FROM agent_friendships WHERE user_id=? AND target_user_id=? AND status='accepted'", (user_id, body.target_user_id))
+            cur.execute("SELECT id FROM agent_friendships WHERE user_id=? AND target_user_id=? AND status='accepted'", (user_id, real_target_id))
             if not cur.fetchone():
                 raise HTTPException(status_code=403, detail="你们还不是好友")
                 
-            # 更新好友关系表中的模式
-            cur.execute("UPDATE agent_friendships SET friend_mode=? WHERE user_id=? AND target_user_id=?", (body.mode, user_id, body.target_user_id))
+            # 更新好友关系表
+            cur.execute("UPDATE agent_friendships SET friend_mode=? WHERE user_id=? AND target_user_id=?", (body.mode, user_id, real_target_id))
             
-            # 精确更新当前与这个好友的会话模式（加上 target_user_id 防止误改别人的）
-            cur.execute("UPDATE conversations SET friend_mode=? WHERE user_id=? AND target_user_id=? AND is_friend_chat=1", (body.mode, user_id, body.target_user_id))
+            # 精确更新会话模式
+            cur.execute("UPDATE conversations SET friend_mode=? WHERE user_id=? AND target_user_id=? AND is_friend_chat=1", (body.mode, user_id, real_target_id))
             
         return {"status": "ok", "mode": body.mode}
     except HTTPException:
@@ -196,3 +210,14 @@ async def set_friend_mode(body: FriendModeRequest, user_id: int = Depends(get_cu
     except Exception as e:
         print(f"[friend-mode 报错] {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+class SessionAgentRequest(BaseModel):
+    conversation_id: int
+    agent_id: str
+
+@router.post("/bind-session-agent")
+async def bind_session_agent(body: SessionAgentRequest, user_id: int = Depends(get_current_user)):
+    from ..db import db_cursor
+    with db_cursor(commit=True) as cur:
+        cur.execute("UPDATE conversations SET agent_id=? WHERE id=? AND user_id=?", (body.agent_id, body.conversation_id, user_id))
+    return {"status": "ok"}

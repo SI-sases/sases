@@ -148,48 +148,65 @@ def finish_run(run_id, status='completed'):
             if status == 'completed':
                 _msg_fin = '[SUMMARY]:OK 执行已结束'
                 try:
-                    import json, sqlite3
-                    _conn = sqlite3.connect('users.db')
-                    _conn.row_factory = sqlite3.Row
-                    _cur = _conn.cursor()
-                    _cur.execute("SELECT results FROM swarm_pending_tasks WHERE supervisor_run_id=? ORDER BY id DESC LIMIT 1", (run_id,))
-                    _row = _cur.fetchone()
-                    if _row and _row['results']:
-                        _res = json.loads(_row['results'])
-                        for _r in reversed(_res):
-                            _ans = _r.get('answer') or _r.get('output')
-                            if _ans and isinstance(_ans, str) and len(_ans) > 5:
-                                _msg_fin = '[SUMMARY]:' + _ans[:1500]
-                                break
-                    _conn.close()
-                except Exception as _e:
-                    print('提取总结失败:', _e)
-                try:
-                    import json, sqlite3
-                    _conn = sqlite3.connect('users.db')
-                    _conn.row_factory = sqlite3.Row
-                    _cur = _conn.cursor()
-                    _cur.execute("SELECT results FROM swarm_pending_tasks WHERE supervisor_run_id=? ORDER BY id DESC LIMIT 1", (run_id,))
-                    _row = _cur.fetchone()
-                    if _row and _row['results']:
-                        _res = json.loads(_row['results'])
-                        for _r in reversed(_res):
-                            _ans = _r.get('answer') or _r.get('output')
-                            if _ans and isinstance(_ans, str) and len(_ans) > 5:
-                                _msg_fin = '[SUMMARY]:' + _ans[:1500]
-                                break
-                    _conn.close()
-                except Exception:
-                    pass
-            elif status == 'waiting_user':
-                _msg_fin = '[SUMMARY]:等待你补充信息后继续（可立即发新任务）'
-            elif status == 'restart_pending':
-                _msg_fin = '[SUMMARY]:改动完成，等待重启验证'
-            elif status in ('failed', 'plan_failed', 'error', 'timeout', 'interrupted'):
-                _msg_fin = '[SUMMARY]:执行失败（' + str(status) + '）'
-            else:
-                _msg_fin = '[SUMMARY]:执行结束（' + str(status) + '）'
+                    import json
+                    with db_cursor() as _c_his:
+                        _c_his.execute('SELECT history FROM supervisor_runs WHERE id=?', (run_id,))
+                        _his_row = _c_his.fetchone()
+                        if _his_row and _his_row['history']:
+                            _hist = json.loads(_his_row['history'])
+                            if _hist and len(_hist) > 0:
+                                _last = _hist[-1]
+                                # 优先从 exec 字段提取（如果有具体的输出结果）
+                                _exec_str = _last.get('exec', '')
+                                if '|' in _exec_str:
+                                    _ans = _exec_str.split('|')[-1].strip()
+                                    if _ans:
+                                        _msg_fin = '[SUMMARY]:' + _ans
+                                # 备用方案：从 review.goal_reason 里提取
+                                else:
+                                    _review = _last.get('review', {})
+                                    _reason = _review.get('goal_reason', '')
+                                    import re
+                                    match = re.search(r"(?:返回|得到)\s*(.*?)[，。]", _reason)
+                                    if match:
+                                        _ans = match.group(1).strip()
+                                        _msg_fin = '[SUMMARY]:' + _ans
+                                    elif _reason:
+                                        _msg_fin = '[SUMMARY]:' + _reason[:100] + '...'
+                except Exception as _e_hist:
+                    print('[supervisor] history 提取异常:', _e_hist)
             _im_fin(_conv_id, _msg_fin, sender_agent_id=_sup_id)
+            # [A2A 跨端回传] 如果是好友会话，将执行结果投递回发起方
+            try:
+                import sqlite3, asyncio
+                _conn_f = sqlite3.connect('users.db')
+                _conn_f.row_factory = sqlite3.Row
+                _cur_f = _conn_f.cursor()
+                _cur_f.execute("SELECT user_id, target_user_id, is_friend_chat FROM conversations WHERE id=?", (_conv_id,))
+                _c_row = _cur_f.fetchone()
+                _conn_f.close()
+                
+                if _c_row and _c_row['is_friend_chat'] == 1 and _c_row['target_user_id']:
+                    from ..cross_account_delivery import deliver_to_linked_accounts
+                    try:
+                        _loop = asyncio.get_running_loop()
+                        _loop.create_task(deliver_to_linked_accounts(
+                            user_id=_c_row['user_id'],
+                            conversation_id=_conv_id,
+                            content=_msg_fin,
+                            sender_agent_id=_sup_id
+                        ))
+                    except RuntimeError:
+                        asyncio.run(deliver_to_linked_accounts(
+                            user_id=_c_row['user_id'],
+                            conversation_id=_conv_id,
+                            content=_msg_fin,
+                            sender_agent_id=_sup_id
+                        ))
+                    print(f"[A2A 成功] 已将执行结果跨端回传给好友 {_c_row['target_user_id']}")
+            except Exception as _e_a2a:
+                print(f"[A2A 失败] 结果回传异常: {_e_a2a}")
+
             print('[supervisor] finish_run 推送: ' + _msg_fin)
     except Exception as _e_fin:
         print('[supervisor] finish_run 推送失败: ' + str(_e_fin))

@@ -2,9 +2,6 @@
 import json
 import asyncio
 from core.db import db_cursor
-
-import json
-import asyncio
 from datetime import datetime
 from ..db import db_cursor
 
@@ -14,35 +11,92 @@ async def deliver_to_linked_accounts(user_id, conversation_id, content, sender_a
         _target_uid = None
         _target_conv_id = None
         _msg_id = None
+        _sender_mode = 'normal'
+        _target_mode = 'normal'
+        _target_agent = None
 
         with db_cursor(commit=True) as cur:
-            # 1. 查找对方的 user_id
+            # 1. 查发送方模式
+            cur.execute("SELECT friend_mode FROM conversations WHERE id=?", (conversation_id,))
+            _s_row = cur.fetchone()
+            if _s_row and _s_row["friend_mode"]:
+                _sender_mode = _s_row["friend_mode"]
+
+            # 2. 查找对方的 user_id
             cur.execute("SELECT target_user_id FROM conversations WHERE id=?", (conversation_id,))
             _t_row = cur.fetchone()
             if _t_row and _t_row["target_user_id"]:
                 _target_uid = _t_row["target_user_id"]
-                # 新增：校验双方是否为已同意的好友关系
+                
+                # 校验好友关系
                 cur.execute("SELECT 1 FROM agent_friendships WHERE status='accepted' AND ((user_id=? AND target_user_id=?) OR (user_id=? AND target_user_id=?))", (user_id, _target_uid, _target_uid, user_id))
                 if not cur.fetchone():
                     print(f'[message] 拦截：用户 {user_id} 与 {_target_uid} 尚未成为好友，拒绝投递。')
                     return
                 
-                # 2. 查对方的会话
-                cur.execute("SELECT id FROM conversations WHERE user_id=? AND target_user_id=? AND is_friend_chat=1", (_target_uid, user_id))
+                # 3. 查对方的会话信息（模式与绑定的智能体）
+                cur.execute("SELECT id, friend_mode, agent_id FROM conversations WHERE user_id=? AND target_user_id=? AND is_friend_chat=1", (_target_uid, user_id))
                 _t_conv = cur.fetchone()
                 if _t_conv:
                     _target_conv_id = _t_conv["id"]
+                    _target_mode = _t_conv["friend_mode"] if _t_conv["friend_mode"] else 'normal'
+                    _target_agent = _t_conv["agent_id"]
                     
-                    # 3. 写入对方数据库
+                    # 4. 写入对方数据库
                     cur.execute(
                         "INSERT INTO messages (conversation_id, sender, content, sender_agent_id, msg_type, attachments) VALUES (?, ?, ?, ?, ?, ?)",
                         (_target_conv_id, 'friend', content, sender_agent_id, msg_type, _att_str)
                     )
                     _msg_id = cur.lastrowid
                     cur.execute("UPDATE conversations SET updated_at=CURRENT_TIMESTAMP WHERE id=?", (_target_conv_id,))
-        
-        # 4. 事务提交后，执行 WebSocket 广播
+
+        # ==========================================
+        # 5. 事务提交后，执行 A2A 矩阵判定
+        # ==========================================
         if _target_uid and _target_conv_id and _msg_id:
+            is_task = False
+            
+            # 只有双方都在自由模式，才进行复杂的智能体交互
+            if _sender_mode == 'free' and _target_mode == 'free':
+                if sender_agent_id or _target_agent:
+                    # 测试期暴力破解：只要含有 #，直接视为任务，不再走 intent_service
+                    if content.startswith('#') or ' #' in content:
+                        is_task = True
+                        print(f"[A2A] 检测到 # 号，强制视为任务！")
+                    else:
+                        try:
+                            from .. import intent_service
+                            _is_greeting = intent_service._is_obvious_chat(content)
+                            if not _is_greeting and not content.startswith("[IMAGE]:") and not content.startswith("[FILE]:"):
+                                is_task = await intent_service.is_task_intent(content)
+                        except Exception as e:
+                            print(f"[A2A] 意图识别失败: {e}")
+
+                if is_task:
+                    from core.services.supervisor_service import create_proposed_run
+                    try:
+                        _proposed_id = create_proposed_run(
+                            user_id=_target_uid,
+                            conversation_id=_target_conv_id,
+                            supervisor_id=sender_agent_id if sender_agent_id else _target_agent,
+                            goal=content,
+                            task_type='unknown'
+                        )
+                        print(f"[A2A] 双方自由，已生成黄卡: {_proposed_id}")
+                    except Exception as e:
+                        print(f"[A2A] 生成黄卡失败: {e}")
+            else:
+                # 有一方不是自由模式，且试图执行，拦截并提示
+                if sender_agent_id or _target_agent or content.startswith("#"):
+                    print(f"[A2A] 非双自由模式，拦截执行。A:{_sender_mode}, B:{_target_mode}")
+                    with db_cursor(commit=True) as cur_warn:
+                        _warn_msg = "[系统提示] 必须双方都在自由模式，才能执行智能体指令。"
+                        cur_warn.execute(
+                            "INSERT INTO messages (conversation_id, sender, content, msg_type) VALUES (?, ?, ?, ?)",
+                            (conversation_id, 'assistant', _warn_msg, 'standard')
+                        )
+
+            # WebSocket 广播
             try:
                 from core.api_routes.ws_routes import broadcast_to_user
                 payload = {
@@ -53,8 +107,10 @@ async def deliver_to_linked_accounts(user_id, conversation_id, content, sender_a
                     "content": content,
                     "sender_agent_id": sender_agent_id
                 }
+                if 'is_task' in locals() and is_task and '_proposed_id' in locals() and _proposed_id:
+                    payload["proposed_run_id"] = _proposed_id
                 await broadcast_to_user(_target_uid, payload)
-                print(f"[投递成功] 已推送给用户 {_target_uid}, msg_id={_msg_id}")
+                print(f"[投递成功] 已推送给用户 {_target_uid}")
             except Exception as ex:
                 print(f"[投递广播失败] {ex}")
     except Exception as e:

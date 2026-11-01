@@ -106,9 +106,11 @@ def _insert_message(conversation_id: int, content: str, sender_agent_id: Optiona
             (datetime.now().isoformat(), conversation_id)
         )
         _msg_id = cur.lastrowid
-        cur.execute("SELECT user_id FROM conversations WHERE id=?", (conversation_id,))
+        cur.execute("SELECT user_id, target_user_id, is_friend_chat FROM conversations WHERE id=?", (conversation_id,))
         _row_u = cur.fetchone()
         _uid = _row_u["user_id"] if _row_u else None
+        _tgt_uid = _row_u["target_user_id"] if _row_u else None
+        _is_friend = _row_u["is_friend_chat"] if _row_u else 0
     _protocols = ('[TASK]:', '[STEP_DONE]:', '[RETRY_TASK]:', '[TASK_DRAFT]:', '[SUPERVISOR_PROGRESS]:')
     _should_bc = _uid and sender_agent_id and not (content or '').startswith(_protocols)
     if _should_bc:
@@ -133,3 +135,21 @@ def _insert_message(conversation_id: int, content: str, sender_agent_id: Optiona
         except Exception as _e_bc:
             print('[ws] insert_message broadcast failed: ' + str(_e_bc))
     return _msg_id
+
+    # ==========================================
+    # [A2A 核心回传] 如果是好友会话，且是最终执行结果，回传给 A
+    # ==========================================
+    if _is_friend and _tgt_uid and _uid and content and content.startswith('[SUMMARY]:'):
+        try:
+            import asyncio as _aio2
+            from ..cross_account_delivery import deliver_to_linked_accounts
+            _loop2 = _aio2.get_running_loop()
+            _loop2.create_task(deliver_to_linked_accounts(
+                user_id=_uid,
+                conversation_id=conversation_id,
+                content=content,
+                sender_agent_id=sender_agent_id or 'sases_assistant'
+            ))
+            print(f"[A2A] 已将执行结果回传给好友 {_tgt_uid}")
+        except Exception as e:
+            print(f"[A2A] 回传失败: {e}")

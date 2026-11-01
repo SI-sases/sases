@@ -68,8 +68,27 @@ export async function openIdentitySwitch(chatState, api) {
 
     container.querySelectorAll('.identity-option').forEach(opt => {
       opt.addEventListener('click', () => {
-        chatState.senderAgentId = opt.dataset.agentId || null;
-        localStorage.setItem('sases_sender_agent_id', chatState.senderAgentId || '');
+        const newAgentId = opt.dataset.agentId || null;
+        chatState.senderAgentId = newAgentId;
+        localStorage.setItem('sases_sender_agent_id', newAgentId || '');
+        
+        // 【核心修复】通知后端，把这个智能体作为当前会话的默认接单方
+        if (chatState.conversationId) {
+            fetch('/agents/bind-session-agent', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + localStorage.getItem('sases_token')
+                },
+                body: JSON.stringify({
+                    conversation_id: chatState.conversationId,
+                    agent_id: newAgentId
+                })
+            }).then(res => {
+                if(!res.ok) console.error('绑定智能体失败', res.status);
+            }).catch(e => console.error(e));
+        }
+        
         window.closeSubpage();
         const baseTitle = document.getElementById('chat-window-title').textContent.split(' (')[0];
         document.getElementById('chat-window-title').textContent = chatState.senderAgentId ? baseTitle + ' (智能体)' : baseTitle;
