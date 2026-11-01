@@ -20,6 +20,7 @@ class TransferRequest(BaseModel):
     amount: float
     message: Optional[str] = ""
     conversation_id: Optional[int] = None
+    credit_type: Optional[str] = "credits"
 
 
 class RedPacketRequest(BaseModel):
