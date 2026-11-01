@@ -1,32 +1,67 @@
+# ========== Python 缓存 ==========
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+*.egg-info/
+
+# ========== 数据库（含 WAL/SHM）==========
 *.db
 *.db-wal
 *.db-shm
+
+# ========== 备份 ==========
 *.bak*
+.backups/
+backups/
+
+# ========== 日志 & 运行时数据 ==========
 *.log
+logs/
+sases.log
+restart_signal.txt
+data/tool_usage.jsonl
+
+# ========== 敏感配置 ==========
 .env
 sases_default.env
 *.key
 *.bin
 *.pem
-backups/
+
+# ========== 上传 / 节点 / 知识库 ==========
 uploads/
 hive-nodes/
 kb/
-logs/
 archive/
+
+# ========== 训练 / LoRA ==========
 lora/
 lora_adapter/
 training_data/
 seeds/
+
+# ========== 打包产物 ==========
 *.zip
 *.exe
 build/
 dist/
+
+# ========== 虚拟环境（关键：所有变体都要排除）==========
+venv/
 venv312/
 python312/
 python-embed/
-.backups/
+launcher/dist/venv/
+launcher/dist/python-embed/
+
+# ========== 模型 ==========
 bge-small-zh-onnx/
+
+# ========== 临时修复脚本 ==========
 fix_*.py
+
+# ========== 编辑器（可选）==========
+.vscode/
+.idea/

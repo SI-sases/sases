@@ -467,7 +467,7 @@ async def lifespan(app: FastAPI):
                         print('[bootstrap] restart_signal removed')
                     except Exception as _e_rm:
                         print('[bootstrap] restart_signal remove err: ' + str(_e_rm))
-                    raise Exception("__restart__")
+                    _os_w._exit(0)
             except Exception as _e_w:
                 print('[bootstrap] restart watch err: ' + str(_e_w))
             await asyncio.sleep(3)
