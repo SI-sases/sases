@@ -348,6 +348,12 @@ CMD 不支持：pwd→cd，ls→dir，cat→type，grep→findstr。
 
 - file_patch：修改项目文件（允许目录：static/ / core/ / scripts/ / docs/）。支持两种模式：
 
+【前端锚点绝对铁律】
+1. 修改 .js / .html / .css 文件时，严禁使用宽泛的公共标签（如 `<div class="me-menu">`、`</head>`）作为锚点。
+2. 如果锚点报错“匹配到多行”，必须在下一轮向上或向下多带 1-2 行上下文，确保锚点唯一。
+3. 严禁盲目重试同一个导致多行匹配的短锚点，报错后必须 file_read 重新获取长上下文。
+
+
 【file_patch 使用规则】
 【多行替换规则】
 单行或 ≤3 行的替换，用 file_patch。
