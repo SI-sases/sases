@@ -47,7 +47,38 @@ import { t } from './me_i18n.js';
 
 let initialized = false;
 
+function openMyCard() {
+  var cardUrl = 'http://47.96.87.147:8001/u/' + (sasesId || '');
+  var name = (displayName || username || '');
+  var handle = (username || '');
+  var html = '<div style="padding:24px;text-align:center;">' +
+    '<div style="font-size:20px;font-weight:600;margin-bottom:6px;">' + name + '</div>' +
+    '<div style="color:#888;margin-bottom:20px;">@' + handle + '</div>' +
+    '<div id="qrcode-container" style="display:inline-block;padding:12px;background:#fff;border-radius:12px;"></div>' +
+    '<div style="margin-top:20px;"><button id="copy-card-link" style="padding:10px 24px;border:none;border-radius:8px;background:#07c160;color:#fff;font-size:15px;">复制链接</button></div>' +
+    '</div>';
+  window.openSubpage('我的名片', html, { returnAction: function() { openMe(); } });
+  setTimeout(function() {
+    var el = document.getElementById('qrcode-container');
+    if (el && typeof QRCode !== 'undefined') {
+      new QRCode(el, { text: cardUrl, width: 180, height: 180 });
+    }
+    var btn = document.getElementById('copy-card-link');
+    if (btn) {
+      btn.onclick = function() {
+        navigator.clipboard.writeText(cardUrl).then(function() {
+          if (typeof showToast === 'function') { showToast('链接已复制'); }
+        });
+      };
+    }
+  }, 100);
+}
+
+
 export function initMe() {
+
+  var myCardEl = document.getElementById('menu-my-card');
+  if (myCardEl) { myCardEl.onclick = openMyCard; }
   if (initialized) return;
   initialized = true;
 
@@ -94,6 +125,13 @@ export function initMe() {
       <div class="me-menu-item" id="menu-settings">
         <span class="menu-icon">⚙️</span>
         <span class="menu-label">${t('settings')}</span>
+
+        <span class="menu-arrow">›</span>
+      </div>
+      <div class="me-menu-item" id="menu-my-card">
+        <span class="menu-icon">🪪</span>
+        <span class="menu-label">我的名片</span>
+        <span class="menu-arrow">›</span>
         <span class="menu-arrow">›</span>
       </div>
     </div>

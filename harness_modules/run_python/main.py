@@ -107,7 +107,7 @@ def run(params):
         r = subprocess.run([sys.executable, tmp], capture_output=True, text=True, timeout=TIMEOUT, encoding='utf-8', errors='replace', cwd=REPO_ROOT, env=_env)
         _err_msg = (r.stderr or '')[:500] if r.returncode != 0 else None
         return {
-            'success': r.returncode == 0,
+            'success': (r.returncode == 0) and not any(m in (r.stdout or '') for m in ('❌', 'Traceback', 'SyntaxError')),
             'stdout': (r.stdout or '')[:3000],
             'stderr': (r.stderr or '')[:1000],
             'error': _err_msg,
