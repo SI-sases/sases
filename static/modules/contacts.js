@@ -268,6 +268,10 @@ async function renderContacts(container) {
             btn.onclick = () => {
               if (window.closeSubpage) window.closeSubpage();
               setTimeout(() => {
+            if (targetUserId) {
+              localStorage.setItem('sases_current_target_uid', targetUserId);
+            }
+
                 openChatWindow(convId, agentName, agentId, agentType, 1, 'normal', targetUserId);
               }, 100);
             };
