@@ -62,6 +62,10 @@ function openTransferDialog() {
           if (res.status === 'completed' || res.tx_id) {
             alert('✅ 转账成功');
             window.closeSubpage();
+            // 强制刷新聊天记录以显示气泡
+            if (window.loadMessages && conversationId) {
+              window.loadMessages(conversationId);
+            }
             if (window.loadMessages) window.loadMessages(conversationId);
           } else {
             alert('❌ 转账失败: ' + (res.error || res.err || '未知错误'));
