@@ -705,11 +705,8 @@ import os,
 
 【背景】
 刚才任务执行完成后，刷新网页出现白屏，前端静态资源可能加载失败或有语法错误。
-- 2026-10-25: 纯只读排查。请把 executor_callback.py 中控制任务结束和续跑的真实代码原样打印出来。
 
 第 1 步：用 file_read 读取 core/
-- 2026-10-25: 先读取 core/services/supervisor/decider.py，找到里面名叫 _fake_words 的变量，把它改成 ['test']，并在最
-- 2026-10-25: 先读取 core/services/supervisor/decider.py，然后在这个文件里找一个叫 "_is_fake" 的变量，把它的判断逻辑改回原来的
 - 2026-10-25: 先读取 core/services/supervisor/decider.py，然后找到 _fake_words 变量，把它改成 ['test']
 - 2026-10-25: 先读取 core/services/supervisor/decider.py，然后找到 `_fake_words` 变量，把它改成 `['test']`，并在
 - 2026-10-25: 先读取 core/services/supervisor/decider.py，然后找到 _fake_words 变量，把它改成 ['test']，最后确认没有
@@ -804,6 +801,15 @@ ROOT = r'C:\Use
 
 要求
 - 2026-10-31: 帮我把 static/modules/chat.js 里的中文改成中英双语（例如 发送 -> 发送 / Send）。
+- 2026-11-01: 只读探测：SASES 的自动重启机制从哪里触发、哪里监听、哪里拉起新进程。不要改任何代码。
+
+背景：
+昨天执行 P0-2 时，改了 core/db.py 后触发
+- 2026-11-01: 给 core/db.py 的 users 表补丁块追加两个 _ensure_column 调用，为 users 表加 handle 和 display_name
+- 2026-10-31: 探测 core/db.py 里 users 表的字段定义方式。不要改任何代码。
+
+背景：
+我要给 users 表加两个字段 handle 和 display_n
 
 
 
