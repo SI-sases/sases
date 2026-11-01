@@ -47,7 +47,7 @@ import { t } from './me_i18n.js';
 
 let initialized = false;
 
-function openMyCard() {
+window.openMyCard = function() {
   var cardUrl = 'http://47.96.87.147:8001/u/' + (sasesId || '');
   var name = (displayName || username || '');
   var handle = (username || '');
@@ -128,13 +128,7 @@ export function initMe() {
 
         <span class="menu-arrow">›</span>
       </div>
-      <div class="me-menu-item" id="menu-my-card">
-        <span class="menu-icon">🪪</span>
-        <span class="menu-label">我的名片</span>
-        <span class="menu-arrow">›</span>
-        <span class="menu-arrow">›</span>
-      </div>
-    </div>
+          </div>
   `;
 
   document.getElementById('me-profile-main').addEventListener('click', openPersonalInfo);
