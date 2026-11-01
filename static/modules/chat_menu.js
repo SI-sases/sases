@@ -36,6 +36,16 @@ function openTransferDialog() {
   
   if (window.openSubpage) {
     window.openSubpage('转账', html, { returnAction: () => { window.closeSubpage(); } });
+    setTimeout(async () => {
+      try {
+        const token = localStorage.getItem('sases_token');
+        const res = await fetch('/credits/balance', { headers: { Authorization: 'Bearer ' + token } });
+        const data = await res.json();
+        const hint = document.getElementById('transfer-balance-hint');
+        if (hint && data.balance !== undefined) hint.textContent = '当前种子积分余额：' + data.balance;
+      } catch(e) {}
+    }, 50);
+
     setTimeout(() => {
       document.getElementById('btn-do-transfer').onclick = async () => {
         const amount = parseFloat(document.getElementById('transfer-amount').value);
