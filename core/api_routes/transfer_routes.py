@@ -44,7 +44,21 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
     return user_id
 
 
-def _resolve_receiver(receiver_id_str: str) -> int:
+def _resolve_receiver(receiver: str):
+    with db_cursor() as cur:
+        if str(receiver).isdigit():
+            cur.execute("SELECT id FROM users WHERE id=?", (int(receiver),))
+            row = cur.fetchone()
+            if row: return row["id"]
+
+        if str(receiver).startswith('sases_api_'):
+            cur.execute("SELECT user_id FROM model_configs WHERE id=?", (receiver,))
+            row = cur.fetchone()
+            if row: return row["user_id"]
+
+        cur.execute("SELECT id FROM users WHERE sases_id=? OR username=?", (receiver, receiver))
+        row = cur.fetchone()
+        return row["id"] if row else None
     """把 SASES ID 或数字 ID 解析为数据库 users.id"""
     receiver = (receiver_id_str or "").strip()
     if not receiver:
