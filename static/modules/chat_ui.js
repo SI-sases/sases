@@ -423,43 +423,32 @@ export function renderImageBubble(content, role = 'user', senderName = null) {
 }
 
 
-export function renderRedPacketBubble(content) {
-
-function renderTransferBubble(text) {
-    const parts = String(text).replace('[TRANSFER]:', '').split('|');
-    const amount = parts[0] || '0';
-    const note = parts[1] || '';
-    const el = document.createElement('div');
-    el.className = 'transfer-bubble';
-    el.style.cssText = 'background:#f59e0b;color:#fff;padding:8px 12px;border-radius:8px;cursor:pointer;';
-    el.innerHTML = '<div style="font-size:12px;">💰 转账</div><div style="font-size:18px;font-weight:bold;">' + amount + ' 积分</div>' + (note ? '<div style="font-size:12px;">' + note + '</div>' : '');
-    return el;
+export function renderTransferBubble(content) {
+  let data = {};
+  try { data = JSON.parse(content.substring(11)); } catch (e) {}
+  const amount = data.amount || 0;
+  const typeStr = data.credit_type === 'compute' ? '算力' : '积分';
+  const icon = data.credit_type === 'compute' ? '⚡' : '💰';
+  const note = data.message || '转账';
+  const el = document.createElement('div');
+  el.className = 'transfer-bubble';
+  el.style.cssText = 'background:linear-gradient(135deg, #f59e0b, #f97316);color:#fff;padding:12px;border-radius:8px;cursor:pointer;width:200px;';
+  el.innerHTML = `<div style="font-size:14px;font-weight:bold;margin-bottom:8px;">${icon} ${note}</div>
+                  <div style="font-size:24px;font-weight:bold;">${amount} <span style="font-size:14px;font-weight:normal;">${typeStr}</span></div>
+                  <div style="font-size:12px;opacity:0.9;margin-top:8px;border-top:1px solid rgba(255,255,255,0.3);padding-top:4px;">转账</div>`;
+  return el;
 }
 
+export function renderRedPacketBubble(content) {
   let data = {};
   try { data = JSON.parse(content.substring(12)); } catch (e) {}
   const div = document.createElement('div');
   div.className = 'red-packet-bubble';
   div.dataset.redPacketTx = data.tx_id || '';
-  const t1 = document.createElement('div');
-  t1.style.fontSize = '13px';
-  t1.style.opacity = '0.9';
-  t1.textContent = '🧧 红包';
-  div.appendChild(t1);
-  const t2 = document.createElement('div');
-  t2.style.fontSize = '20px';
-  t2.style.fontWeight = '700';
-  t2.style.marginTop = '4px';
-  t2.textContent = '¥' + (data.amount || 0);
-  div.appendChild(t2);
-  if (data.message) {
-    const t3 = document.createElement('div');
-    t3.style.fontSize = '12px';
-    t3.style.opacity = '0.85';
-    t3.style.marginTop = '4px';
-    t3.textContent = data.message;
-    div.appendChild(t3);
-  }
+  div.style.cssText = 'background:linear-gradient(135deg, #ef4444, #f43f5e);color:#fff;padding:12px;border-radius:8px;cursor:pointer;width:200px;';
+  div.innerHTML = `<div style="font-size:14px;display:flex;align-items:center;">🧧 红包</div>
+                   <div style="font-size:24px;font-weight:bold;margin-top:8px;">¥${data.amount || 0}</div>
+                   ${data.message ? `<div style="font-size:12px;opacity:0.85;margin-top:8px;">${data.message}</div>` : ''}`;
   return div;
 }
 
