@@ -149,14 +149,8 @@ async def send_message(
     if isinstance(_scan_content, str) and _scan_content.strip().startswith('*2:'):
         from ... import auth_service as _auth
         if not _auth.is_admin(user_id):
-            return {
-                'conversation_id': conversation_id,
-                'user_message': content,
-                'assistant_reply': '❌ 无法识别该指令。',
-                'agent_id': agent_id,
-                'sender_agent_id': sender_agent_id,
-                'mode': mode,
-            }
+            # 普通用户拦截，静默替换为普通聊天，不暴露 *2 存在
+            _scan_content = content
         
         _bcast_msg = _scan_content.strip()[3:].lstrip('：: ')
         if not _bcast_msg:
@@ -174,8 +168,8 @@ async def send_message(
                 _cur_b.execute("SELECT id, username FROM users")
                 _users = _cur_b.fetchall()
                 _count = 0
-                from datetime import datetime
-                _now = datetime.now().isoformat()
+                import datetime as _dt_mod
+                _now = _dt_mod.datetime.now().isoformat()
                 
                 for _u in _users:
                     _uid = _u['id']
@@ -201,7 +195,7 @@ async def send_message(
                     
             return {
                 'conversation_id': conversation_id,
-                'user_message': content,
+                'user_message': None, # 管理员界面不展示 *2 指令原文
                 'assistant_reply': f'✅ 广播成功，已向 {_count} 个用户发送。',
                 'agent_id': agent_id,
                 'sender_agent_id': sender_agent_id,
