@@ -1020,7 +1020,12 @@ async def send_message(
             cur.execute("SELECT * FROM model_configs WHERE id=? AND user_id=?", (agent_id, user_id))
             model_row = cur.fetchone()
         if not model_row:
-            assistant_reply = "错误：找不到绑定的智能体模型"
+            # 【新增】SASES 助手作为留言板，不报错
+            _is_sases_assist = str(agent_id or '').startswith('sases_assistant')
+            if _is_sases_assist:
+                assistant_reply = "📢 留言已收到，系统管理员上线后会处理你的反馈。"
+            else:
+                assistant_reply = "错误：找不到绑定的智能体模型"
         else:
             model_config = dict(model_row)
             # 项目库检索（v0.17.0）— 仅 SASES 助手
