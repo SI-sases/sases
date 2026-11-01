@@ -478,6 +478,10 @@ export function openChatWindow(conversationId, chatName, agentId = null, agentTy
   chatState.conversationId = conversationId ? parseInt(conversationId) : null;
   chatState.agentId = agentId;
   chatState.agentType = agentType;
+  chatState.targetUserId = targetUserId;
+  if (isFriendChat === 1 && targetUserId) {
+    localStorage.setItem('sases_current_target_uid', targetUserId);
+  }
   chatState.senderAgentId = (isFriendChat === 1) ? null : (localStorage.getItem('sases_sender_agent_id') || null);
   chatState.friendMode = 'normal';
   chatState.pendingQuote = null;
