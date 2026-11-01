@@ -45,6 +45,29 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
 
 
 def _resolve_receiver(receiver: str):
+    # 防止异常传参（如传入 None 或 空字符串）
+    if not receiver:
+        return None
+
+    with db_cursor() as cur:
+        # 1. 纯数字按 users.id 查
+        if str(receiver).isdigit():
+            cur.execute("SELECT id FROM users WHERE id=?", (int(receiver),))
+            row = cur.fetchone()
+            if row: return row["id"]
+
+        # 2. 智能体 ID 映射到其所有者
+        if str(receiver).startswith('sases_api_') or str(receiver).startswith('sases_assistant_'):
+            cur.execute("SELECT user_id FROM model_configs WHERE id=?", (receiver,))
+            row = cur.fetchone()
+            if row: return row["user_id"]
+            # 如果是系统虚拟助手，默认转给管理员或者报错
+            return None
+
+        # 3. sases_id 或 username 查
+        cur.execute("SELECT id FROM users WHERE sases_id=? OR username=?", (receiver, receiver))
+        row = cur.fetchone()
+        return row["id"] if row else None
     with db_cursor() as cur:
         if str(receiver).isdigit():
             cur.execute("SELECT id FROM users WHERE id=?", (int(receiver),))
