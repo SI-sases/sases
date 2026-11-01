@@ -95,6 +95,7 @@ export const api = {
   getFriendRequests: () => request('/agents/friend-requests'),
   acceptFriendRequest: (requestId) => request('/agents/friend-requests/accept', { method: 'POST', body: JSON.stringify({ request_id: requestId }) }),
   rejectFriendRequest: (requestId) => request('/agents/friend-requests/reject', { method: 'POST', body: JSON.stringify({ request_id: requestId }) }),
+  setFriendMode: (targetUserId, mode) => request('/agents/friend-mode', { method: 'POST', body: JSON.stringify({ target_user_id: targetUserId, mode: mode }) }),
   callAgent: (agentId, query) => request('/agents/call', { method: 'POST', body: JSON.stringify({ agent_id: agentId, query }) }),
 
   // 消息

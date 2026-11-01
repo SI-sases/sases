@@ -27,6 +27,8 @@ function getPinyinInitial(name) {
 }
 
 function hashColor(input) {
+  if (!input) input = 'default_agent';
+  input = String(input);
   let hash = 0;
   for (let i = 0; i < input.length; i++) {
     hash = input.charCodeAt(i) + ((hash << 5) - hash);
@@ -50,17 +52,31 @@ async function fetchAgents() {
   }
   try {
     const friendData = await api.listFriendAgents();
-    friendAgents = friendData.friends || [];
+    const rawFriends = friendData.friends || [];
+    // [核心防弹衣] 前端兜底去重，防止后端返回重复项
+    const seen = new Set();
+    friendAgents = rawFriends.filter(f => {
+      if (!f.target_user_id) return false;
+      if (seen.has(f.target_user_id)) return false;
+      seen.add(f.target_user_id);
+      return true;
+    });
   } catch (e) {
     console.warn('获取好友智能体失败 to get friend agents', e);
   }
 }
 
 function generateAgentRow(agent, type) {
-  const bgColor = hashColor(agent.agent_id);
+  // 兼容处理：好友列表可能没有 agent_id，用 target_user_id 兜底
+  const aid = agent.agent_id || agent.target_user_id || 'unknown';
+  const aname = agent.name || agent.owner || '未命名';
+  
+  const bgColor = hashColor(aid);
   const statusClass = getStatusDotClass(agent);
-  const name = type === 'my' ? `${agent.name}${agent.type === 'local' ? ' <span style="color:green;font-size:12px;">授粉+2</span>' : ''}` : agent.name;
-  const desc = type === 'my' ? (agent.detail || agent.capability) : `${agent.owner} - ${agent.detail}`;
+  
+  const nameHtml = type === 'my' ? `${aname}${agent.type === 'local' ? ' <span style="color:green;font-size:12px;">授粉+2</span>' : ''}` : aname;
+  const desc = type === 'my' ? (agent.detail || agent.capability || '') : `${agent.owner || ''} - ${agent.detail || ''}`;
+  
   const actions = type === 'my' ? `
     <button class="swipe-btn share-btn" data-action="share">${t('share_settings')}</button>
     <button class="swipe-btn delete-btn" data-action="delete">${t('delete')}</button>
@@ -70,16 +86,16 @@ function generateAgentRow(agent, type) {
   `;
 
   return `
-    <div class="swipe-row" data-agent-id="${agent.agent_id}" data-agent-name="${agent.name}" data-agent-type="${type}" ${type === 'friend' ? `data-conversation-id="${agent.conversation_id || ''}" data-target-user-id="${agent.target_user_id || ''}"` : ''}>
+    <div class="swipe-row" data-agent-id="${aid}" data-agent-name="${aname}" data-agent-type="${type}" ${type === 'friend' ? `data-conversation-id="${agent.conversation_id || ''}" data-target-user-id="${agent.target_user_id || ''}"` : ''}>
       <div class="agent-row">
         <div class="agent-avatar" style="background: ${bgColor};">
-          ${agent.name.charAt(0)}
+          ${aname.charAt(0)}
           <span class="${statusClass}"></span>
         </div>
         <div class="agent-info">
-          <div class="agent-name">${name}</div>
+          <div class="agent-name">${nameHtml}</div>
           <div class="agent-desc">${desc}</div>
-          <div class="agent-id-display" style="font-size:12px;color:#999;">ID: ${agent.agent_id}</div>
+          <div class="agent-id-display" style="font-size:12px;color:#999;">ID: ${aid}</div>
         </div>
       </div>
       <div class="swipe-actions">
@@ -88,6 +104,7 @@ function generateAgentRow(agent, type) {
     </div>
   `;
 }
+
 
 function closeAllSwipe() {
   if (currentOpenRow) {
