@@ -21,6 +21,11 @@ async def deliver_to_linked_accounts(user_id, conversation_id, content, sender_a
             _t_row = cur.fetchone()
             if _t_row and _t_row["target_user_id"]:
                 _target_uid = _t_row["target_user_id"]
+                # 新增：校验双方是否为已同意的好友关系
+                cur.execute("SELECT 1 FROM agent_friendships WHERE status='accepted' AND ((user_id=? AND target_user_id=?) OR (user_id=? AND target_user_id=?))", (user_id, _target_uid, _target_uid, user_id))
+                if not cur.fetchone():
+                    print(f'[message] 拦截：用户 {user_id} 与 {_target_uid} 尚未成为好友，拒绝投递。')
+                    return
                 
                 # 2. 查对方的会话
                 cur.execute("SELECT id FROM conversations WHERE user_id=? AND target_user_id=? AND is_friend_chat=1", (_target_uid, user_id))

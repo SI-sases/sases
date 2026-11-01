@@ -162,6 +162,23 @@ def finish_run(run_id, status='completed'):
                                 _msg_fin = '[SUMMARY]:' + _ans[:1500]
                                 break
                     _conn.close()
+                except Exception as _e:
+                    print('提取总结失败:', _e)
+                try:
+                    import json, sqlite3
+                    _conn = sqlite3.connect('users.db')
+                    _conn.row_factory = sqlite3.Row
+                    _cur = _conn.cursor()
+                    _cur.execute("SELECT results FROM swarm_pending_tasks WHERE supervisor_run_id=? ORDER BY id DESC LIMIT 1", (run_id,))
+                    _row = _cur.fetchone()
+                    if _row and _row['results']:
+                        _res = json.loads(_row['results'])
+                        for _r in reversed(_res):
+                            _ans = _r.get('answer') or _r.get('output')
+                            if _ans and isinstance(_ans, str) and len(_ans) > 5:
+                                _msg_fin = '[SUMMARY]:' + _ans[:1500]
+                                break
+                    _conn.close()
                 except Exception:
                     pass
             elif status == 'waiting_user':

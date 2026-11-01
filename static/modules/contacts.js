@@ -379,8 +379,8 @@ function openNewAgentPage() {
           body: JSON.stringify({ target_sases_id: sasesId })
         });
         const data = await res.json();
-        if (res.ok) alert('&#9989; 好友请求已发送,等待对方同意！');
-        else alert('&#10060; 发送失败: ' + (data.detail || data.message || '未知错误'));
+        if (res.ok) alert('✅ 好友请求已发送,等待对方同意！');
+        else alert('❌ 发送失败: ' + (data.detail || data.message || '未知错误'));
       } catch (e) {
         alert('网络错误 error: ' + e.message);
       }

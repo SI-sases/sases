@@ -185,7 +185,7 @@ def get_received_friend_requests(user_id: int):
                    af.friend_agent_id, mc.name as agent_name
             FROM agent_friendships af
             JOIN users u ON af.user_id = u.id
-            JOIN model_configs mc ON af.friend_agent_id = mc.id
+            LEFT JOIN model_configs mc ON af.friend_agent_id = mc.id
             WHERE af.target_user_id = ? AND af.status = 'pending'
             ORDER BY af.created_at DESC
         """, (user_id,))
@@ -216,7 +216,7 @@ def call_agent(user_id: int, agent_id: str, query: str):
         cur.execute("""
             SELECT af.id, mc.user_id as provider_id, mc.price
             FROM agent_friendships af
-            JOIN model_configs mc ON af.friend_agent_id = mc.id
+            LEFT JOIN model_configs mc ON af.friend_agent_id = mc.id
             WHERE af.user_id=? AND af.friend_agent_id=? AND af.status='accepted'
         """, (user_id, agent_id))
         rel = cur.fetchone()
