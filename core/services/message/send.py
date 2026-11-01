@@ -568,6 +568,24 @@ async def send_message(
                         'mode': mode,
                         'import_mode': 'image'
                     }
+            # 单行 *1: 且非图片 → 提示用户用两行格式
+            if not _uni_text and isinstance(content, str) and _scan_content.startswith('*1:'):
+                _single_body = _scan_content[3:].strip()
+                _hint_body = _single_body
+                for _sp in ('导入项目库：', '导入项目库:', '导入项目库', '导入知识库：', '导入知识库:', '导入知识库', '内容如下：', '内容如下', '内容：', '内容:'):
+                    if _hint_body.startswith(_sp):
+                        _hint_body = _hint_body[len(_sp):].strip()
+                        break
+                if _hint_body:
+                    return {
+                        'conversation_id': conversation_id,
+                        'user_message': content,
+                        'assistant_reply': '📋 知识库导入需要两行格式：' + chr(10) + chr(10) + '第一行：*1: 导入知识库（或 *1: 导入项目库）' + chr(10) + '第二行：要导入的正文内容' + chr(10) + chr(10) + '示例：' + chr(10) + '*1: 导入知识库' + chr(10) + '这是要导入的正文。',
+                        'agent_id': agent_id,
+                        'sender_agent_id': sender_agent_id,
+                        'mode': mode,
+                        'import_mode': 'star1_hint'
+                    }
             if _uni_text:
                 try:
                     from .. import project_service as _ps_uni
