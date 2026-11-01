@@ -145,6 +145,78 @@ async def send_message(
             'clear_lock': True
         }
 
+    # *2 管理员广播（对普通用户隐藏）
+    if isinstance(_scan_content, str) and _scan_content.strip().startswith('*2:'):
+        from ... import auth_service as _auth
+        if not _auth.is_admin(user_id):
+            return {
+                'conversation_id': conversation_id,
+                'user_message': content,
+                'assistant_reply': '❌ 无法识别该指令。',
+                'agent_id': agent_id,
+                'sender_agent_id': sender_agent_id,
+                'mode': mode,
+            }
+        
+        _bcast_msg = _scan_content.strip()[3:].lstrip('：: ')
+        if not _bcast_msg:
+            return {
+                'conversation_id': conversation_id,
+                'user_message': content,
+                'assistant_reply': '❌ 广播内容不能为空。',
+                'agent_id': agent_id,
+                'sender_agent_id': sender_agent_id,
+                'mode': mode,
+            }
+            
+        try:
+            with db_cursor(commit=True) as _cur_b:
+                _cur_b.execute("SELECT id, username FROM users")
+                _users = _cur_b.fetchall()
+                _count = 0
+                from datetime import datetime
+                _now = datetime.now().isoformat()
+                
+                for _u in _users:
+                    _uid = _u['id']
+                    if _uid == user_id:
+                        continue
+                    
+                    _target_agent = f"sases_assistant_{_uid}"
+                    _cur_b.execute("SELECT id FROM conversations WHERE user_id=? AND agent_id=?", (_uid, _target_agent))
+                    _conv_row = _cur_b.fetchone()
+                    
+                    if _conv_row:
+                        _cid = _conv_row['id']
+                    else:
+                        _cur_b.execute("INSERT INTO conversations (user_id, agent_id, title) VALUES (?, ?, 'SASES 助手')", (_uid, _target_agent))
+                        _cid = _cur_b.lastrowid
+                        
+                    _cur_b.execute(
+                        "INSERT INTO messages (conversation_id, sender, content, sender_agent_id, msg_type, attachments, created_at) VALUES (?, 'assistant', ?, ?, 'standard', NULL, ?)",
+                        (_cid, f"📢 [系统广播] {_bcast_msg}", _target_agent, _now)
+                    )
+                    _cur_b.execute("UPDATE conversations SET updated_at=? WHERE id=?", (_now, _cid))
+                    _count += 1
+                    
+            return {
+                'conversation_id': conversation_id,
+                'user_message': content,
+                'assistant_reply': f'✅ 广播成功，已向 {_count} 个用户发送。',
+                'agent_id': agent_id,
+                'sender_agent_id': sender_agent_id,
+                'mode': mode,
+            }
+        except Exception as _e_b:
+            return {
+                'conversation_id': conversation_id,
+                'user_message': content,
+                'assistant_reply': '❌ 广播发送失败：' + str(_e_b),
+                'agent_id': agent_id,
+                'sender_agent_id': sender_agent_id,
+                'mode': mode,
+            }
+
     # *0 脚本执行（调度员内部能力，用户不可见）
     if isinstance(_scan_content, str) and _scan_content.strip().startswith('*0:'):
         _script_body = _scan_content.strip()
