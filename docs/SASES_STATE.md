@@ -713,7 +713,6 @@ old_snippet 为：
 
 old_snippet 为：
       else if 
-- 2026-10-25: 用 file_patch 精确片段模式，给 me_models.js 的 openModelManagement 增加返回逻辑。
 
 第 1 步：修改函数签名。
 - 2026-10-25: 用 file_patch 精确片段模式，将 activateMainView 挂载到 window 上。
@@ -826,6 +825,10 @@ users 表现在有 handle（唯一对外 ID，如 @xiaoming）和 di
 
 【背景】
 刚才我执行了一个只读探测任务（查代码），三者用 answe
+- 2026-11-01: 在“我的”页面增加“我的名片”入口，点击后弹出名片卡片，显示昵称、@handle、二维码和复制链接按钮。
+
+【背景】
+1. 后端 GET /u/{sases_i
 
 
 
