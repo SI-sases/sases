@@ -109,8 +109,8 @@ export function createMessageElement(role, content, senderName, messageId, timeI
     if (msg_type === 'file' && attachments && attachments.length > 0) {
         return renderFileBubble(`[FILE]:${attachments[0].name}|${attachments[0].size || 0}|${attachments[0].url}`, role, senderName);
     }
-    if (typeof content === 'string' && content.startsWith('[RED_PACKET]:')) { return renderRedPacketBubble(content); }
-    if (typeof content === 'string' && content.startsWith('[TRANSFER]:')) { return renderTransferBubble(content); }
+    if (typeof content === 'string' && content.startsWith('[RED_PACKET]:')) { return renderRedPacketBubble(content, role, senderName); }
+    if (typeof content === 'string' && content.startsWith('[TRANSFER]:')) { return renderTransferBubble(content, role, senderName); }
 
   if (typeof content === 'string' && content.startsWith('[IMAGE]:')) { return renderImageBubble(content, role, senderName); }
   if (typeof content === 'string' && content.startsWith('[FILE]:')) { return renderFileBubble(content, role, senderName); }
