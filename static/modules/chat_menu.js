@@ -58,7 +58,7 @@ function openTransferDialog() {
 
         try {
           // 直接调 api 发起请求
-          const res = await window.api.transferCredits(receiverId, amount, note, conversationId, type);
+          const res = await window.sendTransfer(receiverId, amount, note, conversationId, type);
           if (res.status === 'completed' || res.tx_id) {
             alert('✅ 转账成功');
             window.closeSubpage();
@@ -71,7 +71,7 @@ function openTransferDialog() {
             alert('❌ 转账失败: ' + (res.error || res.err || '未知错误'));
           }
         } catch (e) {
-          alert('网络错误或余额不足');
+          alert('转账失败: ' + (e.message || '网络异常'));
         }
       };
     }, 100);
