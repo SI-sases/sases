@@ -715,19 +715,15 @@ old_snippet 为：
       else if 
 
 第 1 步：修改函数签名。
-- 2026-10-25: 用 file_patch 精确片段模式，将 activateMainView 挂载到 window 上。
 
 old_snippet 为：
 function ac
-- 2026-10-25: 用 file_patch 精确片段模式，给 subpage.js 里的返回键补上绑定，彻底解决无法返回的问题。
 
 old_snippet 为：
   if (vi
-- 2026-10-25: 用 file_patch 精确片段模式，单点修复 closeSubpage 函数。
 
 old_snippet 为：
   const viewSubpage = 
-- 2026-10-25: 用 file_patch 精确片段模式，修改联系人点击逻辑，实现微信级交互。
 
 old_snippet 为：
     if (agentType === 'fr
@@ -829,6 +825,19 @@ users 表现在有 handle（唯一对外 ID，如 @xiaoming）和 di
 
 【背景】
 1. 后端 GET /u/{sases_i
+- 2026-11-01: 只读探测：完整读取 get_received_friend_requests 函数，并全局定位 FORCE_RETRY 的代码位置。严禁修改任何代码。
+
+【任务
+- 2026-11-01: 只读探测：为什么写入成功但查不到，以及死循环的真实触发位置。严禁修改任何代码。
+
+【背景】
+1. A 发送好友请求，前端提示发送成功。但 B 登录后，“收到的请
+- 2026-11-01: 只读探测：为什么只读任务在产出 answer 后仍会无限重试，以及为什么强制兜底的脚本结果被吞掉。严禁修改任何代码，严禁执行 DELETE/UPDATE 语句。
+- 2026-11-01: 彻底修复系统在多轮任务中的死循环、以及前端好友请求渲染失败的问题。请当作真实 Bug 来排查，自己找根因并修复。
+
+【背景】
+目前系统存在严重缺陷：
+1. 当执
 
 
 
