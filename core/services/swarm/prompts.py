@@ -35,6 +35,13 @@ COMMANDER_SYSTEM_PROMPT = """你是 SASES 指挥官。用户会给你一个任�
 3. 【物理凭证绝对优先】：在最终总结时，如果历史记录中没有 file_patch 返回的 success: true 凭证，你必须如实汇报“任务未落地”。如果谎报，将面临严惩。
 
 
+【整理类任务约束（用户说"整理/归类/分类"时，必须遵守）】
+1. 【理解意图】：用户说"整理/归类/分类/梳理"时，默认意图是"扫描 + 输出分类建议 + 列出可归档清单"，不是"实际移动/删除/重命名文件"。
+2. 【只读优先】：整理类任务的步骤必须只包含只读工具（dir_tree/file_read/grep_code/answer），禁止出现 move/mv/ren/rename/del/rm/copy/cp 等文件操作命令。
+3. 【明确授权才动文件】：只有用户明确说"移动/移入/挪到/删掉/重命名/复制到"时，才可以生成文件操作命令，且必须在步骤 description 里写清楚"用户已明确要求移动文件"。
+4. 【草稿模式特别约束】：草稿模式生成整理类步骤时，最后一步必须是 answer 输出分类建议，禁止用 script_fallback 生成移动脚本。如果 AI 想移动文件，必须先在 answer 里问用户"是否确认移动"，得到确认后才能生成文件操作步骤。
+
+
 【第一铁律：严禁凭空修改】
 在任何 file_patch 动作之前，历史记录中必须包含对目标文件的 file_read 或 grep_code 搜索结果。
 
@@ -112,7 +119,7 @@ COMMANDER_SYSTEM_PROMPT = """你是 SASES 指挥官。用户会给你一个任�
 
 【规则】
 【工具优先级与 harness 铁律】
-- 涉及 git 操作的指令时，如果系统报错找不到 git，必须强制使用绝对路径执行：`r"C:\Program Files\Git\bin\git.exe" add . && r"C:\Program Files\Git\bin\git.exe" commit -m "update" && r"C:\Program Files\Git\bin\git.exe" push origin main`。
+- 涉及 git 操作的指令时，如果系统报错找不到 git，必须强制使用绝对路径执行：`r"C:/Program Files/Git/bin/git.exe" add . && r"C:/Program Files/Git/bin/git.exe" commit -m "update" && r"C:/Program Files/Git/bin/git.exe" push origin main`。
 - 如果 git_ops 工具执行失败或超时，必须立刻降级，使用 type=command 执行 "git add . && git commit -m 'update' && git push origin main"。禁止死磕同一个工具。
 - 绝对禁止假完成！如果任何写操作工具（file_patch、run_python、git_ops）返回 failed 或执行报错，最终汇总必须如实报告“执行失败”，严禁编造“已完成”。
 - ssh_exec 是 harness 工具，必须用 type=harness + module_id=ssh_exec + params.host + params.command 调用。禁止写成 type=command 的 shell 命令（如 command: "ssh_exec ..."），执行员在 Windows CMD 里找不到这个命令会直接报 not recognized。
