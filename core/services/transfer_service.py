@@ -17,7 +17,7 @@ def get_sent_red_packets(user_id, limit=50):
         )
         return [dict(r) for r in cur.fetchall()]
 
-def create_transfer(sender_id: int, receiver_id: int, amount: float, message: str = ''):
+def create_transfer(sender_id: int, receiver_id: int, amount: float, message: str = '', credit_type: str = 'credits'):
     """转账：立即扣发送方，加接收方，一步完成"""
     if amount <= 0:
         return None, "金额必须大于0"
@@ -25,35 +25,37 @@ def create_transfer(sender_id: int, receiver_id: int, amount: float, message: st
         return None, "不能转账给自己"
 
     with db_cursor(commit=True) as cur:
-        # 检查余额
-        cur.execute("SELECT credits FROM users WHERE id=?", (sender_id,))
-        row = cur.fetchone()
-        if not row or row["credits"] < amount:
-            return None, "积分不足"
-
-        # 扣发送方
-        cur.execute("UPDATE users SET credits = credits - ? WHERE id=?", (amount, sender_id))
-        # 加接收方
-        cur.execute("UPDATE users SET credits = credits + ? WHERE id=?", (amount, receiver_id))
+        if credit_type == 'compute':
+            cur.execute("SELECT balance FROM user_compute_balance WHERE user_id=?", (sender_id,))
+            row = cur.fetchone()
+            if not row or row["balance"] < amount:
+                return None, "算力余额不足"
+            cur.execute("UPDATE user_compute_balance SET balance = balance - ? WHERE user_id=?", (amount, sender_id))
+            cur.execute("INSERT INTO user_compute_balance (user_id, balance) VALUES (?, ?) ON CONFLICT(user_id) DO UPDATE SET balance = balance + ?", (receiver_id, amount, amount))
+        else:
+            cur.execute("SELECT credits FROM users WHERE id=?", (sender_id,))
+            row = cur.fetchone()
+            if not row or row["credits"] < amount:
+                return None, "积分不足"
+            cur.execute("UPDATE users SET credits = credits - ? WHERE id=?", (amount, sender_id))
+            cur.execute("UPDATE users SET credits = credits + ? WHERE id=?", (amount, receiver_id))
 
         now = datetime.now().isoformat()
-        # 记录交易
         cur.execute("""
             INSERT INTO transactions
-            (sender_id, receiver_id, amount, tx_type, status, message, completed_at)
-            VALUES (?, ?, ?, 'transfer', 'completed', ?, ?)
+            (sender_id, receiver_id, amount, tx_type, status, message, completed_at, credit_type)
+            VALUES (?, ?, ?, 'transfer', 'completed', ?, ?, ?)
         """, (sender_id, receiver_id, amount, message, now, credit_type))
         tx_id = cur.lastrowid
 
-        # 积分日志
         cur.execute("""
             INSERT INTO contribution_log (user_id, action, event_type, points, detail)
             VALUES (?, '转账支出', 'transfer', ?, ?)
-        """, (sender_id, -amount, f"向用户{receiver_id}转账"))
+        """, (sender_id, -amount, f"向用户{receiver_id}转账({credit_type})"))
         cur.execute("""
             INSERT INTO contribution_log (user_id, action, event_type, points, detail)
             VALUES (?, '转账收入', 'transfer', ?, ?)
-        """, (receiver_id, amount, f"来自用户{sender_id}的转账"))
+        """, (receiver_id, amount, f"来自用户{sender_id}的转账({credit_type})"))
 
         return tx_id, None
 
@@ -84,7 +86,7 @@ def create_red_packet(sender_id: int, receiver_id: int, amount: float,
         # 创建 pending 红包
         cur.execute("""
             INSERT INTO transactions
-            (sender_id, receiver_id, amount, tx_type, status, message, expires_at)
+            (sender_id, receiver_id, amount, tx_type, status, message, expires_at, credit_type)
             VALUES (?, ?, ?, 'red_packet', 'pending', ?, ?)
         """, (sender_id, receiver_id, amount, message, expires.isoformat()))
         tx_id = cur.lastrowid
