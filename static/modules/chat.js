@@ -63,15 +63,16 @@ function handleSend() {
   sendMessage();
 }
 
-async function sendTransfer(receiver_id, amount, message, conversation_id) {
+async function sendTransfer(receiver_id, amount, message, conversation_id, credit_type = 'credits') {
   try {
-    const res = await api.transferCredits(receiver_id, amount, message, conversation_id);
+    const res = await api.transferCredits(receiver_id, amount, message, conversation_id, credit_type);
     return res;
   } catch (e) {
     console.error('[TRANSFER] sendTransfer failed', e);
     throw e;
   }
 }
+window.sendTransfer = sendTransfer;
 
 
 // ===== 停止按钮 / Stop Button（ / 停止按钮 / Stop Button（v0.38.0）=====
