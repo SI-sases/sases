@@ -161,6 +161,35 @@ async def send_message(
                 'sender_agent_id': sender_agent_id,
                 'mode': mode,
             }
+        # 自然语言自动转 Python 代码（*0 只接受 Python，非代码内容用 LLM 转换）
+        try:
+            import ast as _ast0
+            _ast0.parse(_script_body)
+        except SyntaxError:
+            try:
+                from ..swarm.llm_parser import _call_llm as _llm0
+                _nl_prompt = '把下面的自然语言需求转换成一段完整可执行的 Python 脚本。只输出代码，不要任何解释、不要 markdown 代码块标记。需求：' + _script_body
+                _nl_sys = '你是 Python 代码生成器。用户给出自然语言需求，你输出可直接运行的 Python 代码。必须符合 Python 语法，禁止 markdown 代码块标记（禁止 ```），禁止解释文字。'
+                _converted = await _llm0(_nl_prompt, system_prompt=_nl_sys, max_tokens=800)
+                _converted = _converted.strip()
+                if _converted.startswith(chr(96) + chr(96) + chr(96)):
+                    _cl = _converted.split(chr(10))
+                    if _cl and _cl[0].startswith(chr(96) + chr(96) + chr(96)):
+                        _cl = _cl[1:]
+                    if _cl and _cl[-1].strip() == chr(96) + chr(96) + chr(96):
+                        _cl = _cl[:-1]
+                    _converted = chr(10).join(_cl)
+                _ast0.parse(_converted)
+                _script_body = _converted
+            except Exception as _e_nl:
+                return {
+                    'conversation_id': conversation_id,
+                    'user_message': content,
+                    'assistant_reply': '⚠️ 内容既不是合法 Python，也无法自动转换。请提供 Python 代码，或换种描述。原因：' + str(_e_nl)[:150],
+                    'agent_id': agent_id,
+                    'sender_agent_id': sender_agent_id,
+                    'mode': mode,
+                }
         if len(_script_body) > 50000:
             return {
                 'conversation_id': conversation_id,
