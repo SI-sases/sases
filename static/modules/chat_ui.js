@@ -423,20 +423,32 @@ export function renderImageBubble(content, role = 'user', senderName = null) {
 }
 
 
-export function renderTransferBubble(content) {
+export function renderTransferBubble(content, role = 'user', senderName = null) {
   let data = {};
   try { data = JSON.parse(content.substring(11)); } catch (e) {}
   const amount = data.amount || 0;
   const typeStr = data.credit_type === 'compute' ? '算力' : '积分';
   const icon = data.credit_type === 'compute' ? '⚡' : '💰';
   const note = data.message || '转账';
+  const isSelf = role === 'user';
+  
   const el = document.createElement('div');
   el.className = 'transfer-bubble';
-  el.style.cssText = 'background:linear-gradient(135deg, #f59e0b, #f97316);color:#fff;padding:12px;border-radius:8px;cursor:pointer;width:200px;';
+  el.style.cssText = isSelf 
+    ? 'background:linear-gradient(135deg, #f59e0b, #f97316);color:#fff;padding:12px;border-radius:8px;cursor:pointer;width:200px;'
+    : 'background:#fff;color:#333;padding:12px;border-radius:8px;cursor:pointer;width:200px;border:1px solid #e5e5e5;';
+    
   el.innerHTML = `<div style="font-size:14px;font-weight:bold;margin-bottom:8px;">${icon} ${note}</div>
-                  <div style="font-size:24px;font-weight:bold;">${amount} <span style="font-size:14px;font-weight:normal;">${typeStr}</span></div>
-                  <div style="font-size:12px;opacity:0.9;margin-top:8px;border-top:1px solid rgba(255,255,255,0.3);padding-top:4px;">转账</div>`;
-  return el;
+                  <div style="font-size:24px;font-weight:bold;color:${isSelf ? '#fff' : '#f59e0b'};">${amount} <span style="font-size:14px;font-weight:normal;color:${isSelf ? '#fff' : '#666'};">${typeStr}</span></div>
+                  <div style="font-size:12px;opacity:0.9;margin-top:8px;border-top:1px solid ${isSelf ? 'rgba(255,255,255,0.3)' : '#eee'};padding-top:4px;">转账</div>`;
+                  
+  el.onclick = () => { alert(`转账详情\n金额：${amount} ${typeStr}\n备注：${note}\n(实时到账)`); };
+  
+  const wrapper = document.createElement('div');
+  wrapper.style.display = 'flex';
+  wrapper.style.justifyContent = isSelf ? 'flex-end' : 'flex-start';
+  wrapper.appendChild(el);
+  return wrapper;
 }
 
 export function renderRedPacketBubble(content) {
