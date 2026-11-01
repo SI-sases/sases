@@ -175,6 +175,10 @@ def finish_run(run_id, status='completed'):
                                         _msg_fin = '[SUMMARY]:' + _reason[:100] + '...'
                 except Exception as _e_hist:
                     print('[supervisor] history 提取异常:', _e_hist)
+            try:
+                _msg_fin
+            except NameError:
+                _msg_fin = '[SUMMARY]:OK 执行已结束'
             _im_fin(_conv_id, _msg_fin, sender_agent_id=_sup_id)
             # [A2A 跨端回传] 如果是好友会话，将执行结果投递回发起方
             try:
