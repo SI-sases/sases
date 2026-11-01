@@ -75,9 +75,10 @@ def list_friend_agents(user_id: int):
                 # 查双向会话 ID
                 cur.execute("""
                     SELECT id FROM conversations 
-                    WHERE (user_id=? AND target_user_id=?) OR (user_id=? AND target_user_id=?) 
+                    WHERE (user_id=? AND target_user_id=?) OR (user_id=? AND target_user_id=?)
+                    ORDER BY CASE WHEN user_id=? THEN 0 ELSE 1 END LIMIT 1 
                     AND is_friend_chat=1 LIMIT 1
-                """, (user_id, target_uid, target_uid, user_id))
+                """, (user_id, target_uid, target_uid, user_id, user_id))
                 conv_row = cur.fetchone()
                 conv_id = conv_row["id"] if conv_row else None
                 
