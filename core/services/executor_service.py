@@ -66,7 +66,7 @@ ALLOWED_COMMANDS = {
 DANGEROUS_CHARS = ['&', '`', '\n', '\r']
 
 MAX_OUTPUT_LENGTH = 20000
-DEFAULT_TIMEOUT = 120
+DEFAULT_TIMEOUT = 30
 POLL_INTERVAL = 3
 MAX_CONCURRENT_TASKS = 3
 
@@ -173,7 +173,7 @@ def _sync_run_command(cmd: str, timeout: int) -> tuple:
     start = datetime.datetime.now()
     try:
         result = subprocess.run(
-            cmd, shell=True, capture_output=True, timeout=timeout
+            cmd, shell=True, capture_output=True, timeout=timeout, stdin=subprocess.DEVNULL
         )
         output = smart_decode(result.stdout or b"") + smart_decode(result.stderr or b"")
         status = "success" if result.returncode == 0 else "failed"
