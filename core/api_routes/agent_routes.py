@@ -106,6 +106,12 @@ async def accept_friend_request(body: AcceptRequest, user_id: int = Depends(get_
             
             # 2. 更新好友关系为 accepted
             cur.execute("UPDATE agent_friendships SET status='accepted' WHERE id=?", (body.request_id,))
+
+            # [修复] 建立反向好友关系
+            cur.execute("SELECT 1 FROM agent_friendships WHERE user_id=? AND target_user_id=?", (receiver_id, sender_id))
+            if not cur.fetchone():
+                cur.execute("INSERT INTO agent_friendships (user_id, friend_agent_id, target_user_id, status, friend_mode) VALUES (?, 'dummy', ?, 'accepted', 'normal')", (receiver_id, sender_id))
+
             
             # 3. 为发起者建会话 (如果不存在)
             cur.execute('SELECT username FROM users WHERE id=?', (receiver_id,))
