@@ -40,38 +40,10 @@ def build_next_input(run_id):
 
 
 async def task_summarizer(task):
-    user_text = task.get('user_text', '') or ''
-    # v0.48.0: 只说不做拦截——任务含改/修动词但无成功写操作记录 → 判未完成
-    try:
-        import re as _re_fake
-        _fake_action_pat = _re_fake.search(r'(修复|修改|重写|实现|添加|增加|删除|替换|改成|改为|更新)', user_text)
-        _has_write_success = False
-        for _r in results:
-            _cmd = str(_r.get('command') or _r.get('module_id') or '')
-            _status = str(_r.get('status') or '')
-            _out = str(_r.get('output') or '')
-            if _cmd in ('file_patch', 'run_python', 'file_write', 'file_replace_range'):
-                if _status == 'success' or '"success": true' in _out or '"ok": true' in _out:
-                    _has_write_success = True
-                    break
-        if _fake_action_pat and not _has_write_success:
-            print('[supervisor] task_summarizer 只说不做拦截: 含改/修动词但无成功写操作 → 判未完成')
-            return {
-                'goal_achieved': False,
-                'goal_reason': '只侦察未执行修改',
-                'missing': ['未执行 file_patch/run_python'],
-                'next_hint': '你只做了侦察，请执行 file_patch 修改',
-            }
-    except Exception as _e_fake:
-        print('[supervisor] 只说不做拦截异常: ' + str(_e_fake))
-
-
-    # 保险丝：只要有 answer 产出且轮次超过 1，无条件完成，杜绝死循环！
-    _results = task.get('results', [])
-    if any(r.get('answer') for r in _results) and task.get('round', 1) > 1:
-        return {'goal_achieved': True, 'goal_reason': '已有产出自动收工', 'missing': [], 'next_hint': ''}
-
-    _is_readonly_task = False
+    # [系统宪法] 只要有产出，第2轮起直接完成，绝不空转重试
+    _res = task.get('results', [])
+    if any(r.get('answer') or r.get('output') for r in _res) and task.get('round', 1) > 1:
+        return {'goal_achieved': True, 'goal_reason': '产出已确认', 'missing': [], 'next_hint': ''}
     print('[supervisor] task_summarizer 被调用, task_id=' + str(task.get('task_id')))
     import openai
     import asyncio
@@ -259,11 +231,11 @@ async def task_summarizer(task):
         for _r in results:
             _ans_all += str(_r.get('answer') or _r.get('output') or '') + ' | '
         _fl_count = len(_re_final.findall(r'[\w/\.\-]+\.\w+:\d+|\b\d+行', _ans_all))
-        _is_readonly_task = any(k in user_text for k in ['探测', '只读', '查一下', '看看', '严禁修改', '不要修改', '排查'])
+        _is_readonly_task = any(k in user_text for k in ['探测', '只读', '禁止修改', '不要修改', '只做探测', '仅只读', '排查'])
         _is_modify = any(k in user_text for k in ['改', '修', '加', '删', '替换', '写']) and not _is_readonly_task
         
         # ========== 新增：只读任务物理豁免 ==========
-        if _is_readonly_task and any(r.get("status") == "success" and r.get("module_id") in ("grep_code", "file_read", "dir_tree", "run_python") for r in results):
+        if _is_readonly_task and any(r.get("status") == "success" and r.get("module_id") in ("grep_code", "file_read", "dir_tree") for r in results):
             print("[supervisor] 只读探测任务已成功执行，直接判定完成！")
             return {"goal_achieved": True, "goal_reason": "只读任务工具已返回结果", "missing": [], "next_hint": ""}
         # ============================================

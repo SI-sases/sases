@@ -304,9 +304,10 @@ async def handle_step_done(
                     _continue, _ = await supervisor_service.check_and_continue(_run_id, summary, plan_text=_steps_text, exec_text=_exec_text, review=_review)
                     
                     # 强制拦截：如果总结器判定未完成，无视 _continue 的返回值，直接强制续轮
-                    _run_obj = get_run(_run_id) if _run_id else None
-                    if _run_obj and _run_obj.get('current_round', 0) >= 3:
-                        print('[supervisor] 全局绝对熔断：执行超过 3 轮，强制结束死循环！')
+                    # [系统熔断] 超过 3 轮强制终止，绝不无限循环
+                    _r_obj = get_run(_run_id) if _run_id else None
+                    if _r_obj and _r_obj.get('current_round', 0) >= 3:
+                        print('[supervisor] 物理熔断触发：超过 3 轮强制结束！')
                         supervisor_service.finish_run(_run_id, 'force_terminated')
                         return {'status': 'failed', 'task_id': task_id, 'summary': '死循环熔断'}
 
