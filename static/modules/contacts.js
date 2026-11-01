@@ -46,13 +46,13 @@ async function fetchAgents() {
     const myData = await api.listMyAgents();
     myAgents = myData.agents || [];
   } catch (e) {
-    console.warn('获取智能体列表失败 / Failed to get agent list', e);
+    console.warn('获取智能体列表失败 to get agent list', e);
   }
   try {
     const friendData = await api.listFriendAgents();
     friendAgents = friendData.friends || [];
   } catch (e) {
-    console.warn('获取好友智能体失败 / Failed to get friend agents', e);
+    console.warn('获取好友智能体失败 to get friend agents', e);
   }
 }
 
@@ -120,7 +120,7 @@ function handleTouchEnd(e) {
 }
 
 async function renderContacts(container) {
-  container.innerHTML = '<div class="subpage-placeholder">加载中 / Loading / Loading / Loading / Loading / Loading / Loading / Loading / Loading / Loading / Loading / Loading / Loading / Loading / Loading...</div>';
+  container.innerHTML = '<div class="subpage-placeholder">加载中...</div>';
   await fetchAgents();
 
   let myAgentsHtml = '';
@@ -162,13 +162,13 @@ async function renderContacts(container) {
     letterIndexHtml += '</div>';
   }
 
-  // 移除多余的单独加好友 / Friend / Friends / Friend / Friend按钮,保持微信风格
+  // 移除多余的单独加好友按钮,保持微信风格
   container.innerHTML = `
     <div class="subpage-search-bar" style="margin-bottom:10px;">
       <input type="text" id="contact-search-input" class="search-input" placeholder="${t('search_placeholder')}">
     </div>
     <div class="me-menu">
-      <div class="me-menu-item" data-entry="new-agent">添加 / Add / Add / Add / Add / Add / Add / Add / Add / Add / Add / Add / Add / Add朋友/智能体</div>
+      <div class="me-menu-item" data-entry="new-agent">添加朋友/智能体</div>
       <div class="me-menu-item" data-entry="api-agent"> ${t('api_agent')}</div>
       <div class="me-menu-item" data-entry="group-chat">&#128101; ${t('group_chat')}</div>
     </div>
@@ -197,14 +197,14 @@ async function renderContacts(container) {
       const type = item.dataset.entry;
       if (type === 'new-agent') {
           if (typeof openNewAgentPage === 'function') openNewAgentPage();
-          else window.openSubpage('添加 / Add / Add / Add / Add / Add / Add / Add / Add / Add / Add / Add / Add / Add朋友', '<div class="me-menu" style="margin-top:10px;"><div class="me-menu-item"><span class="menu-label" style="padding:20px; display:block; text-align:center; color:#888;">搜索 / Search / Search / Search / Search / Search / Search / Search / Search / Search / Search / Search / Search / Search / Search账号功能开发中</span></div></div>', { returnAction: () => window.activateMainView('contacts') });
+          else window.openSubpage('添加朋友', '<div class="me-menu" style="margin-top:10px;"><div class="me-menu-item"><span class="menu-label" style="padding:20px; display:block; text-align:center; color:#888;">搜索账号功能开发中</span></div></div>', { returnAction: () => window.activateMainView('contacts') });
       }
       else if (type === 'api-agent') { 
           if (window.openModelManagement) window.openModelManagement(() => window.activateMainView('contacts')); 
       }
       else if (type === 'group-chat') {
           if (typeof openGroupChatList === 'function') openGroupChatList();
-          else window.openSubpage('群 / Group聊 / Group', '<div class="me-menu" style="margin-top:10px;"><div class="me-menu-item"><span class="menu-label" style="padding:20px; display:block; text-align:center; color:#888;">群 / Group聊列表开发中</span></div></div>', { returnAction: () => window.activateMainView('contacts') });
+          else window.openSubpage('群聊', '<div class="me-menu" style="margin-top:10px;"><div class="me-menu-item"><span class="menu-label" style="padding:20px; display:block; text-align:center; color:#888;">群聊列表开发中</span></div></div>', { returnAction: () => window.activateMainView('contacts') });
       }
     });
   });
@@ -232,15 +232,15 @@ async function renderContacts(container) {
       const agentType = row.dataset.agentType;
       
     if (agentType === 'friend') {
-      // 好友 / Friend / Friend / Friend / Friend / Friend / Friend / Friend / Friends / Friend / Friend / Friend智能体:弹出名片页
+      // 好友智能体:弹出名片页
       const convId = row.dataset.conversationId ? parseInt(row.dataset.conversationId) : null;
       const targetUserId = row.dataset.targetUserId ? parseInt(row.dataset.targetUserId) : null;
 
       let html = '<div style="padding: 40px 20px; text-align: center; background: #fff; min-height: 100vh;">';
       html += '<div style="width: 80px; height: 80px; background: #007aff; color: white; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; font-size: 36px; font-weight: bold; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,122,255,0.3);">' + agentName.charAt(0) + '</div>';
       html += '<h2 style="margin: 0; font-size: 22px; color: #333;">' + agentName + '</h2>';
-      html += '<p style="color: #888; margin-top: 8px; font-size: 14px;">好友 / Friend / Friend / Friend / Friend / Friend / Friend / Friend / Friend / Friend / Friend / Friend / Friends / Friend / Friend / Friend智能体</p>';
-      html += '<button id="btn-start-chat-from-info" style="margin-top: 40px; width: 100%; padding: 12px; background: #007aff; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;">发消息 / Message / Messages / Message / Message</button>';
+      html += '<p style="color: #888; margin-top: 8px; font-size: 14px;">好友智能体</p>';
+      html += '<button id="btn-start-chat-from-info" style="margin-top: 40px; width: 100%; padding: 12px; background: #007aff; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;">发消息</button>';
       html += '</div>';
 
       if (window.openSubpage) {
@@ -332,23 +332,23 @@ function filterAgents(query) {
   });
 }
 
-// ==================== 添加 / Add / Add / Add / Add / Add / Add / Add / Add / Add / Add朋友 / 智能体页(参考微信) ====================
+// ==================== 添加朋友 / 智能体页(参考微信) ====================
 function openNewAgentPage() {
   const contentHtml = `
     <div style="padding: 10px 0;">
       <div style="background: #fff; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
-        <div style="font-weight: 600; margin-bottom: 10px; font-size: 15px;">&#128269; 添加 / Add / Add / Add / Add / Add / Add / Add / Add / Add / Add新好友 / Friend / Friends / Friend / Friend (通过 / Pass / Accept / Pass / Approve SASES ID)</div>
+        <div style="font-weight: 600; margin-bottom: 10px; font-size: 15px;">&#128269; 添加新好友 (通过 SASES ID)</div>
         <div style="display: flex; gap: 8px;">
           <input type="text" class="search-input" id="add-user-input" placeholder="输入对方 SASES ID (如 sases_xxx)" style="flex:1;">
-          <button class="search-btn" id="add-user-btn">添加 / Add / Add / Add / Add / Add / Add / Add / Add / Add / Add / Add / Add / Add</button>
+          <button class="search-btn" id="add-user-btn">添加</button>
         </div>
       </div>
 
       <div style="background: #fff; border-radius: 8px; padding: 15px;">
-        <div style="font-weight: 600; margin-bottom: 10px; font-size: 15px;">&#129302; 搜索 / Search / Search / Search / Search / Search / Search / Search / Search / Search / Search并添加 / Add / Add / Add智能体</div>
+        <div style="font-weight: 600; margin-bottom: 10px; font-size: 15px;">&#129302; 搜索并添加智能体</div>
         <div class="subpage-search-bar" style="margin-bottom:0;">
-          <input type="text" class="search-input" id="agent-search-input" placeholder="搜索 / Search / Search / Search / Search / Search / Search / Search / Search / Search / Search / Search / Search / Search / Search智能体名称 / Name...">
-          <button class="search-btn" id="search-agent-btn">搜索 / Search / Search / Search / Search / Search / Search / Search / Search / Search / Search / Search / Search / Search / Search</button>
+          <input type="text" class="search-input" id="agent-search-input" placeholder="搜索智能体名称...">
+          <button class="search-btn" id="search-agent-btn">搜索</button>
         </div>
         <div id="agent-search-results" class="me-menu" style="margin-top: 10px;"></div>
       </div>
@@ -358,16 +358,16 @@ function openNewAgentPage() {
     </div>
   `;
   
-  window.openSubpage('添加 / Add / Add / Add / Add / Add / Add / Add / Add / Add / Add / Add / Add / Add朋友', contentHtml, {
+  window.openSubpage('添加朋友', contentHtml, {
     showMore: false,
     returnAction: () => window.activateMainView('contacts')
   });
 
   setTimeout(() => {
-    // 添加 / Add / Add / Add / Add / Add / Add / Add / Add / Add / Add用户事件
+    // 添加用户事件
     document.getElementById('add-user-btn').addEventListener('click', async () => {
       const sasesId = document.getElementById('add-user-input').value.trim();
-      if (!sasesId) return alert('请输入 / Please enter / Please input / Please enter / Please enter / Please enter / Please enter / Please enter / Please enter / Please enter / Please enter / Please enter / Please enter / Please input / Please enter / Please enter SASES ID');
+      if (!sasesId) return alert('请输入 enter input enter enter enter enter enter enter enter enter enter enter input enter enter SASES ID');
       
       try {
         const res = await fetch('/agents/friend-request', {
@@ -379,14 +379,14 @@ function openNewAgentPage() {
           body: JSON.stringify({ target_sases_id: sasesId })
         });
         const data = await res.json();
-        if (res.ok) alert('&#9989; 好友 / Friend / Friend / Friend / Friend / Friend / Friend / Friend / Friends / Friend / Friend / Friend请求已发送 / Send / Send / Send,等待对方同意 / Accept！');
-        else alert('&#10060; 发送 / Send / Send / Send / Send / Send / Send / Send / Send / Send / Send失败 / Failed / Failed / Failed / Failed / Failed / Failed / Failed / Failed / Failed / Failed: ' + (data.detail || data.message || '未知错误 / Error'));
+        if (res.ok) alert('&#9989; 好友请求已发送,等待对方同意！');
+        else alert('&#10060; 发送失败: ' + (data.detail || data.message || '未知错误'));
       } catch (e) {
-        alert('网络 / Network / Network / Network / Network错误 / Error / Error / Error / Error / Error / Error / Network error / Error: ' + e.message);
+        alert('网络错误 error: ' + e.message);
       }
     });
 
-    // 搜索 / Search / Search / Search / Search / Search / Search / Search / Search / Search / Search智能体事件
+    // 搜索智能体事件
     document.getElementById('search-agent-btn').addEventListener('click', () => {
       const q = document.getElementById('agent-search-input').value.trim();
       if (q) searchAgents(q);
@@ -403,7 +403,7 @@ function openNewAgentPage() {
 
 async function searchAgents(q) {
   const resultsContainer = document.getElementById('agent-search-results');
-  resultsContainer.innerHTML = '<div class="subpage-placeholder">搜索 / Search / Search / Search / Search / Search / Search / Search / Search / Search / Search / Search / Search / Search / Search中...</div>';
+  resultsContainer.innerHTML = '<div class="subpage-placeholder">搜索中...</div>';
   try {
     const data = await api.searchAgents(q, true);
     const results = data.results || [];
@@ -436,7 +436,7 @@ async function searchAgents(q) {
       });
     });
   } catch (e) {
-    resultsContainer.innerHTML = `<div class="subpage-placeholder">搜索 / Search / Search / Search / Search / Search / Search / Search / Search / Search / Search / Search / Search / Search / Search失败 / Failed / Failed / Failed / Failed / Failed / Failed / Failed / Failed / Failed / Failed:${e.message}</div>`;
+    resultsContainer.innerHTML = `<div class="subpage-placeholder">搜索失败:${e.message}</div>`;
   }
 }
 
@@ -453,12 +453,12 @@ async function sendFriendRequest(agentId) {
 async function loadFriendRequests() {
   const container = document.getElementById('friend-requests-list');
   if (!container) return;
-  container.innerHTML = '<div class="subpage-placeholder">加载中 / Loading / Loading / Loading / Loading / Loading / Loading / Loading / Loading / Loading / Loading / Loading / Loading / Loading / Loading...</div>';
+  container.innerHTML = '<div class="subpage-placeholder">加载中...</div>';
   try {
     const data = await api.getFriendRequests();
     const requests = data.requests || [];
     if (requests.length === 0) {
-      container.innerHTML = `<div class="subpage-placeholder">暂无 / None / None / None / None / None / None / None / None / None好友 / Friend / Friend / Friend / Friend / Friend / Friend / Friend / Friend / Friend / Friend / Friends / Friend / Friend请求 / Request / Request / Request</div>`;
+      container.innerHTML = `<div class="subpage-placeholder">暂无好友请求</div>`;
       return;
     }
     let html = '';
@@ -468,10 +468,10 @@ async function loadFriendRequests() {
           <div class="agent-avatar">${req.requester_name ? req.requester_name.charAt(0) : '?'}</div>
           <div class="agent-info">
             <div class="agent-name">${req.requester_name || '未知用户'}</div>
-            <div class="agent-desc">请求添加 / Add / Add / Add您为好友 / Friend / Friends / Friend / Friend</div>
+            <div class="agent-desc">请求添加您为好友</div>
           </div>
-          <button class="accept-request-btn" data-request-id="${req.id}" style="background:#007aff;color:#fff;border:none;padding:4px 10px;border-radius:4px;">同意 / Agree / Accept / Accept / Accept / Accept</button>
-          <button class="reject-request-btn" data-request-id="${req.id}" style="margin-left:4px;">拒绝 / Reject / Reject / Reject / Reject / Reject / Reject</button>
+          <button class="accept-request-btn" data-request-id="${req.id}" style="background:#007aff;color:#fff;border:none;padding:4px 10px;border-radius:4px;">同意</button>
+          <button class="reject-request-btn" data-request-id="${req.id}" style="margin-left:4px;">拒绝</button>
         </div>
       `;
     });
@@ -483,9 +483,9 @@ async function loadFriendRequests() {
         const requestId = btn.dataset.requestId;
         try {
           await api.acceptFriendRequest(requestId);
-          alert(t('accepted') || '已同意 / Accept');
+          alert(t('accepted') || '已同意');
           loadFriendRequests();
-        } catch (err) { alert('操作 / Action / Action / Action失败 / Failed / Failed / Failed / Failed / Failed / Failed / Failed / Failed / Failed / Failed: ' + err.message); }
+        } catch (err) { alert('操作失败: ' + err.message); }
       });
     });
     container.querySelectorAll('.reject-request-btn').forEach(btn => {
@@ -494,19 +494,19 @@ async function loadFriendRequests() {
         const requestId = btn.dataset.requestId;
         try {
           await api.rejectFriendRequest(requestId);
-          alert(t('rejected') || '已拒绝 / Reject');
+          alert(t('rejected') || '已拒绝');
           loadFriendRequests();
-        } catch (err) { alert('操作 / Action / Action / Action失败 / Failed / Failed / Failed / Failed / Failed / Failed / Failed / Failed / Failed / Failed: ' + err.message); }
+        } catch (err) { alert('操作失败: ' + err.message); }
       });
     });
   } catch (e) {
-    container.innerHTML = `<div class="subpage-placeholder">加载失败 / Load failed / Failed / Load failed / Failed / Failed:${e.message}</div>`;
+    container.innerHTML = `<div class="subpage-placeholder">加载失败 failed failed:${e.message}</div>`;
   }
 }
 
-// ==================== 群 / Group聊列表 ====================
+// ==================== 群聊列表 ====================
 async function openGroupChatList() {
-  let groupsHtml = '<div class="subpage-placeholder">加载中 / Loading / Loading / Loading / Loading / Loading / Loading / Loading / Loading / Loading / Loading / Loading / Loading / Loading / Loading...</div>';
+  let groupsHtml = '<div class="subpage-placeholder">加载中...</div>';
   window.openSubpage(t('group_chat'), groupsHtml);
 
   try {
@@ -530,7 +530,7 @@ async function openGroupChatList() {
       groupsHtml += '</div>';
     }
   } catch (e) {
-    groupsHtml = `<div class="subpage-placeholder">加载失败 / Load failed / Failed / Load failed / Failed / Failed:${e.message}</div>`;
+    groupsHtml = `<div class="subpage-placeholder">加载失败 failed failed:${e.message}</div>`;
   }
 
   const contentHtml = `
