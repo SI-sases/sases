@@ -35,6 +35,9 @@ function _openWs(uid) {
       try {
         const d = JSON.parse(e.data);
         // 兼容不同的推送类型名称
+        if (d && d.type === 'friend_request') {
+          window.dispatchEvent(new CustomEvent('sases_friend_request', { detail: d }));
+        }
         if (d && (d.type === 'new_message' || d.type === 'sases_new_message')) {
           window.dispatchEvent(new CustomEvent('sases_new_message', { detail: d }));
         }
