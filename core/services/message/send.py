@@ -7,6 +7,21 @@ from typing import Optional
 from ...db import db_cursor
 
 
+def _normalize_prefix(content):
+    """把 #N xxx / #N：xxx / #N:xxx 统一成 #N:xxx；*0/*1 同理"""
+    import re
+    if not content or not isinstance(content, str):
+        return content
+    s = content.strip()
+    m = re.match(r'^([#*][0-4])(?![0-9a-zA-Z])', s)
+    if m:
+        prefix = m.group(1)
+        rest = s[len(prefix):].lstrip('：: ' + chr(9))
+        if not (s.startswith(prefix + ':') or s.startswith(prefix + '：')):
+            return prefix + ':' + rest
+    return content
+
+
 def _sases_fallback_cid():
     try:
         with db_cursor() as _sases_cur:
@@ -71,6 +86,7 @@ async def send_message(
         except Exception as _e_fc:
             print('[message] 好友投递失败: ' + str(_e_fc))
 
+    _scan_content = _normalize_prefix(content)
     # #0 清锁（最先拦截，绕过所有锁检查）
     if isinstance(content, str) and content.strip().startswith('#0'):
         import os
@@ -131,8 +147,8 @@ async def send_message(
         }
 
     # *0 脚本执行（调度员内部能力，用户不可见）
-    if isinstance(content, str) and (content.strip().startswith('*0:') or content.strip().startswith('*0：')):
-        _script_body = content.strip()
+    if isinstance(_scan_content, str) and _scan_content.strip().startswith('*0:'):
+        _script_body = _scan_content.strip()
         for _pfx0 in ('*0：', '*0:'):
             if _script_body.startswith(_pfx0):
                 _script_body = _script_body[len(_pfx0):].lstrip()
@@ -279,9 +295,9 @@ async def send_message(
     _numbered_prefix_matched = False
     _force_swarm = False
     for _p, _m in COMMAND_PREFIX_MAP.items():
-        if content.startswith(_p):
+        if _scan_content.startswith(_p):
             _numbered_prefix_matched = True
-            content = content[len(_p):].lstrip()
+            content = _scan_content[len(_p):].lstrip()
             if _m == "exec":
                 content = "执行：" + content
             elif _m == "task":
@@ -430,7 +446,7 @@ async def send_message(
                 or any(_k in content for _k in ('导入知识库','加入知识库','存到知识库','存到项目库','导入项目库','加到知识库'))
             )
             _skip_kb_qa = (
-                content.startswith('*1:') or content.startswith('*1：')
+                _scan_content.startswith('*1:')
                 or content.startswith('[用户发了一张图片]')
                 or content.startswith('[用户发了一个文件')
                 or _raw_content.startswith('[IMAGE]:')
@@ -501,9 +517,9 @@ async def send_message(
             _uni_text = None
             _uni_target = 'kb'
             if True:
-                for _up in ('*1：', '*1:'):
-                    if content.startswith(_up):
-                        _uni_body = content[len(_up):].strip()
+                for _up in ('*1:',):
+                    if _scan_content.startswith(_up):
+                        _uni_body = _scan_content[len(_up):].strip()
                         if '项目库' in _uni_body.split('\n', 1)[0]:
                             _uni_target = 'project'
                         _uni_lines = _uni_body.split('\n', 1)
@@ -515,7 +531,7 @@ async def send_message(
                                     break
                         break
             # 单行 *1: 且含图片语义 → 关联最近图片导入
-            if not _uni_text and isinstance(content, str) and content.startswith(('*1:', '*1：')):
+            if not _uni_text and isinstance(content, str) and _scan_content.startswith('*1:'):
                 from datetime import datetime as _dtn
                 _img_uni_body = content[3:].strip()
                 if any(_k in _img_uni_body for _k in ('图片', '这张图', '上图', '刚才的图', '图上的')):
