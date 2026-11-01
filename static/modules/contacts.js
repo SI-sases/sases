@@ -485,6 +485,8 @@ async function loadFriendRequests() {
           await api.acceptFriendRequest(requestId);
           alert(t('accepted') || '已同意');
           loadFriendRequests();
+          if (window.loadFriendAgents) window.loadFriendAgents();
+          if (window.initMessages) window.initMessages();
         } catch (err) { alert('操作失败: ' + err.message); }
       });
     });

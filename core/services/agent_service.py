@@ -8,7 +8,7 @@ def list_my_agents(user_id: int):
             FROM model_configs
             WHERE user_id=?
             ORDER BY created_at DESC
-        """, (user_id,))
+        """, (user_id, user_id))
         rows = cur.fetchall()
 
     agents = []
@@ -56,14 +56,14 @@ def list_friend_agents(user_id: int):
     with db_cursor() as cur:
         # 1. 查询所有 accepted 的好友关系
         cur.execute("""
-            SELECT af.friend_agent_id, af.target_user_id, af.friend_mode
+            SELECT af.user_id, af.friend_agent_id, af.target_user_id, af.friend_mode
             FROM agent_friendships af
-            WHERE af.user_id=? AND af.status='accepted'
-        """, (user_id,))
+            WHERE (af.user_id=? OR af.target_user_id=?) AND af.status='accepted'
+        """, (user_id, user_id))
         rows = cur.fetchall()
         
         for row in rows:
-            target_uid = row["target_user_id"]
+            target_uid = row["target_user_id"] if row["user_id"] == user_id else row["user_id"]
             friend_aid = row["friend_agent_id"]
             
             # 如果是真人好友
@@ -188,7 +188,7 @@ def get_received_friend_requests(user_id: int):
             LEFT JOIN model_configs mc ON af.friend_agent_id = mc.id
             WHERE af.target_user_id = ? AND af.status = 'pending'
             ORDER BY af.created_at DESC
-        """, (user_id,))
+        """, (user_id, user_id))
         rows = cur.fetchall()
     return [dict(row) for row in rows]
 
