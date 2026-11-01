@@ -92,7 +92,8 @@ async def create_transfer(body: TransferRequest, user_id: int = Depends(get_curr
     if resolved_receiver == user_id:
         raise HTTPException(status_code=400, detail="不能转账给自己")
 
-    tx_id, err = transfer_service.create_transfer(user_id, resolved_receiver, body.amount, body.message, body.credit_type)
+    _c_type = getattr(body, 'credit_type', 'credits')
+    tx_id, err = transfer_service.create_transfer(user_id, resolved_receiver, body.amount, body.message, _c_type)
     if err:
         raise HTTPException(status_code=400, detail=err)
     if body.conversation_id:
