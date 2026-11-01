@@ -231,22 +231,11 @@ async def task_summarizer(task):
         for _r in results:
             _ans_all += str(_r.get('answer') or _r.get('output') or '') + ' | '
         _fl_count = len(_re_final.findall(r'[\w/\.\-]+\.\w+:\d+|\b\d+行', _ans_all))
-        _is_readonly_task = any(k in user_text for k in ['探测', '只读', '禁止修改', '不要修改', '只做探测', '仅只读', '排查', '查一下', '看看', '找一下', '搜一下', '列一下', '数一下', '统计一下', '观察一下'])
+        _is_readonly_task = any(k in user_text for k in ['探测', '只读', '禁止修改', '不要修改', '只做探测', '仅只读', '排查'])
         _is_modify = any(k in user_text for k in ['改', '修', '加', '删', '替换', '写']) and not _is_readonly_task
         
         # ========== 新增：只读任务物理豁免 ==========
-        _readonly_tools = ("grep_code", "file_read", "dir_tree")
-        def _is_readonly_hit(_r):
-            if _r.get("status") != "success":
-                return False
-            _mid = str(_r.get("module_id") or "")
-            if _mid in _readonly_tools:
-                return True
-            if not _mid:
-                _cmd = str(_r.get("command") or "")
-                return any(_t in _cmd for _t in _readonly_tools)
-            return False
-        if _is_readonly_task and any(_is_readonly_hit(r) for r in results):
+        if _is_readonly_task and any(r.get("status") == "success" and r.get("module_id") in ("grep_code", "file_read", "dir_tree") for r in results):
             print("[supervisor] 只读探测任务已成功执行，直接判定完成！")
             return {"goal_achieved": True, "goal_reason": "只读任务工具已返回结果", "missing": [], "next_hint": ""}
         # ============================================
