@@ -17,8 +17,7 @@ def _normalize_prefix(content):
     if m:
         prefix = m.group(1)
         rest = s[len(prefix):].lstrip('：: ' + chr(9))
-        if not (s.startswith(prefix + ':') or s.startswith(prefix + '：')):
-            return prefix + ':' + rest
+        return prefix + ':' + rest
     return content
 
 
