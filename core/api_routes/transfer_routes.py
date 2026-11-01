@@ -68,11 +68,17 @@ async def create_transfer(body: TransferRequest, user_id: int = Depends(get_curr
     if resolved_receiver == user_id:
         raise HTTPException(status_code=400, detail="不能转账给自己")
 
-    tx_id, err = transfer_service.create_transfer(
-        user_id, resolved_receiver, body.amount, body.message
-    )
+    tx_id, err = transfer_service.create_transfer(user_id, resolved_receiver, body.amount, body.message, body.credit_type)
     if err:
         raise HTTPException(status_code=400, detail=err)
+    if body.conversation_id:
+        try:
+            import json
+            payload = {"tx_id": tx_id, "amount": body.amount, "credit_type": body.credit_type, "message": body.message or "转账"}
+            transfer_service.insert_message(body.conversation_id, sender="user", content="[TRANSFER]:" + json.dumps(payload, ensure_ascii=False))
+        except Exception as e:
+            print("插入转账气泡失败:", e)
+
     return {"tx_id": tx_id, "status": "completed"}
 
 

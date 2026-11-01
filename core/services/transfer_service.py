@@ -42,7 +42,7 @@ def create_transfer(sender_id: int, receiver_id: int, amount: float, message: st
             INSERT INTO transactions
             (sender_id, receiver_id, amount, tx_type, status, message, completed_at)
             VALUES (?, ?, ?, 'transfer', 'completed', ?, ?)
-        """, (sender_id, receiver_id, amount, message, now))
+        """, (sender_id, receiver_id, amount, message, now, credit_type))
         tx_id = cur.lastrowid
 
         # 积分日志
