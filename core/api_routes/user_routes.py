@@ -1,34 +1,25 @@
 from fastapi import APIRouter, HTTPException
+from core.db import get_conn
 
-router = APIRouter(prefix="/api/users", tags=["users"])
-
-_USERS = {
-    1: {"id": 1, "username": "alice", "display_name": "Alice", "bio": "Hello, I am Alice.", "avatar_url": "https://example.com/avatars/alice.png"},
-    2: {"id": 2, "username": "bob", "display_name": "Bob", "bio": "Bob's public profile.", "avatar_url": "https://example.com/avatars/bob.png"},
-}
+router = APIRouter()
 
 
-def _public_card(user):
+@router.get("/u/{sases_id}")
+def get_user_card(sases_id: str):
+    conn = get_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT sases_id, handle, display_name FROM users WHERE sases_id = ?",
+            (sases_id,),
+        )
+        row = cur.fetchone()
+    finally:
+        conn.close()
+    if not row:
+        raise HTTPException(status_code=404, detail="user not found")
     return {
-        "id": user["id"],
-        "username": user["username"],
-        "display_name": user["display_name"],
-        "bio": user["bio"],
-        "avatar_url": user["avatar_url"],
+        "sases_id": row[0],
+        "handle": row[1],
+        "display_name": row[2],
     }
-
-
-@router.get("/{user_id}/card")
-def get_user_card(user_id: int):
-    user = _USERS.get(user_id)
-    if user is None:
-        raise HTTPException(status_code=404, detail="User not found")
-    return _public_card(user)
-
-
-@router.get("/{user_id}")
-def get_user_public_info(user_id: int):
-    user = _USERS.get(user_id)
-    if user is None:
-        raise HTTPException(status_code=404, detail="User not found")
-    return _public_card(user)
