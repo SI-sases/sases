@@ -59,7 +59,7 @@ function openTransferDialog() {
 
         try {
           // 直接调 api 发起请求
-          const res = await window.sendTransfer(receiverId, amount, note, conversationId, type);
+          const res = await window.sendTransfer(String(receiverId), amount, note, conversationId, type);
           if (res.status === 'completed' || res.tx_id) {
             alert('✅ 转账成功');
             window.closeSubpage();
