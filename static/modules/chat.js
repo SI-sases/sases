@@ -484,6 +484,10 @@ export function openChatWindow(conversationId, chatName, agentId = null, agentTy
   chatState.offset = 0;
   chatState.loadingMore = false;
   chatState.hasMore = true;
+  
+  // 强制清空 DOM，防止上一个会话残留
+  const _msgBoxClear = document.getElementById('chat-messages');
+  if (_msgBoxClear) _msgBoxClear.innerHTML = '';
 
   updateModeText();
   updateInputPlaceholder();
@@ -611,18 +615,8 @@ export function openChatWindow(conversationId, chatName, agentId = null, agentTy
   if (chatState.conversationId) {
     loadMessages(chatState.conversationId);
   } else if (chatState.agentId) {
-    const _targetAgentId = chatState.agentId;
-    api.listConversations().then(_res => {
-      if (chatState.agentId !== _targetAgentId) return;
-      if (chatState.conversationId) return;
-      const _list = (_res && _res.conversations) || [];
-      const _existing = _list.find(c => c.agent_id === _targetAgentId);
-      if (_existing && _existing.id) {
-        chatState.conversationId = parseInt(_existing.id);
-        console.log('[chat] 复用已有会话 / 复用已有会话', chatState.conversationId);
-        loadMessages(chatState.conversationId);
-      }
-    }).catch(e => { console.warn('[chat] 查已有会话失败 / Failed', e); });
+    // 我的智能体入口：强制开启新会话，不再反查旧会话（修复串台）
+    chatState.conversationId = null;
   }
 }
 

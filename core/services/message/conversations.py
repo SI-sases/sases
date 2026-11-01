@@ -32,6 +32,16 @@ def list_conversations(user_id: int):
     return conversations
 
 def create_conversation(user_id: int, agent_id: str = None, title: str = "新会话"):
+    if agent_id and title == "新会话":
+        if agent_id.startswith('sases_assistant'):
+            title = 'SASES 助手'
+        else:
+            with db_cursor() as cur:
+                cur.execute("SELECT name FROM model_configs WHERE id=?", (agent_id,))
+                row = cur.fetchone()
+                if row and row['name']:
+                    title = row['name']
+                
     with db_cursor(commit=True) as cur:
         cur.execute("""
             INSERT INTO conversations (user_id, agent_id, title)
