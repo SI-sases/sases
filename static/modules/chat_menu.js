@@ -1,18 +1,63 @@
 // static/modules/chat_menu.js
 function openTransferDialog() {
-  const receiver = prompt('收款人 SASES ID：');
-  if (!receiver) return;
-  const amountStr = prompt('转账金额：');
-  if (!amountStr) return;
-  const amount = parseFloat(amountStr);
-  if (!amount || amount <= 0) { alert('金额无效'); return; }
-  const note = prompt('留言（可选）：') || '';
-  const cid = window.chatState && window.chatState.conversationId;
-  if (!cid) { alert('请先进入会话'); return; }
-  if (typeof window.sendTransfer === 'function') {
-    window.sendTransfer(receiver, amount, note, cid);
-  } else {
-    alert('sendTransfer 未就绪');
+  const chatState = window.chatState || {};
+  const conversationId = chatState.conversationId;
+  if (!conversationId) { alert('请先进入会话'); return; }
+  
+  // 自动获取当前聊天的对象
+  const receiverId = chatState.targetUserId || chatState.agentId || chatState.chatName;
+  if (!receiverId) {
+    alert('无法识别当前转账对象');
+    return;
+  }
+
+  let html = `
+    <div style="padding: 20px; background: #f4f4f4; min-height: 100vh;">
+      <div style="background: white; border-radius: 8px; overflow: hidden;">
+        <div style="padding: 16px; border-bottom: 1px solid #eee; display: flex; align-items: center;">
+          <span style="width: 80px; color: #666;">金额</span>
+          <input type="number" id="transfer-amount" placeholder="0.00" style="flex:1; border:none; outline:none; font-size:24px; font-weight:bold; text-align:right;">
+        </div>
+        <div style="padding: 16px; border-bottom: 1px solid #eee; display: flex; align-items: center;">
+          <span style="width: 80px; color: #666;">积分类型</span>
+          <select id="transfer-type" style="flex:1; border:none; outline:none; text-align:right; font-size:16px;">
+            <option value="credits">种子积分</option>
+            <option value="compute">算力积分</option>
+          </select>
+        </div>
+        <div style="padding: 16px; display: flex; align-items: center;">
+          <span style="width: 80px; color: #666;">留言</span>
+          <input type="text" id="transfer-note" placeholder="转账说明" style="flex:1; border:none; outline:none; text-align:right; font-size:16px;">
+        </div>
+      </div>
+      <button id="btn-do-transfer" style="margin-top: 20px; width: 100%; padding: 14px; background: #f59e0b; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold;">转账</button>
+    </div>
+  `;
+  
+  if (window.openSubpage) {
+    window.openSubpage('转账', html, { returnAction: () => { window.closeSubpage(); } });
+    setTimeout(() => {
+      document.getElementById('btn-do-transfer').onclick = async () => {
+        const amount = parseFloat(document.getElementById('transfer-amount').value);
+        const type = document.getElementById('transfer-type').value;
+        const note = document.getElementById('transfer-note').value;
+        if (!amount || amount <= 0) { alert('请输入有效金额'); return; }
+        
+        try {
+          // 直接调 api 发起请求
+          const res = await window.api.transferCredits(receiverId, amount, note, conversationId, type);
+          if (res.status === 'completed' || res.tx_id) {
+            alert('✅ 转账成功');
+            window.closeSubpage();
+            if (window.loadMessages) window.loadMessages(conversationId);
+          } else {
+            alert('❌ 转账失败: ' + (res.error || res.err || '未知错误'));
+          }
+        } catch (e) {
+          alert('网络错误或余额不足');
+        }
+      };
+    }, 100);
   }
 }
 
