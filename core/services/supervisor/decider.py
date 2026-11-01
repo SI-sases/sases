@@ -231,7 +231,7 @@ async def task_summarizer(task):
         for _r in results:
             _ans_all += str(_r.get('answer') or _r.get('output') or '') + ' | '
         _fl_count = len(_re_final.findall(r'[\w/\.\-]+\.\w+:\d+|\b\d+行', _ans_all))
-        _is_readonly_task = any(k in user_text for k in ['探测', '只读', '禁止修改', '不要修改', '只做探测', '仅只读', '排查'])
+        _is_readonly_task = any(k in user_text for k in ['探测', '只读', '禁止修改', '不要修改', '只做探测', '仅只读', '排查', '查一下', '看看', '找一下', '搜一下', '列一下', '数一下', '统计一下', '观察一下'])
         _is_modify = any(k in user_text for k in ['改', '修', '加', '删', '替换', '写']) and not _is_readonly_task
         
         # ========== 新增：只读任务物理豁免 ==========
