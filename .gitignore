@@ -64,4 +64,5 @@ fix_*.py
 
 # ========== 编辑器（可选）==========
 .vscode/
-.idea/
+.idea/data/direct_channel.jsonl 
+data/direct_channel.jsonl.* 
