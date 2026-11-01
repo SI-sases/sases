@@ -1,49 +1,34 @@
-# core/api_routes/user_routes.py
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from pydantic import BaseModel
-from typing import Optional
-from jose import jwt, JWTError
+from fastapi import APIRouter, HTTPException
 
-from ..auth_service import SECRET_KEY
-from ..services import user_service
+router = APIRouter(prefix="/api/users", tags=["users"])
 
-router = APIRouter(prefix="/user", tags=["user"])
-security = HTTPBearer()
+_USERS = {
+    1: {"id": 1, "username": "alice", "display_name": "Alice", "bio": "Hello, I am Alice.", "avatar_url": "https://example.com/avatars/alice.png"},
+    2: {"id": 2, "username": "bob", "display_name": "Bob", "bio": "Bob's public profile.", "avatar_url": "https://example.com/avatars/bob.png"},
+}
 
 
-class ProfileUpdateRequest(BaseModel):
-    username: Optional[str] = None
-    gender: Optional[str] = None
-    region: Optional[str] = None
-    signature: Optional[str] = None
+def _public_card(user):
+    return {
+        "id": user["id"],
+        "username": user["username"],
+        "display_name": user["display_name"],
+        "bio": user["bio"],
+        "avatar_url": user["avatar_url"],
+    }
 
 
-def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    token = credentials.credentials
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-        user_id = int(payload.get("sub"))
-    except (JWTError, ValueError):
-        raise HTTPException(status_code=401, detail="Invalid token")
-    return user_id
+@router.get("/{user_id}/card")
+def get_user_card(user_id: int):
+    user = _USERS.get(user_id)
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return _public_card(user)
 
 
-@router.get("/profile")
-async def get_profile(user_id: int = Depends(get_current_user)):
-    profile = user_service.get_user_profile(user_id)
-    if not profile:
-        raise HTTPException(status_code=404, detail="用户不存在")
-    return profile
-
-
-@router.put("/profile")
-async def update_profile(body: ProfileUpdateRequest, user_id: int = Depends(get_current_user)):
-    user_service.update_user_profile(
-        user_id,
-        username=body.username,
-        gender=body.gender,
-        region=body.region,
-        signature=body.signature
-    )
-    return {"status": "updated"}
+@router.get("/{user_id}")
+def get_user_public_info(user_id: int):
+    user = _USERS.get(user_id)
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return _public_card(user)
