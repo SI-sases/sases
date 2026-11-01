@@ -740,13 +740,11 @@ im
 
 背景：
 服务启动时报警告：prompts.py 第 108 行附近有 `Sy
-- 2026-10-25: 用 run_python 执行以下打包代码，生成更新包。
 
 code（逐字）：
 
 import os, zipfile, ast
 ROOT = r'C:\Use
-- 2026-10-25: 用 run_python 强制修复两个源头文件，直接覆写。
 
 把下面的代码作为 run_python 的 code 参数执行：
 
@@ -844,6 +842,16 @@ users 表现在有 handle（唯一对外 ID，如 @xiaoming）和 di
 刚才测试：A 发请求给 B，B 同意后，A 的好友列表里出现了
 - 2026-11-01: 修复判定器（decider.py）的漏洞：识别并拦截“只汇报不干活”的假完成。只改 core/services/supervisor/decider.py。
 - 2026-11-01: #4:帮我看一下app_full.py前5行代码
+- 2026-11-01: *0:
+import os
+import glob
+
+print("========== 1. 给后端意图识别打补丁 ==========")
+p_intent
+- 2026-11-01: 探测只读任务豁免失效的原因，不要改代码。
+
+第 1 步：用 grep_code 在 core/services/supervisor 搜 "只读"
+第 2 步：
 
 
 
