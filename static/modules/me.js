@@ -222,7 +222,7 @@ async function openPersonalInfo() {
       const newName = await _showWxEditModal(t('nickname'), username);
       if (newName && newName.trim()) {
         try {
-          await api.updateUserProfile({ username: newName.trim() });
+          await api.updateUserProfile({ nickname: newName.trim() });
           localStorage.setItem('sases_username', newName.trim());
           alert(t('update_success'));
         if (window.loadConversations) window.loadConversations();
