@@ -64,7 +64,7 @@ def list_friend_agents(user_id: int):
                 
             seen_uids.add(target_uid)
             
-            cur.execute("SELECT username FROM users WHERE id=?", (target_uid,))
+            cur.execute("SELECT COALESCE(display_name, username) as username FROM users WHERE id=?", (target_uid,))
             u_row = cur.fetchone()
             name = u_row["username"] if u_row else f"User{target_uid}"
             
@@ -90,7 +90,7 @@ def search_agents(user_id: int, q: str, include_self: bool = False):
     with db_cursor() as cur:
         if include_self:
             cur.execute("""
-                SELECT mc.id, mc.name, mc.provider, mc.model_name, mc.capabilities, mc.model_type, u.username as owner_name, mc.price
+                SELECT mc.id, mc.name, mc.provider, mc.model_name, mc.capabilities, mc.model_type, COALESCE(u.display_name, u.username) as owner_name, mc.price
                 FROM model_configs mc
                 JOIN users u ON mc.user_id = u.id
                 WHERE (mc.user_id = ? OR (mc.is_shared = 1 OR mc.visibility = 'public'))
@@ -99,7 +99,7 @@ def search_agents(user_id: int, q: str, include_self: bool = False):
             """, (user_id, pattern, pattern, pattern))
         else:
             cur.execute("""
-                SELECT mc.id, mc.name, mc.provider, mc.model_name, mc.capabilities, mc.model_type, u.username as owner_name, mc.price
+                SELECT mc.id, mc.name, mc.provider, mc.model_name, mc.capabilities, mc.model_type, COALESCE(u.display_name, u.username) as owner_name, mc.price
                 FROM model_configs mc
                 JOIN users u ON mc.user_id = u.id
                 WHERE mc.user_id != ?
@@ -149,7 +149,7 @@ def send_friend_request(user_id: int, agent_id: str):
 def get_received_friend_requests(user_id: int):
     with db_cursor() as cur:
         cur.execute("""
-            SELECT af.id, af.user_id as requester_id, u.username as requester_name,
+            SELECT af.id, af.user_id as requester_id, COALESCE(u.display_name, u.username) as requester_name,
                    af.friend_agent_id, mc.name as agent_name
             FROM agent_friendships af
             JOIN users u ON af.user_id = u.id

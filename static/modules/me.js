@@ -113,22 +113,17 @@ export function initMe() {
         <span class="menu-label">${t('wallet')}</span>
         <span class="menu-arrow">›</span>
       </div>
-    </div>
-    <div class="me-menu">
       <div class="me-menu-item" id="menu-knowledge">
         <span class="menu-icon">📚</span>
         <span class="menu-label">个人知识库</span>
         <span class="menu-arrow">›</span>
       </div>
-    </div>
-    <div class="me-menu">
       <div class="me-menu-item" id="menu-settings">
         <span class="menu-icon">⚙️</span>
         <span class="menu-label">${t('settings')}</span>
-
         <span class="menu-arrow">›</span>
       </div>
-          </div>
+    </div>
   `;
 
   document.getElementById('me-profile-main').addEventListener('click', openPersonalInfo);
@@ -230,6 +225,10 @@ async function openPersonalInfo() {
           await api.updateUserProfile({ username: newName.trim() });
           localStorage.setItem('sases_username', newName.trim());
           alert(t('update_success'));
+        if (window.loadConversations) window.loadConversations();
+        if (window.renderContacts) window.renderContacts();
+        // 强制刷新页面以防底层组件未挂载，如果不需要刷新页面可注释掉下面这行
+        // window.location.reload();
           window.closeSubpage();
           initMe();
         } catch (e) { alert(t('update_failed') + ': ' + e.message); }
