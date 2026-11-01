@@ -707,7 +707,6 @@ import os,
 刚才任务执行完成后，刷新网页出现白屏，前端静态资源可能加载失败或有语法错误。
 
 第 1 步：用 file_read 读取 core/
-- 2026-10-25: 先读取 core/services/supervisor/decider.py，然后找到 _fake_words 变量，把它改成 ['test']，最后确认没有
 - 2026-10-25: 用 file_patch 精确片段模式，精准切除 subpage.js 的坏代码。
 
 old_snippet 为：
@@ -818,6 +817,9 @@ ROOT = r'C:\Use
 
 【背景】
 users 表现在有 handle（唯一对外 ID，如 @xiaoming）和 di
+- 2026-11-01: 探测 harness_modules/file_patch/main.py 中关于 anchor_pattern 多行匹配的报错逻辑。严禁修改任何代码。
+
+【背
 
 
 
