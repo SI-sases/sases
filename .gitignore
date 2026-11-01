@@ -22,6 +22,8 @@ logs/
 sases.log
 restart_signal.txt
 data/tool_usage.jsonl
+data/direct_channel.jsonl
+data/direct_channel.jsonl.*
 
 # ========== 敏感配置 ==========
 .env
@@ -62,7 +64,9 @@ bge-small-zh-onnx/
 # ========== 临时修复脚本 ==========
 fix_*.py
 
-# ========== 编辑器（可选）==========
+# ========== 编辑器 ==========
 .vscode/
-.idea/data/direct_channel.jsonl 
-data/direct_channel.jsonl.* 
+.idea/
+
+# ========== 自动生成文档（定时任务覆盖写）==========
+docs/SASES_STATE.md
