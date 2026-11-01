@@ -225,6 +225,15 @@ async def task_summarizer(task):
         print('[supervisor] task_summarizer 代码规则命中: ' + ','.join(_hit) + ' —— 继续调 LLM 生成具体 hint')
 
     # v0.19: 终轮提示词——answer 里含 ≥3 条 file:line 格式视为完成
+    # 兜底初始化：确保 _is_readonly_task / _is_modify 已赋值（防 UnboundLocalError）
+    _is_readonly_task = any(k in user_text for k in ['探测', '只读', '禁止修改', '不要修改', '只做探测', '仅只读', '排查'])
+    _is_modify = any(k in user_text for k in ['改', '修', '加', '删', '替换', '写']) and not _is_readonly_task
+
+    # v0.39.0: 只读豁免 —— 必须在 _hit 判定之前生效
+    _is_readonly_task = any(k in user_text for k in ['读', '查看', '检查', '分析', '排查', '探测', '定位', '搜索', 'grep', 'read'])
+    if _is_readonly_task:
+        _hit = False
+
     if not _hit:
         import re as _re_final
         _ans_all = ''
