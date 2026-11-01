@@ -5,7 +5,8 @@ function openTransferDialog() {
   if (!conversationId) { alert('请先进入会话'); return; }
   
   // 自动获取当前聊天的对象
-  const receiverId = chatState.targetUserId || chatState.agentId;
+  // 优先读刚存的缓存，其次读 chatState，最后读 agentId（智能体聊天时）
+  const receiverId = localStorage.getItem('sases_current_target_uid') || chatState.targetUserId || chatState.agentId;
   if (!receiverId) {
     alert('无法识别当前转账对象');
     return;
