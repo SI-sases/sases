@@ -2,21 +2,21 @@
 cd /d %~dp0
 call venv312\Scripts\activate.bat
 echo ========================================
-echo  SASES æœåŠ¡å¯åŠ¨å™¨
+echo  SASES ·şÎñÆô¶¯Æ÷
 echo ========================================
 
 :loop
 echo.
-echo [start.bat] å¯åŠ¨æœåŠ¡...
+echo [start.bat] Æô¶¯·şÎñ...
 python scripts/run_forever.py
 set EC=%errorlevel%
-echo [start.bat] æœåŠ¡é€€å‡ºï¼Œé€€å‡ºç : %EC%
+echo [start.bat] ·şÎñÍË³ö£¬ÍË³öÂë: %EC%
 
 if %EC%==0 (
-    echo [start.bat] æ­£å¸¸é€€å‡ºï¼Œ2 ç§’åé‡å¯...
+    echo [start.bat] Õı³£ÍË³ö£¬2 ÃëºóÖØÆô...
     timeout /t 2 /nobreak >nul
     goto loop
 ) else (
-    echo [start.bat] å¼‚å¸¸é€€å‡ºï¼ŒæŒ‰ä»»æ„é”®å…³é—­ã€‚
+    echo [start.bat] Òì³£ÍË³ö£¬°´ÈÎÒâ¼ü¹Ø±Õ¡£
     pause
 )

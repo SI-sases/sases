@@ -707,8 +707,6 @@ import os,
 刚才任务执行完成后，刷新网页出现白屏，前端静态资源可能加载失败或有语法错误。
 
 第 1 步：用 file_read 读取 core/
-- 2026-10-25: 先读取 core/services/supervisor/decider.py，然后找到 _fake_words 变量，把它改成 ['test']
-- 2026-10-25: 先读取 core/services/supervisor/decider.py，然后找到 `_fake_words` 变量，把它改成 `['test']`，并在
 - 2026-10-25: 先读取 core/services/supervisor/decider.py，然后找到 _fake_words 变量，把它改成 ['test']，最后确认没有
 - 2026-10-25: 用 file_patch 精确片段模式，精准切除 subpage.js 的坏代码。
 
@@ -810,6 +808,16 @@ ROOT = r'C:\Use
 
 背景：
 我要给 users 表加两个字段 handle 和 display_n
+- 2026-11-01: 只读探测系统防呆机制相关代码。严禁修改任何文件，只做读取和报告。
+
+【背景】
+上一轮任务中，系统在处理带 Emoji 的 me.js 时陷入死循环。
+根因是：
+
+- 2026-11-01: 增加"我的名片"功能，让用户能看到并分享自己的 handle。
+
+【背景】
+users 表现在有 handle（唯一对外 ID，如 @xiaoming）和 di
 
 
 
