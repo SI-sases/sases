@@ -43,6 +43,9 @@ function openTransferDialog() {
         const note = document.getElementById('transfer-note').value;
         if (!amount || amount <= 0) { alert('请输入有效金额'); return; }
         
+        // 二次确认（微信式）
+        if (!confirm(`确认转账 ${amount} ${type === 'compute' ? '算力积分' : '种子积分'} 给对方？`)) return;
+
         try {
           // 直接调 api 发起请求
           const res = await window.api.transferCredits(receiverId, amount, note, conversationId, type);
