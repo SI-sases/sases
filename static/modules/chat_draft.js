@@ -93,6 +93,7 @@ export function showTaskDraftEditor(taskId, steps) {
   list.style.marginBottom = '10px';
 
   let currentSteps = steps.map(s => ({
+    ...s,
     step: s.step,
     description: s.description || '',
     command: s.command || ''
@@ -182,7 +183,7 @@ export function showTaskDraftEditor(taskId, steps) {
   addBtn.style.cursor = 'pointer';
   addBtn.style.marginBottom = '12px';
   addBtn.onclick = () => {
-    currentSteps.push({ step: currentSteps.length + 1, description: '', command: '' });
+    currentSteps.push({ step: currentSteps.length + 1, description: '', command: '', type: 'command' });
     renderList();
   };
   wrap.appendChild(addBtn);
