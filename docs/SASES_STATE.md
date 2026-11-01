@@ -727,7 +727,6 @@ old_snippet 为：
 
 old_snippet 为：
     if (agentType === 'fr
-- 2026-10-25: 一次 run_python 完成三件事：清信号、备份、覆盖。不许判断、不许犹豫、只调一次 run_python。
 
 code 参数（逐字复制，不许改）：
 
@@ -838,6 +837,9 @@ users 表现在有 handle（唯一对外 ID，如 @xiaoming）和 di
 【背景】
 目前系统存在严重缺陷：
 1. 当执
+- 2026-11-01: 修复判定器（decider.py）的漏洞：识别并拦截“只汇报不干活”的假完成。只改 core/services/supervisor/decider.py。
+
+
 
 
 

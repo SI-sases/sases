@@ -40,6 +40,7 @@ def build_next_input(run_id):
 
 
 async def task_summarizer(task):
+    user_text = task.get('user_text', '') or ''
     # v0.48.0: 只说不做拦截——任务含改/修动词但无成功写操作记录 → 判未完成
     try:
         import re as _re_fake
