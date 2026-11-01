@@ -322,7 +322,7 @@ async def _execute_task(task: Dict[str, Any]):
 
         step_id = step.get("step")
         desc = step.get("description", "")
-        step_type = step.get("type", "command")
+        step_type = "command" if str(step.get("command") or "").strip() else ("harness" if step.get("module_id") else step.get("type", "command"))
 
         print(f"[executor] task={task_id} step={step_id} type={step_type}")
 
