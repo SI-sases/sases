@@ -105,6 +105,8 @@ async def create_transfer(body: TransferRequest, user_id: int = Depends(get_curr
 
 @router.post("/red-packet")
 async def create_red_packet(body: RedPacketRequest, user_id: int = Depends(get_current_user)):
+    if body.amount > 300:
+        raise HTTPException(status_code=400, detail="红包最大金额不能超过300积分")
     resolved_receiver = _resolve_receiver(body.receiver_id)
     if resolved_receiver == user_id:
         raise HTTPException(status_code=400, detail="不能发红包给自己")
