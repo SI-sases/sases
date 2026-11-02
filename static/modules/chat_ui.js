@@ -442,7 +442,21 @@ export function renderTransferBubble(content, role = 'user', senderName = null) 
                   <div style="font-size:24px;font-weight:bold;color:${isSelf ? '#fff' : '#f59e0b'};">${amount} <span style="font-size:14px;font-weight:normal;color:${isSelf ? '#fff' : '#666'};">${typeStr}</span></div>
                   <div style="font-size:12px;opacity:0.9;margin-top:8px;border-top:1px solid ${isSelf ? 'rgba(255,255,255,0.3)' : '#eee'};padding-top:4px;">转账</div>`;
                   
-  el.onclick = () => { alert(`转账详情\n金额：${amount} ${typeStr}\n备注：${note}\n(实时到账)`); };
+  el.onclick = () => {
+    let html = `
+      <div style="padding: 30px 20px; text-align: center; background: #f4f4f4; min-height: 100vh;">
+        <div style="font-size: 40px; margin-bottom: 10px;">${icon}</div>
+        <div style="font-size: 24px; font-weight: bold; margin-bottom: 20px;">${amount} ${typeStr}</div>
+        <div style="color: #666; margin-bottom: 10px;">${note}</div>
+        <div style="color: #f59e0b; font-size: 14px;">✅ 已实时到账</div>
+      </div>
+    `;
+    if (window.openSubpage) {
+      window.openSubpage('转账详情', html, { returnAction: () => { window.closeSubpage(); } });
+    } else {
+      alert(`转账详情\n金额：${amount} ${typeStr}\n备注：${note}\n(实时到账)`);
+    }
+  };
   
   const wrapper = document.createElement('div');
   wrapper.style.display = 'flex';
