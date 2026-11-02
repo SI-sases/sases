@@ -88,10 +88,12 @@ def create_transfer(sender_id: int, receiver_id: int, amount: float, message: st
 # ========== 红包（先冻结，后领取/退回） ==========
 
 def create_red_packet(sender_id: int, receiver_id: int, amount: float,
-                      message: str = '', expire_hours: int = RED_PACKET_EXPIRE_HOURS):
+                      message: str = '', expire_hours: int = RED_PACKET_EXPIRE_HOURS, credit_type: str = 'credits'):
     """发红包：立即扣发送方积分（冻结），等待接收方领取"""
     if amount <= 0:
         return None, "金额必须大于0"
+    if amount > 300:
+        return None, "红包最大金额不能超过300积分"
     if sender_id == receiver_id:
         return None, "不能发红包给自己"
 
