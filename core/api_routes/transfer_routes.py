@@ -97,7 +97,7 @@ async def create_transfer(body: TransferRequest, user_id: int = Depends(get_curr
     if err:
         raise HTTPException(status_code=400, detail=err)
 
-    # 【新增】跨端投递给 B（接收方）
+    # 跨端投递块已移除
     try:
         with db_cursor(commit=True) as cur:
             cur.execute("SELECT id FROM conversations WHERE (user_id=? AND target_user_id=?) OR (user_id=? AND target_user_id=?)", (resolved_receiver, user_id, user_id, resolved_receiver))
