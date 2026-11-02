@@ -467,7 +467,7 @@ export function renderTransferBubble(content, role = 'user', senderName = null) 
 
 export function renderRedPacketBubble(content, role = 'user', senderName = null) {
   let data = {};
-  try { data = JSON.parse(content.substring(12)); } catch (e) {}
+  try { data = JSON.parse(content.substring(13)); } catch (e) {}
   const isSelf = role === 'user';
   
   const div = document.createElement('div');
