@@ -17,7 +17,7 @@ def get_sent_red_packets(user_id, limit=50):
         )
         return [dict(r) for r in cur.fetchall()]
 
-def create_transfer(sender_id: int, receiver_id: int, amount: float, message: str = '', credit_type: str = 'credits'):
+def create_transfer(sender_id: int, receiver_id: int, amount: float, message: str = '', credit_type: str = 'credits', conversation_id: int = None):
     """转账：立即扣发送方，加接收方，一步完成"""
     if amount <= 0:
         return None, "金额必须大于0"
@@ -56,6 +56,30 @@ def create_transfer(sender_id: int, receiver_id: int, amount: float, message: st
             INSERT INTO contribution_log (user_id, action, event_type, points, detail)
             VALUES (?, '转账收入', 'transfer', ?, ?)
         """, (receiver_id, amount, f"来自用户{sender_id}的转账({credit_type})"))
+
+        # 插入双向气泡
+        try:
+            import json
+            payload = {"tx_id": tx_id, "amount": amount, "credit_type": credit_type, "message": message or "转账"}
+            msg_content = "[TRANSFER]:" + json.dumps(payload, ensure_ascii=False)
+            now_str = datetime.now().isoformat()
+
+            a_conv_id = conversation_id
+            if not a_conv_id:
+                cur.execute("SELECT id FROM conversations WHERE user_id=? AND target_user_id=? AND is_friend_chat=1", (sender_id, receiver_id))
+                r = cur.fetchone()
+                if r: a_conv_id = r["id"]
+
+            cur.execute("SELECT id FROM conversations WHERE user_id=? AND target_user_id=? AND is_friend_chat=1", (receiver_id, sender_id))
+            r2 = cur.fetchone()
+            b_conv_id = r2["id"] if r2 else None
+
+            if a_conv_id:
+                cur.execute("INSERT INTO messages (conversation_id, sender, content, created_at) VALUES (?, 'user', ?, ?)", (a_conv_id, msg_content, now_str))
+            if b_conv_id:
+                cur.execute("INSERT INTO messages (conversation_id, sender, content, created_at) VALUES (?, 'user', ?, ?)", (b_conv_id, msg_content, now_str))
+        except Exception as e:
+            print("转账气泡插入失败:", e)
 
         return tx_id, None
 
