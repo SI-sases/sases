@@ -535,11 +535,20 @@ export function renderRedPacketBubble(content, role = 'user', senderName = null)
                   }
                 }, 1500);
               } else {
-                btn.textContent = '開';
+                // 如果没有 ok，说明可能是已经领过，或者已过期
+                const errMsg = resData.detail || resData.error || '';
+                btn.style.background = '#eee';
+                btn.style.color = '#999';
+                btn.style.boxShadow = 'none';
+                btn.textContent = '已领';
                 btn.setAttribute('data-loading', '0');
                 if (msgEl) {
-                  msgEl.style.color = '#ef4444';
-                  msgEl.textContent = '领取失败: ' + (resData.detail || resData.error || '未知错误');
+                  msgEl.style.color = '#f59e0b'; // 改成微信的橙色
+                  if (errMsg.includes('completed')) {
+                    msgEl.textContent = '手慢了，红包派完了 / 已存入零钱';
+                  } else {
+                    msgEl.textContent = '红包已失效';
+                  }
                 }
               }
             } catch (e) {
