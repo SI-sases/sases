@@ -117,23 +117,29 @@ async def create_red_packet(body: RedPacketRequest, user_id: int = Depends(get_c
     if err:
         raise HTTPException(status_code=400, detail=err)
 
-    # 如果带了 conversation_id，往会话里插入一条红包消息
-    if body.conversation_id:
-        payload = {
-            "tx_id": tx_id,
-            "amount": body.amount,
-            "message": body.message or "恭喜发财，大吉大利",
-            "sender_id": user_id,
-        }
-        try:
-            transfer_service.insert_message(
-                conversation_id=body.conversation_id,
-                sender="user",
-                content="[RED_PACKET]:" + json.dumps(payload, ensure_ascii=False),
-                sender_agent_id=None
-            )
-        except Exception as e:
-            print(f"[transfer] 插入红包消息失败: {e}")
+    # 强制推送到接收方(B)的 SASES 助手会话
+    try:
+        with db_cursor(commit=True) as cur:
+            target_agent_id = f"sases_assistant_{resolved_receiver}"
+            cur.execute("SELECT id FROM conversations WHERE user_id=? AND agent_id=?", (resolved_receiver, target_agent_id))
+            row = cur.fetchone()
+            if row:
+                b_assist_conv_id = row["id"]
+            else:
+                cur.execute("INSERT INTO conversations (user_id, agent_id, title) VALUES (?, ?, 'SASES 助手')", (resolved_receiver, target_agent_id))
+                b_assist_conv_id = cur.lastrowid
+
+            payload = {
+                "tx_id": tx_id,
+                "amount": body.amount,
+                "message": body.message or "恭喜发财，大吉大利",
+                "sender_id": user_id,
+            }
+            content = "[RED_PACKET]:" + json.dumps(payload, ensure_ascii=False)
+            now = datetime.now().isoformat()
+            cur.execute("INSERT INTO messages (conversation_id, sender, content, created_at) VALUES (?, 'user', ?, ?)", (b_assist_conv_id, content, now))
+    except Exception as e:
+        print(f"[transfer] 推送到 SASES 助手失败: {e}")
 
     return {"tx_id": tx_id, "status": "pending", "expire_hours": body.expire_hours}
 
