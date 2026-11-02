@@ -472,11 +472,13 @@ export function renderRedPacketBubble(content, role = 'user', senderName = null)
   // 优先用 sender_id 判断是不是自己发的，如果没有 sender_id 再回退到 role
   const isSelf = data.sender_id ? (String(data.sender_id) === String(_myId)) : (role === 'user');
   
+  const senderTitle = isSelf ? '我发出的红包' : `${data.sender_name || senderName || '好友'}的红包`;
+  
   const div = document.createElement('div');
   div.className = 'red-packet-bubble';
   div.dataset.redPacketTx = data.tx_id || '';
   div.style.cssText = 'background:linear-gradient(135deg, #ef4444, #f43f5e);color:#fff;padding:12px;border-radius:8px;cursor:pointer;width:200px;';
-  div.innerHTML = `<div style="font-size:14px;display:flex;align-items:center;">🧧 红包</div>
+  div.innerHTML = `<div style="font-size:14px;display:flex;align-items:center;">🧧 ${senderTitle}</div>
                    <div style="font-size:24px;font-weight:bold;margin-top:8px;">¥${data.amount || 0}</div>
                    ${data.message ? `<div style="font-size:12px;opacity:0.85;margin-top:8px;">${data.message}</div>` : ''}`;
                    
