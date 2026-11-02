@@ -60,7 +60,7 @@ def create_transfer(sender_id: int, receiver_id: int, amount: float, message: st
 
         # 插入双向气泡
         try:
-            import json
+
             payload = {"tx_id": tx_id, "amount": amount, "credit_type": credit_type, "message": message or "转账"}
             msg_content = "[TRANSFER]:" + json.dumps(payload, ensure_ascii=False)
             now_str = datetime.now().isoformat()
