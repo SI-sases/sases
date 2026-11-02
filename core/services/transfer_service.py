@@ -112,8 +112,8 @@ def create_red_packet(sender_id: int, receiver_id: int, amount: float,
         cur.execute("""
             INSERT INTO transactions
             (sender_id, receiver_id, amount, tx_type, status, message, expires_at, credit_type)
-            VALUES (?, ?, ?, 'red_packet', 'pending', ?, ?)
-        """, (sender_id, receiver_id, amount, message, expires.isoformat()))
+            VALUES (?, ?, ?, 'red_packet', 'pending', ?, ?, ?)
+        """, (sender_id, receiver_id, amount, message, expires.isoformat(), credit_type))
         tx_id = cur.lastrowid
 
         # 积分日志（支出）
