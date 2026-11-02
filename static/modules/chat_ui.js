@@ -468,6 +468,34 @@ export function renderTransferBubble(content, role = 'user', senderName = null) 
 export function renderRedPacketBubble(content) {
   let data = {};
   try { data = JSON.parse(content.substring(12)); } catch (e) {}
+
+  // 绑定点击事件，用于领取红包
+  const handleClaim = async () => {
+    if (!data.tx_id) return;
+    if (!confirm('确定要拆开这个红包吗？')) return;
+    try {
+      const token = localStorage.getItem('sases_token');
+      const res = await fetch('/transfer/claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ tx_id: data.tx_id })
+      });
+      const resData = await res.json();
+      if (res.ok) {
+        alert('🎉 领取成功，积分已到账！');
+        if (window.loadMessages && window.chatState && window.chatState.conversationId) {
+          window.loadMessages(window.chatState.conversationId);
+        }
+      } else {
+        alert('领取失败: ' + (resData.detail || resData.error || '未知错误'));
+      }
+    } catch (e) {
+      alert('网络异常或已领取');
+    }
+  };
+
+  let data = {};
+  try { data = JSON.parse(content.substring(12)); } catch (e) {}
   const div = document.createElement('div');
   div.className = 'red-packet-bubble';
   div.dataset.redPacketTx = data.tx_id || '';
