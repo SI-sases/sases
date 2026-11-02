@@ -485,14 +485,15 @@ export function renderRedPacketBubble(content, role = 'user', senderName = null)
   div.onclick = async () => {
     if (!data.tx_id) return;
     
-    let statusText = '未领取';
+    let detailData = null;
     try {
       const res = await fetch('/transfer/detail/' + data.tx_id, { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('sases_token') } });
       if (res.ok) {
-        const detail = await res.json();
-        if (detail.status === 'completed') statusText = '已领取';
+        detailData = await res.json();
       }
     } catch(e) {}
+
+    let statusText = (detailData && detailData.status === 'completed') ? '已领取' : '未领取';
 
     if (isSelf) {
       if (window.openSubpage) {
@@ -509,6 +510,26 @@ export function renderRedPacketBubble(content, role = 'user', senderName = null)
       return;
     }
 
+    // 如果已经领过，直接显示灰色的“已领”页面
+    if (statusText === '已领取') {
+      if (window.openSubpage) {
+        window.openSubpage('红包详情', `
+          <div style="background:#f4f4f4;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding-top:40px;">
+            <div style="width:80px;height:80px;background:#ddd;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;margin-bottom:15px;">🧧</div>
+            <div style="font-size:18px;font-weight:bold;color:#333;margin-bottom:10px;">${data.sender_name || '好友'}发出的红包</div>
+            <div style="color:#888;margin-bottom:40px;font-size:14px;">${data.message || '恭喜发财，大吉大利'}</div>
+            
+            <div style="width:120px;height:120px;background:#eee;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#999;font-size:36px;font-weight:bold;">
+              已领
+            </div>
+            <div style="margin-top:20px;font-size:16px;color:#f59e0b;font-weight:bold;">手慢了，红包派完了 / 已存入零钱</div>
+          </div>
+        `, { returnAction: () => window.closeSubpage() });
+      }
+      return;
+    }
+
+    // 未领取的状态，显示金色的开字
     let html = `
       <div style="background:#f4f4f4;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding-top:40px;">
         <div style="width:80px;height:80px;background:#ddd;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;margin-bottom:15px;">🧧</div>
