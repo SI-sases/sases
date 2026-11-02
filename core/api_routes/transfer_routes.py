@@ -161,6 +161,27 @@ async def create_red_packet(body: RedPacketRequest, user_id: int = Depends(get_c
     return {"tx_id": tx_id, "status": "pending", "expire_hours": body.expire_hours}
 
 
+@router.get("/detail/{tx_id}")
+async def get_red_packet_detail(tx_id: int, user_id: int = Depends(get_current_user)):
+    with db_cursor() as cur:
+        cur.execute("SELECT * FROM transactions WHERE id=? AND tx_type='red_packet'", (tx_id,))
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="红包不存在")
+        if row["sender_id"] != user_id and row["receiver_id"] != user_id:
+            raise HTTPException(status_code=403, detail="无权查看")
+
+        return {
+            "tx_id": row["id"],
+            "sender_id": row["sender_id"],
+            "receiver_id": row["receiver_id"],
+            "amount": row["amount"],
+            "status": row["status"],
+            "message": row["message"],
+            "created_at": row["created_at"]
+        }
+
+
 @router.get("/pending")
 async def get_pending_red_packets(user_id: int = Depends(get_current_user)):
     packets = transfer_service.get_pending_transfers(user_id)
