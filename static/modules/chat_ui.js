@@ -468,7 +468,9 @@ export function renderTransferBubble(content, role = 'user', senderName = null) 
 export function renderRedPacketBubble(content, role = 'user', senderName = null) {
   let data = {};
   try { data = JSON.parse(content.substring(13)); } catch (e) {}
-  const isSelf = role === 'user';
+  const _myId = localStorage.getItem('sases_user_id');
+  // 优先用 sender_id 判断是不是自己发的，如果没有 sender_id 再回退到 role
+  const isSelf = data.sender_id ? (String(data.sender_id) === String(_myId)) : (role === 'user');
   
   const div = document.createElement('div');
   div.className = 'red-packet-bubble';
