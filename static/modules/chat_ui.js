@@ -482,12 +482,29 @@ export function renderRedPacketBubble(content, role = 'user', senderName = null)
                    <div style="font-size:24px;font-weight:bold;margin-top:8px;">¥${data.amount || 0}</div>
                    ${data.message ? `<div style="font-size:12px;opacity:0.85;margin-top:8px;">${data.message}</div>` : ''}`;
                    
-  div.onclick = () => {
+  div.onclick = async () => {
     if (!data.tx_id) return;
     
+    let statusText = '未领取';
+    try {
+      const res = await fetch('/transfer/detail/' + data.tx_id, { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('sases_token') } });
+      if (res.ok) {
+        const detail = await res.json();
+        if (detail.status === 'completed') statusText = '已领取';
+      }
+    } catch(e) {}
+
     if (isSelf) {
       if (window.openSubpage) {
-        window.openSubpage('红包详情', `<div style="padding:40px;text-align:center;color:#666;">这是您发出的红包</div>`, { returnAction: () => window.closeSubpage() });
+        window.openSubpage('红包详情', `
+          <div style="background:#f4f4f4;min-height:100vh;padding-top:40px;text-align:center;">
+            <div style="width:80px;height:80px;background:#ef4444;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 15px;">🧧</div>
+            <div style="font-size:18px;color:#333;">我发出的红包</div>
+            <div style="color:#888;margin-top:10px;font-size:14px;">${data.message || '恭喜发财，大吉大利'}</div>
+            <div style="font-size:32px;font-weight:bold;margin-top:20px;color:#333;">¥${data.amount || 0}</div>
+            <div style="color:#ef4444;margin-top:10px;font-size:16px;font-weight:bold;">${statusText}</div>
+          </div>
+        `, { returnAction: () => window.closeSubpage() });
       }
       return;
     }
@@ -495,7 +512,7 @@ export function renderRedPacketBubble(content, role = 'user', senderName = null)
     let html = `
       <div style="background:#f4f4f4;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding-top:40px;">
         <div style="width:80px;height:80px;background:#ddd;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;margin-bottom:15px;">🧧</div>
-        <div style="font-size:18px;font-weight:bold;color:#333;margin-bottom:10px;">${senderName || '好友'}发出的红包</div>
+        <div style="font-size:18px;font-weight:bold;color:#333;margin-bottom:10px;">${data.sender_name || '好友'}发出的红包</div>
         <div style="color:#888;margin-bottom:40px;font-size:14px;">${data.message || '恭喜发财，大吉大利'}</div>
         
         <div id="rp-btn-open" style="width:120px;height:120px;background:linear-gradient(135deg,#f59e0b,#f97316);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:36px;font-weight:bold;cursor:pointer;box-shadow:0 10px 20px rgba(245,158,11,0.3);">
