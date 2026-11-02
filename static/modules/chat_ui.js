@@ -465,12 +465,20 @@ export function renderTransferBubble(content, role = 'user', senderName = null) 
   return wrapper;
 }
 
-export function renderRedPacketBubble(content) {
+export function renderRedPacketBubble(content, role = 'user', senderName = null) {
   let data = {};
   try { data = JSON.parse(content.substring(12)); } catch (e) {}
-
-  // 绑定点击事件，用于领取红包
-  const handleClaim = async () => {
+  const isSelf = role === 'user';
+  
+  const div = document.createElement('div');
+  div.className = 'red-packet-bubble';
+  div.dataset.redPacketTx = data.tx_id || '';
+  div.style.cssText = 'background:linear-gradient(135deg, #ef4444, #f43f5e);color:#fff;padding:12px;border-radius:8px;cursor:pointer;width:200px;';
+  div.innerHTML = `<div style="font-size:14px;display:flex;align-items:center;">🧧 红包</div>
+                   <div style="font-size:24px;font-weight:bold;margin-top:8px;">¥${data.amount || 0}</div>
+                   ${data.message ? `<div style="font-size:12px;opacity:0.85;margin-top:8px;">${data.message}</div>` : ''}`;
+                   
+  div.onclick = async () => {
     if (!data.tx_id) return;
     if (!confirm('确定要拆开这个红包吗？')) return;
     try {
@@ -493,17 +501,12 @@ export function renderRedPacketBubble(content) {
       alert('网络异常或已领取');
     }
   };
-
-  let data = {};
-  try { data = JSON.parse(content.substring(12)); } catch (e) {}
-  const div = document.createElement('div');
-  div.className = 'red-packet-bubble';
-  div.dataset.redPacketTx = data.tx_id || '';
-  div.style.cssText = 'background:linear-gradient(135deg, #ef4444, #f43f5e);color:#fff;padding:12px;border-radius:8px;cursor:pointer;width:200px;';
-  div.innerHTML = `<div style="font-size:14px;display:flex;align-items:center;">🧧 红包</div>
-                   <div style="font-size:24px;font-weight:bold;margin-top:8px;">¥${data.amount || 0}</div>
-                   ${data.message ? `<div style="font-size:12px;opacity:0.85;margin-top:8px;">${data.message}</div>` : ''}`;
-  return div;
+  
+  const wrapper = document.createElement('div');
+  wrapper.style.display = 'flex';
+  wrapper.style.justifyContent = isSelf ? 'flex-end' : 'flex-start';
+  wrapper.appendChild(div);
+  return wrapper;
 }
 
 export function renderGroupRedPacketBubble(content) {
