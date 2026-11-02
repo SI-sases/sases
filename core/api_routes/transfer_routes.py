@@ -97,19 +97,7 @@ async def create_transfer(body: TransferRequest, user_id: int = Depends(get_curr
     if err:
         raise HTTPException(status_code=400, detail=err)
 
-    # 跨端投递块已移除
-    try:
-        with db_cursor(commit=True) as cur:
-            cur.execute("SELECT id FROM conversations WHERE (user_id=? AND target_user_id=?) OR (user_id=? AND target_user_id=?)", (resolved_receiver, user_id, user_id, resolved_receiver))
-            row = cur.fetchone()
-            if row:
-                b_conv_id = row["id"]
-                payload = {"tx_id": tx_id, "amount": body.amount, "credit_type": _c_type, "message": body.message or "转账"}
-                content = "[TRANSFER]:" + json.dumps(payload, ensure_ascii=False)
-                now = datetime.now().isoformat()
-                cur.execute("INSERT INTO messages (conversation_id, sender, content, created_at) VALUES (?, 'user', ?, ?)", (b_conv_id, content, now))
-    except Exception as e:
-        print("跨端转账投递失败:", e)
+    pass
     if body.conversation_id:
         try:
             import json
