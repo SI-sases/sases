@@ -130,11 +130,16 @@ async def create_red_packet(body: RedPacketRequest, user_id: int = Depends(get_c
                 cur.execute("INSERT INTO conversations (user_id, agent_id, title) VALUES (?, ?, 'SASES 助手')", (resolved_receiver, target_agent_id))
                 b_assist_conv_id = cur.lastrowid
 
+            cur.execute("SELECT COALESCE(display_name, username) as name FROM users WHERE id=?", (user_id,))
+            sender_row = cur.fetchone()
+            sender_name = sender_row["name"] if sender_row else "好友"
+
             payload = {
                 "tx_id": tx_id,
                 "amount": body.amount,
                 "message": body.message or "恭喜发财，大吉大利",
                 "sender_id": user_id,
+                "sender_name": sender_name,
             }
             content = "[RED_PACKET]:" + json.dumps(payload, ensure_ascii=False)
             now = datetime.now().isoformat()
