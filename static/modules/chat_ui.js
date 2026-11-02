@@ -478,27 +478,80 @@ export function renderRedPacketBubble(content, role = 'user', senderName = null)
                    <div style="font-size:24px;font-weight:bold;margin-top:8px;">¥${data.amount || 0}</div>
                    ${data.message ? `<div style="font-size:12px;opacity:0.85;margin-top:8px;">${data.message}</div>` : ''}`;
                    
-  div.onclick = async () => {
+  div.onclick = () => {
     if (!data.tx_id) return;
-    if (!confirm('确定要拆开这个红包吗？')) return;
-    try {
-      const token = localStorage.getItem('sases_token');
-      const res = await fetch('/transfer/claim', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-        body: JSON.stringify({ tx_id: data.tx_id })
-      });
-      const resData = await res.json();
-      if (res.ok) {
-        alert('🎉 领取成功，积分已到账！');
-        if (window.loadMessages && window.chatState && window.chatState.conversationId) {
-          window.loadMessages(window.chatState.conversationId);
-        }
-      } else {
-        alert('领取失败: ' + (resData.detail || resData.error || '未知错误'));
+    
+    if (isSelf) {
+      if (window.openSubpage) {
+        window.openSubpage('红包详情', `<div style="padding:40px;text-align:center;color:#666;">这是您发出的红包</div>`, { returnAction: () => window.closeSubpage() });
       }
-    } catch (e) {
-      alert('网络异常或已领取');
+      return;
+    }
+
+    let html = `
+      <div style="background:#f4f4f4;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding-top:40px;">
+        <div style="width:80px;height:80px;background:#ddd;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;margin-bottom:15px;">🧧</div>
+        <div style="font-size:18px;font-weight:bold;color:#333;margin-bottom:10px;">${senderName || '好友'}发出的红包</div>
+        <div style="color:#888;margin-bottom:40px;font-size:14px;">${data.message || '恭喜发财，大吉大利'}</div>
+        
+        <div id="rp-btn-open" style="width:120px;height:120px;background:linear-gradient(135deg,#f59e0b,#f97316);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:36px;font-weight:bold;cursor:pointer;box-shadow:0 10px 20px rgba(245,158,11,0.3);">
+          開
+        </div>
+        <div id="rp-msg" style="margin-top:20px;font-size:16px;color:#f59e0b;font-weight:bold;"></div>
+      </div>
+    `;
+    
+    if (window.openSubpage) {
+      window.openSubpage('拆红包', html, { returnAction: () => window.closeSubpage() });
+      
+      setTimeout(() => {
+        const btn = document.getElementById('rp-btn-open');
+        if (btn) {
+          btn.onclick = async () => {
+            if (btn.getAttribute('data-loading') === '1') return;
+            btn.setAttribute('data-loading', '1');
+            btn.textContent = '...';
+            try {
+              const token = localStorage.getItem('sases_token');
+              const res = await fetch('/transfer/claim', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify({ tx_id: data.tx_id })
+              });
+              const resData = await res.json();
+              const msgEl = document.getElementById('rp-msg');
+              if (res.ok) {
+                btn.style.background = '#eee';
+                btn.style.color = '#999';
+                btn.style.boxShadow = 'none';
+                btn.textContent = '已领';
+                if (msgEl) msgEl.textContent = '🎉 领取成功，积分已到账';
+                setTimeout(() => {
+                  window.closeSubpage();
+                  if (window.loadMessages && window.chatState && window.chatState.conversationId) {
+                    window.loadMessages(window.chatState.conversationId);
+                  }
+                }, 1500);
+              } else {
+                btn.textContent = '開';
+                btn.setAttribute('data-loading', '0');
+                if (msgEl) {
+                  msgEl.style.color = '#ef4444';
+                  msgEl.textContent = '领取失败: ' + (resData.detail || resData.error || '未知错误');
+                }
+              }
+            } catch (e) {
+              btn.textContent = '開';
+              btn.setAttribute('data-loading', '0');
+              const msgEl = document.getElementById('rp-msg');
+              if (msgEl) {
+                msgEl.style.color = '#ef4444';
+                msgEl.textContent = '网络异常或已领取';
+              }
+            }
+          };
+        }
+      }, 100);
     }
   };
   
