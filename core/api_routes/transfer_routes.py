@@ -142,6 +142,17 @@ async def create_red_packet(body: RedPacketRequest, user_id: int = Depends(get_c
     except Exception as e:
         print(f"[transfer] 推送到 SASES 助手失败: {e}")
 
+    # 给发送方(A)在原本的会话插入记录
+    if body.conversation_id:
+        try:
+            with db_cursor(commit=True) as cur:
+                payload_a = {"tx_id": tx_id, "amount": body.amount, "message": body.message or "恭喜发财，大吉大利", "sender_id": user_id}
+                content_a = "[RED_PACKET]:" + json.dumps(payload_a, ensure_ascii=False)
+                now_a = datetime.now().isoformat()
+                cur.execute("INSERT INTO messages (conversation_id, sender, content, created_at) VALUES (?, 'user', ?, ?)", (body.conversation_id, content_a, now_a))
+        except Exception as e:
+            print(f"[transfer] 插入发送方记录失败: {e}")
+
     return {"tx_id": tx_id, "status": "pending", "expire_hours": body.expire_hours}
 
 
