@@ -17,6 +17,7 @@ def get_sent_red_packets(user_id, limit=50):
         )
         return [dict(r) for r in cur.fetchall()]
 
+import json
 def create_transfer(sender_id: int, receiver_id: int, amount: float, message: str = '', credit_type: str = 'credits', conversation_id: int = None):
     """转账：立即扣发送方，加接收方，一步完成"""
     if amount <= 0:
