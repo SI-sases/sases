@@ -98,13 +98,7 @@ async def create_transfer(body: TransferRequest, user_id: int = Depends(get_curr
         raise HTTPException(status_code=400, detail=err)
 
     pass
-    if body.conversation_id:
-        try:
-            import json
-            payload = {"tx_id": tx_id, "amount": body.amount, "credit_type": body.credit_type, "message": body.message or "转账"}
-            transfer_service.insert_message(body.conversation_id, sender="user", content="[TRANSFER]:" + json.dumps(payload, ensure_ascii=False))
-        except Exception as e:
-            print("插入转账气泡失败:", e)
+    # 插入气泡已移至 transfer_service.create_transfer 内部，此处无需重复插入
 
     return {"tx_id": tx_id, "status": "completed"}
 
