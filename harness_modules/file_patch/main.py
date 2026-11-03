@@ -142,6 +142,13 @@ def _mode_snippet(abs_path, safe_path, params):
     if count != expected_count:
         raise ValueError(f"原片段在 {safe_path} 中出现 {count} 次，期望 {expected_count} 次。")
 
+    # 物理防呆：拦截超大替换
+    if len(new_content.splitlines()) > 20:
+        raise ValueError("单次替换超过20行，请拆分或使用 run_python 脚本。")
+    # 物理防呆：拦截套娃叠加
+    if 'old_snippet' in locals() and old_snippet and old_snippet in new_content:
+        raise ValueError("新内容包含了旧内容，疑似AI无限叠加，已物理拦截。")
+
     backup_path = _backup_before_write(abs_path, safe_path)
     new_content = original.replace(old_snippet, new_snippet)
     with open(abs_path, "w", encoding="utf-8") as f:
@@ -255,6 +262,13 @@ def _mode_anchor(abs_path, safe_path, params):
 
     idx = matched_indices[0]
     matched_line = lines[idx]
+    # 物理防呆：拦截超大替换
+    if len(new_content.splitlines()) > 20:
+        raise ValueError("单次替换超过20行，请拆分或使用 run_python 脚本。")
+    # 物理防呆：拦截套娃叠加
+    if 'old_snippet' in locals() and old_snippet and old_snippet in new_content:
+        raise ValueError("新内容包含了旧内容，疑似AI无限叠加，已物理拦截。")
+
     backup_path = _backup_before_write(abs_path, safe_path)
 
     if position == "before":
@@ -303,7 +317,14 @@ def _mode_create(abs_path, safe_path, params):
     if existed:
         with open(abs_path, "r", encoding="utf-8") as f:
             old_length = len(f.read())
-        backup_path = _backup_before_write(abs_path, safe_path)
+        # 物理防呆：拦截超大替换
+    if len(new_content.splitlines()) > 20:
+        raise ValueError("单次替换超过20行，请拆分或使用 run_python 脚本。")
+    # 物理防呆：拦截套娃叠加
+    if 'old_snippet' in locals() and old_snippet and old_snippet in new_content:
+        raise ValueError("新内容包含了旧内容，疑似AI无限叠加，已物理拦截。")
+
+    backup_path = _backup_before_write(abs_path, safe_path)
 
     parent = os.path.dirname(abs_path)
     if parent:
