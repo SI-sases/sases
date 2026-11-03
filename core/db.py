@@ -11,6 +11,13 @@ def get_connection():
     conn.row_factory = sqlite3.Row
     if os.environ.get("SASES_DISABLE_FK", "false").lower() not in ("1", "true", "yes"):
         conn.execute("PRAGMA foreign_keys = ON")
+    # 开启 WAL 模式大幅缓解并发读写死锁
+    try:
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA synchronous=NORMAL")
+    except Exception:
+        pass
+
     return conn
 
 def get_db():
