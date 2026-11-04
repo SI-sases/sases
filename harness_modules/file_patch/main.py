@@ -153,6 +153,12 @@ def _mode_snippet(abs_path, safe_path, params):
     new_content = original.replace(old_snippet, new_snippet)
     with open(abs_path, "w", encoding="utf-8") as f:
         f.write(new_content)
+    import hashlib
+    _old_md5 = hashlib.md5(original.encode('utf-8')).hexdigest()
+    _new_md5 = hashlib.md5(new_content.encode('utf-8')).hexdigest()
+
+    if _old_md5 == _new_md5:
+        raise ValueError(f"【物理拦截】替换前和替换后的文件内容完全一致，AI 在进行无效替换（假成功）。")
 
     # v2.9.1: 写后读回校验
     with open(abs_path, "r", encoding="utf-8") as f:
