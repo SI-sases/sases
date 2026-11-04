@@ -77,11 +77,14 @@ def list_friend_agents(user_id: int):
             conv_id = conv_row["id"] if conv_row else None
             
             friends.append({
+                "agent_id": f"user_{target_uid}",
                 "target_user_id": target_uid,
                 "name": name,
+                "description": "跨网节点好友" if str(name).startswith("remote_") else "普通用户",
+                "status": "online",
                 "conversation_id": conv_id,
                 "friend_mode": row["friend_mode"] or "normal",
-                "type": "user"
+                "type": "friend"
             })
     return friends
 

@@ -1,3 +1,89 @@
+
+async def poll_cross_network_messages():
+    import asyncio, httpx, os
+    from core.db import db_cursor
+    from core.broadcast.ws_hub import broadcast_to_user
+
+    _master_url = os.environ.get("HIVE_MASTER", "http://47.96.87.147:8001")
+    
+    while True:
+        try:
+            await asyncio.sleep(1) # 刚才说的改成1秒，提高实时性
+            
+            with db_cursor() as cur:
+                cur.execute("SELECT id, sases_id FROM users WHERE username NOT LIKE 'remote_%' LIMIT 1")
+                user = cur.fetchone()
+                if not user: 
+                    continue
+                user_id = user["id"]
+                sases_id = user["sases_id"]
+
+            url = f"{_master_url}/hive/sync/pull_messages?sases_id={sases_id}"
+            
+            headers = {}
+            try:
+                from core.broadcast.node_relay import hive_headers
+                headers = hive_headers()
+            except:
+                pass
+                
+            async with httpx.AsyncClient(timeout=5, trust_env=False, headers=headers) as client:
+                resp = await client.get(url)
+                
+                if resp.status_code == 200:
+                    data = resp.json()
+                    msgs = data.get("messages", [])
+                    
+                    for m in msgs:
+                        try:
+                            conv_id = None
+                            local_msg_id = None
+                            
+                            with db_cursor(commit=True) as cur:
+                                cur.execute("SELECT id FROM users WHERE sases_id=?", (m["sender_sases"],))
+                                sender_row = cur.fetchone()
+                                if not sender_row: 
+                                    continue
+                                sender_uid = sender_row["id"]
+
+                                cur.execute("SELECT id FROM conversations WHERE user_id=? AND target_user_id=? AND is_friend_chat=1", (user_id, sender_uid))
+                                conv = cur.fetchone()
+                                if not conv: 
+                                    continue
+                                conv_id = conv["id"]
+
+                                cur.execute("SELECT id FROM messages WHERE conversation_id=? AND content=? AND sender='friend'", (conv_id, m["content"]))
+                                if cur.fetchone(): 
+                                    continue
+
+                                cur.execute("INSERT INTO messages (conversation_id, sender, content, sender_agent_id, msg_type, attachments) VALUES (?, 'friend', ?, ?, ?, ?)", (conv_id, m["content"], m["sender_agent_id"], m["msg_type"], m["attachments"]))
+                                local_msg_id = cur.lastrowid
+
+                            # 【关键修复】确保缩进正确，且字段完整
+                            if conv_id and local_msg_id:
+                                await broadcast_to_user(user_id, {
+                                    "type": "sases_new_message", 
+                                    "sender": "friend",
+                                    "conversation_id": conv_id, 
+                                    "message_id": local_msg_id,
+                                    "content": m["content"], 
+                                    "sender_agent_id": m["sender_agent_id"],
+                                    "sender_name": "远端好友",
+                                    "msg_type": m.get("msg_type") or "standard", 
+                                    "attachments": m.get("attachments"),
+                                    "timestamp": str(m.get("created_at"))
+                                })
+                                print(f"[跨网拉取] 🎉 成功接收云端消息: {m['content']}")
+                                
+                                # 刷新前端会话列表
+                                await broadcast_to_user(user_id, {"type": "refresh_conversations"})
+                                
+                        except Exception as inner_e:
+                            print(f"💥 [跨网单条消息处理异常] {inner_e}")
+
+        except Exception as outer_e:
+            pass
+
 # core/bootstrap.py
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -323,6 +409,7 @@ async def periodic_group_red_packet():
                         message='每日群福利', source_type='group_pool', packet_type='lucky'
                     )
                     if ok:
+                        print("[跨网轮询] 正在向云端拉取新消息...")
                         with db_cursor(commit=True) as cur:
                             cur.execute('UPDATE groups SET last_red_packet_date=? WHERE id=?', (today, g['id']))
                         print(f'[group-rp] group {g["id"]} sent {amount}')
@@ -419,6 +506,7 @@ async def lifespan(app: FastAPI):
     # 【秒级】
     _background_tasks.append(asyncio.create_task(executor_service.start_background_executor()))
     _background_tasks.append(asyncio.create_task(periodic_syntax_check()))
+    _background_tasks.append(asyncio.create_task(poll_cross_network_messages()))
 
     # 【分钟级】
     _background_tasks.append(asyncio.create_task(periodic_rescue_maintenance()))
