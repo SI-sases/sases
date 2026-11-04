@@ -250,3 +250,60 @@ async def sync_friend_message(body: dict):
             print(f"[sync_friend_message] WS 广播失败: {e}")
             
     return {"status": "ok", "msg_id": msg_id}
+
+
+@router.post("/sync/friend_request")
+async def sync_friend_request(body: dict):
+    from ..db import db_cursor
+    from ..broadcast.ws_hub import broadcast_to_user
+    
+    target_sases_id = body.get("target_sases_id")
+    sender_sases_id = body.get("sender_sases_id")
+    
+    with db_cursor(commit=True) as cur:
+        cur.execute("SELECT id FROM users WHERE sases_id=?", (target_sases_id,))
+        target_row = cur.fetchone()
+        if not target_row: return {"status": "error", "msg": "Target not found"}
+        target_uid = target_row["id"]
+        
+        cur.execute("SELECT id FROM users WHERE sases_id=?", (sender_sases_id,))
+        sender_row = cur.fetchone()
+        if not sender_row:
+            shadow_username = f"remote_{sender_sases_id[-6:]}"
+            cur.execute("INSERT INTO users (username, password_hash, sases_id, credits) VALUES (?, 'shadow', ?, 0)", (shadow_username, sender_sases_id))
+            sender_uid = cur.lastrowid
+        else:
+            sender_uid = sender_row["id"]
+            
+        cur.execute("SELECT 1 FROM agent_friendships WHERE user_id=? AND target_user_id=?", (sender_uid, target_uid))
+        if not cur.fetchone():
+            cur.execute("INSERT INTO agent_friendships (user_id, friend_agent_id, target_user_id, status, friend_mode) VALUES (?, 'dummy', ?, 'pending', 'normal')", (sender_uid, target_uid))
+            req_id = cur.lastrowid
+            try:
+                await broadcast_to_user(target_uid, {"type": "new_friend_request"})
+            except Exception: pass
+            
+    return {"status": "ok", "req_id": req_id}
+
+
+@router.get("/sync/pull_messages")
+async def pull_messages(sases_id: str):
+    from ..db import db_cursor
+    with db_cursor(commit=True) as cur:
+        cur.execute('''
+            SELECT m.id, m.content, m.sender_agent_id, m.msg_type, m.attachments, m.created_at,
+                   u.sases_id as sender_sases
+            FROM messages m
+            JOIN conversations c ON m.conversation_id = c.id
+            JOIN users u ON c.target_user_id = u.id
+            WHERE c.user_id = (SELECT id FROM users WHERE sases_id=?) 
+              AND m.sender = 'friend'
+              AND m.id > COALESCE((SELECT last_pulled_id FROM users WHERE sases_id=?), 0)
+        ''', (sases_id, sases_id))
+        msgs = cur.fetchall()
+        
+        if msgs:
+            max_id = max(m["id"] for m in msgs)
+            cur.execute("UPDATE users SET last_pulled_id=? WHERE sases_id=?", (max_id, sases_id))
+            
+        return {"messages": [dict(m) for m in msgs]}
