@@ -92,7 +92,9 @@ def run(params):
         return {'success': False, 'error': 'code too long'}
     err = _check_ast(code)
     if err:
-        return {'success': False, 'error': err}
+        # 如果遇到语法错误，给出极其明确的重写建议
+        _friendly_err = err + "\n\n💡【急救提示】你的代码存在语法错误（大概率是引号嵌套或 f-string 截断）。\n请立刻重写：1. 千万不要嵌套双引号！ 2. 写脚本修改代码时，统一用单引号，多行文本用三引号包裹。 3. 不要在 f-string 里塞复杂的字典或对象！"
+        return {'success': False, 'error': _friendly_err}
     tmp = None
     try:
         preamble = PREAMBLE.replace('REPO_ROOT_PLACEHOLDER', REPO_ROOT.replace(chr(92), '/'))

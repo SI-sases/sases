@@ -336,3 +336,50 @@ async def pull_group_messages(sases_id: str):
             cur.execute("UPDATE users SET last_pulled_group_id=? WHERE sases_id=?", (max_id, sases_id))
 
         return {"messages": [dict(m) for m in msgs]}
+
+
+@router.post("/sync/register")
+async def sync_register(body: dict):
+    """接收来自本地客户端的跨节点注册信息"""
+    from ..db import db_cursor
+    _username = body.get('username')
+    _password_hash = body.get('password_hash')
+    _sases_id = body.get('sases_id')
+    if not _username or not _sases_id:
+        return {"ok": False, "error": "missing params"}
+    with db_cursor(commit=True) as cur:
+        cur.execute("SELECT id FROM users WHERE username=?", (_username,))
+        if cur.fetchone():
+            return {"ok": True, "skipped": True}
+        cur.execute(
+            "INSERT INTO users (username, password_hash, sases_id) VALUES (?, ?, ?)",
+            (_username, _password_hash, _sases_id)
+        )
+        print(f"[跨网注册] 成功同步云端账号: {_username} ({_sases_id})")
+    return {"ok": True}
+
+@router.get("/sync/pull_friend_requests")
+async def pull_friend_requests(sases_id: str):
+    """供本地客户端轮询拉取发给自己的好友请求"""
+    from ..db import db_cursor
+    with db_cursor(commit=True) as cur:
+        cur.execute("SELECT id FROM users WHERE sases_id=?", (sases_id,))
+        target_row = cur.fetchone()
+        if not target_row:
+            return {"requests": []}
+        target_uid = target_row["id"]
+
+        cur.execute("""
+            SELECT af.id as req_id, u.sases_id as sender_sases, u.username as sender_name
+            FROM agent_friendships af
+            JOIN users u ON af.user_id = u.id
+            WHERE af.target_user_id = ? AND af.status = 'pending'
+        """, (target_uid,))
+        reqs = cur.fetchall()
+
+        if reqs:
+            req_ids = [r["req_id"] for r in reqs]
+            placeholders = ','.join('?' for _ in req_ids)
+            cur.execute(f"UPDATE agent_friendships SET status='pulled' WHERE id IN ({placeholders})", req_ids)
+
+        return {"requests": [dict(r) for r in reqs]}

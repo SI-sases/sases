@@ -80,6 +80,31 @@ async def poll_cross_network_messages():
                                 
                         except Exception as inner_e:
                             print(f"💥 [跨网单条消息处理异常] {inner_e}")
+            # --- 拉取好友请求 ---
+            req_url = f"{_master_url}/hive/sync/pull_friend_requests?sases_id={sases_id}"
+            async with httpx.AsyncClient(timeout=5, trust_env=False) as client:
+                resp_req = await client.get(req_url)
+                if resp_req.status_code == 200:
+                    reqs = resp_req.json().get("requests", [])
+                    for r in reqs:
+                        with db_cursor(commit=True) as cur:
+                            # 查对方的本地 id（如果不存在就建影子）
+                            cur.execute("SELECT id FROM users WHERE sases_id=?", (r["sender_sases"],))
+                            sender_row = cur.fetchone()
+                            if not sender_row:
+                                cur.execute("INSERT INTO users (username, password_hash, sases_id) VALUES (?, 'shadow', ?)", (r["sender_name"], r["sender_sases"]))
+                                sender_uid = cur.lastrowid
+                            else:
+                                sender_uid = sender_row["id"]
+
+                            # 防止重复插入
+                            cur.execute("SELECT id FROM agent_friendships WHERE user_id=? AND target_user_id=?", (sender_uid, user_id))
+                            if not cur.fetchone():
+                                cur.execute("INSERT INTO agent_friendships (user_id, friend_agent_id, target_user_id, status) VALUES (?, 'dummy', ?, 'pending')", (sender_uid, user_id))
+
+                        # 推送前端刷新
+                        await broadcast_to_user(user_id, {"type": "new_friend_request"})
+                        print(f"[跨网好友] 收到来自 {r['sender_name']} 的请求")
 
             # --- 拉取群消息 ---
             group_url = f"{_master_url}/hive/sync/pull_group_messages?sases_id={sases_id}"
