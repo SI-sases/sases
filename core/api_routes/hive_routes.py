@@ -67,6 +67,11 @@ async def sync_message(body: dict):
         })
     except Exception as _e:
         print('[ws] sync push failed:', _e)
+    # 通知前端刷新群列表
+    from .ws_routes import broadcast_to_user
+    if _owner_uid:
+        await broadcast_to_user(_owner_uid, {"type": "refresh_groups"})
+
     return {'ok': True, 'created': True}
 
 
@@ -129,7 +134,7 @@ def sync_member_remove(body: dict):
 
 
 @router.post("/sync/group")
-def sync_group(body: dict):
+async def sync_group(body: dict):
     """接收 peer 的群创建通知，写本地影子群 + 写群主为成员"""
     from ..db import db_cursor
     _gid = body.get('global_group_id')
@@ -306,4 +311,28 @@ async def pull_messages(sases_id: str):
             max_id = max(m["id"] for m in msgs)
             cur.execute("UPDATE users SET last_pulled_id=? WHERE sases_id=?", (max_id, sases_id))
             
+        return {"messages": [dict(m) for m in msgs]}
+
+@router.get("/sync/pull_group_messages")
+async def pull_group_messages(sases_id: str):
+    from ..db import db_cursor
+    with db_cursor(commit=True) as cur:
+        # 查询发给该用户所在群的新消息
+        cur.execute('''
+            SELECT m.id, m.group_id, m.content, m.sender_agent_id, m.msg_type, m.attachments, m.created_at,
+                   u.sases_id as sender_sases, g.global_group_id
+            FROM group_messages m
+            JOIN groups g ON m.group_id = g.id
+            JOIN users u ON m.sender_id = u.id
+            WHERE m.group_id IN (
+                SELECT group_id FROM group_members WHERE user_id = (SELECT id FROM users WHERE sases_id=?)
+            )
+            AND m.id > COALESCE((SELECT last_pulled_group_id FROM users WHERE sases_id=?), 0)
+        ''', (sases_id, sases_id))
+        msgs = cur.fetchall()
+
+        if msgs:
+            max_id = max(m["id"] for m in msgs)
+            cur.execute("UPDATE users SET last_pulled_group_id=? WHERE sases_id=?", (max_id, sases_id))
+
         return {"messages": [dict(m) for m in msgs]}

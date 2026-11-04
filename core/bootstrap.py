@@ -81,6 +81,35 @@ async def poll_cross_network_messages():
                         except Exception as inner_e:
                             print(f"💥 [跨网单条消息处理异常] {inner_e}")
 
+            # --- 拉取群消息 ---
+            group_url = f"{_master_url}/hive/sync/pull_group_messages?sases_id={sases_id}"
+            async with httpx.AsyncClient(timeout=5, trust_env=False) as client:
+                resp_g = await client.get(group_url)
+                if resp_g.status_code == 200:
+                    data_g = resp_g.json()
+                    for m in data_g.get("messages", []):
+                        with db_cursor(commit=True) as cur:
+                            # 找本地群
+                            cur.execute("SELECT id FROM groups WHERE global_group_id=?", (m["global_group_id"],))
+                            g_row = cur.fetchone()
+                            if not g_row: continue
+                            local_gid = g_row["id"]
+
+                            # 找发送者(如果本地没有则忽略)
+                            cur.execute("SELECT id FROM users WHERE sases_id=?", (m["sender_sases"],))
+                            s_row = cur.fetchone()
+                            sender_uid = s_row["id"] if s_row else 1
+
+                            # 去重
+                            cur.execute("SELECT id FROM group_messages WHERE group_id=? AND content=? AND sender_id=?", (local_gid, m["content"], sender_uid))
+                            if cur.fetchone(): continue
+
+                            cur.execute("INSERT INTO group_messages (group_id, sender_id, sender_agent_id, content, msg_type, attachments) VALUES (?, ?, ?, ?, ?, ?)", (local_gid, sender_uid, m["sender_agent_id"], m["content"], m["msg_type"], m["attachments"]))
+                            local_msg_id = cur.lastrowid
+
+                        from core.api_routes.ws_routes import broadcast_to_group
+                        await broadcast_to_group(local_gid, {"type": "message", "content": m["content"], "sender_id": sender_uid})
+                        print(f"[跨网群聊] 收到群消息: {m['content']}")
         except Exception as outer_e:
             pass
 

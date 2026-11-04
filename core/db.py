@@ -85,6 +85,7 @@ def init_db():
         _ensure_column(cur, "users", "sases_id", "TEXT")
         _ensure_column(cur, "users", "credits", "REAL DEFAULT 0")
         _ensure_column(cur, "users", "last_pulled_id", "INTEGER DEFAULT 0")
+        _ensure_column(cur, "users", "last_pulled_group_id", "INTEGER DEFAULT 0")
         _ensure_column(cur, "users", "gender", "TEXT")
         _ensure_column(cur, "users", "region", "TEXT")
         _ensure_column(cur, "users", "signature", "TEXT")
