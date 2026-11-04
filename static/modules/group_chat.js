@@ -140,7 +140,11 @@ export async function openGroupChat(groupId, groupName) {
             // 增量追加
             const _container = document.getElementById('chat-messages');
             if (_container) {
-              appendGroupMessage(d.sender_name || '?', d.content, false);
+              let _clean_content = d.content;
+if (d.sender_sases_id && _clean_content.startsWith(d.sender_sases_id + ': ')) {
+    _clean_content = _clean_content.substring(d.sender_sases_id.length + 2);
+}
+appendGroupMessage(d.sender_name || '?', _clean_content, false);
             }
           }
         } catch (err) {}
