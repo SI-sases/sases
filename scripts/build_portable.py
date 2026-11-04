@@ -4,6 +4,21 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BUILD_DIR = os.path.join(ROOT, "build_portable")
 EMBED_URL = "https://www.python.org/ftp/python/3.12.10/python-3.12.10-embed-amd64.zip"
 
+# 定义要排除的超大依赖库前缀或完整名称
+EXCLUDE_PREFIXES = ["chromadb", "playwright", "scipy", "torch", "pandas"]
+
+def ignore_heavy_libs(directory, contents):
+    """在打包时过滤掉不需要的巨型库和缓存文件"""
+    ignored = []
+    for item in contents:
+        # 如果是以黑名单开头的文件夹或文件
+        if any(item.startswith(prefix) for prefix in EXCLUDE_PREFIXES):
+            ignored.append(item)
+        # 过滤掉 .whl 安装包、__pycache__ 等无用文件
+        elif item.endswith(".whl") or item == "__pycache__":
+            ignored.append(item)
+    return ignored
+
 def build():
     print("1. 清理旧目录...")
     if os.path.exists(BUILD_DIR):
@@ -35,7 +50,7 @@ def build():
             f.write("\nLib\\site-packages\n")
 
     print("3. 复制项目文件...")
-    items_to_copy = ["core", "static", "harness_modules", "launcher", "scripts", "LICENSE", "COMMERCIAL.md", "THIRD_PARTY_LICENSES.md", "app_full.py", "requirements.txt", "LICENSE", "COMMERCIAL.md", "THIRD_PARTY_LICENSES.md"]
+    items_to_copy = ["core", "static", "harness_modules", "launcher", "scripts", "LICENSE", "COMMERCIAL.md", "THIRD_PARTY_LICENSES.md", "app_full.py", "requirements.txt"]
     for item in items_to_copy:
         src = os.path.join(ROOT, item)
         if os.path.exists(src):
@@ -44,12 +59,13 @@ def build():
             else:
                 shutil.copy2(src, os.path.join(BUILD_DIR, item))
 
-    print("4. 复制本地依赖包 (venv312/Lib/site-packages)...")
+    print("4. 复制本地依赖包 (自动过滤巨型库)...")
     venv_site = os.path.join(ROOT, "venv312", "Lib", "site-packages")
     embed_site = os.path.join(BUILD_DIR, "python-embed", "Lib", "site-packages")
     os.makedirs(embed_site, exist_ok=True)
     if os.path.exists(venv_site):
-        shutil.copytree(venv_site, embed_site, dirs_exist_ok=True)
+        # 应用过滤规则
+        shutil.copytree(venv_site, embed_site, dirs_exist_ok=True, ignore=ignore_heavy_libs)
 
     print("5. 将打包好的启动器 EXE 复制到根目录...")
     src_exe = os.path.join(ROOT, "launcher", "dist", "SASES启动器.exe")
@@ -68,6 +84,8 @@ def build():
     os.makedirs(os.path.dirname(output_zip), exist_ok=True)
     if os.path.exists(output_zip):
         os.remove(output_zip)
+    
+    # 修复 make_archive 传入路径的坑，确保不把 build_portable 文件夹本身包进去
     shutil.make_archive(output_zip.replace(".zip", ""), 'zip', BUILD_DIR)
     print(f"✅ 打包成功！文件已保存至: {output_zip}")
 

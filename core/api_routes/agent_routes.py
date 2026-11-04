@@ -56,7 +56,12 @@ async def send_friend_request(body: FriendRequest, user_id: int = Depends(get_cu
             cur.execute("SELECT id FROM users WHERE sases_id=?", (body.target_sases_id,))
             target = cur.fetchone()
             if not target:
-                raise HTTPException(status_code=404, detail="找不到该 SASES ID 的用户")
+                # 跨服兜底：自动在本地创建影子账号
+                shadow_username = f"remote_{body.target_sases_id[-6:]}"
+                cur.execute("INSERT INTO users (username, password_hash, sases_id, credits) VALUES (?, 'shadow', ?, 0)", (shadow_username, body.target_sases_id))
+                cur.execute("SELECT id FROM users WHERE sases_id=?", (body.target_sases_id,))
+                target = cur.fetchone()
+                print(f"[跨服加好友] 已创建影子账号: {shadow_username}")
             
             target_user_id = target["id"]
             if target_user_id == user_id:
