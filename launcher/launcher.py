@@ -45,10 +45,8 @@ class SetupDialog(QDialog):
         btn_layout = QHBoxLayout()
         btn_ok = QPushButton("保存并启动")
         btn_ok.setStyleSheet("background-color: #4a90e2; color: white; padding: 8px 16px; border-radius: 4px; font-weight: bold;")
-        btn_ok.clicked.connect(self._on_ok_check)
         btn_skip = QPushButton("跳过")
         btn_skip.setStyleSheet("background-color: #3c3c3c; color: white; padding: 8px 16px; border-radius: 4px;")
-        btn_skip.clicked.connect(self.reject)
         
         btn_layout.addStretch(1)
         btn_layout.addWidget(btn_skip)
@@ -56,27 +54,26 @@ class SetupDialog(QDialog):
         
         layout.addWidget(title)
         layout.addWidget(desc)
+        
         from PyQt6.QtWidgets import QCheckBox
         self.agree_cb = QCheckBox("我已阅读并同意《免责声明》：本工具仅供学习交流，AI 生成内容及本地执行操作由使用者自行承担全部责任。")
         self.agree_cb.setStyleSheet("color: #ff5c5c; font-size: 11px;")
+        
         layout.addWidget(self.agree_cb)
         layout.addWidget(self.input)
         layout.addLayout(btn_layout)
         
         self.text = ""
         self.ok = False
-        btn_ok.clicked.connect(self._on_ok)
+        
+        # 修复：只绑定一次，并且确保保存逻辑生效
+        btn_ok.clicked.connect(self._on_ok_check)
         btn_skip.clicked.connect(self._on_skip)
         
     def _on_ok_check(self):
         if not self.agree_cb.isChecked():
-            from PyQt6.QtWidgets import QMessageBox
             QMessageBox.warning(self, "提示", "请先勾选同意免责声明！")
             return
-        self.accept()
-
-
-    def _on_ok(self):
         self.text = self.input.text()
         self.ok = True
         self.accept()
@@ -87,6 +84,27 @@ class SetupDialog(QDialog):
         self.reject()
 
 def main():
+    # =========================================================================
+    # 金蝉脱壳逻辑：如果发现是在打包后的 EXE 中运行，立刻转交给外部 Python
+    # 这样以后只需要热更新 launcher 文件夹，用户完全无感
+    # =========================================================================
+    if getattr(sys, 'frozen', False):
+        exe_dir = os.path.dirname(sys.executable)
+        python_embed = os.path.join(exe_dir, "python-embed", "python.exe")
+        script_path = os.path.join(exe_dir, "launcher", "launcher.py")
+        
+        if os.path.exists(python_embed) and os.path.exists(script_path):
+            creationflags = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
+            subprocess.Popen(
+                [python_embed, script_path], 
+                cwd=exe_dir, 
+                creationflags=creationflags
+            )
+            os._exit(0) # EXE 立刻自杀，释放控制权
+
+    # =========================================================================
+    # 以下为正常外部环境运行的逻辑
+    # =========================================================================
     import traceback
     import datetime
     def my_excepthook(exc_type, exc_value, exc_tb):

@@ -202,3 +202,51 @@ async def hive_relay(request: Request):
         return {"success": True}
     except Exception as e:
         return {"success": False, "error": str(e)}
+
+
+@router.post("/sync/friend_message")
+async def sync_friend_message(body: dict):
+    from ..db import db_cursor
+    from ..broadcast.ws_hub import broadcast_to_user
+    import json
+    
+    target_sases_id = body.get("target_sases_id")
+    content = body.get("content")
+    sender_sases_id = body.get("sender_sases_id", "unknown")
+    sender_agent_id = body.get("sender_agent_id")
+    msg_type = body.get("msg_type", "standard")
+    attachments = body.get("attachments")
+    _att_str = json.dumps(attachments) if attachments else None
+
+    with db_cursor(commit=True) as cur:
+        cur.execute("SELECT id FROM users WHERE sases_id=?", (target_sases_id,))
+        target_row = cur.fetchone()
+        if not target_row: return {"status": "error", "msg": "Target not found"}
+        target_uid = target_row["id"]
+        
+        cur.execute("SELECT id FROM users WHERE sases_id=?", (sender_sases_id,))
+        sender_row = cur.fetchone()
+        if not sender_row:
+            cur.execute("INSERT INTO users (username, password_hash, sases_id, credits) VALUES (?, 'shadow', ?, 0)", (f"remote_{sender_sases_id[-6:]}", sender_sases_id))
+            sender_uid = cur.lastrowid
+        else:
+            sender_uid = sender_row["id"]
+
+        cur.execute("SELECT id FROM conversations WHERE user_id=? AND target_user_id=? AND is_friend_chat=1", (target_uid, sender_uid))
+        conv = cur.fetchone()
+        if not conv:
+            cur.execute("INSERT INTO conversations (user_id, target_user_id, title, is_friend_chat) VALUES (?, ?, ?, 1)", (target_uid, sender_uid, f"与 {sender_sases_id[-6:]} 聊天"))
+            conv_id = cur.lastrowid
+        else:
+            conv_id = conv["id"]
+            
+        cur.execute("INSERT INTO messages (conversation_id, sender, content, sender_agent_id, msg_type, attachments) VALUES (?, 'friend', ?, ?, ?, ?)", (conv_id, content, sender_agent_id, msg_type, _att_str))
+        msg_id = cur.lastrowid
+        cur.execute("UPDATE conversations SET updated_at=CURRENT_TIMESTAMP WHERE id=?", (conv_id,))
+        
+        try:
+            await broadcast_to_user(target_uid, {"type": "sases_new_message", "message_id": msg_id, "conversation_id": conv_id, "sender": "friend", "content": content, "sender_agent_id": sender_agent_id, "msg_type": msg_type, "attachments": attachments})
+        except Exception as e:
+            print(f"[sync_friend_message] WS 广播失败: {e}")
+            
+    return {"status": "ok", "msg_id": msg_id}

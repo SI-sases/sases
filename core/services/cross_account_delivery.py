@@ -42,12 +42,26 @@ async def deliver_to_linked_accounts(user_id, conversation_id, content, sender_a
                     _target_mode = _t_conv["friend_mode"] if _t_conv["friend_mode"] else 'normal'
                     _target_agent = _t_conv["agent_id"]
                     
-                    # 4. 写入对方数据库
-                    cur.execute(
-                        "INSERT INTO messages (conversation_id, sender, content, sender_agent_id, msg_type, attachments) VALUES (?, ?, ?, ?, ?, ?)",
-                        (_target_conv_id, 'friend', content, sender_agent_id, msg_type, _att_str)
-                    )
-                    _msg_id = cur.lastrowid
+                                        # 获取对方真实的 sases_id 和 username
+                    cur.execute("SELECT username, sases_id FROM users WHERE id=?", (_target_uid,))
+                    _target_info = cur.fetchone()
+                    _is_remote = _target_info and (_target_info["username"].startswith("remote_") or "shadow" in str(_target_info["username"]))
+                    
+                    if _is_remote:
+                        import httpx, os
+                        from ..broadcast.node_relay import hive_headers
+                        _master_url = os.environ.get("HIVE_MASTER", "http://47.96.87.147:8001")
+                        cur.execute("SELECT sases_id FROM users WHERE id=?", (user_id,))
+                        _sender_sases = cur.fetchone()["sases_id"]
+                        _payload = {"target_sases_id": _target_info["sases_id"], "content": content, "sender_sases_id": _sender_sases, "sender_agent_id": sender_agent_id, "msg_type": msg_type, "attachments": attachments}
+                        async with httpx.AsyncClient(timeout=5, trust_env=False, headers=hive_headers()) as client:
+                            resp = await client.post(f"{_master_url}/hive/sync/friend_message", json=_payload)
+                            print(f"[跨网投递] HTTP 发往云端: {resp.status_code}")
+                    else:
+                        cur.execute("INSERT INTO messages (conversation_id, sender, content, sender_agent_id, msg_type, attachments) VALUES (?, ?, ?, ?, ?, ?)", (_target_conv_id, 'friend', content, sender_agent_id, msg_type, _att_str))
+                        _msg_id = cur.lastrowid
+                        cur.execute("UPDATE conversations SET updated_at=CURRENT_TIMESTAMP WHERE id=?", (_target_conv_id,))
+
                     cur.execute("UPDATE conversations SET updated_at=CURRENT_TIMESTAMP WHERE id=?", (_target_conv_id,))
 
         # ==========================================

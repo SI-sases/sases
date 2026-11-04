@@ -1,11 +1,12 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+
 a = Analysis(
-    ['launcher/launcher.py'],
-    pathex=['C:\\Users\\xiaomai\\sases', 'C:\\Users\\xiaomai\\sases\\launcher'],
+    ['C:/Users/xiaomai/sases/launcher/launcher.py'],
+    pathex=['C:/Users/xiaomai/sases/launcher'],
     binaries=[],
-    datas=[('C:\\Users\\xiaomai\\sases\\launcher\\launcher_config.py', 'launcher'), ('C:\\Users\\xiaomai\\sases\\launcher\\icon.ico', 'launcher')],
-    hiddenimports=['ui', 'ui.main_window', 'PyQt6.QtWebEngineWidgets', 'PyQt6.QtWebEngineCore', 'PyQt6.QtCore', 'PyQt6.QtGui', 'PyQt6.QtWidgets'],
+    datas=[('C:/Users/xiaomai/sases/launcher/ui', 'ui'), ('C:/Users/xiaomai/sases/launcher/launcher_config.py', '.'), ('C:/Users/xiaomai/sases/launcher/icon.ico', '.')],
+    hiddenimports=['urllib.request', 'urllib.error', 'urllib.parse', 'http.client', 'webbrowser', 'subprocess', 'socket', 'json', 'ui.main_window', 'launcher_config'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -34,5 +35,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon='C:\\Users\\xiaomai\\sases\\launcher\\icon.ico',
+    icon=['C:/Users/xiaomai/sases/launcher/icon.ico'],
 )
