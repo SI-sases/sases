@@ -42,7 +42,8 @@ async def _send_one(row):
         headers = json.loads(row.get("headers") or "{}")
     except Exception:
         headers = {}
-    url = API_BASE + row["target_url"]
+    _tu = row["target_url"]
+    url = _tu if _tu.startswith("http") else API_BASE + _tu
     try:
         async with httpx.AsyncClient(timeout=10) as cli:
             resp = await cli.post(url, content=row["payload"], headers=headers)
