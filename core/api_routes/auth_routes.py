@@ -216,6 +216,16 @@ async def register(body: RegisterRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"注册失败: {e}")
 
+    # 【静默同步到云端】
+    try:
+        import httpx
+        from ..config import HIVE_PEERS
+        if HIVE_PEERS:
+            httpx.post(HIVE_PEERS[0] + "/hive/sync/register", json={"username": username, "password_hash": password_hash, "sases_id": sases_id}, timeout=3)
+            print("[跨网注册] 已自动同步账号到云端: " + str(username))
+    except Exception as e:
+        print("[跨网注册] 同步失败: " + str(e))
+
     token = create_access_token(user_id)
     return {
         "access_token": token,

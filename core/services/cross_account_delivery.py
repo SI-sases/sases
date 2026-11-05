@@ -33,8 +33,7 @@ async def deliver_to_linked_accounts(user_id, conversation_id, content, sender_a
                 # 校验好友关系
                 cur.execute("SELECT 1 FROM agent_friendships WHERE status='accepted' AND ((user_id=? AND target_user_id=?) OR (user_id=? AND target_user_id=?))", (user_id, _target_uid, _target_uid, user_id))
                 if not cur.fetchone():
-                    print(f'[message] 拦截：用户 {user_id} 与 {_target_uid} 尚未成为好友，拒绝投递。')
-                    return
+                    raise ValueError(f"拦截：用户 {user_id} 与 {_target_uid} 尚未成为好友，拒绝投递。")
 
                 # 查对方用户信息判断是否跨网
                 cur.execute("SELECT username, sases_id FROM users WHERE id=?", (_target_uid,))

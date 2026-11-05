@@ -8,133 +8,141 @@ async def poll_cross_network_messages():
     
     while True:
         try:
-            await asyncio.sleep(1) # 刚才说的改成1秒，提高实时性
+            await asyncio.sleep(1) 
             
+            # 查出本地所有的真实用户
             with db_cursor() as cur:
-                cur.execute("SELECT id, sases_id FROM users WHERE username NOT LIKE 'remote_%' LIMIT 1")
-                user = cur.fetchone()
-                if not user: 
-                    continue
+                cur.execute("SELECT id, sases_id FROM users WHERE username NOT LIKE 'remote_%'")
+                users = cur.fetchall()
+            
+            if not users:
+                continue
+
+            # 遍历每个真实用户，分别去云端拉取
+            for user in users:
                 user_id = user["id"]
                 sases_id = user["sases_id"]
-
-            url = f"{_master_url}/hive/sync/pull_messages?sases_id={sases_id}"
-            
-            headers = {}
-            try:
-                from core.broadcast.node_relay import hive_headers
-                headers = hive_headers()
-            except:
-                pass
                 
-            async with httpx.AsyncClient(timeout=5, trust_env=False, headers=headers) as client:
-                resp = await client.get(url)
-                
-                if resp.status_code == 200:
-                    data = resp.json()
-                    msgs = data.get("messages", [])
-                    
-                    for m in msgs:
-                        try:
-                            conv_id = None
-                            local_msg_id = None
-                            
-                            with db_cursor(commit=True) as cur:
-                                cur.execute("SELECT id FROM users WHERE sases_id=?", (m["sender_sases"],))
-                                sender_row = cur.fetchone()
-                                if not sender_row: 
-                                    continue
-                                sender_uid = sender_row["id"]
+                headers = {}
+                try:
+                    from core.broadcast.node_relay import hive_headers
+                    headers = hive_headers()
+                except:
+                    pass
 
-                                cur.execute("SELECT id FROM conversations WHERE user_id=? AND target_user_id=? AND is_friend_chat=1", (user_id, sender_uid))
-                                conv = cur.fetchone()
-                                if not conv: 
-                                    continue
-                                conv_id = conv["id"]
+                async with httpx.AsyncClient(timeout=5, trust_env=False, headers=headers) as client:
+                    # --- 1. 拉取私聊消息 ---
+                    url = f"{_master_url}/hive/sync/pull_messages?sases_id={sases_id}"
+                    resp = await client.get(url)
+                    if resp.status_code == 200:
+                        for m in resp.json().get("messages", []):
+                            try:
+                                with db_cursor(commit=True) as cur:
+                                    cur.execute("SELECT id FROM users WHERE sases_id=?", (m["sender_sases"],))
+                                    sender_row = cur.fetchone()
+                                    if not sender_row: continue
+                                    sender_uid = sender_row["id"]
 
-                                cur.execute("SELECT id FROM messages WHERE conversation_id=? AND content=? AND sender='friend'", (conv_id, m["content"]))
-                                if cur.fetchone(): 
-                                    continue
+                                    cur.execute("SELECT id FROM conversations WHERE user_id=? AND target_user_id=? AND is_friend_chat=1", (user_id, sender_uid))
+                                    conv = cur.fetchone()
+                                    if not conv: continue
+                                    conv_id = conv["id"]
 
-                                cur.execute("INSERT INTO messages (conversation_id, sender, content, sender_agent_id, msg_type, attachments) VALUES (?, 'friend', ?, ?, ?, ?)", (conv_id, m["content"], m["sender_agent_id"], m["msg_type"], m["attachments"]))
-                                local_msg_id = cur.lastrowid
+                                    cur.execute("SELECT id FROM messages WHERE conversation_id=? AND content=? AND sender='friend'", (conv_id, m["content"]))
+                                    if cur.fetchone(): continue
 
-                            # 【关键修复】确保缩进正确，且字段完整
-                            if conv_id and local_msg_id:
+                                    cur.execute("INSERT INTO messages (conversation_id, sender, content, sender_agent_id, msg_type, attachments) VALUES (?, 'friend', ?, ?, ?, ?)", (conv_id, m["content"], m["sender_agent_id"], m["msg_type"], m["attachments"]))
+                                    local_msg_id = cur.lastrowid
+
                                 await broadcast_to_user(user_id, {
-                                    "type": "sases_new_message", 
-                                    "sender": "friend",
-                                    "conversation_id": conv_id, 
-                                    "message_id": local_msg_id,
-                                    "content": m["content"], 
-                                    "sender_agent_id": m["sender_agent_id"],
-                                    "sender_name": "远端好友",
-                                    "msg_type": m.get("msg_type") or "standard", 
-                                    "attachments": m.get("attachments"),
-                                    "timestamp": str(m.get("created_at"))
+                                    "type": "sases_new_message", "sender": "friend",
+                                    "conversation_id": conv_id, "message_id": local_msg_id,
+                                    "content": m["content"], "sender_agent_id": m["sender_agent_id"],
+                                    "sender_name": "远端好友", "msg_type": m.get("msg_type") or "standard", 
+                                    "attachments": m.get("attachments"), "timestamp": str(m.get("created_at"))
                                 })
-                                print(f"[跨网拉取] 🎉 成功接收云端消息: {m['content']}")
+                                print(f"[跨网拉取] 🎉 账号 {sases_id} 成功接收消息: {m['content']}")
+                            except Exception as inner_e:
+                                pass
+
+                    # --- 2. 拉取群消息 ---
+                    group_url = f"{_master_url}/hive/sync/pull_group_messages?sases_id={sases_id}"
+                    resp_g = await client.get(group_url)
+                    if resp_g.status_code == 200:
+                        for m in resp_g.json().get("messages", []):
+                            with db_cursor(commit=True) as cur:
+                                cur.execute("SELECT id FROM groups WHERE global_group_id=?", (m["global_group_id"],))
+                                g_row = cur.fetchone()
+                                if not g_row: continue
+                                local_gid = g_row["id"]
                                 
-                                # 刷新前端会话列表
-                                await broadcast_to_user(user_id, {"type": "refresh_conversations"})
+                                cur.execute("SELECT id FROM users WHERE sases_id=?", (m["sender_sases"],))
+                                s_row = cur.fetchone()
+                                sender_uid = s_row["id"] if s_row else 1
                                 
-                        except Exception as inner_e:
-                            print(f"💥 [跨网单条消息处理异常] {inner_e}")
-            # --- 拉取好友请求 ---
-            req_url = f"{_master_url}/hive/sync/pull_friend_requests?sases_id={sases_id}"
-            async with httpx.AsyncClient(timeout=5, trust_env=False) as client:
-                resp_req = await client.get(req_url)
-                if resp_req.status_code == 200:
-                    reqs = resp_req.json().get("requests", [])
-                    for r in reqs:
-                        with db_cursor(commit=True) as cur:
-                            # 查对方的本地 id（如果不存在就建影子）
-                            cur.execute("SELECT id FROM users WHERE sases_id=?", (r["sender_sases"],))
-                            sender_row = cur.fetchone()
-                            if not sender_row:
-                                cur.execute("INSERT INTO users (username, password_hash, sases_id) VALUES (?, 'shadow', ?)", (r["sender_name"], r["sender_sases"]))
-                                sender_uid = cur.lastrowid
-                            else:
-                                sender_uid = sender_row["id"]
+                                cur.execute("SELECT id FROM group_messages WHERE group_id=? AND content=? AND sender_id=?", (local_gid, m["content"], sender_uid))
+                                if cur.fetchone(): continue
+                                
+                                cur.execute("INSERT INTO group_messages (group_id, sender_id, sender_agent_id, content, msg_type, attachments) VALUES (?, ?, ?, ?, ?, ?)", (local_gid, sender_uid, m["sender_agent_id"], m["content"], m["msg_type"], m["attachments"]))
+                                
+                            from core.api_routes.ws_routes import broadcast_to_group
+                            await broadcast_to_group(local_gid, {"type": "message", "content": m["content"], "sender_id": sender_uid})
+                            print(f"[跨网群聊] 账号 {sases_id} 收到群消息: {m['content']}")
 
-                            # 防止重复插入
-                            cur.execute("SELECT id FROM agent_friendships WHERE user_id=? AND target_user_id=?", (sender_uid, user_id))
-                            if not cur.fetchone():
-                                cur.execute("INSERT INTO agent_friendships (user_id, friend_agent_id, target_user_id, status) VALUES (?, 'dummy', ?, 'pending')", (sender_uid, user_id))
+                    # --- 3. 拉取好友请求 ---
+                    req_url = f"{_master_url}/hive/sync/pull_friend_requests?sases_id={sases_id}"
+                    resp_req = await client.get(req_url)
+                    if resp_req.status_code == 200:
+                        for r in resp_req.json().get("requests", []):
+                            with db_cursor(commit=True) as cur:
+                                cur.execute("SELECT id FROM users WHERE sases_id=?", (r["sender_sases"],))
+                                sender_row = cur.fetchone()
+                                if not sender_row:
+                                    cur.execute("INSERT INTO users (username, password_hash, sases_id) VALUES (?, 'shadow', ?)", (r["sender_name"], r["sender_sases"]))
+                                    sender_uid = cur.lastrowid
+                                else:
+                                    sender_uid = sender_row["id"]
+                                    
+                                cur.execute("SELECT id FROM agent_friendships WHERE user_id=? AND target_user_id=?", (sender_uid, user_id))
+                                if not cur.fetchone():
+                                    cur.execute("INSERT INTO agent_friendships (user_id, friend_agent_id, target_user_id, status) VALUES (?, 'dummy', ?, 'pending')", (sender_uid, user_id))
+                            
+                            await broadcast_to_user(user_id, {"type": "new_friend_request"})
+                            print("[跨网好友] 账号 " + str(sases_id) + " 收到来自 " + str(r["sender_name"]) + " 的请求")
 
-                        # 推送前端刷新
-                        await broadcast_to_user(user_id, {"type": "new_friend_request"})
-                        print(f"[跨网好友] 收到来自 {r['sender_name']} 的请求")
+                    # --- 4. 拉取已同意的好友关系 ---
+                    friend_url = f"{_master_url}/hive/sync/pull_friend_status?sases_id={sases_id}"
+                    resp_f = await client.get(friend_url)
+                    if resp_f.status_code == 200:
+                        for f in resp_f.json().get("friends", []):
+                            with db_cursor(commit=True) as cur:
+                                cur.execute("SELECT id, username FROM users WHERE sases_id=?", (f["friend_sases"],))
+                                row = cur.fetchone()
+                                if not row: 
+                                    continue
+                                
+                                friend_uid = row["id"]
+                                friend_name = row["username"] or f["friend_name"]
+                                
+                                # 1. 强制确保双向好友关系存在
+                                cur.execute("UPDATE agent_friendships SET status='accepted' WHERE user_id=? AND target_user_id=?", (user_id, friend_uid))
+                                cur.execute("INSERT INTO agent_friendships (user_id, friend_agent_id, target_user_id, status) SELECT ?, 'dummy', ?, 'accepted' WHERE NOT EXISTS (SELECT 1 FROM agent_friendships WHERE user_id=? AND target_user_id=?)", (user_id, friend_uid, user_id, friend_uid))
+                                
+                                cur.execute("UPDATE agent_friendships SET status='accepted' WHERE user_id=? AND target_user_id=?", (friend_uid, user_id))
+                                cur.execute("INSERT INTO agent_friendships (user_id, friend_agent_id, target_user_id, status) SELECT ?, 'dummy', ?, 'accepted' WHERE NOT EXISTS (SELECT 1 FROM agent_friendships WHERE user_id=? AND target_user_id=?)", (friend_uid, user_id, friend_uid, user_id))
+                                
+                                # 2. 检查并建立会话
+                                cur.execute("SELECT id FROM conversations WHERE user_id=? AND target_user_id=? AND is_friend_chat=1", (user_id, friend_uid))
+                                if not cur.fetchone():
+                                    cur.execute("INSERT INTO conversations (user_id, target_user_id, title, is_friend_chat, friend_mode) VALUES (?, ?, ?, 1, 'normal')", (user_id, friend_uid, friend_name))
+                                    # 关键：只在新建会话成功时，打印并通知前端刷新一次
+                                    await broadcast_to_user(user_id, {"type": "refresh_conversations"})
+                                    print("[跨网好友] 建立双向会话: " + str(friend_name))
+                                    
+                                cur.execute("SELECT id FROM conversations WHERE user_id=? AND target_user_id=? AND is_friend_chat=1", (friend_uid, user_id))
+                                if not cur.fetchone():
+                                    cur.execute("INSERT INTO conversations (user_id, target_user_id, title, is_friend_chat, friend_mode) VALUES (?, ?, ?, 1, 'normal')", (friend_uid, user_id, "User" + str(user_id)))
 
-            # --- 拉取群消息 ---
-            group_url = f"{_master_url}/hive/sync/pull_group_messages?sases_id={sases_id}"
-            async with httpx.AsyncClient(timeout=5, trust_env=False) as client:
-                resp_g = await client.get(group_url)
-                if resp_g.status_code == 200:
-                    data_g = resp_g.json()
-                    for m in data_g.get("messages", []):
-                        with db_cursor(commit=True) as cur:
-                            # 找本地群
-                            cur.execute("SELECT id FROM groups WHERE global_group_id=?", (m["global_group_id"],))
-                            g_row = cur.fetchone()
-                            if not g_row: continue
-                            local_gid = g_row["id"]
-
-                            # 找发送者(如果本地没有则忽略)
-                            cur.execute("SELECT id FROM users WHERE sases_id=?", (m["sender_sases"],))
-                            s_row = cur.fetchone()
-                            sender_uid = s_row["id"] if s_row else 1
-
-                            # 去重
-                            cur.execute("SELECT id FROM group_messages WHERE group_id=? AND content=? AND sender_id=?", (local_gid, m["content"], sender_uid))
-                            if cur.fetchone(): continue
-
-                            cur.execute("INSERT INTO group_messages (group_id, sender_id, sender_agent_id, content, msg_type, attachments) VALUES (?, ?, ?, ?, ?, ?)", (local_gid, sender_uid, m["sender_agent_id"], m["content"], m["msg_type"], m["attachments"]))
-                            local_msg_id = cur.lastrowid
-
-                        from core.api_routes.ws_routes import broadcast_to_group
-                        await broadcast_to_group(local_gid, {"type": "message", "content": m["content"], "sender_id": sender_uid})
-                        print(f"[跨网群聊] 收到群消息: {m['content']}")
         except Exception as outer_e:
             pass
 

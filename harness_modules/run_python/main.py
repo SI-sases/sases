@@ -90,10 +90,12 @@ def run(params):
         return {'success': False, 'error': 'missing code'}
     if len(code) > MAX_CODE_LEN:
         return {'success': False, 'error': 'code too long'}
+        if "'''" in code or '"""' in code:
+            return {'success': False, 'error': '❌【语法拦截】禁止使用三引号！请立刻改用 "\\n".join([...]) 拼接文本，或改用多次短小的 replace。'}
     err = _check_ast(code)
     if err:
         # 如果遇到语法错误，给出极其明确的重写建议
-        _friendly_err = err + "\n\n💡【急救提示】你的代码存在语法错误（大概率是引号嵌套或 f-string 截断）。\n请立刻重写：1. 千万不要嵌套双引号！ 2. 写脚本修改代码时，统一用单引号，多行文本用三引号包裹。 3. 不要在 f-string 里塞复杂的字典或对象！"
+        _friendly_err = err + "\n\n💡【急救提示】你的代码存在语法错误（大概率是引号嵌套或 f-string 截断）。\n请立刻重写：1. 千万不要嵌套双引号！ 2. 写脚本修改代码时，统一用单引号，多行文本用双引号加\n拼接。 3. 不要在 f-string 里塞复杂的字典或对象！"
         return {'success': False, 'error': _friendly_err}
     tmp = None
     try:
