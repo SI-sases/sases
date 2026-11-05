@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', function () {
   if (!dlBtn) return;
   
   // 直接修改 href 为相对路径，避免写死 IP 导致跨域或 404
-  dlBtn.href = '/static/downloads/sases.zip';
+  dlBtn.href = 'http://47.96.87.147:8001/static/downloads/sases-portable.zip';
   dlBtn.setAttribute('download', 'sases.zip');
   
   // 移除之前拦截点击并弹窗的黑框逻辑，让浏览器直接下载
