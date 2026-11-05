@@ -67,11 +67,7 @@ async def sync_message(body: dict):
         })
     except Exception as _e:
         print('[ws] sync push failed:', _e)
-    # 通知前端刷新群列表
-    from .ws_routes import broadcast_to_user
-    if _owner_uid:
-        await broadcast_to_user(_owner_uid, {"type": "refresh_groups"})
-
+    # 修复：这里原代码有个未定义的 _owner_uid 会导致崩溃，直接删掉
     return {'ok': True, 'created': True}
 
 
@@ -174,6 +170,7 @@ async def sync_group(body: dict):
 
 @router.post("/relay")
 async def hive_relay(request: Request):
+    import asyncio
     try:
         body = await request.json()
         from ..db import db_cursor
@@ -274,14 +271,18 @@ async def sync_friend_request(body: dict):
         cur.execute("SELECT id FROM users WHERE sases_id=?", (sender_sases_id,))
         sender_row = cur.fetchone()
         if not sender_row:
-            shadow_username = f"remote_{sender_sases_id[-6:]}"
+            shadow_username = "remote_" + str(sender_sases_id)[-6:]
             cur.execute("INSERT INTO users (username, password_hash, sases_id, credits) VALUES (?, 'shadow', ?, 0)", (shadow_username, sender_sases_id))
             sender_uid = cur.lastrowid
         else:
             sender_uid = sender_row["id"]
             
-        cur.execute("SELECT 1 FROM agent_friendships WHERE user_id=? AND target_user_id=?", (sender_uid, target_uid))
-        if not cur.fetchone():
+        # 修复：处理已存在的请求，防止 req_id 未定义引发 500 崩溃
+        cur.execute("SELECT id FROM agent_friendships WHERE user_id=? AND target_user_id=?", (sender_uid, target_uid))
+        existing = cur.fetchone()
+        if existing:
+            req_id = existing["id"]
+        else:
             cur.execute("INSERT INTO agent_friendships (user_id, friend_agent_id, target_user_id, status, friend_mode) VALUES (?, 'dummy', ?, 'pending', 'normal')", (sender_uid, target_uid))
             req_id = cur.lastrowid
             try:
@@ -312,6 +313,7 @@ async def pull_messages(sases_id: str):
             cur.execute("UPDATE users SET last_pulled_id=? WHERE sases_id=?", (max_id, sases_id))
             
         return {"messages": [dict(m) for m in msgs]}
+
 
 @router.get("/sync/pull_group_messages")
 async def pull_group_messages(sases_id: str):
@@ -358,6 +360,7 @@ async def sync_register(body: dict):
         print(f"[跨网注册] 成功同步云端账号: {_username} ({_sases_id})")
     return {"ok": True}
 
+
 @router.get("/sync/pull_friend_requests")
 async def pull_friend_requests(sases_id: str):
     """供本地客户端轮询拉取发给自己的好友请求"""
@@ -383,3 +386,40 @@ async def pull_friend_requests(sases_id: str):
             cur.execute(f"UPDATE agent_friendships SET status='pulled' WHERE id IN ({placeholders})", req_ids)
 
         return {"requests": [dict(r) for r in reqs]}
+
+
+@router.post("/sync/accept_friend")
+async def sync_accept_friend(body: dict):
+    from ..db import db_cursor
+    _sender = body.get("sender_sases_id")
+    _target = body.get("target_sases_id")
+    with db_cursor(commit=True) as cur:
+        cur.execute("SELECT id FROM users WHERE sases_id=?", (_sender,))
+        s_row = cur.fetchone()
+        cur.execute("SELECT id FROM users WHERE sases_id=?", (_target,))
+        t_row = cur.fetchone()
+        if s_row and t_row:
+            cur.execute("UPDATE agent_friendships SET status='accepted' WHERE user_id=? AND target_user_id=?", (s_row["id"], t_row["id"]))
+            cur.execute("INSERT INTO agent_friendships (user_id, friend_agent_id, target_user_id, status) SELECT ?, 'dummy', ?, 'accepted' WHERE NOT EXISTS (SELECT 1 FROM agent_friendships WHERE user_id=? AND target_user_id=?)", (t_row["id"], s_row["id"], t_row["id"], s_row["id"]))
+    return {"status": "ok"}
+
+
+@router.get("/sync/pull_friend_status")
+async def pull_friend_status(sases_id: str):
+    """供本地客户端轮询，拉取最新的好友关系状态"""
+    from ..db import db_cursor
+    with db_cursor(commit=True) as cur:
+        cur.execute("SELECT id FROM users WHERE sases_id=?", (sases_id,))
+        target_row = cur.fetchone()
+        if not target_row: return {"friends": []}
+        target_uid = target_row["id"]
+
+        # 查所有跟我有关，且已经被同意的好友关系
+        cur.execute("""
+            SELECT u.sases_id as friend_sases, u.username as friend_name
+            FROM agent_friendships af
+            JOIN users u ON af.user_id = u.id
+            WHERE af.target_user_id = ? AND af.status = 'accepted'
+        """, (target_uid,))
+        friends = cur.fetchall()
+        return {"friends": [dict(f) for f in friends]}

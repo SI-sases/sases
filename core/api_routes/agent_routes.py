@@ -170,6 +170,16 @@ async def accept_friend_request(body: AcceptRequest, user_id: int = Depends(get_
             if not cur.fetchone():
                 cur.execute("INSERT INTO conversations (user_id, target_user_id, title, is_friend_chat, friend_mode) VALUES (?, ?, ?, 1, 'normal')", (receiver_id, sender_id, _send_name))
                 
+            cur.execute("SELECT username, sases_id FROM users WHERE id=?", (sender_id,))
+            _sender = cur.fetchone()
+            if _sender:
+                import httpx, os
+                _master_url = os.environ.get("HIVE_MASTER", "http://47.96.87.147:8001")
+                cur.execute("SELECT sases_id FROM users WHERE id=?", (user_id,))
+                _my_sases = cur.fetchone()["sases_id"]
+                try:
+                    httpx.post(_master_url + "/hive/sync/accept_friend", json={"sender_sases_id": _sender["sases_id"], "target_sases_id": _my_sases}, timeout=3)
+                except Exception: pass
         return {"status": "accepted"}
     except PermissionError as e:
         raise HTTPException(status_code=403, detail=str(e))
