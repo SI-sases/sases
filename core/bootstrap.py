@@ -559,6 +559,9 @@ async def lifespan(app: FastAPI):
 
     # 【秒级】
     _background_tasks.append(asyncio.create_task(executor_service.start_background_executor()))
+
+    _background_tasks.append(asyncio.create_task(outbox_worker()))
+
     _background_tasks.append(asyncio.create_task(periodic_syntax_check()))
     _background_tasks.append(asyncio.create_task(poll_cross_network_messages()))
 
