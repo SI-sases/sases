@@ -75,3 +75,6 @@ bge-small-zh-onnx/
 
 # ========== 自动生成文档 ==========
 docs/SASES_STATE.md
+# WireGuard keys (no extension)
+privatekey
+publickey
