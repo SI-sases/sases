@@ -81,12 +81,31 @@ async def deliver_to_linked_accounts(user_id, conversation_id, content, sender_a
             from ..broadcast.node_relay import hive_headers
             _master_url = os.environ.get("HIVE_MASTER", "http://47.96.87.147:8001")
             print(f"[跨网投递] 准备发往云端: {_master_url}, 目标: {_payload_to_send['target_sases_id']}")
+
+            _send_ok = False
+            _send_err = ''
+            _hdrs = {}
+
             try:
                 async with httpx.AsyncClient(timeout=5, trust_env=False, headers=hive_headers()) as client:
                     resp = await client.post(f"{_master_url}/hive/sync/friend_message", json=_payload_to_send)
                     print(f"[跨网投递] HTTP 发往云端: {resp.status_code}, 返回: {resp.text}")
+                    if 200 <= resp.status_code < 300:
+                        _send_ok = True
+                    else:
+                        _send_err = f'http_{resp.status_code}'
             except Exception as e:
                 print(f"[跨网投递] 💥 发送失败: {e}")
+
+                _send_err = str(e)[:200]
+            if not _send_ok:
+                try:
+                    from core.services.outbox.outbox_service import enqueue
+                    _ob_id = enqueue(f"{_master_url}/hive/sync/friend_message", _payload_to_send, extra_headers=_hdrs)
+                    print(f"[跨网投递] ⏳ 已进 outbox ({_ob_id[:8]}), worker 将自动重试。原因: {_send_err}")
+                except Exception as _eq:
+                    print(f"[跨网投递] ❌ outbox 入队失败: {_eq}")
+
 
         # 只有本地用户才有 _msg_id，才需要走后续的 WS 广播和 A2A
         if _target_uid and _target_conv_id and _msg_id:
