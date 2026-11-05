@@ -635,6 +635,9 @@ async def lifespan(app: FastAPI):
 
 
 def create_app() -> FastAPI:
+    from core.migrations import ensure_schema
+    ensure_schema()
+
     app = FastAPI(title="SASES", version="0.15.4", lifespan=lifespan)
 
     # 统一错误返回格式（兼容 error / message 两种前端读取方式）
