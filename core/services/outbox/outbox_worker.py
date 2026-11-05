@@ -45,7 +45,7 @@ async def _send_one(row):
     _tu = row["target_url"]
     url = _tu if _tu.startswith("http") else API_BASE + _tu
     try:
-        async with httpx.AsyncClient(timeout=10) as cli:
+        async with httpx.AsyncClient(timeout=10, trust_env=False) as cli:
             resp = await cli.post(url, content=row["payload"], headers=headers)
         if resp.status_code in (200, 201, 409):
             mark_success(row["msg_id"])
