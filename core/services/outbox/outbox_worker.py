@@ -57,3 +57,23 @@ async def _send_one(row):
 
 
 
+
+
+async def outbox_worker():
+    print("[outbox] worker started")
+    idle_ticks = 0
+    while True:
+        try:
+            rows = _fetch_due()
+            if rows:
+                idle_ticks = 0
+                groups = _group_by_conv(rows)
+                await asyncio.gather(*[_send_sequential(g) for g in groups.values()], return_exceptions=True)
+                print(f"[outbox] processed {len(rows)} messages")
+            else:
+                idle_ticks += 1
+                if idle_ticks % 30 == 0:
+                    print("[outbox] idle, pending=0")
+        except Exception as e:
+            print(f"[outbox] worker error: {e}")
+        await asyncio.sleep(WORKER_INTERVAL)
