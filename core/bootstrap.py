@@ -1,3 +1,4 @@
+from core.services.outbox.outbox_worker import outbox_worker
 
 async def poll_cross_network_messages():
     import asyncio, httpx, os
