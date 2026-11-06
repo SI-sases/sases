@@ -1,7 +1,7 @@
 """数据库迁移框架：按版本号顺序应用 schema 变更。"""
 import datetime
 
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 
 
 def _now_iso():
@@ -33,7 +33,15 @@ def _migrate_v4_transfer_fields(cur):
     cur.execute("ALTER TABLE transactions ADD COLUMN receiver_node_id TEXT")
     cur.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_transactions_idem ON transactions(idempotency_key) WHERE idempotency_key IS NOT NULL")
 
-MIGRATIONS = {1: _migrate_v1_outbox, 2: _migrate_v2_hmac, 3: _migrate_v3_reconcile, 4: _migrate_v4_transfer_fields}
+
+
+def _migrate_v5_credit_type(cur):
+    cur.execute("PRAGMA table_info(transactions)")
+    cols = [r[1] for r in cur.fetchall()]
+    if "credit_type" not in cols:
+        cur.execute("ALTER TABLE transactions ADD COLUMN credit_type TEXT DEFAULT 'credits'")
+
+MIGRATIONS = {1: _migrate_v1_outbox, 2: _migrate_v2_hmac, 3: _migrate_v3_reconcile, 4: _migrate_v4_transfer_fields, 5: _migrate_v5_credit_type}
 
 
 def ensure_schema():
