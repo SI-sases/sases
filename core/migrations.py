@@ -1,7 +1,7 @@
 """数据库迁移框架：按版本号顺序应用 schema 变更。"""
 import datetime
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 
 def _now_iso():
@@ -25,7 +25,15 @@ def _migrate_v3_reconcile(cur):
     cur.execute("CREATE TABLE IF NOT EXISTS user_frozen (user_id INTEGER PRIMARY KEY, reason TEXT, frozen_at TEXT, frozen_by TEXT DEFAULT 'system')")
 
 
-MIGRATIONS = {1: _migrate_v1_outbox, 2: _migrate_v2_hmac, 3: _migrate_v3_reconcile}
+
+
+def _migrate_v4_transfer_fields(cur):
+    cur.execute("ALTER TABLE transactions ADD COLUMN idempotency_key TEXT")
+    cur.execute("ALTER TABLE transactions ADD COLUMN sender_node_id TEXT")
+    cur.execute("ALTER TABLE transactions ADD COLUMN receiver_node_id TEXT")
+    cur.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_transactions_idem ON transactions(idempotency_key) WHERE idempotency_key IS NOT NULL")
+
+MIGRATIONS = {1: _migrate_v1_outbox, 2: _migrate_v2_hmac, 3: _migrate_v3_reconcile, 4: _migrate_v4_transfer_fields}
 
 
 def ensure_schema():
