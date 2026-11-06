@@ -448,14 +448,14 @@ async def sync_transfer(body: dict):
         return {"status": "error", "msg": "cannot transfer to self"}
 
     with db_cursor(commit=True) as cur:
+        cur.execute("SELECT id FROM transactions WHERE idempotency_key=?", (_idem,))
+        _exist = cur.fetchone()
+        if _exist:
+            return {"status": "ok", "skipped": True, "tx_id": _exist["id"]}
         try:
             cur.execute("INSERT INTO sync_received (idempotency_key, received_at) VALUES (?, ?)", (_idem, datetime.now().isoformat()))
-        except Exception:
-            cur.execute("SELECT id FROM transactions WHERE idempotency_key=?", (_idem,))
-            _exist = cur.fetchone()
-            if _exist:
-                return {"status": "ok", "skipped": True, "tx_id": _exist["id"]}
-            return {"status": "ok", "skipped": True}
+        except Exception as e:
+            return {"status": "error", "msg": "Duplicate key locked"}
 
         cur.execute("SELECT id FROM transactions WHERE idempotency_key=?", (_idem,))
         _exist = cur.fetchone()
