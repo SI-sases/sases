@@ -448,6 +448,15 @@ async def sync_transfer(body: dict):
         return {"status": "error", "msg": "cannot transfer to self"}
 
     with db_cursor(commit=True) as cur:
+        try:
+            cur.execute("INSERT INTO sync_received (idempotency_key, received_at) VALUES (?, ?)", (_idem, datetime.now().isoformat()))
+        except Exception:
+            cur.execute("SELECT id FROM transactions WHERE idempotency_key=?", (_idem,))
+            _exist = cur.fetchone()
+            if _exist:
+                return {"status": "ok", "skipped": True, "tx_id": _exist["id"]}
+            return {"status": "ok", "skipped": True}
+
         cur.execute("SELECT id FROM transactions WHERE idempotency_key=?", (_idem,))
         _exist = cur.fetchone()
         if _exist:
@@ -489,4 +498,15 @@ async def sync_transfer(body: dict):
         await broadcast_to_user(_suid, {"type": "balance_update", "reason": "transfer_out", "amount": _amt, "credit_type": _ct, "tx_id": _tx})
     except Exception as _e:
         print("[sync_transfer] WS 广播失败: " + str(_e))
+    try:
+        with db_cursor(commit=True) as cur_msg:
+            cur_msg.execute("SELECT id FROM conversations WHERE user_id=? AND is_friend_chat=1 LIMIT 1", (_tuid,))
+            conv = cur_msg.fetchone()
+            if conv:
+                _payload = {"tx_id": _tx, "amount": _amt, "credit_type": _ct, "message": _msg or "转账"}
+                import json as _json
+                msg_content = "[TRANSFER]:" + _json.dumps(_payload, ensure_ascii=False)
+                cur_msg.execute("INSERT INTO messages (conversation_id, sender, content, created_at) VALUES (?, 'friend', ?, datetime('now', 'localtime'))", (conv["id"], msg_content))
+    except Exception as e:
+        print("[sync_transfer] write msg error:", e)
     return {"status": "ok", "tx_id": _tx, "created": True}
