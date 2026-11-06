@@ -18,7 +18,7 @@ def get_sent_red_packets(user_id, limit=50):
         return [dict(r) for r in cur.fetchall()]
 
 import json
-def create_transfer(sender_id: int, receiver_id: int, amount: float, message: str = '', credit_type: str = 'credits', conversation_id: int = None):
+def create_transfer(sender_id: int, receiver_id: int, amount: float, message: str = '', credit_type: str = 'credits', conversation_id: int = None, idempotency_key: str = None):
     """转账：立即扣发送方，加接收方，一步完成"""
     if amount <= 0:
         return None, "金额必须大于0"
@@ -26,6 +26,11 @@ def create_transfer(sender_id: int, receiver_id: int, amount: float, message: st
         return None, "不能转账给自己"
 
     with db_cursor(commit=True) as cur:
+        if idempotency_key:
+            cur.execute("SELECT id FROM transactions WHERE idempotency_key=?", (idempotency_key,))
+            _exist = cur.fetchone()
+            if _exist:
+                return _exist["id"], None
         if credit_type == 'compute':
             cur.execute("SELECT balance FROM user_compute_balance WHERE user_id=?", (sender_id,))
             row = cur.fetchone()
@@ -44,9 +49,9 @@ def create_transfer(sender_id: int, receiver_id: int, amount: float, message: st
         now = datetime.now().isoformat()
         cur.execute("""
             INSERT INTO transactions
-            (sender_id, receiver_id, amount, tx_type, status, message, completed_at, credit_type)
-            VALUES (?, ?, ?, 'transfer', 'completed', ?, ?, ?)
-        """, (sender_id, receiver_id, amount, message, now, credit_type))
+            (sender_id, receiver_id, amount, tx_type, status, message, completed_at, credit_type, idempotency_key)
+            VALUES (?, ?, ?, 'transfer', 'completed', ?, ?, ?, ?)
+        """, (sender_id, receiver_id, amount, message, now, credit_type, idempotency_key))
         tx_id = cur.lastrowid
 
         cur.execute("""
