@@ -22,6 +22,7 @@ class TransferRequest(BaseModel):
     message: Optional[str] = ""
     conversation_id: Optional[int] = None
     credit_type: Optional[str] = "credits"
+    idempotency_key: Optional[str] = None
 
 
 class RedPacketRequest(BaseModel):
@@ -94,14 +95,23 @@ async def create_transfer(body: TransferRequest, user_id: int = Depends(get_curr
         raise HTTPException(status_code=400, detail="不能转账给自己")
 
     _c_type = getattr(body, 'credit_type', 'credits')
-    tx_id, err = transfer_service.create_transfer(user_id, resolved_receiver, body.amount, body.message, _c_type, body.conversation_id)
+    tx_id, err = transfer_service.create_transfer(user_id, resolved_receiver, body.amount, body.message, _c_type, body.conversation_id, getattr(body, 'idempotency_key', None))
     if err:
         raise HTTPException(status_code=400, detail=err)
 
     pass
     # 插入气泡已移至 transfer_service.create_transfer 内部，此处无需重复插入
 
-    return {"tx_id": tx_id, "status": "completed"}
+    _real_status = "completed"
+    try:
+        from ..db import db_cursor as _dbc
+        with _dbc() as _c:
+            _c.execute("SELECT status FROM transactions WHERE id=?", (tx_id,))
+            _r = _c.fetchone()
+            if _r: _real_status = _r["status"]
+    except Exception as _e:
+        print("[transfer] query status error:", _e)
+    return {"tx_id": tx_id, "status": _real_status}
 
 
 @router.post("/red-packet")
