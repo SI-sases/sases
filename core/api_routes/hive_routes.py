@@ -423,3 +423,70 @@ async def pull_friend_status(sases_id: str):
         """, (target_uid,))
         friends = cur.fetchall()
         return {"friends": [dict(f) for f in friends]}
+
+
+@router.post("/sync/transfer")
+async def sync_transfer(body: dict):
+    """接收 peer 转账。idempotency_key 去重。自动创建影子用户。"""
+    from ..db import db_cursor
+    from ..broadcast.ws_hub import broadcast_to_user
+    from datetime import datetime
+    _idem = body.get("idempotency_key")
+    _ss = body.get("sender_sases_id")
+    _ts = body.get("target_sases_id")
+    _amt = body.get("amount")
+    _ct = body.get("credit_type", "credits")
+    _msg = body.get("message", "")
+
+    if not _idem or not _ss or not _ts or _amt is None:
+        return {"status": "error", "msg": "missing params"}
+    if _amt <= 0:
+        return {"status": "error", "msg": "amount must be positive"}
+    if _ct not in ("credits", "compute"):
+        return {"status": "error", "msg": "invalid credit_type"}
+    if _ss == _ts:
+        return {"status": "error", "msg": "cannot transfer to self"}
+
+    with db_cursor(commit=True) as cur:
+        cur.execute("SELECT id FROM transactions WHERE idempotency_key=?", (_idem,))
+        _exist = cur.fetchone()
+        if _exist:
+            return {"status": "ok", "skipped": True, "tx_id": _exist["id"]}
+        cur.execute("SELECT id FROM users WHERE sases_id=?", (_ts,))
+        _t = cur.fetchone()
+        if _t:
+            _tuid = _t["id"]
+        else:
+            cur.execute("INSERT INTO users (username, password_hash, sases_id, credits) VALUES (?, 'shadow', ?, 0)", ("remote_"+_ts[-6:], _ts))
+            _tuid = cur.lastrowid
+        cur.execute("SELECT id FROM users WHERE sases_id=?", (_ss,))
+        _s = cur.fetchone()
+        if _s:
+            _suid = _s["id"]
+        else:
+            cur.execute("INSERT INTO users (username, password_hash, sases_id, credits) VALUES (?, 'shadow', ?, 0)", ("remote_"+_ss[-6:], _ss))
+            _suid = cur.lastrowid
+
+        if _ct == "compute":
+            cur.execute("SELECT balance FROM user_compute_balance WHERE user_id=?", (_suid,))
+            _b = cur.fetchone()
+            if not _b or _b["balance"] < _amt:
+                return {"status": "error", "msg": "insufficient compute"}
+            cur.execute("UPDATE user_compute_balance SET balance = balance - ? WHERE user_id=?", (_amt, _suid))
+            cur.execute("INSERT INTO user_compute_balance (user_id, balance) VALUES (?, ?) ON CONFLICT(user_id) DO UPDATE SET balance = balance + ?", (_tuid, _amt, _amt))
+        else:
+            cur.execute("SELECT credits FROM users WHERE id=?", (_suid,))
+            _b = cur.fetchone()
+            if not _b or _b["credits"] < _amt:
+                return {"status": "error", "msg": "insufficient credits"}
+            cur.execute("UPDATE users SET credits = credits - ? WHERE id=?", (_amt, _suid))
+            cur.execute("UPDATE users SET credits = credits + ? WHERE id=?", (_amt, _tuid))
+
+        cur.execute("INSERT INTO transactions (sender_id, receiver_id, amount, tx_type, status, message, completed_at, credit_type, idempotency_key, receiver_node_id) VALUES (?, ?, ?, 'transfer', 'completed', ?, ?, ?, ?, 'cloud')", (_suid, _tuid, _amt, _msg, datetime.now().isoformat(), _ct, _idem))
+        _tx = cur.lastrowid
+    try:
+        await broadcast_to_user(_tuid, {"type": "balance_update", "reason": "transfer_in", "amount": _amt, "credit_type": _ct, "tx_id": _tx})
+        await broadcast_to_user(_suid, {"type": "balance_update", "reason": "transfer_out", "amount": _amt, "credit_type": _ct, "tx_id": _tx})
+    except Exception as _e:
+        print("[sync_transfer] WS 广播失败: " + str(_e))
+    return {"status": "ok", "tx_id": _tx, "created": True}
