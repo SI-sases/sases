@@ -1219,6 +1219,14 @@ def init_db():
         cur.execute("CREATE INDEX IF NOT EXISTS idx_feedback_user ON task_feedback(user_id, created_at)")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_feedback_rating ON task_feedback(rating, created_at)")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_feedback_reason ON task_feedback(reason_tag)")
+
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS sync_received (
+                idempotency_key TEXT PRIMARY KEY,
+                received_at TEXT NOT NULL
+            )
+        """)
+        print("[db] sync_received 表就绪")
         print("[db] task_feedback 表就绪")
 
 if __name__ == '__main__':
