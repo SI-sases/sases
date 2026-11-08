@@ -65,10 +65,36 @@ def update_model_share(user_id: int, model_id: str, is_shared: int, visibility: 
     return True
 
 def delete_model(user_id: int, model_id: str):
-    """删除模型配置"""
-    with db_cursor(commit=True) as cur:
-        cur.execute("DELETE FROM model_configs WHERE id=? AND user_id=?", (model_id, user_id))
-    return True
+    """删除模型配置，并级联清理相关的会话和消息"""
+    from core.db import db_cursor
+    try:
+        with db_cursor(commit=True) as cur:
+            # 1. 查出该智能体下所有会话
+            cur.execute("SELECT id FROM conversations WHERE agent_id=? AND user_id=?", (model_id, user_id))
+            convs = cur.fetchall()
+            for c in convs:
+                # 2. 删除会话内的所有消息
+                cur.execute("DELETE FROM messages WHERE conversation_id=?", (c[0],))
+            # 3. 删除会话
+            cur.execute("DELETE FROM conversations WHERE agent_id=? AND user_id=?", (model_id, user_id))
+            
+            # 4. 清理其他可能存在的关联（如好友关系、挂起任务）
+            try:
+                cur.execute("DELETE FROM swarm_pending_tasks WHERE conversation_id NOT IN (SELECT id FROM conversations)")
+            except: pass
+            
+            # 5. 清理逻辑引用（无外键约束，防止幽灵数据）
+            try:
+                cur.execute("DELETE FROM agent_friendships WHERE friend_agent_id=?", (model_id,))
+                cur.execute("DELETE FROM group_members WHERE agent_id=?", (model_id,))
+            except Exception: pass
+
+            # 6. 最后删除模型本身
+            cur.execute("DELETE FROM model_configs WHERE id=? AND user_id=?", (model_id, user_id))
+        return True, "deleted" 
+    except Exception as e:
+        print(f"[delete_model] error: {e}")
+        return False
 
 def parse_capabilities(model_config) -> dict:
     """解析 model_config 的 capabilities 字段，返回 dict"""

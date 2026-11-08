@@ -86,7 +86,7 @@ function generateAgentRow(agent, type) {
   `;
 
   return `
-    <div class="swipe-row" data-agent-id="${aid}" data-agent-name="${aname}" data-agent-type="${type}" ${type === 'friend' ? `data-conversation-id="${agent.conversation_id || ''}" data-target-user-id="${agent.target_user_id || ''}"` : ''}>
+    <div class="swipe-row" data-agent-id="${aid}" data-agent-name="${aname}" data-agent-type="${type}" ${type === 'friend' ? `data-conversation-id="${agent.conversation_id || ''}" data-target-user-id="${agent.target_user_id || ''}" data-friendship-id="${agent.friendship_id || ''}"` : ''}>
       <div class="agent-row">
         <div class="agent-avatar" style="background: ${bgColor};">
           ${aname.charAt(0)}
@@ -261,7 +261,52 @@ async function renderContacts(container) {
       html += '</div>';
 
       if (window.openSubpage) {
-        window.openSubpage('详细资料', html, { returnAction: () => window.activateMainView('contacts') });
+        const _fid = row.dataset.friendshipId;
+        const _opts = { returnAction: () => window.activateMainView('contacts') };
+        
+        // 只有当存在 friendshipId（即点开的是好友）时，才显示右上角的 ...
+        if (_fid) {
+          _opts.showMore = true;
+          _opts.onMore = () => {
+            const menuHtml = `
+              <div class="me-menu" style="margin-top: 8px;">
+                <div class="me-menu-item"><span class="menu-label">设置备注和标签</span></div>
+                <div class="me-menu-item"><span class="menu-label">朋友权限</span></div>
+              </div>
+              <div style="height: 8px; background: #f5f5f5;"></div>
+              <div class="me-menu">
+                <div class="me-menu-item"><span class="menu-label">投诉</span></div>
+              </div>
+              <div style="height: 8px; background: #f5f5f5;"></div>
+              <div class="me-menu" style="margin-bottom: 20px;">
+                <div class="me-menu-item"><span class="menu-label" style="color: #ff3b30; text-align: center; width: 100%;">加入黑名单</span></div>
+                <div style="height: 0.5px; background: #eee; margin: 0 16px;"></div>
+                <div class="me-menu-item" id="btn-remove-friend"><span class="menu-label" style="color: #ff3b30; text-align: center; width: 100%;">解除好友关系</span></div>
+              </div>
+            `;
+            window.openSubpage('更多信息', menuHtml, { showMore: false, returnAction: () => { window.closeSubpage(); } });
+            setTimeout(() => {
+              const btn = document.getElementById('btn-remove-friend');
+              if (btn) {
+                btn.onclick = async () => {
+                  if (!confirm('确定要解除好友关系吗？')) return;
+                  try {
+                    const res = await fetch('/agents/friends/' + _fid, {
+                      method: 'DELETE',
+                      headers: { 'Authorization': 'Bearer ' + localStorage.getItem('sases_token') }
+                    });
+                    if (res.ok) {
+                      alert('已解除好友关系');
+                      window.closeSubpage(); window.closeSubpage(); window.activateMainView('contacts');
+                    } else { alert('操作失败'); }
+                  } catch (e) { alert('网络请求失败'); }
+                };
+              }
+            }, 100);
+          };
+        }
+        
+        window.openSubpage('详细资料', html, _opts);
         setTimeout(() => {
           const btn = document.getElementById('btn-start-chat-from-info');
           if (btn) {
@@ -320,8 +365,20 @@ function handleSwipeAction(action, agentId, agentName, agentType) {
     alert(t('share_settings') + ': ' + agentName);
   } else if (action === 'delete') {
     if (confirm(`${t('delete_confirm')} "${agentName}"?`)) {
-      alert(t('delete_success'));
-      renderContacts(document.getElementById('contacts-list'));
+      if (window.api && window.api.deleteModel) {
+        window.api.deleteModel(agentId).then(res => {
+          if (res.status === 'ok') {
+            alert(t('delete_success'));
+            renderContacts(document.getElementById('contacts-list'));
+          } else {
+            alert('删除失败: ' + (res.detail || res.msg || '未知错误'));
+          }
+        }).catch(e => {
+          alert('请求异常: ' + e.message);
+        });
+      } else {
+        alert('API 接口未就绪');
+      }
     }
   } else if (action === 'complain') {
     alert(t('complain') + ' ' + t('coming_soon'));

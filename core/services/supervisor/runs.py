@@ -13,6 +13,9 @@ def get_run(run_id):
 
 
 def create_proposed_run(user_id, conversation_id, supervisor_id, goal, task_type=None):
+    with db_cursor() as _c:
+        _c.execute("SELECT id FROM conversations WHERE id=?", (conversation_id,))
+        if not _c.fetchone(): raise ValueError("会话已失效，请刷新页面重试")
     """创建 proposed 状态的 run，等用户确认"""
     with db_cursor(commit=True) as cur:
         _tt = task_type if task_type is not None else 'unknown'
@@ -93,6 +96,9 @@ def get_active_run(user_id):
 
 
 def create_run(user_id, conversation_id, supervisor_id, goal, task_type=None, max_rounds: int = None):
+    with db_cursor() as _c:
+        _c.execute("SELECT id FROM conversations WHERE id=?", (conversation_id,))
+        if not _c.fetchone(): raise ValueError("会话已失效，请刷新页面重试")
     with db_cursor(commit=True) as cur:
         _tt = task_type if task_type is not None else 'unknown'
         _mr = max_rounds if max_rounds is not None else MAX_ROUNDS

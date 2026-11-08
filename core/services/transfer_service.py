@@ -137,8 +137,15 @@ def create_transfer(sender_id: int, receiver_id: int, amount: float, message: st
                 print("[create_transfer] httpx error:", _e)
             if _ok:
                 try:
-                    with db_cursor(commit=True) as _uc:
-                        _uc.execute("UPDATE transactions SET status='completed', completed_at=? WHERE id=?", (datetime.now().isoformat(), tx_id))
+                    import time
+                    for _r in range(3):
+                        try:
+                            with db_cursor(commit=True) as _uc:
+                                _uc.execute("UPDATE transactions SET status='completed', completed_at=? WHERE id=?", (datetime.now().isoformat(), tx_id))
+                            break
+                        except Exception as _ue:
+                            if _r == 2: print("[create_transfer] 更新状态失败(锁):", _ue)
+                            else: time.sleep(1)
                 except Exception as _ue:
                     print("[create_transfer] update status error:", _ue)
             else:

@@ -1,6 +1,6 @@
 from fastapi import Request
 # core/api_routes/agent_routes.py
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from typing import Optional, List
@@ -269,3 +269,11 @@ async def bind_session_agent(body: SessionAgentRequest, user_id: int = Depends(g
     with db_cursor(commit=True) as cur:
         cur.execute("UPDATE conversations SET agent_id=? WHERE id=? AND user_id=?", (body.agent_id, body.conversation_id, user_id))
     return {"status": "ok"}
+
+@router.delete("/friends/{friendship_id}")
+async def delete_friend(friendship_id: int, user_id: int = Depends(get_current_user)):
+    from ..services import agent_service
+    success, msg = agent_service.delete_friend(user_id, friendship_id)
+    if not success:
+        raise HTTPException(status_code=400, detail=msg)
+    return {"status": "ok", "msg": msg}
