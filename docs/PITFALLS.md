@@ -38,3 +38,9 @@
 - 修复：db.py init_db() 末尾加两段幂等调用（apply_migrations + apply_hlc_groundwork）
 - 教训：所有"加字段/加表"的迁移必须挂到 init_db()，不能只做独立脚本
 
+
+
+### 坑 6：PowerShell -replace 处理含中文的 UTF-8 文件导致乱码
+- 现象：执行 PowerShell 的 -replace 替换 chat_ui.js 内容后，所有中文变成乱码（如 '我' 变成 '鎴?'），且吞掉单引号引发 SyntaxError
+- 根因：Windows PowerShell 5.1 的 Set-Content 默认使用系统 ANSI 编码（中文环境为 GBK），读写 UTF-8 文件时破坏中文字符
+- 修复：绝对不要用 PowerShell -replace 改含中文的代码文件。用 Python 脚本（显式 encoding='utf-8'）或 file_patch 工具
