@@ -1227,6 +1227,86 @@ def init_db():
             )
         """)
         print("[db] sync_received 表就绪")
+
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS asset_snapshots (
+                snapshot_date TEXT PRIMARY KEY,
+                total_seed REAL NOT NULL,
+                total_compute REAL NOT NULL,
+                user_count INTEGER NOT NULL,
+                tx_count INTEGER NOT NULL,
+                ledger_hash TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            )
+        """)
+        print("[db] asset_snapshots 表就绪")
+
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS auth_meta (
+                key TEXT PRIMARY KEY,
+                value TEXT
+            )
+        """)
+        print("[db] auth_meta 表就绪")
+
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS nonce_cache (
+                user_id INTEGER,
+                nonce TEXT,
+                expire_at TEXT,
+                PRIMARY KEY (user_id, nonce)
+            )
+        """)
+        print("[db] nonce_cache 表就绪")
+
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS outbox (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                msg_id TEXT UNIQUE NOT NULL,
+                target_url TEXT NOT NULL,
+                payload TEXT NOT NULL,
+                headers TEXT,
+                status TEXT NOT NULL DEFAULT 'pending',
+                retry_count INTEGER NOT NULL DEFAULT 0,
+                max_retries INTEGER NOT NULL DEFAULT 5,
+                next_retry_at TEXT NOT NULL,
+                last_error TEXT,
+                created_at TEXT NOT NULL,
+                completed_at TEXT
+            )
+        """)
+        print("[db] outbox 表就绪")
+
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS reconcile_issues (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                issue_type TEXT NOT NULL,
+                detail TEXT,
+                detected_at TEXT NOT NULL,
+                resolved INTEGER DEFAULT 0,
+                resolved_at TEXT,
+                resolved_by TEXT
+            )
+        """)
+        print("[db] reconcile_issues 表就绪")
+
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS schema_version (
+                version INTEGER PRIMARY KEY,
+                applied_at TEXT NOT NULL
+            )
+        """)
+        print("[db] schema_version 表就绪")
+
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS user_frozen (
+                user_id INTEGER PRIMARY KEY,
+                reason TEXT,
+                frozen_at TEXT,
+                frozen_by TEXT DEFAULT 'system'
+            )
+        """)
+        print("[db] user_frozen 表就绪")
         print("[db] task_feedback 表就绪")
 
 if __name__ == '__main__':
