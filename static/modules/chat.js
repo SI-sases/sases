@@ -750,7 +750,11 @@ async function loadMessages(conversationId, force = false) {
     chatState._seenMsgIds = new Set();
     messages.forEach(msg => {
       if (msg.id) chatState._seenMsgIds.add(msg.id);
-      appendMessage(msg.sender, msg.content, msg.sender_name, msg.id, msg.created_at, false, chatState);
+      try {
+        appendMessage(msg.sender, msg.content, msg.sender_name, msg.id, msg.created_at, false, chatState);
+      } catch (e) {
+        console.error('[loadMessages] 渲染单条消息失败，已跳过避免阻断后续：', msg, e);
+      }
     });
     chatState._bulkLoading = false;
     chatState.offset = messages.length;
