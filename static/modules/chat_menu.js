@@ -157,12 +157,85 @@ export function showContextMenu(x, y, wrapper, chatState) {
   const menu = document.getElementById('message-context-menu');
   if (!menu) return;
   menu.innerHTML = `
-    <div class="context-menu-item" data-action="quote" style="padding:10px 16px; cursor:pointer;">引用</div>
-    <div class="context-menu-item" data-action="reply" style="padding:10px 16px; cursor:pointer;">帮我回复</div>
+    <div class="context-menu-item" data-action="ask" style="padding:10px 16px; cursor:pointer; border-bottom:1px solid #eee;">帮我提问</div>
+    <div class="context-menu-item" data-action="execute" style="padding:10px 16px; cursor:pointer; border-bottom:1px solid #eee;">帮我执行</div>
+    <div class="context-menu-item" data-action="reply" style="padding:10px 16px; cursor:pointer; border-bottom:1px solid #eee;">帮我回复</div>
+    <div class="context-menu-item" data-action="quote" style="padding:10px 16px; cursor:pointer; border-bottom:1px solid #eee;">引用</div>
+    <div class="context-menu-item" data-action="delete" style="padding:10px 16px; cursor:pointer; color:#ff3b30;">删除</div>
   `;
   menu.style.display = 'block';
   menu.style.left = x + 'px';
   menu.style.top = y + 'px';
+
+  const srcContent = wrapper.dataset.content || '';
+  
+  // 获取最近的 5 条聊天上下文
+  function getRecentContext() {
+      return Array.from(document.querySelectorAll('.message-row')).slice(-5).map(el => {
+          const isUser = el.classList.contains('user');
+          const text = el.querySelector('.message')?.textContent || '';
+          return `${isUser ? '我' : '对方'}: ${text}`;
+      }).join('\n');
+  }
+
+  menu.querySelector('[data-action="ask"]').addEventListener('click', async () => {
+    closeContextMenu();
+    const input = document.getElementById('chat-input');
+    if(!input) return;
+    input.value = "正在为您整理建议与提问...";
+    const context = getRecentContext();
+    try {
+      const prompt = `你是用户的私人助理。以下是最近的聊天上下文：\n${context}\n\n重点针对对方的这句话："${srcContent}"\n请根据上下文，给出有优先级的建议或关键问题。直接输出正文内容，不要包含任何解释。`;
+      const res = await fetch('/agents/chat', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('sases_token')},
+        body: JSON.stringify({agent_id: window.chatState?.agentId || 'sases_assistant_2', query: prompt})
+      });
+      const data = await res.json();
+      let reply = data.reply || data.content || "生成失败，请重试";
+      
+      // 如果 API 返回的是报错信息，做个简单的兜底
+      if(reply.includes("作为我的私人助理") || reply.includes("请根据上下文")) {
+          reply = "生成失败，请检查模型配置";
+      }
+      
+      // 核心修改：拼接固定的结尾后缀
+      const suffix = "\n\n你还有什么要补充的吗、这部分内容根据优先级给出详细总结总结。";
+      input.value = reply.trim() + suffix;
+      
+    } catch(e) { input.value = ''; alert('网络请求失败'); }
+  });
+
+  menu.querySelector('[data-action="execute"]').addEventListener('click', async () => {
+    closeContextMenu();
+    const input = document.getElementById('chat-input');
+    if(!input) return;
+    input.value = "正在为您提炼诊断与执行指令...";
+    const context = getRecentContext();
+    try {
+      const prompt = `你是一个系统诊断者。请根据以下上下文：\n${context}\n\n针对："${srcContent}"\n\n请提取用户的真实意图，并生成一条严格遵循"三层交互规范"的 #4: 指令。\n\n要求指令必须包含三个部分：\n1. 目标：要修复什么问题或实现什么功能。\n2. 背景：基于上下文的事实描述，帮助执行者定位。\n3. 约束：强调先查再改、改完必须 verify_syntax、或指定文件限制。\n\n严禁在指令中包含具体的 old_snippet 或 new_snippet 代码，将具体如何修改的决定权留给执行者。\n直接输出指令文本，不要多余废话。`;
+      const res = await fetch('/agents/chat', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('sases_token')},
+        body: JSON.stringify({agent_id: window.chatState?.agentId || 'sases_assistant_2', query: prompt})
+      });
+      const data = await res.json();
+      let cmd = data.reply || data.content || "";
+      
+      // 清理多余的 markdown 标记
+      cmd = cmd.replace(/```[a-z]*\n/g, '').replace(/```/g, '').trim();
+      if(cmd && !cmd.startsWith("#4:")) cmd = "#4: " + cmd;
+      input.value = cmd || "#4: 请补充具体要执行的任务";
+    } catch(e) { input.value = ''; alert('网络请求失败'); }
+  });
+
+  menu.querySelector('[data-action="delete"]').addEventListener('click', () => {
+    closeContextMenu();
+    if(confirm('确定要删除这条消息吗？')){
+        // 这里调用后端的删除消息接口，暂时前端隐藏
+        wrapper.style.display = 'none';
+    }
+  });
 
   menu.querySelector('[data-action="quote"]').addEventListener('click', () => {
     chatState.pendingQuote = wrapper.dataset.content;
@@ -294,13 +367,56 @@ export function openChatInfo(chatState) {
 
   setTimeout(() => {
     document.getElementById('switch-identity-entry').addEventListener('click', () => openIdentitySwitch(chatState, api));
+    
+    const delBtn = document.getElementById('delete-friend-entry');
+    if (delBtn) {
+        delBtn.addEventListener('click', async () => {
+            if (!confirm('确定要解除好友关系吗？聊天记录将一并清空且无法恢复。')) return;
+            if (!chatState.friendshipId) {
+                alert('缺少好友关系ID，请刷新页面重试');
+                return;
+            }
+            try {
+                const res = await fetch('/agents/friends/' + chatState.friendshipId, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + localStorage.getItem('sases_token') }
+                });
+                if (res.ok) {
+                    alert('已解除好友关系');
+                    window.closeSubpage();
+                    if (window.activateMainView) window.activateMainView('contacts');
+                } else {
+                    const data = await res.json();
+                    alert('操作失败: ' + (data.detail || '未知错误'));
+                }
+            } catch (e) {
+                alert('网络请求失败');
+            }
+        });
+    }
     document.getElementById('set-remark-entry').addEventListener('click', () => {
       const remark = prompt('请输入备注名：', chatName);
       if (remark) alert('备注已设置（模拟）');
     });
     document.getElementById('complain-entry').addEventListener('click', () => alert('投诉功能待实现'));
-    document.getElementById('delete-chat-entry').addEventListener('click', () => {
-      if (confirm('确定删除聊天记录吗？')) alert('已删除（模拟）');
+    document.getElementById('delete-chat-entry').addEventListener('click', async () => {
+      if (chatState.agentId) {
+        if (!confirm('确定要删除该智能体吗？')) return;
+        try {
+          const res = await api.deleteModel(chatState.agentId);
+          if (res.status === 'ok') {
+            alert('智能体已删除');
+            window.closeSubpage();
+            if (window.activateMainView) window.activateMainView('contacts');
+          } else {
+            alert('删除失败: ' + (res.detail || res.msg));
+          }
+        } catch (e) {
+          alert('请求失败');
+        }
+      } else {
+        alert('该会话无绑定智能体');
+      }
     });
   }, 100);
 }
@@ -323,7 +439,7 @@ export function openChatPlusPanel() {
   if (content) {
     const items = [
       { icon: '📷', label: '相册', action: () => { const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*'; inp.multiple = true; inp.onchange = () => { if (!inp.files || !inp.files.length) return; window.chatState = window.chatState || {}; window.chatState.pendingAttachments = window.chatState.pendingAttachments || []; Array.from(inp.files).forEach(f => { window.chatState.pendingAttachments.push({ type: 'image', file: f, name: f.name, size: f.size }); }); import('./chat_ui.js').then(m => m.renderAttachmentPreview(window.chatState.pendingAttachments)); }; inp.click(); } },
-      { icon: '💰', label: '转账', action: () => openTransferDialog() },
+      ...(window.currentGroupId ? [] : [{ icon: '💰', label: '转账', action: () => openTransferDialog() }]),
       ...(window.currentGroupId ? [] : [{ icon: '🧧', label: '红包', action: () => openRedPacketDialog() },]),
 { icon: '📁', label: '文件', action: () => { const inp = document.createElement('input'); inp.type = 'file'; inp.multiple = true; inp.onchange = () => { if (!inp.files || !inp.files.length) return; window.chatState = window.chatState || {}; window.chatState.pendingAttachments = window.chatState.pendingAttachments || []; Array.from(inp.files).forEach(f => { window.chatState.pendingAttachments.push({ type: 'file', file: f, name: f.name, size: f.size }); }); import('./chat_ui.js').then(m => m.renderAttachmentPreview(window.chatState.pendingAttachments)); }; inp.click(); } },
       { icon: '📍', label: '位置', action: () => alert('位置功能待实现') }

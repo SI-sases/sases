@@ -12,7 +12,7 @@ async def poll_cross_network_messages():
             await asyncio.sleep(1) # 刚才说的改成1秒，提高实时性
             
             with db_cursor() as cur:
-                cur.execute("SELECT id, sases_id FROM users WHERE username NOT LIKE 'remote_%'")
+                cur.execute("SELECT id, sases_id FROM users WHERE username NOT LIKE 'remote_%' LIMIT 1")
                 user = cur.fetchone()
                 if not user: 
                     continue
@@ -515,12 +515,6 @@ async def periodic_red_packet_expire():
             await asyncio.sleep(3600)
 
 @asynccontextmanager
-
-
-
-
-
-
 async def lifespan(app: FastAPI):
     asyncio.create_task(supervisor_service.resume_restart_pending_runs())
     init_db()

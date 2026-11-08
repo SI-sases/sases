@@ -69,6 +69,11 @@ async def send_message(
 ):
     print(f"[MSG_DEBUG] content={content!r} | mode={mode!r} | agent_id={agent_id!r} | msg_type={msg_type}")
 
+    if conversation_id:
+        with db_cursor() as _c:
+            _c.execute("SELECT id FROM conversations WHERE id=?", (conversation_id,))
+            if not _c.fetchone():
+                raise ValueError("会话已失效，请刷新页面重新开始")
     _att_str = json.dumps(attachments) if attachments else None
 
     # 跨账号投递：好友会话的任何消息（文字/图片/文件）都投递
@@ -436,6 +441,10 @@ async def send_message(
                             supervisor_id=sender_agent_id or agent_id,
                             supervisor_run_id=_run_id,
                         )
+                        if not _plan_result or (isinstance(_plan_result, dict) and _plan_result.get('status') == 'error'):
+                            supervisor_service.finish_run(_run_id, "failed")
+                            raise ValueError("模型规划失败，可能是 API Key 无效或余额不足")
+                        
                         # v0.38.0: precheck 拦截时，自动重试一次（用 reason 修正 prompt）
                         if _plan_result and isinstance(_plan_result, dict) and _plan_result.get('status') == 'no_plan' and 'precheck blocked' in str(_plan_result.get('reason', '')):
                             print('[supervisor] precheck 拦截，自动重试一次')

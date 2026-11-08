@@ -78,5 +78,7 @@ async def update_share_settings(model_id: str, body: UpdateShareRequest, user_id
 
 @router.delete("/{model_id}")
 async def delete_model(model_id: str, user_id: int = Depends(get_current_user)):
-    model_service.delete_model(user_id, model_id)
-    return {"status": "deleted"}
+    success, msg = model_service.delete_model(user_id, model_id)
+    if not success:
+        raise HTTPException(status_code=400, detail=msg)
+    return {"status": "ok", "msg": "deleted"}
