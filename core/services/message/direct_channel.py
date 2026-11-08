@@ -13,7 +13,7 @@ import time
 from datetime import datetime
 import openai
 from ... import config
-from ...harness_runtime import harness_runtime
+from ... import tool_gateway
 
 _ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 LOG_DIR = os.path.join(_ROOT, "data")
@@ -213,7 +213,7 @@ async def can_direct_execute(content: str) -> dict:
 async def execute_direct(tool: str, params: dict) -> str:
     """执行单个工具并返回结果文本。"""
     try:
-        response = await asyncio.to_thread(harness_runtime.invoke_tool, tool, params)
+        response = await tool_gateway.invoke_tool_async(tool, params)
         if not getattr(response, "success", False):
             _err = getattr(response, 'error', '未知错误')
             print(f"[direct] {tool} 失败: {_err}")

@@ -4,6 +4,7 @@ from typing import Dict, Any, List, Optional
 import httpx
 
 from core.harness_runtime import harness_runtime
+from core import tool_gateway
 from core import config
 from core.node_registry import NodeRegistry
 from core.sync_manager import SyncManager
@@ -48,7 +49,7 @@ class SpaceService:
             return {"success": False, "error": f"Node {node_id} not found"}
 
         if node.get("node_type") == "harness" and not node.get("endpoint"):
-            resp = harness_runtime.invoke_tool(node_id, params)
+            resp = tool_gateway.invoke_tool(node_id, params)
             self.update_reputation(node_id, resp.success)
             return {
                 "success": resp.success,

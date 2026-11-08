@@ -11,6 +11,7 @@ from ..db import db_cursor
 from . import work_service
 from core.services import executor_service
 from core.harness_runtime import harness_runtime
+from core import tool_gateway
 
 client = openai.OpenAI(
     api_key=config.DEEPSEEK_API_KEY,
@@ -200,7 +201,7 @@ async def _execute_harness_step(step: Dict[str, Any]) -> Dict[str, Any]:
     """执行一个 Harness 工具步骤"""
     module_id = step["module_id"]
     try:
-        response = await asyncio.to_thread(harness_runtime.invoke_tool, module_id, {})
+        response = await tool_gateway.invoke_tool_async(module_id, {})
         if response.success:
             result = response.result
             if isinstance(result, dict):
