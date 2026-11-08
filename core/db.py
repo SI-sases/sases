@@ -52,6 +52,7 @@ def init_db():
     _DB_INIT_DONE = True
 
     with db_cursor(commit=True) as cur:
+        _init_p2_tables(cur)
         # ========== 用户表 ==========
         cur.execute("""
             CREATE TABLE IF NOT EXISTS users (
@@ -1342,3 +1343,45 @@ def init_db():
 if __name__ == '__main__':
     init_db()
     print("Database initialized successfully.")
+
+
+def _init_p2_tables(cur):
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS nodes (
+            node_id TEXT PRIMARY KEY,
+            node_name TEXT,
+            role_type TEXT DEFAULT 'app_node',
+            public_key TEXT,
+            capabilities TEXT,
+            status TEXT DEFAULT 'offline',
+            last_heartbeat TEXT,
+            created_at TEXT NOT NULL
+        )
+    """)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS cognitive_rules (
+            rule_id TEXT PRIMARY KEY,
+            domain_main TEXT NOT NULL,
+            domain_sub TEXT,
+            rule_content TEXT NOT NULL,
+            trigger_context TEXT,
+            confidence REAL DEFAULT 0.5,
+            applied_count INTEGER DEFAULT 0,
+            success_count INTEGER DEFAULT 0,
+            status TEXT DEFAULT 'active',
+            source_pattern_ids TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT
+        )
+    """)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS rule_tool_bindings (
+            binding_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            rule_id TEXT NOT NULL,
+            tool_id TEXT NOT NULL,
+            usage_context TEXT,
+            priority INTEGER DEFAULT 0,
+            FOREIGN KEY(rule_id) REFERENCES cognitive_rules(rule_id)
+        )
+    """)
+

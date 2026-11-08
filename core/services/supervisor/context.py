@@ -121,6 +121,17 @@ def build_context(user_id, conversation_id, query, mode='execute', supervisor_id
     except Exception as _e_api:
         print(f"[build_context] api_registry 读取失败: {_e_api}")
 
+    # 注入常识规则（cognitive_rules）
+    try:
+        with db_cursor() as _cur_rule:
+            _cur_rule.execute("SELECT domain_main, rule_content FROM cognitive_rules WHERE status='active' LIMIT 10")
+            _rule_rows = _cur_rule.fetchall()
+        if _rule_rows:
+            _rule_lines = [f"- [{r['domain_main']}] {r['rule_content']}" for r in _rule_rows]
+            parts.append("【系统常识/行为规则】\n" + "\n".join(_rule_lines))
+    except Exception as _e_rule:
+        print(f"[build_context] cognitive_rules 读取失败: {_e_rule}")
+
     _result = "\n".join(parts)
     _CTX_CACHE[_ck] = (_ct, _result)
     if len(_CTX_CACHE) > _CTX_MAX:
