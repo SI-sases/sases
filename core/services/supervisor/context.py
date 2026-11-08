@@ -109,6 +109,18 @@ def build_context(user_id, conversation_id, query, mode='execute', supervisor_id
             print('[supervisor] chat mode 经验库失败: ' + str(_e))
 
 
+    # 注入业务 API 能力
+    try:
+        with db_cursor() as _cur_api:
+            _cur_api.execute("SELECT api_id, description, params_schema FROM api_registry")
+            _api_rows = _cur_api.fetchall()
+        if _api_rows:
+            import json as _json_api
+            _api_list = [dict(r) for r in _api_rows]
+            parts.append("【业务 API 能力】\n" + _json_api.dumps(_api_list, ensure_ascii=False))
+    except Exception as _e_api:
+        print(f"[build_context] api_registry 读取失败: {_e_api}")
+
     _result = "\n".join(parts)
     _CTX_CACHE[_ck] = (_ct, _result)
     if len(_CTX_CACHE) > _CTX_MAX:
