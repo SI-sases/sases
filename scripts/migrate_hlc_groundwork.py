@@ -204,5 +204,30 @@ def migrate():
         conn.close()
 
 
+def apply_hlc_groundwork(cur):
+    """接受外部游标，幂等地为 12 张表加 HLC 字段和索引（供 init_db 调用，不自己 commit）。"""
+    processed = 0
+    for table in TABLES:
+        if not _table_exists(cur, table):
+            continue
+        cols = _table_columns(cur, table)
+        for col, col_def in [
+            ("hlc_ts", "TEXT"),
+            ("origin_node", "TEXT"),
+            ("shard_key", "TEXT DEFAULT ''"),
+        ]:
+            if col not in cols:
+                cur.execute(f"ALTER TABLE {table} ADD COLUMN {col} {col_def}")
+                cols.append(col)
+        idx_hlc = f"idx_{table}_hlc"
+        idx_shard = f"idx_{table}_shard"
+        if not _index_exists(cur, idx_hlc):
+            cur.execute(f"CREATE INDEX {idx_hlc} ON {table}(hlc_ts)")
+        if not _index_exists(cur, idx_shard):
+            cur.execute(f"CREATE INDEX {idx_shard} ON {table}(shard_key)")
+        processed += 1
+    print(f"[hlc] HLC 地基已应用于 {processed} 张表")
+
+
 if __name__ == "__main__":
     sys.exit(migrate())

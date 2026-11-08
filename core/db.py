@@ -1309,6 +1309,25 @@ def init_db():
         print("[db] user_frozen 表就绪")
         print("[db] task_feedback 表就绪")
 
+        # ========== 应用增量迁移（幂等） ==========
+        try:
+            from core.migrations import apply_migrations
+            apply_migrations(cur)
+        except Exception as _e_mig:
+            print(f"[db] migrations 应用失败: {_e_mig}")
+
+        # ========== 应用 HLC 地基（幂等） ==========
+        try:
+            import importlib.util as _ilu
+            import os as _os
+            _hlc_path = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))), 'scripts', 'migrate_hlc_groundwork.py')
+            _spec = _ilu.spec_from_file_location('_migrate_hlc', _hlc_path)
+            _mod = _ilu.module_from_spec(_spec)
+            _spec.loader.exec_module(_mod)
+            _mod.apply_hlc_groundwork(cur)
+        except Exception as _e_hlc:
+            print(f"[db] HLC 地基应用失败: {_e_hlc}")
+
 if __name__ == '__main__':
     init_db()
     print("Database initialized successfully.")
