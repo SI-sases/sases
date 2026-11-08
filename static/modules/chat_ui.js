@@ -460,6 +460,9 @@ export function renderTransferBubble(content, role = 'user', senderName = null) 
   
   const wrapper = document.createElement('div');
   wrapper.style.display = 'flex';
+  wrapper.style.flexDirection = 'row';
+  wrapper.style.alignItems = 'flex-start';
+  wrapper.style.margin = '8px 12px';
   wrapper.style.justifyContent = isSelf ? 'flex-end' : 'flex-start';
   wrapper.appendChild(el);
   return wrapper;

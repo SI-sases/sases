@@ -1,5 +1,7 @@
 # core/db.py
 import sqlite3
+
+_DB_INIT_DONE = False
 import os
 from contextlib import contextmanager
 
@@ -31,6 +33,7 @@ def db_cursor(commit=False):
         yield cursor
         if commit:
             conn.commit()
+            pass # 静默初始化
     finally:
         conn.close()
 
@@ -43,6 +46,11 @@ def _ensure_column(cur, table: str, column: str, definition: str):
         cur.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
 
 def init_db():
+    global _DB_INIT_DONE
+    if _DB_INIT_DONE:
+        return
+    _DB_INIT_DONE = True
+
     with db_cursor(commit=True) as cur:
         # ========== 用户表 ==========
         cur.execute("""
@@ -1226,7 +1234,6 @@ def init_db():
                 received_at TEXT NOT NULL
             )
         """)
-        print("[db] sync_received 表就绪")
 
         cur.execute("""
             CREATE TABLE IF NOT EXISTS asset_snapshots (
@@ -1239,7 +1246,6 @@ def init_db():
                 created_at TEXT NOT NULL
             )
         """)
-        print("[db] asset_snapshots 表就绪")
 
         cur.execute("""
             CREATE TABLE IF NOT EXISTS auth_meta (
@@ -1247,7 +1253,6 @@ def init_db():
                 value TEXT
             )
         """)
-        print("[db] auth_meta 表就绪")
 
         cur.execute("""
             CREATE TABLE IF NOT EXISTS nonce_cache (
@@ -1257,7 +1262,6 @@ def init_db():
                 PRIMARY KEY (user_id, nonce)
             )
         """)
-        print("[db] nonce_cache 表就绪")
 
         cur.execute("""
             CREATE TABLE IF NOT EXISTS outbox (
@@ -1275,7 +1279,6 @@ def init_db():
                 completed_at TEXT
             )
         """)
-        print("[db] outbox 表就绪")
 
         cur.execute("""
             CREATE TABLE IF NOT EXISTS reconcile_issues (
@@ -1288,7 +1291,6 @@ def init_db():
                 resolved_by TEXT
             )
         """)
-        print("[db] reconcile_issues 表就绪")
 
         cur.execute("""
             CREATE TABLE IF NOT EXISTS schema_version (
@@ -1296,7 +1298,6 @@ def init_db():
                 applied_at TEXT NOT NULL
             )
         """)
-        print("[db] schema_version 表就绪")
 
         cur.execute("""
             CREATE TABLE IF NOT EXISTS user_frozen (
@@ -1306,8 +1307,18 @@ def init_db():
                 frozen_by TEXT DEFAULT 'system'
             )
         """)
-        print("[db] user_frozen 表就绪")
-        print("[db] task_feedback 表就绪")
+
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS api_registry (
+                api_id TEXT PRIMARY KEY,
+                endpoint TEXT NOT NULL,
+                description TEXT NOT NULL,
+                params_schema TEXT,
+                capability_tags TEXT,
+                provider_signature TEXT,
+                created_at TEXT NOT NULL
+            )
+        """)
 
         # ========== 应用增量迁移（幂等） ==========
         try:
