@@ -1,7 +1,5 @@
 # core/db.py
 import sqlite3
-
-_DB_INIT_DONE = False
 import os
 from contextlib import contextmanager
 
@@ -33,7 +31,6 @@ def db_cursor(commit=False):
         yield cursor
         if commit:
             conn.commit()
-            pass # 静默初始化
     finally:
         conn.close()
 
@@ -46,37 +43,7 @@ def _ensure_column(cur, table: str, column: str, definition: str):
         cur.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
 
 def init_db():
-    global _DB_INIT_DONE
-    if _DB_INIT_DONE:
-        return
-    _DB_INIT_DONE = True
-
     with db_cursor(commit=True) as cur:
-        _init_p2_tables(cur)
-        
-        # ========== 卡密与设备绑定表 ==========
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS license_keys (
-                key_code TEXT PRIMARY KEY,
-                key_type TEXT,
-                duration_days INTEGER,
-                seed_reward_total REAL,
-                seed_reward_daily REAL,
-                status TEXT DEFAULT 'unused',
-                created_at TEXT
-            )
-        """)
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS device_bindings (
-                user_id INTEGER,
-                device_fingerprint TEXT,
-                activated_at TEXT,
-                expire_at TEXT,
-                PRIMARY KEY (user_id, device_fingerprint)
-            )
-        """)
-        # ======================================
-
         # ========== 用户表 ==========
         cur.execute("""
             CREATE TABLE IF NOT EXISTS users (
@@ -1252,160 +1219,8 @@ def init_db():
         cur.execute("CREATE INDEX IF NOT EXISTS idx_feedback_user ON task_feedback(user_id, created_at)")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_feedback_rating ON task_feedback(rating, created_at)")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_feedback_reason ON task_feedback(reason_tag)")
-
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS sync_received (
-                idempotency_key TEXT PRIMARY KEY,
-                received_at TEXT NOT NULL
-            )
-        """)
-
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS asset_snapshots (
-                snapshot_date TEXT PRIMARY KEY,
-                total_seed REAL NOT NULL,
-                total_compute REAL NOT NULL,
-                user_count INTEGER NOT NULL,
-                tx_count INTEGER NOT NULL,
-                ledger_hash TEXT NOT NULL,
-                created_at TEXT NOT NULL
-            )
-        """)
-
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS auth_meta (
-                key TEXT PRIMARY KEY,
-                value TEXT
-            )
-        """)
-
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS nonce_cache (
-                user_id INTEGER,
-                nonce TEXT,
-                expire_at TEXT,
-                PRIMARY KEY (user_id, nonce)
-            )
-        """)
-
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS outbox (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                msg_id TEXT UNIQUE NOT NULL,
-                target_url TEXT NOT NULL,
-                payload TEXT NOT NULL,
-                headers TEXT,
-                status TEXT NOT NULL DEFAULT 'pending',
-                retry_count INTEGER NOT NULL DEFAULT 0,
-                max_retries INTEGER NOT NULL DEFAULT 5,
-                next_retry_at TEXT NOT NULL,
-                last_error TEXT,
-                created_at TEXT NOT NULL,
-                completed_at TEXT
-            )
-        """)
-
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS reconcile_issues (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                issue_type TEXT NOT NULL,
-                detail TEXT,
-                detected_at TEXT NOT NULL,
-                resolved INTEGER DEFAULT 0,
-                resolved_at TEXT,
-                resolved_by TEXT
-            )
-        """)
-
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS schema_version (
-                version INTEGER PRIMARY KEY,
-                applied_at TEXT NOT NULL
-            )
-        """)
-
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS user_frozen (
-                user_id INTEGER PRIMARY KEY,
-                reason TEXT,
-                frozen_at TEXT,
-                frozen_by TEXT DEFAULT 'system'
-            )
-        """)
-
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS api_registry (
-                api_id TEXT PRIMARY KEY,
-                endpoint TEXT NOT NULL,
-                description TEXT NOT NULL,
-                params_schema TEXT,
-                capability_tags TEXT,
-                provider_signature TEXT,
-                created_at TEXT NOT NULL
-            )
-        """)
-
-        # ========== 应用增量迁移（幂等） ==========
-        try:
-            from core.migrations import apply_migrations
-            apply_migrations(cur)
-        except Exception as _e_mig:
-            print(f"[db] migrations 应用失败: {_e_mig}")
-
-        # ========== 应用 HLC 地基（幂等） ==========
-        try:
-            import importlib.util as _ilu
-            import os as _os
-            _hlc_path = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))), 'scripts', 'migrate_hlc_groundwork.py')
-            _spec = _ilu.spec_from_file_location('_migrate_hlc', _hlc_path)
-            _mod = _ilu.module_from_spec(_spec)
-            _spec.loader.exec_module(_mod)
-            _mod.apply_hlc_groundwork(cur)
-        except Exception as _e_hlc:
-            print(f"[db] HLC 地基应用失败: {_e_hlc}")
+        print("[db] task_feedback 表就绪")
 
 if __name__ == '__main__':
     init_db()
     print("Database initialized successfully.")
-
-
-def _init_p2_tables(cur):
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS nodes (
-            node_id TEXT PRIMARY KEY,
-            node_name TEXT,
-            role_type TEXT DEFAULT 'app_node',
-            public_key TEXT,
-            capabilities TEXT,
-            status TEXT DEFAULT 'offline',
-            last_heartbeat TEXT,
-            created_at TEXT NOT NULL
-        )
-    """)
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS cognitive_rules (
-            rule_id TEXT PRIMARY KEY,
-            domain_main TEXT NOT NULL,
-            domain_sub TEXT,
-            rule_content TEXT NOT NULL,
-            trigger_context TEXT,
-            confidence REAL DEFAULT 0.5,
-            applied_count INTEGER DEFAULT 0,
-            success_count INTEGER DEFAULT 0,
-            status TEXT DEFAULT 'active',
-            source_pattern_ids TEXT,
-            created_at TEXT NOT NULL,
-            updated_at TEXT
-        )
-    """)
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS rule_tool_bindings (
-            binding_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            rule_id TEXT NOT NULL,
-            tool_id TEXT NOT NULL,
-            usage_context TEXT,
-            priority INTEGER DEFAULT 0,
-            FOREIGN KEY(rule_id) REFERENCES cognitive_rules(rule_id)
-        )
-    """)
-

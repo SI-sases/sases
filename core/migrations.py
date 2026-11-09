@@ -58,25 +58,3 @@ def ensure_schema():
             cur.execute("INSERT INTO schema_version (version, applied_at) VALUES (?, ?)", (v, _now_iso()))
         print(f"[migrate] v{v} ok")
     print(f"[migrate] schema at v{SCHEMA_VERSION}")
-
-def apply_migrations(cur):
-    """接受外部游标，幂等地应用所有未应用的迁移（供 init_db 调用，不自己 commit）"""
-    cur.execute("CREATE TABLE IF NOT EXISTS schema_version (version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL)")
-    cur.execute("SELECT MAX(version) FROM schema_version")
-    row = cur.fetchone()
-    current = row[0] if row and row[0] is not None else 0
-    if current >= SCHEMA_VERSION:
-        print(f"[migrate] schema 已在 v{current}，无需迁移")
-        return
-    for v in range(current + 1, SCHEMA_VERSION + 1):
-        try:
-            MIGRATIONS[v](cur)
-        except Exception as e:
-            err = str(e).lower()
-            if "duplicate column" in err or "already exists" in err:
-                print(f"[migrate] v{v} 已应用，跳过")
-            else:
-                print(f"[migrate] v{v} 失败: {e}")
-                raise
-        cur.execute("INSERT OR REPLACE INTO schema_version (version, applied_at) VALUES (?, ?)", (v, _now_iso()))
-        print(f"[migrate] v{v} ok")

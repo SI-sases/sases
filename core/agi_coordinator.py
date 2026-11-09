@@ -2,7 +2,6 @@ import re
 from typing import Dict, Any, Optional
 
 from core.harness_runtime import harness_runtime
-from core import tool_gateway
 from core import seed_utils
 from core import config
 from core import auth_service
@@ -92,7 +91,7 @@ def quick_execute(query: str) -> Optional[Dict[str, Any]]:
     if params is None:
         return None
 
-    response = tool_gateway.invoke_tool(module_id, params)
+    response = harness_runtime.invoke_tool(module_id, params)
     if response.success:
         return {
             "success": True,
@@ -136,7 +135,7 @@ def execute_task(query: str, params: Optional[Dict[str, Any]] = None, user_id=No
             }
         params = extracted
 
-    response = tool_gateway.invoke_tool(module_id, params)
+    response = harness_runtime.invoke_tool(module_id, params)
     if response.success:
         return {
             "success": True,

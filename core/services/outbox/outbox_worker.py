@@ -48,18 +48,8 @@ async def _send_one(row):
         async with httpx.AsyncClient(timeout=10, trust_env=False) as cli:
             resp = await cli.post(url, content=row["payload"], headers=headers)
         if resp.status_code in (200, 201, 409):
-            try:
-                _body = resp.json()
-                if _body.get("status") in ("ok", "success") or _body.get("skipped"):
-                    mark_success(row["msg_id"])
-                    return True
-                else:
-                    _err = _body.get("msg") or _body.get("error") or str(_body)[:100]
-                    mark_failed(row["msg_id"], f"business_error: {_err}")
-                    return False
-            except Exception as _je:
-                mark_failed(row["msg_id"], f"json_parse_fail: {str(_je)[:100]}")
-                return False
+            mark_success(row["msg_id"])
+            return True
         mark_failed(row["msg_id"], f"HTTP {resp.status_code}")
         return False
     except Exception as e:

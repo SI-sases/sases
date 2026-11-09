@@ -304,7 +304,6 @@ async function sendMessage() {
   const tempId = 'temp-' + Date.now();
   appendMessage('user', text, chatState.senderAgentId ? '智能体 / 智能体' : '我', tempId, new Date().toISOString(), true, chatState);
   input.value = '';
-  input.style.height = '36px'; // 发送后强制重置高度，解决无法自动缩回的问题
   updateSendButtonVisibility();
 
   try {
@@ -313,16 +312,12 @@ async function sendMessage() {
 
     let _maxSteps = null;
     try { _maxSteps = getParamMaxSteps(); } catch (e) {}
-    let _finalMode = chatState.mode;
-    if (text.startsWith('#4:') || text.startsWith('#4：') || text.includes('发给调度员：#4')) {
-      _finalMode = 'auto';
-    }
     const data = await api.sendMessage({
       conversation_id: chatState.conversationId,
       agent_id: chatState.agentId,
       content: text,
       sender_agent_id: chatState.senderAgentId,
-      mode: _finalMode,
+      mode: chatState.mode,
       max_steps: _maxSteps
     });
 
@@ -563,7 +558,7 @@ export function openChatWindow(conversationId, chatName, agentId = null, agentTy
   const infoBtn = document.getElementById('chat-info-btn');
   const groupSettingsBtn = document.getElementById('group-settings-btn');
   const modeBtn = document.getElementById('chat-mode-btn');
-  if (infoBtn) { infoBtn.style.display = window.currentGroupChat ? 'none' : 'block'; infoBtn.style.zIndex = '999'; }
+  if (infoBtn) infoBtn.style.display = window.currentGroupChat ? 'none' : 'block';
   if (groupSettingsBtn) groupSettingsBtn.style.display = window.currentGroupChat ? 'block' : 'none';
   if (modeBtn) {
     modeBtn.style.display = 'block';
@@ -754,11 +749,7 @@ async function loadMessages(conversationId, force = false) {
     chatState._seenMsgIds = new Set();
     messages.forEach(msg => {
       if (msg.id) chatState._seenMsgIds.add(msg.id);
-      try {
-        appendMessage(msg.sender, msg.content, msg.sender_name, msg.id, msg.created_at, false, chatState);
-      } catch (e) {
-        console.error('[loadMessages] 渲染单条消息失败，已跳过避免阻断后续：', msg, e);
-      }
+      appendMessage(msg.sender, msg.content, msg.sender_name, msg.id, msg.created_at, false, chatState);
     });
     chatState._bulkLoading = false;
     chatState.offset = messages.length;
@@ -917,19 +908,3 @@ export function initChat() {
   updateIdentityButton(chatState);
   createContextMenu();
 }
-// ==== 输入框自动变高 ====
-document.addEventListener('input', function(e) {
-    if (e.target && e.target.id === 'chat-input') {
-        // 先重置为 auto，强迫浏览器重新计算真实高度
-        e.target.style.height = 'auto';
-        
-        // 如果内容为空，直接缩回单行高度
-        if (!e.target.value) {
-            e.target.style.height = '36px';
-        } else {
-            // 根据内容计算新高度，最高 120px
-            const newHeight = Math.min(e.target.scrollHeight, 120);
-            e.target.style.height = newHeight + 'px';
-        }
-    }
-});

@@ -26,10 +26,7 @@ export async function openModelManagement(returnAction = null) {
               <div class="model-id-display" style="font-size:12px;color:#999;">ID: ${m.id}</div>
               <div class="model-share-info" style="font-size:12px;color:#007aff;">${shareText} · ${m.visibility} · ${m.price}${t('price_unit')}</div>
             </div>
-            <div style="display:flex; gap:8px;">
-              <button class="edit-share-btn" data-model-id="${m.id}">${t('share_settings')}</button>
-              <button class="delete-model-btn" data-model-id="${m.id}" style="background:#ff3b30; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">删除</button>
-            </div>
+            <button class="edit-share-btn" data-model-id="${m.id}">${t('share_settings')}</button>
           </div>
         `;
       });
@@ -239,37 +236,3 @@ function openShareSettings(modelId, isShared, visibility, price) {
 }
 
 window.openModelManagement = openModelManagement;
-// ==== 强行补齐的删除按钮事件委托 ====
-document.body.addEventListener('click', async function(e) {
-    const btn = e.target.closest('.delete-model-btn');
-    if (!btn) return;
-    
-    e.stopPropagation();
-    const mid = btn.getAttribute('data-model-id');
-    if (!mid) return;
-    
-    if (!confirm('确定要永久删除该智能体/模型吗？')) return;
-    
-    try {
-        btn.textContent = '删除中...';
-        btn.disabled = true;
-        const res = await fetch('/models/' + mid, {
-            method: 'DELETE',
-            headers: {'Authorization': 'Bearer ' + localStorage.getItem('sases_token')}
-        });
-        const data = await res.json();
-        
-        if (res.ok && data.status === 'ok') {
-            alert('删除成功');
-            window.location.reload(); // 刷新页面，最稳妥
-        } else {
-            alert('删除失败: ' + (data.detail || data.msg || '未知错误'));
-            btn.textContent = '删除';
-            btn.disabled = false;
-        }
-    } catch(err) {
-        alert('网络请求失败: ' + err.message);
-        btn.textContent = '删除';
-        btn.disabled = false;
-    }
-});

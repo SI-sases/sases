@@ -4,21 +4,6 @@ import tempfile
 import os
 import sys
 
-# ================= 安全沙箱拦截 =================
-FORBIDDEN_KEYWORDS = [
-    'import sqlite3', 'from sqlite3', 'users.db', 'users.db',
-    'UPDATE users', 'INSERT INTO users', 'DELETE FROM users',
-    'import core', 'from core', 'transfer_service', 'credit_service'
-]
-
-def _check_security(code_str):
-    for kw in FORBIDDEN_KEYWORDS:
-        if kw.lower() in code_str.lower():
-            raise PermissionError(f"安全拦截: 禁止在 run_python 中直接操作数据库或调用核心资产服务 (命中关键词: {kw})")
-
-# ================================================
-
-
 MAX_CODE_LEN = 5000
 TIMEOUT = 150
 TIMEOUT = 120

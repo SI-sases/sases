@@ -12,7 +12,7 @@ async def poll_cross_network_messages():
             await asyncio.sleep(1) # 刚才说的改成1秒，提高实时性
             
             with db_cursor() as cur:
-                cur.execute("SELECT id, sases_id FROM users WHERE username NOT LIKE 'remote_%' LIMIT 1")
+                cur.execute("SELECT id, sases_id FROM users WHERE username NOT LIKE 'remote_%'")
                 user = cur.fetchone()
                 if not user: 
                     continue
@@ -163,7 +163,6 @@ from .api_routes import (
     supervisor_routes,
     upload_routes,
     auth_routes,
-    admin_routes,
     seed_routes,
     credit_routes,
     feedback_routes,
@@ -516,6 +515,12 @@ async def periodic_red_packet_expire():
             await asyncio.sleep(3600)
 
 @asynccontextmanager
+
+
+
+
+
+
 async def lifespan(app: FastAPI):
     asyncio.create_task(supervisor_service.resume_restart_pending_runs())
     init_db()
@@ -624,15 +629,19 @@ async def lifespan(app: FastAPI):
 
     yield
 
-    # 取消所有后台任务（旧代码引用了未定义的变量，导致 shutdown NameError）
-    for _t in _background_tasks:
-        try:
-            _t.cancel()
-        except Exception as _e_c:
-            print(f'[bootstrap] task cancel err: {_e_c}')
+    summary_task.cancel()
+    debug_task.cancel()
+    rescue_task.cancel()
+    backup_task.cancel()
+    executor_task.cancel()
+    cleanup_task.cancel()
+    _state_task.cancel()
 
     if '_restart_watch_task' in dir():
         _restart_watch_task.cancel()
+    pattern_task.cancel()
+    git_push_task.cancel()
+    syntax_check_task.cancel()
 
 
 def create_app() -> FastAPI:
@@ -760,7 +769,6 @@ def create_app() -> FastAPI:
         return _log_result(response)
 
     app.include_router(auth_routes.router)
-    app.include_router(admin_routes.router)
     app.include_router(seed_routes.router)
     app.include_router(credit_routes.router)
     app.include_router(harness_routes.router)
