@@ -1,12 +1,6 @@
 {
-  "name": "文件写入（长文本）",
-  "description": "创建新文件，不改已有文件。用于创建超过20行的脚本。",
-  "params_schema": {
-    "file_path": "str",
-    "content": "str",
-    "overwrite": "bool"
-  },
-  "entry": "main.py",
-  "function": "run",
-  "id": "file_write"
+  "id": "file_write",
+  "name": "文件写入",
+  "description": "创建新文件，不改已有文件",
+  "params": {"file_path": "str", "content": "str"}
 }
