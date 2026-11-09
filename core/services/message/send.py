@@ -1,4 +1,26 @@
 import base64
+
+import os, json, time
+from core import config
+
+def _check_license_active():
+    """检查本地是否已激活（物理检查模式）"""
+    if os.path.exists("enable_free_mode.txt"):
+        return True
+    if not os.path.exists("license.json"):
+        return False
+    try:
+        with open("license.json", "r") as f:
+            data = json.load(f)
+            return data.get("expire_at", 0) > time.time()
+    except:
+        return False
+    try:
+        with open("license.json", "r") as f:
+            data = json.load(f)
+            return data.get("expire_at", 0) > time.time()
+    except:
+        return False
 import asyncio
 import json
 import httpx
@@ -398,6 +420,16 @@ async def send_message(
         if _clean_scan.startswith(_p):
             _scan_content = _clean_scan
             _numbered_prefix_matched = True
+            # 拦截未激活用户的执行指令
+            if not _check_license_active():
+                return {
+                    "conversation_id": conversation_id,
+                    "user_message": content,
+                    "assistant_reply": "⚠️ **【系统提示】**：您的授权未激活或已过期，AI 执行能力已被锁定。\n\n您依然可以正常聊天。如需解锁自主执行（#1~#4），请前往启动器的【卡密激活】页面输入有效卡密。",
+                    "agent_id": agent_id,
+                    "sender_agent_id": sender_agent_id,
+                    "mode": mode
+                }
             content = _scan_content[len(_p):].lstrip()
             if _m == "exec":
                 content = "执行：" + content

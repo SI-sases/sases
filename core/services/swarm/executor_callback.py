@@ -191,9 +191,9 @@ async def handle_step_done(
                     return {"status": "completed", "task_id": task_id, "summary": "answer 工具产出"}
                 # else fall through 到续轮逻辑
 
-            if _run_id:
-                # v0.18.1: 单步任务全成功 -> 直接完成，不续轮
                 _is_simple = (task.get('_original_step_count', 0) == 1 and len(task.get('steps', [])) == 1 and len(task.get('results', [])) == 1 and all(r.get('review') != 'retry' for r in task.get('results', [])))
+                # v0.18.1: 单步任务全成功 -> 直接完成，不续轮
+                _is_simple = (len(task.get('steps', [])) == 1 and len(task.get('results', [])) == 1 and all(r.get('review') != 'retry' for r in task.get('results', [])))
                 _s1_chk = task.get('steps', [{}])[0] if task.get('steps') else {}
                 _s1_mod = _s1_chk.get('module_id', '') or ''
                 _s1_type = _s1_chk.get('type', 'command')
@@ -463,14 +463,6 @@ async def handle_step_done(
                     print("[swarm] 脚本降级成功，已构造单步 run_python task")
                     return {"status": "script_fallback", "task_id": task_id}
                 print("[swarm] 脚本降级失败，强制结束任务，防止死循环")
-                _run_id_fail = task.get("supervisor_run_id")
-                if _run_id_fail:
-                    try:
-                        from ..supervisor.runs import finish_run
-                        finish_run(_run_id_fail, 'failed')
-                        print(f"[swarm] 已强制解锁 supervisor_run_id={_run_id_fail}")
-                    except Exception as _e_fin:
-                        print(f"[swarm] 强制解锁失败: {_e_fin}")
                 _insert_message(conversation_id, "[SUMMARY]:❌ 任务执行失败。AI连续重试且无法生成兜底脚本，已强制终止。", sender_agent_id=_summary_sender(task))
                 del _pending[task_id]
                 _delete_pending_from_db(task_id)
@@ -601,7 +593,7 @@ async def handle_step_done(
 
             if _run_id:
                 # v0.18.1: 单步任务全成功 -> 直接完成，不续轮
-                _is_simple = (task.get('_original_step_count', 0) == 1 and len(task.get('steps', [])) == 1 and len(task.get('results', [])) == 1 and all(r.get('review') != 'retry' for r in task.get('results', [])))
+                _is_simple = (len(task.get('steps', [])) == 1 and len(task.get('results', [])) == 1 and all(r.get('review') != 'retry' for r in task.get('results', [])))
                 _s1_chk = task.get('steps', [{}])[0] if task.get('steps') else {}
                 _s1_mod = _s1_chk.get('module_id', '') or ''
                 _s1_type = _s1_chk.get('type', 'command')
