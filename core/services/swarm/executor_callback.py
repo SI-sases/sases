@@ -191,9 +191,9 @@ async def handle_step_done(
                     return {"status": "completed", "task_id": task_id, "summary": "answer 工具产出"}
                 # else fall through 到续轮逻辑
 
-    _is_simple = (task.get('_original_step_count', 0) == 1 and len(task.get('steps', [])) == 1 and len(task.get('results', [])) == 1 and all(r.get('review') != 'retry' for r in task.get('results', [])))
+            if _run_id:
                 # v0.18.1: 单步任务全成功 -> 直接完成，不续轮
-                _is_simple = (len(task.get('steps', [])) == 1 and len(task.get('results', [])) == 1 and all(r.get('review') != 'retry' for r in task.get('results', [])))
+                _is_simple = (task.get('_original_step_count', 0) == 1 and len(task.get('steps', [])) == 1 and len(task.get('results', [])) == 1 and all(r.get('review') != 'retry' for r in task.get('results', [])))
                 _s1_chk = task.get('steps', [{}])[0] if task.get('steps') else {}
                 _s1_mod = _s1_chk.get('module_id', '') or ''
                 _s1_type = _s1_chk.get('type', 'command')
@@ -591,9 +591,9 @@ async def handle_step_done(
                     return {"status": "completed", "task_id": task_id, "summary": "answer 工具产出"}
                 # else fall through 到续轮逻辑
 
-    _is_simple = (task.get('_original_step_count', 0) == 1 and len(task.get('steps', [])) == 1 and len(task.get('results', [])) == 1 and all(r.get('review') != 'retry' for r in task.get('results', [])))
+            if _run_id:
                 # v0.18.1: 单步任务全成功 -> 直接完成，不续轮
-                _is_simple = (len(task.get('steps', [])) == 1 and len(task.get('results', [])) == 1 and all(r.get('review') != 'retry' for r in task.get('results', [])))
+                _is_simple = (task.get('_original_step_count', 0) == 1 and len(task.get('steps', [])) == 1 and len(task.get('results', [])) == 1 and all(r.get('review') != 'retry' for r in task.get('results', [])))
                 _s1_chk = task.get('steps', [{}])[0] if task.get('steps') else {}
                 _s1_mod = _s1_chk.get('module_id', '') or ''
                 _s1_type = _s1_chk.get('type', 'command')
