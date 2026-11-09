@@ -159,6 +159,7 @@ from .services import pattern_service
 from .services import pattern_service
 from . import backup_service
 from .api_routes import (
+    user_api_routes,
     ws_routes,
     supervisor_routes,
     upload_routes,
