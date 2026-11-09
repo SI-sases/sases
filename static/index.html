@@ -211,7 +211,7 @@
             <span>Harness 工具</span>
             <span class="menu-arrow">›</span>
           </div>
-          <div class="side-menu-item" id="menu-external-api">
+<div id="menu-external-api" onclick="window.openSasesExternalApi && window.openSasesExternalApi()">
             <span class="menu-icon">🔌</span>
             <span>我的外部 API</span>
             <span class="menu-arrow">›</span>
@@ -268,5 +268,7 @@
   <!-- 版本号已提升至 20261031，强制清除 Edge 浏览器缓存 -->
   <script type="module" src="/static/modules/main.js?v=20261031"></script>
 
+
+<script src="/static/external_api.js"></script>
 </body>
 </html>
