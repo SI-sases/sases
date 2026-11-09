@@ -463,6 +463,14 @@ async def handle_step_done(
                     print("[swarm] 脚本降级成功，已构造单步 run_python task")
                     return {"status": "script_fallback", "task_id": task_id}
                 print("[swarm] 脚本降级失败，强制结束任务，防止死循环")
+                _run_id_fail = task.get("supervisor_run_id")
+                if _run_id_fail:
+                    try:
+                        from ..supervisor.runs import finish_run
+                        finish_run(_run_id_fail, 'failed')
+                        print(f"[swarm] 已强制解锁 supervisor_run_id={_run_id_fail}")
+                    except Exception as _e_fin:
+                        print(f"[swarm] 强制解锁失败: {_e_fin}")
                 _insert_message(conversation_id, "[SUMMARY]:❌ 任务执行失败。AI连续重试且无法生成兜底脚本，已强制终止。", sender_agent_id=_summary_sender(task))
                 del _pending[task_id]
                 _delete_pending_from_db(task_id)

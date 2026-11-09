@@ -1,5 +1,7 @@
 # core/config.py
 import os
+
+ENABLE_LICENSE = os.environ.get("SASES_ENABLE_LICENSE", "false").lower() == "true"
 from dotenv import load_dotenv
 
 load_dotenv()
