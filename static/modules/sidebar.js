@@ -22,6 +22,17 @@ export function initSideDrawer() {
 
   const menuHarness = document.getElementById('menu-harness');
   const menuMarket = document.getElementById('menu-market');
+  const menuExternalApi = document.getElementById('menu-external-api');
+
+  if (menuExternalApi) {
+    menuExternalApi.addEventListener('click', () => {
+      closeSideDrawer();
+      if (typeof window.__openExternalApiPage === 'function') {
+        window.__openExternalApiPage();
+      }
+    });
+  }
+
   const menuMiniApps = document.getElementById('menu-mini-apps');
   const pollinationToggle = document.getElementById('pollination-toggle');
 
