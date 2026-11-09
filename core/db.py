@@ -46,9 +46,6 @@ def _ensure_column(cur, table: str, column: str, definition: str):
         cur.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
 
 def init_db():
-    cur.execute("CREATE TABLE IF NOT EXISTS license_keys (key_code TEXT PRIMARY KEY, key_type TEXT, duration_days INTEGER, seed_reward_total REAL, seed_reward_daily REAL, status TEXT DEFAULT 'unused', created_at TEXT)")
-    cur.execute("CREATE TABLE IF NOT EXISTS device_bindings (user_id INTEGER, device_fingerprint TEXT, activated_at TEXT, expire_at TEXT, PRIMARY KEY (user_id, device_fingerprint))")
-
     global _DB_INIT_DONE
     if _DB_INIT_DONE:
         return
@@ -56,6 +53,30 @@ def init_db():
 
     with db_cursor(commit=True) as cur:
         _init_p2_tables(cur)
+        
+        # ========== 卡密与设备绑定表 ==========
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS license_keys (
+                key_code TEXT PRIMARY KEY,
+                key_type TEXT,
+                duration_days INTEGER,
+                seed_reward_total REAL,
+                seed_reward_daily REAL,
+                status TEXT DEFAULT 'unused',
+                created_at TEXT
+            )
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS device_bindings (
+                user_id INTEGER,
+                device_fingerprint TEXT,
+                activated_at TEXT,
+                expire_at TEXT,
+                PRIMARY KEY (user_id, device_fingerprint)
+            )
+        """)
+        # ======================================
+
         # ========== 用户表 ==========
         cur.execute("""
             CREATE TABLE IF NOT EXISTS users (

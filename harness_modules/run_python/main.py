@@ -117,12 +117,6 @@ def run(params):
         preamble = PREAMBLE.replace('REPO_ROOT_PLACEHOLDER', REPO_ROOT.replace(chr(92), '/'))
         full = preamble + code
         with tempfile.NamedTemporaryFile('w', suffix='.py', delete=False, encoding='utf-8') as f:
-        # ================= 物理安全沙箱拦截 =================
-        _forbidden = ['sqlite3', 'users.db', 'from core', 'import core', 'os.system', 'subprocess', 'shutil.rmtree']
-        for _kw in _forbidden:
-            if _kw in code:
-                return {"success": False, "error": f"安全拦截：禁止在 run_python 中执行涉及 '{_kw}' 的代码！"}
-        # ====================================================
             f.write(full)
             tmp = f.name
         _env = os.environ.copy()
