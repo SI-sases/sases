@@ -575,9 +575,8 @@ class MainWindow(QMainWindow):
 
         # ================= 联网心跳拦截 =================
         if not self._check_license():
-            QMessageBox.warning(self, "未激活", "客户端未激活或已过期！\n请先在左侧【卡密激活】页面输入有效卡密。")
-            self.sidebar.setCurrentRow(self.sidebar.count() - 1)
-            return
+            # 不阻断启动，仅在日志提示，允许用户进网页聊天
+            print("[launcher] 未激活，启动受限模式（仅聊天）。")
             
         try:
             with open("license.json", "r") as f:
