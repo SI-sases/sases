@@ -788,6 +788,7 @@ def create_app() -> FastAPI:
     app.include_router(market_routes.router)
     app.include_router(wisdom_space_routes.router)
     app.include_router(transfer_routes.router)
+    app.include_router(user_api_routes.router)
     app.include_router(user_routes.router)
     app.include_router(memory_routes.router)
     app.include_router(work_routes.router)
