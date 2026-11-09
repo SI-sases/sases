@@ -380,7 +380,7 @@ class MainWindow(QMainWindow):
         try:
             fingerprint = get_hardware_fingerprint()
             # 目前用本地测试地址，上线换成你的云端 Node-A 地址
-            resp = httpx.post("http://127.0.0.1:8001/auth/activate", trust_env=False, json={
+            resp = httpx.post("http://47.96.87.147:8001/auth/activate", trust_env=False, json={
                 "key_code": key_code,
                 "device_fingerprint": fingerprint
             }, timeout=5)
@@ -575,16 +575,15 @@ class MainWindow(QMainWindow):
 
         # ================= 联网心跳拦截 =================
         if not self._check_license():
-            QMessageBox.warning(self, "未激活", "客户端未激活或已过期！\n请先在左侧【卡密激活】页面输入有效卡密。")
-            self.sidebar.setCurrentRow(self.sidebar.count() - 1)
-            return
+            # 不阻断启动，仅在日志提示，允许用户进网页聊天
+            print("[launcher] 未激活，启动受限模式（仅聊天）。")
             
         try:
             with open("license.json", "r") as f:
                 lic_data = json.load(f)
             key_code = lic_data.get("key_code")
             
-            resp = httpx.post("http://127.0.0.1:8001/auth/heartbeat", trust_env=False, json={
+            resp = httpx.post("http://47.96.87.147:8001/auth/heartbeat", trust_env=False, json={
                 "key_code": key_code,
                 "device_fingerprint": get_hardware_fingerprint()
             }, timeout=3)
@@ -669,7 +668,7 @@ class MainWindow(QMainWindow):
             env["SASES_PORT"] = str(port)
             env["SASES_NODE_ID"] = f"node-hidden-{i}"
             env["HIVE_ROLE"] = "slave"
-            env["HIVE_MASTER"] = "http://127.0.0.1:8001"
+            env["HIVE_MASTER"] = "http://47.96.87.147:8001"
             env["SASES_DB_PATH"] = os.path.join(db_dir, "replica.db")
             python_exe = os.path.join(os.getcwd(), "python-embed", "python.exe")
             if not os.path.exists(python_exe): python_exe = sys.executable
