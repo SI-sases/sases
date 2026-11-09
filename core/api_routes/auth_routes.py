@@ -272,3 +272,27 @@ async def get_me(user: dict = Depends(get_current_user)):
         "username": user["username"],
         "sases_id": user["sases_id"]
     }
+
+
+from pydantic import BaseModel
+
+class ActivateRequest(BaseModel):
+    key_code: str
+    device_fingerprint: str
+
+@router.post("/auth/activate")
+async def activate_license(req: ActivateRequest):
+    from core import config
+    if not getattr(config, 'ENABLE_LICENSE', False):
+        return {"status": "success", "message": "推广期免验证"}
+    
+    # 真实校验逻辑（占位）
+    with db_cursor() as cur:
+        cur.execute("SELECT status FROM license_keys WHERE key_code=?", (req.key_code,))
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="卡密不存在")
+        if row['status'] != 'unused' and row['status'] != 'active':
+            raise HTTPException(status_code=400, detail="卡密已失效")
+            
+    return {"status": "success", "message": "卡密校验通过，后续逻辑待开发"}
