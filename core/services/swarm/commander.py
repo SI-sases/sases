@@ -214,29 +214,6 @@ async def plan_task(
         print(f"[swarm] 手册检索失败: {e}")
 
     prompt_parts = []
-    # 注入常识规则
-    try:
-        from core.db import db_cursor as _rule_db
-        with _rule_db() as _cur_rule:
-            _cur_rule.execute("SELECT domain_main, rule_content FROM cognitive_rules WHERE status='active' LIMIT 10")
-            _rule_rows = _cur_rule.fetchall()
-        if _rule_rows:
-            _rule_lines = [f"- [{r['domain_main']}] {r['rule_content']}" for r in _rule_rows]
-            prompt_parts.append("【系统常识/行为规则】\n" + "\n".join(_rule_lines))
-    except Exception as _e_rule:
-        print(f"[plan_task] cognitive_rules 读取失败: {_e_rule}")
-    # 注入业务 API 能力
-    try:
-        from core.db import db_cursor as _api_db
-        with _api_db() as _cur_api:
-            _cur_api.execute("SELECT api_id, description, params_schema FROM api_registry")
-            _api_rows = _cur_api.fetchall()
-        if _api_rows:
-            import json as _json_api
-            _api_list = [dict(r) for r in _api_rows]
-            prompt_parts.append("【业务 API 能力】\n" + _json_api.dumps(_api_list, ensure_ascii=False))
-    except Exception as _e_api:
-        print(f"[plan_task] api_registry 读取失败: {_e_api}")
     if manual_text:
         prompt_parts.append(f"【工具手册参考】\n{manual_text}")
     if pattern_text:

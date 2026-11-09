@@ -14,13 +14,6 @@ import shutil
 import datetime
 import winreg
 import launcher_config
-import httpx
-import sys
-import os
-_parent_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if _parent_dir not in sys.path:
-    sys.path.insert(0, _parent_dir)
-from launcher.hardware import get_hardware_fingerprint
 
 CURRENT_LAUNCHER_VERSION = "1.0.0"
 
@@ -98,7 +91,7 @@ class MainWindow(QMainWindow):
             QListWidget::item:selected { background-color: #3c3f41; color: #ffffff; border-left: 4px solid #4a90e2; }
             QListWidget::item:hover:!selected { background-color: #333333; }
         """)
-        self.sidebar.addItems(["📜 运行日志", "⚙️ 统一设置", "🔑 卡密激活"])
+        self.sidebar.addItems(["📜 运行日志", "⚙️ 统一设置"])
         self.sidebar.currentRowChanged.connect(self._on_sidebar_changed)
         sidebar_layout.addWidget(self.sidebar)
         
@@ -251,71 +244,6 @@ class MainWindow(QMainWindow):
 
         self.stacked_widget.addWidget(page_log)
         self.stacked_widget.addWidget(page_settings)
-
-        # ========== 构建卡密激活与发卡页面 ==========
-        page_license = QWidget()
-        lic_main_layout = QVBoxLayout(page_license)
-        lic_main_layout.setContentsMargins(0, 0, 0, 0)
-        
-        lic_scroll = QScrollArea()
-        lic_scroll.setWidgetResizable(True)
-        lic_scroll.setStyleSheet("QScrollArea { border: none; background-color: #1e1e1e; }")
-        
-        lic_container = QWidget()
-        lic_layout = QVBoxLayout(lic_container)
-        lic_layout.setContentsMargins(30, 30, 30, 30)
-        lic_layout.setSpacing(20)
-
-        # 标题
-        lbl_lic_title = QLabel("🔑 授权与激活")
-        lbl_lic_title.setFont(QFont("Arial", 18, QFont.Weight.Bold))
-        lbl_lic_title.setStyleSheet("color: white;")
-        lic_layout.addWidget(lbl_lic_title)
-
-        # 状态显示
-        self.lbl_license_status = QLabel("当前状态：未激活 / 已过期")
-        self.lbl_license_status.setStyleSheet("color: #aaa; font-size: 14px;")
-        lic_layout.addWidget(self.lbl_license_status)
-
-        # --- 激活区 ---
-        lic_group1 = QFrame()
-        lic_group1.setStyleSheet("QFrame { background-color: #2b2b2b; border-radius: 8px; padding: 15px; }")
-        g1_layout = QVBoxLayout(lic_group1)
-        g1_layout.setSpacing(10)
-        
-        lbl_act = QLabel("输入卡密激活")
-        lbl_act.setStyleSheet("color: #ddd; font-weight: bold; border: none;")
-        g1_layout.addWidget(lbl_act)
-
-        self.input_key = QLineEdit()
-        self.input_key.setPlaceholderText("SASES-XXXX-XXXX-XXXX")
-        self.input_key.setMinimumHeight(35)
-        self.input_key.setStyleSheet("background-color: #1e1e1e; color: white; border: 1px solid #444; border-radius: 4px; padding: 5px;")
-        g1_layout.addWidget(self.input_key)
-
-        self.btn_activate = QPushButton("立即激活")
-        self.btn_activate.setMinimumHeight(35)
-        self.btn_activate.setStyleSheet("background-color: #007aff; color: white; border-radius: 4px; font-weight: bold;")
-        self.btn_activate.clicked.connect(self.on_activate_clicked)
-        g1_layout.addWidget(self.btn_activate)
-        
-        lic_layout.addWidget(lic_group1)
-
-
-        # --- 免责声明 ---
-        lbl_disclaimer = QLabel("⚠️ 法律免责声明：\n本软件仅供学习与技术交流使用。用户利用本软件生成或执行的一切内容及操作，由用户自行承担全部法律责任。请确保合法合规使用。")
-        lbl_disclaimer.setStyleSheet("color: #888; font-size: 12px; margin-top: 20px; border: none;")
-        lbl_disclaimer.setWordWrap(True)
-        lic_layout.addWidget(lbl_disclaimer)
-        
-        lic_layout.addStretch()
-        lic_scroll.setWidget(lic_container)
-        lic_main_layout.addWidget(lic_scroll)
-        
-        self.stacked_widget.addWidget(page_license)
-        # =====================================
-
-
         
         # ========== 底部操作区（保留大圆按钮） ==========
         bottom_bar = QWidget()
@@ -342,76 +270,6 @@ class MainWindow(QMainWindow):
         self.sidebar.setCurrentRow(0)
 
     # ====== 开机自启与操作逻辑 ======
-
-    def _build_license_page(self):
-        page = QWidget()
-        layout = QVBoxLayout(page)
-        
-        lbl_title = QLabel("卡密激活")
-        lbl_title.setFont(QFont("Arial", 16, QFont.Weight.Bold))
-        layout.addWidget(lbl_title)
-        
-        self.lbl_license_status = QLabel("当前状态：检查中...")
-        layout.addWidget(self.lbl_license_status)
-        
-        layout.addSpacing(20)
-        self.input_key = QLineEdit()
-        self.input_key.setPlaceholderText("请输入卡密 (SASES-XXXX-XXXX-XXXX)")
-        self.input_key.setMinimumHeight(40)
-        layout.addWidget(self.input_key)
-        
-        self.btn_activate = QPushButton("立即激活")
-        self.btn_activate.setMinimumHeight(40)
-        self.btn_activate.clicked.connect(self.on_activate_clicked)
-        layout.addWidget(self.btn_activate)
-        
-        layout.addStretch()
-        return page
-
-    def on_activate_clicked(self):
-        key_code = self.input_key.text().strip()
-        if not key_code.startswith("SASES-"):
-            QMessageBox.warning(self, "错误", "卡密格式不正确")
-            return
-            
-        self.btn_activate.setEnabled(False)
-        self.btn_activate.setText("验证中...")
-        
-        try:
-            fingerprint = get_hardware_fingerprint()
-            # 目前用本地测试地址，上线换成你的云端 Node-A 地址
-            resp = httpx.post("http://47.96.87.147:8001/auth/activate", trust_env=False, json={
-                "key_code": key_code,
-                "device_fingerprint": fingerprint
-            }, timeout=5)
-            
-            data = resp.json()
-            if resp.status_code == 200 and data.get("status") == "success":
-                with open("license.json", "w") as f:
-                    json.dump({"key_code": key_code, "expire_at": time.time() + 30*86400}, f)
-                QMessageBox.information(self, "成功", "激活成功！")
-                self.lbl_license_status.setText("当前状态：已激活")
-                self._check_license()
-            else:
-                QMessageBox.warning(self, "失败", data.get("message", "卡密无效"))
-        except Exception as e:
-            QMessageBox.critical(self, "网络错误", f"无法连接: {e}")
-        finally:
-            self.btn_activate.setEnabled(True)
-            self.btn_activate.setText("立即激活")
-
-    def _check_license(self):
-        if os.path.exists("license.json"):
-            try:
-                with open("license.json", "r") as f:
-                    data = json.load(f)
-                    if data.get("expire_at", 0) > time.time():
-                        self.lbl_license_status.setText("当前状态：已激活 (有效期内)")
-                        return True
-            except: pass
-        self.lbl_license_status.setText("当前状态：未激活 / 已过期")
-        return False
-
     def _get_autostart_status(self):
         try:
             key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Run", 0, winreg.KEY_READ)
@@ -572,39 +430,6 @@ class MainWindow(QMainWindow):
         except Exception: pass
 
     def start(self):
-
-        # ================= 联网心跳拦截 =================
-        if not self._check_license():
-            # 不阻断启动，仅在日志提示，允许用户进网页聊天
-            print("[launcher] 未激活，启动受限模式（仅聊天）。")
-            
-        try:
-            with open("license.json", "r") as f:
-                lic_data = json.load(f)
-            key_code = lic_data.get("key_code")
-            
-            resp = httpx.post("http://47.96.87.147:8001/auth/heartbeat", trust_env=False, json={
-                "key_code": key_code,
-                "device_fingerprint": get_hardware_fingerprint()
-            }, timeout=3)
-            
-            if resp.status_code == 403:
-                os.remove("license.json")
-                QMessageBox.critical(self, "已停用", "您的卡密已被系统停用，请联系管理员！")
-                self._check_license()
-                self.sidebar.setCurrentRow(self.sidebar.count() - 1)
-                return
-        except httpx.RequestError:
-            print("网络连接失败，使用离线模式启动。")
-        except Exception as e:
-            print(f"心跳验证异常: {e}")
-        # =================================================
-        if not self._check_license():
-            QMessageBox.warning(self, "未激活", "客户端未激活或已过期！\n请先在左侧【卡密激活】页面输入有效卡密。")
-            # 自动切换到卡密激活页 (假设它在侧边栏的最后一个)
-            self.sidebar.setCurrentRow(self.sidebar.count() - 1)
-            return
-
         if self.proc is not None: return
         self._set_running_ui(True)
         self.sidebar.setCurrentRow(0)
@@ -668,7 +493,7 @@ class MainWindow(QMainWindow):
             env["SASES_PORT"] = str(port)
             env["SASES_NODE_ID"] = f"node-hidden-{i}"
             env["HIVE_ROLE"] = "slave"
-            env["HIVE_MASTER"] = "http://47.96.87.147:8001"
+            env["HIVE_MASTER"] = "http://127.0.0.1:8001"
             env["SASES_DB_PATH"] = os.path.join(db_dir, "replica.db")
             python_exe = os.path.join(os.getcwd(), "python-embed", "python.exe")
             if not os.path.exists(python_exe): python_exe = sys.executable

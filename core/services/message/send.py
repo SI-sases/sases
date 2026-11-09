@@ -1,26 +1,4 @@
 import base64
-
-import os, json, time
-from core import config
-
-def _check_license_active():
-    """检查本地是否已激活（物理检查模式）"""
-    if os.path.exists("enable_free_mode.txt"):
-        return True
-    if not os.path.exists("license.json"):
-        return False
-    try:
-        with open("license.json", "r") as f:
-            data = json.load(f)
-            return data.get("expire_at", 0) > time.time()
-    except:
-        return False
-    try:
-        with open("license.json", "r") as f:
-            data = json.load(f)
-            return data.get("expire_at", 0) > time.time()
-    except:
-        return False
 import asyncio
 import json
 import httpx
@@ -91,11 +69,6 @@ async def send_message(
 ):
     print(f"[MSG_DEBUG] content={content!r} | mode={mode!r} | agent_id={agent_id!r} | msg_type={msg_type}")
 
-    if conversation_id:
-        with db_cursor() as _c:
-            _c.execute("SELECT id FROM conversations WHERE id=?", (conversation_id,))
-            if not _c.fetchone():
-                raise ValueError("会话已失效，请刷新页面重新开始")
     _att_str = json.dumps(attachments) if attachments else None
 
     # 跨账号投递：好友会话的任何消息（文字/图片/文件）都投递
@@ -415,21 +388,9 @@ async def send_message(
     require_confirmation = REQUIRE_TASK_CONFIRMATION
     _numbered_prefix_matched = False
     _force_swarm = False
-    _clean_scan = _scan_content.replace('发给调度员：', '').replace('发给调度员:', '').strip()
     for _p, _m in COMMAND_PREFIX_MAP.items():
-        if _clean_scan.startswith(_p):
-            _scan_content = _clean_scan
+        if _scan_content.startswith(_p):
             _numbered_prefix_matched = True
-            # 拦截未激活用户的执行指令
-            if not _check_license_active():
-                return {
-                    "conversation_id": conversation_id,
-                    "user_message": content,
-                    "assistant_reply": "⚠️ **【系统提示】**：您的授权未激活或已过期，AI 执行能力已被锁定。\n\n您依然可以正常聊天。如需解锁自主执行（#1~#4），请前往启动器的【卡密激活】页面输入有效卡密。",
-                    "agent_id": agent_id,
-                    "sender_agent_id": sender_agent_id,
-                    "mode": mode
-                }
             content = _scan_content[len(_p):].lstrip()
             if _m == "exec":
                 content = "执行：" + content
@@ -475,10 +436,6 @@ async def send_message(
                             supervisor_id=sender_agent_id or agent_id,
                             supervisor_run_id=_run_id,
                         )
-                        if not _plan_result or (isinstance(_plan_result, dict) and _plan_result.get('status') == 'error'):
-                            supervisor_service.finish_run(_run_id, "failed")
-                            raise ValueError("模型规划失败，可能是 API Key 无效或余额不足")
-                        
                         # v0.38.0: precheck 拦截时，自动重试一次（用 reason 修正 prompt）
                         if _plan_result and isinstance(_plan_result, dict) and _plan_result.get('status') == 'no_plan' and 'precheck blocked' in str(_plan_result.get('reason', '')):
                             print('[supervisor] precheck 拦截，自动重试一次')

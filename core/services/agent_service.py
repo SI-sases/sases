@@ -49,7 +49,7 @@ def list_friend_agents(user_id: int):
     
     with db_cursor() as cur:
         cur.execute("""
-            SELECT af.id AS friendship_id, af.user_id, af.friend_agent_id, af.target_user_id, af.friend_mode
+            SELECT af.user_id, af.friend_agent_id, af.target_user_id, af.friend_mode
             FROM agent_friendships af
             WHERE (af.user_id=? OR af.target_user_id=?) AND af.status='accepted'
         """, (user_id, user_id))
@@ -77,7 +77,6 @@ def list_friend_agents(user_id: int):
             conv_id = conv_row["id"] if conv_row else None
             
             friends.append({
-                "friendship_id": row["friendship_id"],
                 "agent_id": f"user_{target_uid}",
                 "target_user_id": target_uid,
                 "name": name,
@@ -218,20 +217,3 @@ def call_agent(user_id: int, agent_id: str, query: str):
             """, (rel["provider_id"], provider_income, agent_id, f"来自用户{user_id}的调用"))
 
     return {"status": "charged", "price": price, "provider_income": provider_income, "platform_fee": platform_fee}
-
-def delete_friend(user_id: int, friendship_id: int):
-    from core.db import db_cursor
-    with db_cursor(commit=True) as cur:
-        cur.execute('SELECT user_id, target_user_id FROM agent_friendships WHERE id=?', (friendship_id,))
-        row = cur.fetchone()
-        if not row: return False, "好友关系不存在"
-        uid_a, uid_b = row[0], row[1]
-        if user_id not in (uid_a, uid_b): return False, "无权操作"
-        target_uid = uid_b if user_id == uid_a else uid_a
-        cur.execute('DELETE FROM agent_friendships WHERE (user_id=? AND target_user_id=?) OR (user_id=? AND target_user_id=?)', (user_id, target_uid, target_uid, user_id))
-        cur.execute('SELECT id FROM conversations WHERE is_friend_chat=1 AND ((user_id=? AND target_user_id=?) OR (user_id=? AND target_user_id=?))', (user_id, target_uid, target_uid, user_id))
-        convs = cur.fetchall()
-        for c in convs:
-            cur.execute('DELETE FROM messages WHERE conversation_id=?', (c[0],))
-            cur.execute('DELETE FROM conversations WHERE id=?', (c[0],))
-    return True, "已解除好友关系"

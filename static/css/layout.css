@@ -146,8 +146,6 @@
   display: flex;
   flex-direction: column;
   z-index: 10;
-
-  overflow: hidden; /* 强制裁剪溢出内容 */
 }
 
 /* ===== 二级页面容器 ===== */

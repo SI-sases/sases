@@ -35,7 +35,7 @@ from typing import Optional, Dict, Any, List
 
 from ..db import db_cursor
 from . import swarm_service
-from .. import tool_gateway
+from ..harness_runtime import harness_runtime
 
 
 # ========== 安全配置 ==========
@@ -198,7 +198,7 @@ async def _run_command(cmd: str, timeout: int = DEFAULT_TIMEOUT) -> tuple:
 async def _run_harness(module_id: str, params: Dict[str, Any]) -> tuple:
     start = datetime.datetime.now()
     try:
-        response = await tool_gateway.invoke_tool_async(module_id, params)
+        response = await asyncio.to_thread(harness_runtime.invoke_tool, module_id, params)
         dur = int((datetime.datetime.now() - start).total_seconds() * 1000)
 
         if not getattr(response, "success", False):
