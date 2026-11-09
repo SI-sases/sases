@@ -393,8 +393,10 @@ async def send_message(
     require_confirmation = REQUIRE_TASK_CONFIRMATION
     _numbered_prefix_matched = False
     _force_swarm = False
+    _clean_scan = _scan_content.replace('发给调度员：', '').replace('发给调度员:', '').strip()
     for _p, _m in COMMAND_PREFIX_MAP.items():
-        if _scan_content.startswith(_p):
+        if _clean_scan.startswith(_p):
+            _scan_content = _clean_scan
             _numbered_prefix_matched = True
             content = _scan_content[len(_p):].lstrip()
             if _m == "exec":
