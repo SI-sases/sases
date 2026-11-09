@@ -163,6 +163,7 @@ from .api_routes import (
     supervisor_routes,
     upload_routes,
     auth_routes,
+    admin_routes,
     seed_routes,
     credit_routes,
     feedback_routes,
@@ -759,6 +760,7 @@ def create_app() -> FastAPI:
         return _log_result(response)
 
     app.include_router(auth_routes.router)
+    app.include_router(admin_routes.router)
     app.include_router(seed_routes.router)
     app.include_router(credit_routes.router)
     app.include_router(harness_routes.router)
