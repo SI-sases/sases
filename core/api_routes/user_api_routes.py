@@ -1,11 +1,23 @@
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from typing import Optional
-from ..security import get_current_user
-from ..db import db_cursor
+from jose import jwt, JWTError
 import httpx
 
+from ..auth_service import SECRET_KEY
+from ..db import db_cursor
+
 router = APIRouter(prefix="/api/user-api", tags=["User APIs"])
+security = HTTPBearer()
+
+# 手动解析 Token 获取用户 ID（完全兼容你现有的 transfer_routes.py）
+def _get_uid(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=["HS256"])
+        return payload.get("sub")
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
 class ApiConfigCreate(BaseModel):
     api_name: str
@@ -20,33 +32,30 @@ class ApiConfigCreate(BaseModel):
     capability_tags: Optional[str] = ""
 
 @router.get("/list")
-async def list_apis(current_user: dict = Depends(get_current_user)):
-    user_id = current_user["user_id"]
+async def list_apis(uid: str = Depends(_get_uid)):
     with db_cursor() as cur:
-        cur.execute("SELECT id, api_name, api_desc, endpoint, method, auth_type, status FROM user_api_configs WHERE user_id = ?", (user_id,))
+        cur.execute("SELECT id, api_name, api_desc, endpoint, method, auth_type, status FROM user_api_configs WHERE user_id = ?", (uid,))
         rows = cur.fetchall()
         return {"apis": [dict(r) for r in rows]}
 
 @router.post("/add")
-async def add_api(config: ApiConfigCreate, current_user: dict = Depends(get_current_user)):
-    user_id = current_user["user_id"]
+async def add_api(config: ApiConfigCreate, uid: str = Depends(_get_uid)):
     with db_cursor(commit=True) as cur:
         cur.execute("""
             INSERT INTO user_api_configs 
             (user_id, api_name, api_desc, endpoint, method, auth_type, auth_key_encrypted, auth_header_name, params_example, response_path, capability_tags, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
-        """, (user_id, config.api_name, config.api_desc, config.endpoint, config.method, config.auth_type, config.auth_key, config.auth_header_name, config.params_example, config.response_path, config.capability_tags))
+        """, (uid, config.api_name, config.api_desc, config.endpoint, config.method, config.auth_type, config.auth_key, config.auth_header_name, config.params_example, config.response_path, config.capability_tags))
     return {"status": "ok", "message": "API added"}
 
 @router.delete("/{api_id}")
-async def delete_api(api_id: int, current_user: dict = Depends(get_current_user)):
-    user_id = current_user["user_id"]
+async def delete_api(api_id: int, uid: str = Depends(_get_uid)):
     with db_cursor(commit=True) as cur:
-        cur.execute("DELETE FROM user_api_configs WHERE id = ? AND user_id = ?", (api_id, user_id))
+        cur.execute("DELETE FROM user_api_configs WHERE id = ? AND user_id = ?", (api_id, uid))
     return {"status": "ok"}
 
 @router.post("/test")
-async def test_api(endpoint: str):
+async def test_api(endpoint: str, uid: str = Depends(_get_uid)):
     if "127.0.0.1" in endpoint or "localhost" in endpoint:
         raise HTTPException(status_code=400, detail="禁止调用内网地址")
     try:
