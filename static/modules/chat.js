@@ -313,12 +313,16 @@ async function sendMessage() {
 
     let _maxSteps = null;
     try { _maxSteps = getParamMaxSteps(); } catch (e) {}
+    let _finalMode = chatState.mode;
+    if (text.startsWith('#4:') || text.startsWith('#4：') || text.includes('发给调度员：#4')) {
+      _finalMode = 'auto';
+    }
     const data = await api.sendMessage({
       conversation_id: chatState.conversationId,
       agent_id: chatState.agentId,
       content: text,
       sender_agent_id: chatState.senderAgentId,
-      mode: chatState.mode,
+      mode: _finalMode,
       max_steps: _maxSteps
     });
 
