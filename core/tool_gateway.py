@@ -26,39 +26,13 @@ def _invoke_http_sync(module_id: str, params: Dict[str, Any]) -> ToolInvokeRespo
     raise NotImplementedError("HTTP endpoint 在 P3 才实现")
 
 
-def _handle_ext_api(api_id: int, params: Dict[str, Any]) -> Any:
-    import sqlite3
-    import httpx
-    conn = sqlite3.connect('users.db')
-    cur = conn.cursor()
-    cur.execute("SELECT endpoint, method, auth_key_encrypted FROM user_api_configs WHERE id=?", (api_id,))
-    row = cur.fetchone()
-    conn.close()
-    if not row:
-        return {"success": False, "error": "未找到该外部 API"}
-    endpoint, method, auth_key = row
-    headers = {}
-    if auth_key:
-        headers["Authorization"] = f"Bearer {auth_key}"
-    m = method.upper() if method else "GET"
-    try:
-        if m == "GET":
-            resp = httpx.get(endpoint, headers=headers, params=params, timeout=15)
-        else:
-            resp = httpx.post(endpoint, headers=headers, json=params, timeout=15)
-        return {"success": True, "status": resp.status_code, "body": resp.text}
-    except Exception as e:
-        return {"success": False, "error": str(e)}
-
-
-
 
 def _route(module_id: str, params: Dict[str, Any]) -> ToolInvokeResponse:
     if module_id.startswith("ext_api_"):
         try:
             api_id = int(module_id[len("ext_api_"):])
         except Exception:
-            return {"error": "未找到该外部 API"}
+            return ToolInvokeResponse(module_id=module_id, success=False, error="Invalid ext_api format")
         return _handle_ext_api(api_id, params)
 
     """按 endpoint 前缀路由到本地或远程。"""
@@ -84,3 +58,35 @@ async def invoke_tool_async(module_id: str, params: Dict[str, Any]) -> ToolInvok
     return await asyncio.to_thread(_route, module_id, params)
 
 
+
+def _handle_ext_api(api_id: int, params: Dict[str, Any]) -> Any:
+    import sqlite3
+    import httpx
+    from core.harness_models import ToolInvokeResponse
+    
+    conn = sqlite3.connect('users.db')
+    cur = conn.cursor()
+    cur.execute("SELECT endpoint, method, auth_key_encrypted FROM user_api_configs WHERE id=?", (api_id,))
+    row = cur.fetchone()
+    conn.close()
+    
+    if not row: 
+        return ToolInvokeResponse(module_id=f"ext_api_{api_id}", success=False, error="未找到该外部 API")
+        
+    endpoint, method, auth_key = row
+    headers = {}
+    if auth_key: headers["Authorization"] = f"Bearer {auth_key}"
+    m = method.upper() if method else "GET"
+    
+    try:
+        # 加上 User-Agent 防屏蔽
+        headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+        if m == "GET":
+            resp = httpx.get(endpoint, headers=headers, params=params, timeout=15)
+        else:
+            resp = httpx.post(endpoint, headers=headers, json=params, timeout=15)
+            
+        # 强行包成对象返回
+        return ToolInvokeResponse(module_id=f"ext_api_{api_id}", success=True, result=resp.text)
+    except Exception as e:
+        return ToolInvokeResponse(module_id=f"ext_api_{api_id}", success=False, error=str(e))
