@@ -66,7 +66,7 @@ async def send_message(
     msg_type: str = "standard",
     max_steps: int = None,
     attachments: list = None
-):
+, enabled_api_ids: list = None):
     print(f"[MSG_DEBUG] content={content!r} | mode={mode!r} | agent_id={agent_id!r} | msg_type={msg_type}")
 
     _att_str = json.dumps(attachments) if attachments else None

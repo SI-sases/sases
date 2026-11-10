@@ -160,7 +160,10 @@ def finish_run(run_id, status='completed'):
                                 _exec_str = _last.get('exec', '')
                                 if '|' in _exec_str:
                                     _ans = _exec_str.split('|')[-1].strip()
-                                    if _ans:
+                                    if _ans and not _ans.startswith('{') and not _ans.startswith('[') and 'current_weather' not in _ans and 'latitude' not in _ans:
+                                        _msg_fin = '[SUMMARY]:' + _ans
+                                    else:
+                                        _msg_fin = '[SUMMARY]:任务已完成，执行结果请查看聊天记录'
                                         _msg_fin = '[SUMMARY]:' + _ans
                                 # 备用方案：从 review.goal_reason 里提取
                                 else:

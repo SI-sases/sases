@@ -86,6 +86,47 @@ function _hideMenu() {
 }
 
 export function initParamBar() {
+
+    // ===== 🔌 API 胶囊逻辑 (强制置顶) =====
+    window.currentSessionAPIs = window.currentSessionAPIs || [];
+    window.__toggleApi = function(id) {
+        var set = new Set(window.currentSessionAPIs);
+        if (set.has(id)) set.delete(id); else set.add(id);
+        window.currentSessionAPIs = Array.from(set);
+        var p = document.getElementById('api-pill');
+        if (p) p.innerText = window.currentSessionAPIs.length > 0 ? ('🔌 API (' + window.currentSessionAPIs.length + ')') : '🔌 API';
+    };
+
+    var apiPill = document.getElementById('api-pill');
+    if (apiPill && !apiPill._bound) {
+        apiPill._bound = true;
+        apiPill.onclick = function() {
+            var html = '<div id="api-select-list" style="padding:10px;">加载中...</div>';
+            window.openSubpage('🔌 选择外部 API', html);
+            var token = localStorage.getItem('sases_token') || '';
+            fetch('/api/user-api/list', { headers: { 'Authorization': 'Bearer ' + token } })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                var listEl = document.getElementById('api-select-list');
+                if (!listEl) return;
+                if (!data.apis || data.apis.length === 0) {
+                    listEl.innerHTML = '<div style="text-align:center;padding:20px;color:#999;">暂无配置的 API</div>';
+                    return;
+                }
+                var h = '';
+                data.apis.forEach(function(a) {
+                    var checked = (window.currentSessionAPIs || []).indexOf(a.id) !== -1 ? 'checked' : '';
+                    h += '<label style="display:flex;padding:12px;border-bottom:1px solid #eee;cursor:pointer;">';
+                    h += '<input type="checkbox" value="' + a.id + '" onchange="window.__toggleApi(' + a.id + ')" ' + checked + ' style="margin-right:10px;">';
+                    h += '<span>' + a.api_name + '</span></label>';
+                });
+                listEl.innerHTML = h;
+            }).catch(function(e) {
+                if (listEl) listEl.innerHTML = '加载失败: ' + e.message;
+            });
+        };
+    }
+
   _currentValue = _read();
   const pill = document.getElementById('param-rounds');
   if (!pill) return;
