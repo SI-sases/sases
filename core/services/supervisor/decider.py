@@ -39,6 +39,26 @@ def build_next_input(run_id):
     return chr(10).join(lines)
 
 
+async def _supervisor_final_review(task):
+    import json as _json
+    user_text = task.get('user_text', '')
+    answer = ''
+    for r in task.get('results', []) or []:
+        if isinstance(r, dict) and r.get('type') == 'answer':
+            answer = r.get('content', '') or r.get('text', '')
+    prompt = ('你是调度员，用户最开始的诉求是：' + user_text + '。执行过程最后产出了：' + answer + '。请严格判断是否真正满足了用户的诉求？只返回 JSON 格式：{"goal_achieved": true/false, "reason": "xxx"}')
+    try:
+        raw = await _call_llm(prompt)
+        data = _json.loads(raw)
+        if not data.get('goal_achieved', True):
+            task.setdefault('results', []).append({'type': 'error', 'content': '[调度员终审] ' + str(data.get('reason', ''))})
+            return False
+        return True
+    except Exception as _e:
+        return True
+
+
+
 async def task_summarizer(task):
     # [系统宪法] 只要有产出，第2轮起直接完成，绝不空转重试
     _res = task.get('results', [])
