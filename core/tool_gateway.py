@@ -27,6 +27,13 @@ def _invoke_http_sync(module_id: str, params: Dict[str, Any]) -> ToolInvokeRespo
 
 
 def _route(module_id: str, params: Dict[str, Any]) -> ToolInvokeResponse:
+    if module_id.startswith("ext_api_"):
+        try:
+            api_id = int(module_id[len("ext_api_"):])
+        except Exception:
+            return {"error": "未找到该外部 API"}
+        return _handle_ext_api(api_id, params)
+
     """按 endpoint 前缀路由到本地或远程。"""
     endpoint = _resolve_endpoint(module_id)
     if endpoint.startswith("local://"):

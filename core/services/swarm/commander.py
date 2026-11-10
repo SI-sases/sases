@@ -279,6 +279,23 @@ async def plan_task(
         "必须只输出 JSON 数组，格式：[{\"step\":1,\"description\":\"...\",\"command\":\"...\"}]\n"
         "不要输出任何其他文字，不要用 markdown 代码块。"
     )
+    # 注入外部 API 配置（强约束）
+    try:
+        import sqlite3
+        _conn = sqlite3.connect('users.db')
+        _cur = _conn.cursor()
+        _cur.execute("SELECT id, api_name, api_desc, params_example FROM user_api_configs WHERE status = 'active'")
+        _apis = _cur.fetchall()
+        if _apis:
+            _api_str = "\n\n【可用的外部 API 接口】\n⚠️ 严禁使用 web_fetch 或 api_call 访问外部网络！如果任务涉及查询外部数据，必须且只能调用以下接口，请输出 type=\"harness\", module_id=\"ext_api_{id}\"，将所需的参数传给 params。\n"
+            for _aid, _aname, _adesc, _aparams in _apis:
+                _api_str += f"- 模块名: ext_api_{_aid}，名称: {_aname}，描述: {_adesc}，参数示例: {_aparams}\n"
+            prompt_parts.append(_api_str)
+        _conn.close()
+    except Exception as e:
+        print(f"[commander] 注入外部 API 失败: {e}")
+
+
     full_prompt = "\n\n".join(prompt_parts)
 
     raw = ""
