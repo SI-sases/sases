@@ -319,6 +319,7 @@ async function sendMessage() {
       sender_agent_id: chatState.senderAgentId,
       mode: chatState.mode,
       max_steps: _maxSteps
+      enabled_api_ids: window.currentSessionAPIs || [],
     });
 
     if (!chatState.conversationId) {
