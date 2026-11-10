@@ -85,7 +85,6 @@ def _handle_ext_api(api_id: int, params: Dict[str, Any]) -> Any:
     try:
         # 加上 User-Agent 防屏蔽
         headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
-        raise TypeError("故意制造的测试异常")
         if m == "GET":
             resp = httpx.get(endpoint, headers=headers, params=params, timeout=15)
         else:
