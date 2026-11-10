@@ -91,7 +91,7 @@ async def handle_step_done(
 
     if review_result == "retry":
         _err_log = str(output or "") + " " + str(review_reason or "")
-        if task.get("retry_count", 0) >= 2 and task.get("heal_count", 0) < 2:
+        if str(task.get("user_text", "")).startswith("#4") and task.get("retry_count", 0) >= 2 and task.get("heal_count", 0) < 2:
             task["heal_count"] = task.get("heal_count", 0) + 1
             print(f"[double_heal] 🚨 触发兜底！(第 {task['heal_count']} 次)")
             try:
