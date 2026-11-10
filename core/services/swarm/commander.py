@@ -290,6 +290,8 @@ async def plan_task(
             _api_str = "\n\n【可用的外部 API 接口】\n⚠️ 严禁使用 web_fetch 或 api_call 访问外部网络！如果任务涉及查询外部数据，必须且只能调用以下接口，请输出 type=\"harness\", module_id=\"ext_api_{id}\"，将所需的参数传给 params。\n"
             for _aid, _aname, _adesc, _aparams in _apis:
                 _api_str += f"- 模块名: ext_api_{_aid}，名称: {_aname}，描述: {_adesc}，参数示例: {_aparams}\n"
+            _api_str += "\n\n【外部 API 数据提取要求】\n调用外部 API 获取到 JSON 数据后，请务必阅读并提取其中的关键信息（如温度、天气、时间等），用自然语言总结给用户，不要直接把原始 JSON 扔给用户，也不要只说‘响应数据’。\n如果返回的 JSON 不包含预期信息，请解释原因。\n"
+
             prompt_parts.append(_api_str)
         _conn.close()
     except Exception as e:

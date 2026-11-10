@@ -44,7 +44,7 @@ async def task_summarizer(task):
     _res = task.get('results', [])
     # 【物理防假死】强制校验
     import re
-    _goal_text = run.get('goal', '')
+    _goal_text = task.get('goal', '')
     _modify_keywords = r'改|写|加|删|创建|新增|替换|重构|更新|修复'
     if re.search(_modify_keywords, _goal_text):
         _has_success_patch = any(r.get('command') == 'file_patch' and r.get('status') == 'success' for r in _res)
