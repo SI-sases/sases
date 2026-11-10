@@ -103,5 +103,5 @@ def _handle_ext_api(api_id: int, params: Dict[str, Any]) -> Any:
             conn.close()
         except Exception as _db_err:
             print(f"[tool_gateway] 写入 outbox 失败: {_db_err}")
-        return ToolInvokeResponse(module_id=module_id, success=False, error=f"请求失败，已进入重试队列: {str(e)}")
+        return ToolInvokeResponse(module_id=f"ext_api_{api_id}", success=False, error=f"请求失败，已进入重试队列: {str(e)}")
         return ToolInvokeResponse(module_id=f"ext_api_{api_id}", success=False, error=str(e))

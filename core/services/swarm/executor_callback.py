@@ -18,7 +18,6 @@ from .reviewer import review_step
 from .task_state import _save_task_state
 from .summarizer import _summarize, _summary_sender
 from .commander import plan_task, replan_failed_steps
-from ..supervisor.diagnose_service import diagnose_and_fix
 from .helpers import _insert_message
 
 
@@ -89,35 +88,41 @@ async def handle_step_done(
 
     print(f"[swarm] step {step_id} 审核: {review_result} | {review_reason}")
 
-    
 
-
-            else:
-                print("[diagnose] ❌ 调度诊断失败，交由原有降级逻辑处理。")
-        # ==========================================
-        # ==========================================
-        # 🚨 专属 #4 任务的第三次重拆诊断拦截
-        # ==========================================
-        _is_task4 = str(task.get("user_text", "")).startswith("#4")
-        if _is_task4 and task.get("retry_count", 0) >= 2:
-            _err_log = str(output or "") + " " + str(review_reason or "")
-            print("[diagnose] 🚨 连续重拆失败，强制中断死循环，呼叫调度诊断！")
+    if review_result == "retry":
+        _err_log = str(output or "") + " " + str(review_reason or "")
+        if task.get("retry_count", 0) >= 2 and task.get("heal_count", 0) < 2:
+            task["heal_count"] = task.get("heal_count", 0) + 1
+            print(f"[double_heal] 🚨 触发兜底！(第 {task['heal_count']} 次)")
             try:
-                _fixed = await diagnose_and_fix(task, _err_log)
-            except Exception as _e_diag:
-                print(f"[diagnose] 诊断过程异常: {_e_diag}")
-                _fixed = False
-                
-            if _fixed:
-                print("[diagnose] ✅ 调度修复成功，重置重拆，交回给三者执行！")
-                task["retry_count"] = 0
-                _save_pending(task)
-                return {"status": "diagnosed", "task_id": task_id}
-            else:
-                print("[diagnose] ❌ 调度诊断失败，交由原有降级逻辑处理。")
-                # 不 return，让它继续往下走原有的兜底逻辑（比如 script_fallback）
-        # ==========================================
-        pass
+                from .auto_heal import auto_heal_code
+                _heal_cmd = await auto_heal_code(_err_log)
+                if not _heal_cmd:
+                    from ..supervisor.diagnose_service import diagnose_and_fix
+                    _heal_cmd = await diagnose_and_fix(_err_log)
+                if _heal_cmd:
+                    print(f"[double_heal] ✅ 兜底成功，处方: {_heal_cmd}")
+                    _delete_pending_from_db(task_id)
+                    if _run_id:
+                        from ..supervisor.runs import finish_run
+                        finish_run(_run_id, 'failed')
+                    from .commander import plan_task
+                    await plan_task(
+                        user_id=task.get("user_id"),
+                        conversation_id=task.get("conversation_id"),
+                        user_input=_heal_cmd,
+                        supervisor_id=task.get("supervisor_id")
+                    )
+                    print("[double_heal] 🚀 处方已派发给护士。")
+                    return {"status": "diagnosed", "task_id": task_id}
+                else:
+                    print("[double_heal] ❌ 医生无法开具处方，放弃治疗。")
+                    _delete_pending_from_db(task_id)
+                    return {"status": "failed", "task_id": task_id}
+            except Exception as e:
+                print(f"[double_heal] 异常: {e}")
+                _delete_pending_from_db(task_id)
+                return {"status": "failed", "task_id": task_id}
         try:
             fail_cmd = original_step.get("command", "") or original_step.get("module_id", "")
             fail_content = (
