@@ -15,6 +15,7 @@ from .. import memory_service
 from .memory_cache import _pending
 from .persistence import _save_pending, _delete_pending_from_db, _load_pending, _log_review
 from .reviewer import review_step
+import asyncio
 from .task_state import _save_task_state
 from .summarizer import _summarize, _summary_sender
 from .commander import plan_task, replan_failed_steps
