@@ -72,7 +72,17 @@ async def handle_step_done(
 
     status = payload.get("status", "unknown")
     output = payload.get("output", "")
-    review_result, review_reason = review_step(original_step, status, output)
+    review_result, review_reason = review_step
+
+    # 🚨 专属 #4 任务的“只查不改”拦截
+    if str(task.get("user_text", "")).startswith("#4"):
+        _is_modify = any(k in task.get("user_text", "") for k in ("修改", "删除", "替换", "改", "写"))
+        _has_patch = any(r.get("command") == "file_patch" and r.get("status") == "success" for r in task.get("results", []))
+        _has_python = any(r.get("command") == "run_python" and r.get("status") == "success" for r in task.get("results", []))
+        if _is_modify and not _has_patch and not _has_python and review_result == "pass":
+            print("[supervisor] 🚨 假完成拦截：任务要求修改，但未产生任何写操作，强制打回！")
+            review_result = "retry"
+            review_reason = "严禁只查不改！必须实际调用 file_patch 或 run_python 修改代码！"(original_step, status, output)
 
     task["done"].add(step_id)
     task["results"].append({
