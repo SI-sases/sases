@@ -93,4 +93,14 @@ def _handle_ext_api(api_id: int, params: Dict[str, Any]) -> Any:
         # 强行包成对象返回
         return ToolInvokeResponse(module_id=f"ext_api_{api_id}", success=True, result=resp.text)
     except Exception as e:
+        try:
+            import sqlite3
+            conn = sqlite3.connect('users.db')
+            cur = conn.cursor()
+            cur.execute("INSERT INTO api_call_outbox (tool_id, params_json, retry_count, status, created_at) VALUES (?, ?, 0, 'pending', ?)", (module_id, json.dumps(params), datetime.datetime.now().isoformat()))
+            conn.commit()
+            conn.close()
+        except Exception as _db_err:
+            print(f"[tool_gateway] 写入 outbox 失败: {_db_err}")
+        return ToolInvokeResponse(module_id=module_id, success=False, error=f"请求失败，已进入重试队列: {str(e)}")
         return ToolInvokeResponse(module_id=f"ext_api_{api_id}", success=False, error=str(e))
