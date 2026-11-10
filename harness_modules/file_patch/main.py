@@ -63,6 +63,8 @@ def run(params):
             return {"success": False, "error": "未提供修改模式"}
 
         if new_content is not None:
+            if original == new_content:
+                return {"success": False, "error": "新旧内容完全一致，未做任何修改"}
             with open(file_path, 'w', encoding='utf-8') as f:
                 f.write(new_content)
             return {"success": True, "message": "修改成功"}

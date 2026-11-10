@@ -102,18 +102,29 @@ async def handle_step_done(
                     _heal_cmd = await diagnose_and_fix(_err_log)
                 if _heal_cmd:
                     print(f"[double_heal] ✅ 兜底成功，处方: {_heal_cmd}")
+                    _orig_goal = str(task.get("user_text") or "").strip()
+                    _composite = (
+                        "先执行以下修复指令：" + chr(10) + str(_heal_cmd) + chr(10) + chr(10)
+                        + "修复验证通过后，请继续完成原任务：" + chr(10) + _orig_goal
+                    )
+                    print(f"[double_heal] 🧩 复合任务: {_composite[:300]}")
                     _delete_pending_from_db(task_id)
                     if _run_id:
                         from ..supervisor.runs import finish_run
                         finish_run(_run_id, 'failed')
+                    try:
+                        from .memory_cache import _pending as _pending_cache
+                        _pending_cache.pop(task_id, None)
+                    except Exception as _e_lock:
+                        print(f"[double_heal] 清理会话锁失败: {_e_lock}")
                     from .commander import plan_task
                     await plan_task(
                         user_id=task.get("user_id"),
                         conversation_id=task.get("conversation_id"),
-                        user_input=_heal_cmd,
+                        user_input=_composite,
                         supervisor_id=task.get("supervisor_id")
                     )
-                    print("[double_heal] 🚀 处方已派发给护士。")
+                    print("[double_heal] 🚀 复合任务已派发给指挥官。")
                     return {"status": "diagnosed", "task_id": task_id}
                 else:
                     print("[double_heal] ❌ 医生无法开具处方，放弃治疗。")

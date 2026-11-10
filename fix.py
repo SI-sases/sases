@@ -1,57 +1,33 @@
 # fix.py
-import subprocess
-import os
+import re
 
-print("🔄 正在将 executor_callback.py 恢复到 P2 纯净版...")
-# 1. 强制从 Git 恢复该文件
-subprocess.run(["git", "checkout", "p2-completed", "--", "core/services/swarm/executor_callback.py"])
+# 1. 修复 file_patch 的假成功
+p1 = 'harness_modules/file_patch/main.py'
+with open(p1, 'r', encoding='utf-8') as f:
+    c1 = f.read()
 
-# 2. 注入最简单的双重兜底代码（不用 SQL，只调新任务）
-p = 'core/services/swarm/executor_callback.py'
-with open(p, 'r', encoding='utf-8') as f:
-    c = f.read()
+# 注入新旧内容一致性校验
+if 'if original == new_content:' not in c1:
+    c1 = c1.replace(
+        'if new_content is not None:\n            with open(file_path, \'w\', encoding=\'utf-8\') as f:',
+        'if new_content is not None:\n            if original == new_content:\n                return {"success": False, "error": "新旧内容完全一致，未做任何修改"}\n            with open(file_path, \'w\', encoding=\'utf-8\') as f:'
+    )
 
-# 强行找到 retry 分支
-intercept_code = """
-    if review_result == "retry":
-        _err_log = str(output or "") + " " + str(review_reason or "")
-        if task.get("retry_count", 0) >= 2 and task.get("heal_count", 0) < 2:
-            task["heal_count"] = task.get("heal_count", 0) + 1
-            print(f"[double_heal] 🚨 触发兜底！(第 {task['heal_count']} 次)")
-            try:
-                from .auto_heal import auto_heal_code
-                _heal_cmd = await auto_heal_code(_err_log)
-                if not _heal_cmd:
-                    from ..supervisor.diagnose_service import diagnose_and_fix
-                    _heal_cmd = await diagnose_and_fix(_err_log)
-                if _heal_cmd:
-                    print(f"[double_heal] ✅ 兜底成功，处方: {_heal_cmd}")
-                    _delete_pending_from_db(task_id)
-                    if _run_id:
-                        from ..supervisor.runs import finish_run
-                        finish_run(_run_id, 'failed')
-                    from .commander import plan_task
-                    await plan_task(
-                        user_id=task.get("user_id"),
-                        conversation_id=task.get("conversation_id"),
-                        user_input=_heal_cmd,
-                        supervisor_id=task.get("supervisor_id")
-                    )
-                    print("[double_heal] 🚀 处方已派发给护士。")
-                    return {"status": "diagnosed", "task_id": task_id}
-                else:
-                    print("[double_heal] ❌ 医生无法开具处方，放弃治疗。")
-                    _delete_pending_from_db(task_id)
-                    return {"status": "failed", "task_id": task_id}
-            except Exception as e:
-                print(f"[double_heal] 异常: {e}")
-                _delete_pending_from_db(task_id)
-                return {"status": "failed", "task_id": task_id}
-"""
+with open(p1, 'w', encoding='utf-8') as f:
+    f.write(c1)
+print("✅ file_patch 假成功拦截已注入！")
 
-c = c.replace('    if review_result == "retry":\n', intercept_code, 1)
+# 2. 升级医生 Prompt：关注“故意制造”或“raise”字眼
+p2 = 'core/services/supervisor/diagnose_service.py'
+with open(p2, 'r', encoding='utf-8') as f:
+    c2 = f.read()
 
-with open(p, 'w', encoding='utf-8') as f:
-    f.write(c)
+if '如果你看到日志中包含' not in c2:
+    c2 = c2.replace(
+        '【核心铁律】',
+        '【核心铁律】\n0. 如果你看到日志中包含“故意制造”、“raise”等字眼，说明代码中被人为埋了雷。请直接开处方：`#4: 修改 对应文件，删除 raise 语句`。'
+    )
 
-print("✅ 恢复并重新注入完成！请重启后端！")
+with open(p2, 'w', encoding='utf-8') as f:
+    f.write(c2)
+print("✅ 医生防误诊提示词已注入！")
