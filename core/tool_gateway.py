@@ -26,6 +26,33 @@ def _invoke_http_sync(module_id: str, params: Dict[str, Any]) -> ToolInvokeRespo
     raise NotImplementedError("HTTP endpoint 在 P3 才实现")
 
 
+def _handle_ext_api(api_id: int, params: Dict[str, Any]) -> Any:
+    import sqlite3
+    import httpx
+    conn = sqlite3.connect('users.db')
+    cur = conn.cursor()
+    cur.execute("SELECT endpoint, method, auth_key_encrypted FROM user_api_configs WHERE id=?", (api_id,))
+    row = cur.fetchone()
+    conn.close()
+    if not row:
+        return {"success": False, "error": "未找到该外部 API"}
+    endpoint, method, auth_key = row
+    headers = {}
+    if auth_key:
+        headers["Authorization"] = f"Bearer {auth_key}"
+    m = method.upper() if method else "GET"
+    try:
+        if m == "GET":
+            resp = httpx.get(endpoint, headers=headers, params=params, timeout=15)
+        else:
+            resp = httpx.post(endpoint, headers=headers, json=params, timeout=15)
+        return {"success": True, "status": resp.status_code, "body": resp.text}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+
+
 def _route(module_id: str, params: Dict[str, Any]) -> ToolInvokeResponse:
     if module_id.startswith("ext_api_"):
         try:
