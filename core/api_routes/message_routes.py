@@ -20,7 +20,8 @@ class SendMessageRequest(BaseModel):
     content: str
     sender_agent_id: Optional[str] = None
     mode: Optional[str] = "normal"  # normal / free / swarm
-    max_steps: Optional[int] = None  # -1=不限，None=默认8
+    max_steps: Optional[int] = None
+    enabled_api_ids: Optional[list] = None  # -1=不限，None=默认8
 
 
 class ConversationCreateRequest(BaseModel):
@@ -78,6 +79,7 @@ async def send_message(body: SendMessageRequest, user_id: int = Depends(get_curr
         sender_agent_id=body.sender_agent_id,
         mode=body.mode,
         max_steps=body.max_steps,
+        enabled_api_ids=body.enabled_api_ids,
         msg_type=body.msg_type,
         attachments=body.attachments
     )
