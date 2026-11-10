@@ -53,6 +53,7 @@ window.deleteSasesApi = async function(id) {
     window.loadSasesApiList();
 };
 
+
 window.openAddApiModal = function() {
     let html = `
         <div style="padding: 15px;">
@@ -60,7 +61,31 @@ window.openAddApiModal = function() {
             <div style="margin-bottom: 10px;"><input type="text" id="api-name" placeholder="API 名称" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;"></div>
             <div style="margin-bottom: 10px;"><input type="text" id="api-endpoint" placeholder="接口URL" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;"></div>
             <div style="margin-bottom: 10px;"><input type="text" id="api-desc" placeholder="描述" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;"></div>
+            <div style="margin-bottom: 10px;"><input type="text" id="api-key" placeholder="API Key (若无鉴权留空)" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;"></div>
+            <div style="margin-bottom: 10px;"><input type="text" id="api-params" placeholder='参数示例 JSON (如: {"latitude": 39.9})' style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;"></div>
             <button class="save-btn" style="width: 100%; padding: 12px; margin-top: 10px;" onclick="window.submitSasesApi()">保存配置</button>
+        </div>
+    `;
+    window.openSubpage('添加外部 API', html, { returnAction: () => window.openSasesExternalApi() });
+};
+
+window.submitSasesApi = async function() {
+    const name = document.getElementById('api-name').value;
+    const endpoint = document.getElementById('api-endpoint').value;
+    const desc = document.getElementById('api-desc').value;
+    const key = document.getElementById('api-key').value;
+    const params = document.getElementById('api-params').value;
+    if (!name || !endpoint) { alert('名称和 URL 为必填项'); return; }
+    const payload = { api_name: name, endpoint: endpoint, api_desc: desc, auth_key: key, auth_type: key ? 'bearer' : 'none', params_example: params, method: 'GET' };
+    try {
+        const token = localStorage.getItem('sases_token');
+        const res = await fetch('/api/user-api/add', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify(payload) });
+        if (!res.ok) throw new Error('请求失败');
+        alert('添加成功！');
+        window.openSasesExternalApi();
+    } catch (e) { alert('添加失败: ' + e.message); }
+}
+window.submitSasesApi()">保存配置</button>
         </div>
     `;
     window.openSubpage('添加外部 API', html, { returnAction: () => window.openSasesExternalApi() });
