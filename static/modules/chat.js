@@ -358,7 +358,9 @@ async function sendMessage() {
       window.onboarding.report('send_message');
     }
   } catch (err) {
-    updateMessageStatus(tempId, 'failed');
+    console.error("【前端捕获到错误】", err);
+      alert("【测试报错】" + (err.message || "未知错误"));
+      updateMessageStatus(tempId, 'failed');
   }
 }
 
