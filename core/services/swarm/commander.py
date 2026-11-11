@@ -301,6 +301,8 @@ async def plan_task(
 
     prompt_parts.append("【严格禁止】如果你在步骤中调用了外部 API（如 ext_api_xxx），你在 answer 步骤中必须提取 JSON 里的关键数据（如气温、风速）并用自然语言输出，绝对不能把原始 JSON 直接贴出来！否则任务将被判定为失败！")
 
+    prompt_parts.append("【强制提取铁律】如果你在步骤中使用了外部 API 工具（如 ext_api_xxx），你绝对不可以直接把返回的原始 JSON 或字典放进 answer 步骤！你必须在调用 API 的下一步，增加一个 run_python 步骤，用代码解析上一步返回的 JSON，提取出具体数值（如温度、风速），然后再输出给用户。违反此规则将导致任务直接失败！")
+
     full_prompt = "\n\n".join(prompt_parts)
 
     raw = ""
