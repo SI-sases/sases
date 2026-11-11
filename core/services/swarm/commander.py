@@ -5,7 +5,8 @@ from ... import config
 from ...db import db_cursor
 from .. import memory_service
 from .. import feedback_service
-from .prompts import COMMANDER_SYSTEM_PROMPT, REPLAN_SYSTEM_PROMPT
+from .prompts import COMMANDER_SYSTEM_PROMPT
+# 占位，待读取后精确修改, REPLAN_SYSTEM_PROMPT
 from .reviewer import UNRECOVERABLE_KEYWORDS
 from .memory_cache import _pending
 from .persistence import (_save_pending, _delete_pending_from_db, _load_pending, _has_active_task_in_conversation, _ensure_feedback_table)
