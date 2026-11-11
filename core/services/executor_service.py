@@ -111,6 +111,14 @@ def is_command_safe(cmd) -> tuple:
     if _stripped.startswith('{') and 'module_id' in _stripped:
         return True, ''
 
+    # 禁止通过系统命令直接操作数据库或执行 Python 脚本
+    _lower_cmd = cmd.lower()
+    _blocked_keywords = ["python ", "python.exe", "sqlite3", "users.db", "import sqlite3"]
+    for _kw in _blocked_keywords:
+        if _kw in _lower_cmd:
+            return False, "⚠️ 禁止通过系统命令直接操作数据库或执行 Python 脚本！"
+
+
     # 危险字符检查（精简版）
     for ch in DANGEROUS_CHARS:
         if ch in cmd:
