@@ -71,6 +71,18 @@ async def get_messages(
 
 @router.post("/send")
 async def send_message(body: SendMessageRequest, user_id: int = Depends(get_current_user)):
+
+    # ===== #4 任务半锁死拦截 =====
+    if body.content and body.content.strip().startswith("#4"):
+        from ..db import db_cursor
+        from datetime import datetime
+        from fastapi import HTTPException
+        with db_cursor() as _cur:
+            _cur.execute("SELECT expire_at FROM device_bindings WHERE user_id=?", (user_id,))
+            _row = _cur.fetchone()
+            if not _row or datetime.fromisoformat(_row['expire_at']) < datetime.now():
+                raise HTTPException(status_code=403, detail="⚠️ 您的授权未激活或已过期，无法执行 #4 任务。请前往启动器激活卡密。")
+    # ==============================
     result = await message_service.send_message(
         user_id=user_id,
         conversation_id=body.conversation_id,
