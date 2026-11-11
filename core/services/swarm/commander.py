@@ -303,6 +303,8 @@ async def plan_task(
 
     prompt_parts.append("【强制提取铁律】如果你在步骤中使用了外部 API 工具（如 ext_api_xxx），你绝对不可以直接把返回的原始 JSON 或字典放进 answer 步骤！你必须在调用 API 的下一步，增加一个 run_python 步骤，用代码解析上一步返回的 JSON，提取出具体数值（如温度、风速），然后再输出给用户。违反此规则将导致任务直接失败！")
 
+    prompt_parts.append("【强制纯文本输出铁律】在最后一步使用 answer 工具时，只能输出纯中文自然语言！绝对禁止把上一步 run_python 返回的 JSON 外壳（如 {\"success\": true, \"stdout\": ...}）直接复制进 answer 中！必须把 stdout 里的文字干净地提取出来输出。违反者将判定为任务失败！")
+
     full_prompt = "\n\n".join(prompt_parts)
 
     raw = ""
