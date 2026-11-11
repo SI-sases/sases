@@ -358,10 +358,22 @@ async function sendMessage() {
       window.onboarding.report('send_message');
     }
   } catch (err) {
-    console.error("【前端捕获到错误】", err);
-      alert("【测试报错】" + (err.message || "未知错误"));
-      updateMessageStatus(tempId, 'failed');
-  }
+    updateMessageStatus(tempId, 'failed');
+    
+    let errorText = "发送失败";
+    try {
+        const parsed = JSON.parse(err.message);
+        errorText = parsed.detail || parsed.message || parsed.error || err.message;
+    } catch (e) {
+        errorText = err.message;
+    }
+    
+    if (typeof appendMessage === 'function') {
+         appendMessage('assistant', errorText, '系统提示', null, new Date().toISOString(), false, chatState);
+    } else {
+        console.error('未找到 appendMessage 函数，报错:', errorText);
+    }
+}
 }
 
 // ========== 草稿任务 / Task编辑器 / 草稿任务 / Task编辑器 ==========
