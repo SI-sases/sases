@@ -159,6 +159,7 @@ from .services import pattern_service
 from .services import pattern_service
 from . import backup_service
 from .api_routes import (
+    license_routes,
     user_api_routes,
     ws_routes,
     supervisor_routes,
@@ -770,6 +771,7 @@ def create_app() -> FastAPI:
         return _log_result(response)
 
     app.include_router(auth_routes.router)
+    app.include_router(license_routes.router)
     app.include_router(seed_routes.router)
     app.include_router(credit_routes.router)
     app.include_router(harness_routes.router)
