@@ -90,6 +90,34 @@ async def handle_step_done(
     print(f"[swarm] step {step_id} 审核: {review_result} | {review_reason}")
 
     if review_result == "retry":
+        # ===== 独立计数器：绝对不受 task 状态重置影响 =====
+        _heal_retry = task.get("_heal_retry", 0) + 1
+        task["_heal_retry"] = _heal_retry
+        
+        if _heal_retry >= 2 and task.get("supervisor_run_id") and not task.get("_healer_forced"):
+            task["_healer_forced"] = True
+            try:
+                import sqlite3
+                _conn = sqlite3.connect('users.db')
+                _cur = _conn.cursor()
+                _cur.execute("UPDATE supervisor_runs SET status='failed' WHERE id=?", (task["supervisor_run_id"],))
+                _conn.commit()
+                _conn.close()
+                
+                from .healer import diagnose_and_heal
+                print(f"[swarm] 🚨 连续失败 {_heal_retry} 次，强制触发 HEALER！")
+                _error_log = str([r.get("reason", "") for r in task.get("results", []) if r.get("review") == "retry"])
+                _healed = await diagnose_and_heal(task, _error_log)
+                if _healed:
+                    # 彻底阻断旧任务
+                    try:
+                        del _pending[task_id]
+                    except:
+                        pass
+                    return {"status": "healed", "task_id": task_id}
+            except Exception as _e:
+                print(f"[swarm] Healer 触发异常: {_e}")
+
         try:
             fail_cmd = original_step.get("command", "") or original_step.get("module_id", "")
             fail_content = (
@@ -128,6 +156,16 @@ async def handle_step_done(
     if len(_unique_done_ids) >= len(_unique_step_ids):
         failed = [r for r in task["results"] if r.get("review") == "retry"]
         blocked = [r for r in task["results"] if r.get("status") == "blocked"]
+        
+        # ===== HEALER 强制急救挂载点 =====
+        if failed and str(task.get("user_text", "")).startswith("#4") and not task.get("_healer_triggered"):
+            task["_healer_triggered"] = True
+            from .healer import diagnose_and_heal
+            _error_log = str([r.get("reason", "") for r in failed])
+            _healed = await diagnose_and_heal(task, _error_log)
+            if _healed:
+                return {"status": "healed", "task_id": task_id}
+        # =================================
 
         if blocked:
             print(f"[swarm] 发现 {len(blocked)} 个被拒绝的命令，跳过重拆")
@@ -443,6 +481,7 @@ async def handle_step_done(
         else:
             if failed and not task.get("_script_fallback_tried"):
                 task["_script_fallback_tried"] = True
+                                
                 print("[swarm] 重拆已达上限，尝试降级为脚本模式")
                 _script_fb = None
                 try:
@@ -461,6 +500,7 @@ async def handle_step_done(
                     _insert_message(conversation_id, "[SUPERVISOR_PROGRESS]:降级为脚本模式", sender_agent_id=task.get("commander_id"))
                     print("[swarm] 脚本降级成功，已构造单步 run_python task")
                     return {"status": "script_fallback", "task_id": task_id}
+
                 print("[swarm] 脚本降级失败，强制结束任务，防止死循环")
                 _insert_message(conversation_id, "[SUMMARY]:❌ 任务执行失败。AI连续重试且无法生成兜底脚本，已强制终止。", sender_agent_id=_summary_sender(task))
                 del _pending[task_id]
