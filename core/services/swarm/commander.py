@@ -298,6 +298,8 @@ async def plan_task(
         print(f"[commander] 注入外部 API 失败: {e}")
 
 
+    prompt_parts.append("【严格禁止】如果你在步骤中调用了外部 API（如 ext_api_xxx），你在 answer 步骤中必须提取 JSON 里的关键数据（如气温、风速）并用自然语言输出，绝对不能把原始 JSON 直接贴出来！否则任务将被判定为失败！")
+
     full_prompt = "\n\n".join(prompt_parts)
 
     raw = ""
