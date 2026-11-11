@@ -15,6 +15,7 @@ from .. import memory_service
 from .memory_cache import _pending
 from .persistence import _save_pending, _delete_pending_from_db, _load_pending, _log_review
 from .reviewer import review_step
+import asyncio
 from .task_state import _save_task_state
 from .summarizer import _summarize, _summary_sender
 from .commander import plan_task, replan_failed_steps
@@ -72,17 +73,7 @@ async def handle_step_done(
 
     status = payload.get("status", "unknown")
     output = payload.get("output", "")
-    review_result, review_reason = review_step
-
-    # 🚨 专属 #4 任务的“只查不改”拦截
-    if str(task.get("user_text", "")).startswith("#4"):
-        _is_modify = any(k in task.get("user_text", "") for k in ("修改", "删除", "替换", "改", "写"))
-        _has_patch = any(r.get("command") == "file_patch" and r.get("status") == "success" for r in task.get("results", []))
-        _has_python = any(r.get("command") == "run_python" and r.get("status") == "success" for r in task.get("results", []))
-        if _is_modify and not _has_patch and not _has_python and review_result == "pass":
-            print("[supervisor] 🚨 假完成拦截：任务要求修改，但未产生任何写操作，强制打回！")
-            review_result = "retry"
-            review_reason = "严禁只查不改！必须实际调用 file_patch 或 run_python 修改代码！"(original_step, status, output)
+    review_result, review_reason = review_step(original_step, status, output)
 
     task["done"].add(step_id)
     task["results"].append({
@@ -98,52 +89,35 @@ async def handle_step_done(
 
     print(f"[swarm] step {step_id} 审核: {review_result} | {review_reason}")
 
-
     if review_result == "retry":
-        _err_log = str(output or "") + " " + str(review_reason or "")
-        if str(task.get("user_text", "")).startswith("#4") and task.get("retry_count", 0) >= 2 and task.get("heal_count", 0) < 2:
-            task["heal_count"] = task.get("heal_count", 0) + 1
-            print(f"[double_heal] 🚨 触发兜底！(第 {task['heal_count']} 次)")
+        # ===== 独立计数器：绝对不受 task 状态重置影响 =====
+        _heal_retry = task.get("_heal_retry", 0) + 1
+        task["_heal_retry"] = _heal_retry
+        
+        if _heal_retry >= 2 and task.get("supervisor_run_id") and not task.get("_healer_forced"):
+            task["_healer_forced"] = True
             try:
-                from .auto_heal import auto_heal_code
-                _heal_cmd = await auto_heal_code(_err_log)
-                if not _heal_cmd:
-                    from ..supervisor.diagnose_service import diagnose_and_fix
-                    _heal_cmd = await diagnose_and_fix(_err_log)
-                if _heal_cmd:
-                    print(f"[double_heal] ✅ 兜底成功，处方: {_heal_cmd}")
-                    _orig_goal = str(task.get("user_text") or "").strip()
-                    _composite = (
-                        "先执行以下修复指令：" + chr(10) + str(_heal_cmd) + chr(10) + chr(10)
-                        + "修复验证通过后，请继续完成原任务：" + chr(10) + _orig_goal
-                    )
-                    print(f"[double_heal] 🧩 复合任务: {_composite[:300]}")
-                    _delete_pending_from_db(task_id)
-                    if _run_id:
-                        from ..supervisor.runs import finish_run
-                        finish_run(_run_id, 'failed')
+                import sqlite3
+                _conn = sqlite3.connect('users.db')
+                _cur = _conn.cursor()
+                _cur.execute("UPDATE supervisor_runs SET status='failed' WHERE id=?", (task["supervisor_run_id"],))
+                _conn.commit()
+                _conn.close()
+                
+                from .healer import diagnose_and_heal
+                print(f"[swarm] 🚨 连续失败 {_heal_retry} 次，强制触发 HEALER！")
+                _error_log = str([r.get("reason", "") for r in task.get("results", []) if r.get("review") == "retry"])
+                _healed = await diagnose_and_heal(task, _error_log)
+                if _healed:
+                    # 彻底阻断旧任务
                     try:
-                        from .memory_cache import _pending as _pending_cache
-                        _pending_cache.pop(task_id, None)
-                    except Exception as _e_lock:
-                        print(f"[double_heal] 清理会话锁失败: {_e_lock}")
-                    from .commander import plan_task
-                    await plan_task(
-                        user_id=task.get("user_id"),
-                        conversation_id=task.get("conversation_id"),
-                        user_input=_composite,
-                        supervisor_id=task.get("supervisor_id")
-                    )
-                    print("[double_heal] 🚀 复合任务已派发给指挥官。")
-                    return {"status": "diagnosed", "task_id": task_id}
-                else:
-                    print("[double_heal] ❌ 医生无法开具处方，放弃治疗。")
-                    _delete_pending_from_db(task_id)
-                    return {"status": "failed", "task_id": task_id}
-            except Exception as e:
-                print(f"[double_heal] 异常: {e}")
-                _delete_pending_from_db(task_id)
-                return {"status": "failed", "task_id": task_id}
+                        del _pending[task_id]
+                    except:
+                        pass
+                    return {"status": "healed", "task_id": task_id}
+            except Exception as _e:
+                print(f"[swarm] Healer 触发异常: {_e}")
+
         try:
             fail_cmd = original_step.get("command", "") or original_step.get("module_id", "")
             fail_content = (
@@ -182,6 +156,16 @@ async def handle_step_done(
     if len(_unique_done_ids) >= len(_unique_step_ids):
         failed = [r for r in task["results"] if r.get("review") == "retry"]
         blocked = [r for r in task["results"] if r.get("status") == "blocked"]
+        
+        # ===== HEALER 强制急救挂载点 =====
+        if failed and str(task.get("user_text", "")).startswith("#4") and not task.get("_healer_triggered"):
+            task["_healer_triggered"] = True
+            from .healer import diagnose_and_heal
+            _error_log = str([r.get("reason", "") for r in failed])
+            _healed = await diagnose_and_heal(task, _error_log)
+            if _healed:
+                return {"status": "healed", "task_id": task_id}
+        # =================================
 
         if blocked:
             print(f"[swarm] 发现 {len(blocked)} 个被拒绝的命令，跳过重拆")
@@ -497,6 +481,7 @@ async def handle_step_done(
         else:
             if failed and not task.get("_script_fallback_tried"):
                 task["_script_fallback_tried"] = True
+                                
                 print("[swarm] 重拆已达上限，尝试降级为脚本模式")
                 _script_fb = None
                 try:
@@ -515,6 +500,7 @@ async def handle_step_done(
                     _insert_message(conversation_id, "[SUPERVISOR_PROGRESS]:降级为脚本模式", sender_agent_id=task.get("commander_id"))
                     print("[swarm] 脚本降级成功，已构造单步 run_python task")
                     return {"status": "script_fallback", "task_id": task_id}
+
                 print("[swarm] 脚本降级失败，强制结束任务，防止死循环")
                 _insert_message(conversation_id, "[SUMMARY]:❌ 任务执行失败。AI连续重试且无法生成兜底脚本，已强制终止。", sender_agent_id=_summary_sender(task))
                 del _pending[task_id]

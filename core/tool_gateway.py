@@ -63,10 +63,10 @@ async def invoke_tool_async(module_id: str, params: Dict[str, Any]) -> ToolInvok
 
 
 
-def _handle_ext_api(api_id: int, params: Dict[str, Any]) -> Any:
+def _handle_ext_api(api_id: int, params: Dict[str, Any]) -> ToolInvokeResponse:
     import sqlite3
     import httpx
-    from core.harness_models import ToolInvokeResponse
+    import json
     
     conn = sqlite3.connect('users.db')
     cur = conn.cursor()
@@ -75,7 +75,7 @@ def _handle_ext_api(api_id: int, params: Dict[str, Any]) -> Any:
     conn.close()
     
     if not row: 
-        return ToolInvokeResponse(module_id=f"ext_api_{api_id}", success=False, error="未找到该外部 API")
+        return ToolInvokeResponse(module_id=f"ext_api_{api_id}", success=False, error="未找到该 API 配置")
         
     endpoint, method, auth_key = row
     headers = {}
@@ -83,24 +83,10 @@ def _handle_ext_api(api_id: int, params: Dict[str, Any]) -> Any:
     m = method.upper() if method else "GET"
     
     try:
-        # 加上 User-Agent 防屏蔽
-        headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
         if m == "GET":
             resp = httpx.get(endpoint, headers=headers, params=params, timeout=15)
         else:
             resp = httpx.post(endpoint, headers=headers, json=params, timeout=15)
-            
-        # 强行包成对象返回
         return ToolInvokeResponse(module_id=f"ext_api_{api_id}", success=True, result=resp.text)
     except Exception as e:
-        try:
-            import sqlite3
-            conn = sqlite3.connect('users.db')
-            cur = conn.cursor()
-            cur.execute("INSERT INTO api_call_outbox (tool_id, params_json, retry_count, status, created_at) VALUES (?, ?, 0, 'pending', ?)", (f"ext_api_{api_id}", json.dumps(params), datetime.datetime.now().isoformat()))
-            conn.commit()
-            conn.close()
-        except Exception as _db_err:
-            print(f"[tool_gateway] 写入 outbox 失败: {_db_err}")
-        return ToolInvokeResponse(module_id=f"ext_api_{api_id}", success=False, error=f"请求失败，已进入重试队列: {str(e)}")
         return ToolInvokeResponse(module_id=f"ext_api_{api_id}", success=False, error=str(e))
