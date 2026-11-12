@@ -23,7 +23,7 @@ from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QPushButton, QPlainTextEdit,
     QVBoxLayout, QHBoxLayout, QMessageBox, QLabel,
     QSystemTrayIcon, QMenu, QStyle, QListWidget, QStackedWidget,
-    QFrame, QLineEdit, QFileDialog, QCheckBox, QScrollArea
+    QFrame, QLineEdit, QFileDialog, QCheckBox, QScrollArea, QDialog
 )
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -36,6 +36,7 @@ def _decode_child_line(raw):
         except (UnicodeDecodeError, LookupError):
             continue
     return raw.decode('utf-8', 'replace')
+
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -91,7 +92,7 @@ class MainWindow(QMainWindow):
             QListWidget::item:selected { background-color: #3c3f41; color: #ffffff; border-left: 4px solid #4a90e2; }
             QListWidget::item:hover:!selected { background-color: #333333; }
         """)
-        self.sidebar.addItems(["📜 运行日志", "⚙️ 统一设置"])
+        self.sidebar.addItems(["📜 运行日志", "⚙️ 统一设置", "🔑 卡密激活"])
         self.sidebar.currentRowChanged.connect(self._on_sidebar_changed)
         sidebar_layout.addWidget(self.sidebar)
         
@@ -245,6 +246,38 @@ class MainWindow(QMainWindow):
         self.stacked_widget.addWidget(page_log)
         self.stacked_widget.addWidget(page_settings)
         
+        # ===== 卡密页面（第三页） =====
+        self.page_license = QWidget()
+        license_layout = QVBoxLayout(self.page_license)
+        license_layout.setContentsMargins(30, 30, 30, 30)
+        license_layout.setSpacing(15) # 增加元素间距，告别拥挤
+        
+        title_lic = QLabel("卡密激活")
+        title_lic.setStyleSheet("font-size: 18px; font-weight: bold; color: #ffffff; margin-bottom: 10px;")
+        license_layout.addWidget(title_lic)
+        
+        desc_lbl = QLabel("请输入您的 SASES 卡密（例如: SASES-VIP-8888）：")
+        desc_lbl.setStyleSheet("color: #aaaaaa; font-size: 13px;")
+        license_layout.addWidget(desc_lbl)
+        
+        self.license_input = QLineEdit()
+        self.license_input.setPlaceholderText("在此输入卡密...")
+        self.license_input.setStyleSheet("padding: 10px; border: 1px solid #555; border-radius: 4px; background: #3c3f41; color: white; font-size: 14px;")
+        license_layout.addWidget(self.license_input)
+        
+        self.btn_activate = QPushButton("立即连接云端激活")
+        self.btn_activate.setStyleSheet("padding: 10px; background: #4a90e2; color: white; border-radius: 4px; font-weight: bold; margin-top: 10px;")
+        self.btn_activate.clicked.connect(self._do_activate)
+        license_layout.addWidget(self.btn_activate)
+        
+        self.lbl_license_status = QLabel("")
+        self.lbl_license_status.setStyleSheet("color: #ff9500; font-size: 13px; margin-top: 10px;")
+        license_layout.addWidget(self.lbl_license_status)
+        
+        license_layout.addStretch()
+        self.stacked_widget.addWidget(self.page_license)
+        # ==============================
+        
         # ========== 底部操作区（保留大圆按钮） ==========
         bottom_bar = QWidget()
         bottom_bar.setStyleSheet("background-color: #1e1e1e;")
@@ -314,8 +347,54 @@ class MainWindow(QMainWindow):
             if model: f.write(f"MODEL_NAME={model}\n")
         QMessageBox.information(self, "成功", "配置已保存，重启服务生效。")
 
+    def _do_activate(self):
+        key = self.license_input.text().strip()
+        if not key:
+            self.lbl_license_status.setText("❌ 卡密不能为空")
+            self.lbl_license_status.setStyleSheet("color: #ff3b30; margin-top: 10px;")
+            return
+            
+        self.lbl_license_status.setText("正在连接云端验证...")
+        self.lbl_license_status.setStyleSheet("color: #4a90e2; margin-top: 10px;")
+        self.btn_activate.setEnabled(False)
+        
+        import urllib.request, urllib.error, json
+        import launcher_config
+        
+        fp = "unknown_fp"
+        try:
+            from hardware import get_hardware_fingerprint
+            fp = get_hardware_fingerprint()
+        except: pass
+            
+        api_url = "http://47.96.87.147:8001/auth/license/activate"
+        payload = json.dumps({"key_code": key, "device_fingerprint": fp, "user_id": 1}).encode('utf-8')
+        req = urllib.request.Request(api_url, data=payload, headers={'Content-Type': 'application/json'})
+        
+        try:
+            with urllib.request.urlopen(req, timeout=10) as response:
+                res_data = json.loads(response.read().decode('utf-8'))
+                self.lbl_license_status.setText("✅ 激活成功！")
+                self.lbl_license_status.setStyleSheet("color: #34c759; margin-top: 10px;")
+                
+                cfg_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "launcher_config.json")
+                self.cfg["license_expire_at"] = res_data.get("expire_at")
+                with open(cfg_path, "w", encoding="utf-8") as f:
+                    json.dump(self.cfg, f, ensure_ascii=False, indent=2)
+                    
+        except urllib.error.HTTPError as e:
+            err_body = e.read().decode('utf-8')
+            self.lbl_license_status.setText(f"❌ 失败({e.code}): {err_body}")
+            self.lbl_license_status.setStyleSheet("color: #ff3b30; margin-top: 10px;")
+        except Exception as e:
+            self.lbl_license_status.setText(f"❌ 网络错误: {str(e)}")
+            self.lbl_license_status.setStyleSheet("color: #ff3b30; margin-top: 10px;")
+            
+        self.btn_activate.setEnabled(True)
+
     def _on_sidebar_changed(self, index):
         self.stacked_widget.setCurrentIndex(index)
+
 
     def _set_running_ui(self, is_running):
         if is_running:

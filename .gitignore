@@ -78,3 +78,6 @@ docs/SASES_STATE.md
 # WireGuard keys (no extension)
 privatekey
 publickey
+
+keys/*.pem
+core/keys/*.pem 
