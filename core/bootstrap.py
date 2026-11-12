@@ -770,7 +770,9 @@ def create_app() -> FastAPI:
             raise
         return _log_result(response)
 
-    app.include_router(auth_routes.router)
+    app.include_router(stats_routes.router)
+
+app.include_router(auth_routes.router)
     app.include_router(license_routes.router)
     app.include_router(seed_routes.router)
     app.include_router(credit_routes.router)
