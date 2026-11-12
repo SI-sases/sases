@@ -1,32 +1,22 @@
-# core/api_routes/stats_routes.py
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from jose import jwt, JWTError
+from fastapi import APIRouter
+from ..db import db_cursor
+from datetime import datetime
 
-from ..auth_service import SECRET_KEY
-from ..services import stats_service
+router = APIRouter(prefix="/stats", tags=["Stats"])
 
-router = APIRouter(prefix="/stats", tags=["stats"])
-security = HTTPBearer()
-
-
-def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    token = credentials.credentials
+@router.get("/health")
+async def get_health():
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-        user_id = int(payload.get("sub"))
-    except (JWTError, ValueError):
-        raise HTTPException(status_code=401, detail="Invalid token")
-    return user_id
-
-
-@router.get("/leaderboard")
-async def get_leaderboard(user_id: int = Depends(get_current_user)):
-    leaderboard = stats_service.get_leaderboard()
-    return {"leaderboard": leaderboard}
-
-
-@router.get("/harness-modules")
-async def get_harness_modules(user_id: int = Depends(get_current_user)):
-    modules = stats_service.get_harness_modules()
-    return {"modules": modules}
+        today_str = datetime.now().strftime("%Y-%m-%d")
+        with db_cursor() as cur:
+            cur.execute("SELECT COUNT(*) FROM supervisor_runs WHERE created_at LIKE ?", (f"{today_str}%",))
+            total = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) FROM supervisor_runs WHERE created_at LIKE ? AND status='completed'", (f"{today_str}%",))
+            success = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) FROM supervisor_runs WHERE status IN ('running', 'running_resumed')")
+            running = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) FROM swarm_reviews WHERE created_at LIKE ?", (f"{today_str}%",))
+            reviews = cur.fetchone()[0]
+        return {"status": "ok", "today_total": total, "today_success": success, "success_rate": round(success / total, 2) if total > 0 else 0, "current_running": running, "today_reviews": reviews}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}

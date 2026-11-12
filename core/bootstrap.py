@@ -159,8 +159,8 @@ from .services import pattern_service
 from .services import pattern_service
 from . import backup_service
 from .api_routes import (
-    license_routes,
-    user_api_routes,
+    stats_routes,
+        user_api_routes,
     ws_routes,
     supervisor_routes,
     upload_routes,
@@ -177,8 +177,7 @@ from .api_routes import (
     chat_routes,
     message_routes,
     knowledge_routes,
-    stats_routes,
-    search_routes,
+        search_routes,
     hive_routes,
     ai_circle_routes,
     export_routes,
@@ -770,10 +769,7 @@ def create_app() -> FastAPI:
             raise
         return _log_result(response)
 
-    app.include_router(stats_routes.router)
-
-app.include_router(auth_routes.router)
-    app.include_router(license_routes.router)
+    app.include_router(auth_routes.router)
     app.include_router(seed_routes.router)
     app.include_router(credit_routes.router)
     app.include_router(harness_routes.router)
@@ -785,7 +781,6 @@ app.include_router(auth_routes.router)
     app.include_router(chat_routes.router)
     app.include_router(message_routes.router)
     app.include_router(knowledge_routes.router)
-    app.include_router(stats_routes.router)
     app.include_router(search_routes.router)
     app.include_router(ai_circle_routes.router)
     app.include_router(export_routes.router)
@@ -814,6 +809,7 @@ app.include_router(auth_routes.router)
     app.include_router(hive_task_routes.router)
     app.include_router(feedback_routes.router)
     app.include_router(version_routes.router)
+    app.include_router(stats_routes.router)
 
     @app.get("/static/index.html", response_class=HTMLResponse)
     async def serve_index():
