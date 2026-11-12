@@ -39,32 +39,12 @@ def build_next_input(run_id):
     return chr(10).join(lines)
 
 
-async def _supervisor_final_review(task):
-    import json as _json
-    user_text = task.get('user_text', '')
-    answer = ''
-    for r in task.get('results', []) or []:
-        if isinstance(r, dict) and r.get('type') == 'answer':
-            answer = r.get('content', '') or r.get('text', '')
-    prompt = ('你是调度员，用户最开始的诉求是：' + user_text + '。执行过程最后产出了：' + answer + '。请严格判断是否真正满足了用户的诉求？只返回 JSON 格式：{"goal_achieved": true/false, "reason": "xxx"}')
-    try:
-        raw = await _call_llm(prompt)
-        data = _json.loads(raw)
-        if not data.get('goal_achieved', True):
-            task.setdefault('results', []).append({'type': 'error', 'content': '[调度员终审] ' + str(data.get('reason', ''))})
-            return False
-        return True
-    except Exception as _e:
-        return True
-
-
-
 async def task_summarizer(task):
     # [系统宪法] 只要有产出，第2轮起直接完成，绝不空转重试
     _res = task.get('results', [])
     # 【物理防假死】强制校验
     import re
-    _goal_text = task.get('goal', '')
+    _goal_text = run.get('goal', '')
     _modify_keywords = r'改|写|加|删|创建|新增|替换|重构|更新|修复'
     if re.search(_modify_keywords, _goal_text):
         _has_success_patch = any(r.get('command') == 'file_patch' and r.get('status') == 'success' for r in _res)
@@ -74,10 +54,6 @@ async def task_summarizer(task):
             print("[防假成功] 任务涉及修改，但没有任何成功的 patch 或脚本记录，强行打回！")
             return {'goal_achieved': False, 'goal_reason': '没有产生真实的文件修改', 'next_hint': '请执行真实的 file_patch 或 run_python 修改'}
     if any(r.get('answer') or r.get('output') for r in _res) and task.get('round', 1) > 1:
-        # 拦截 AI 用 echo 输出报错来敷衍
-        _last_out = str(_res[-1].get('output') or _res[-1].get('answer') or '')
-        if '不可用' in _last_out or '强制崩溃' in _last_out or '无法获取' in _last_out:
-            return {'goal_achieved': False, 'goal_reason': '禁止用 echo 输出错误敷衍，必须修复', 'missing': [], 'next_hint': '请修复问题后重试'}
         return {'goal_achieved': True, 'goal_reason': '产出已确认', 'missing': [], 'next_hint': ''}
     print('[supervisor] task_summarizer 被调用, task_id=' + str(task.get('task_id')))
     import openai

@@ -5,8 +5,7 @@ from ... import config
 from ...db import db_cursor
 from .. import memory_service
 from .. import feedback_service
-from .prompts import REPLAN_SYSTEM_PROMPT,  COMMANDER_SYSTEM_PROMPT
-# 占位，待读取后精确修改, REPLAN_SYSTEM_PROMPT
+from .prompts import COMMANDER_SYSTEM_PROMPT, REPLAN_SYSTEM_PROMPT
 from .reviewer import UNRECOVERABLE_KEYWORDS
 from .memory_cache import _pending
 from .persistence import (_save_pending, _delete_pending_from_db, _load_pending, _has_active_task_in_conversation, _ensure_feedback_table)
@@ -17,7 +16,7 @@ from .task_state import _load_task_state
 async def generate_script_for_task(user_id, conversation_id, user_input, failed_results):
     """常规拆解失败时，让 LLM 直接生成 Python 脚本。返回脚本代码或 None。"""
     try:
-        from .prompts import REPLAN_SYSTEM_PROMPT,  SCRIPT_FALLBACK_PROMPT
+        from .prompts import SCRIPT_FALLBACK_PROMPT
     except Exception as _e_imp:
         print("[script_fallback] import SCRIPT_FALLBACK_PROMPT 失败: " + str(_e_imp))
         return None
@@ -280,31 +279,6 @@ async def plan_task(
         "必须只输出 JSON 数组，格式：[{\"step\":1,\"description\":\"...\",\"command\":\"...\"}]\n"
         "不要输出任何其他文字，不要用 markdown 代码块。"
     )
-    # 注入外部 API 配置（强约束）
-    try:
-        import sqlite3
-        _conn = sqlite3.connect('users.db')
-        _cur = _conn.cursor()
-        _cur.execute("SELECT id, api_name, api_desc, params_example FROM user_api_configs WHERE status = 'active'")
-        _apis = _cur.fetchall()
-        if _apis:
-            _api_str = "\n\n【可用的外部 API 接口】\n⚠️ 严禁使用 web_fetch 或 api_call 访问外部网络！如果任务涉及查询外部数据，必须且只能调用以下接口，请输出 type=\"harness\", module_id=\"ext_api_{id}\"，将所需的参数传给 params。\n"
-            for _aid, _aname, _adesc, _aparams in _apis:
-                _api_str += f"- 模块名: ext_api_{_aid}，名称: {_aname}，描述: {_adesc}，参数示例: {_aparams}\n"
-            _api_str += "\n\n【外部 API 数据提取要求】\n调用外部 API 获取到 JSON 数据后，请务必阅读并提取其中的关键信息（如温度、天气、时间等），用自然语言总结给用户，不要直接把原始 JSON 扔给用户，也不要只说‘响应数据’。\n如果返回的 JSON 不包含预期信息，请解释原因。\n"
-
-            prompt_parts.append(_api_str)
-        _conn.close()
-    except Exception as e:
-        print(f"[commander] 注入外部 API 失败: {e}")
-
-
-    prompt_parts.append("【严格禁止】如果你在步骤中调用了外部 API（如 ext_api_xxx），你在 answer 步骤中必须提取 JSON 里的关键数据（如气温、风速）并用自然语言输出，绝对不能把原始 JSON 直接贴出来！否则任务将被判定为失败！")
-
-    prompt_parts.append("【强制提取铁律】如果你在步骤中使用了外部 API 工具（如 ext_api_xxx），你绝对不可以直接把返回的原始 JSON 或字典放进 answer 步骤！你必须在调用 API 的下一步，增加一个 run_python 步骤，用代码解析上一步返回的 JSON，提取出具体数值（如温度、风速），然后再输出给用户。违反此规则将导致任务直接失败！")
-
-    prompt_parts.append("【强制纯文本输出铁律】在最后一步使用 answer 工具时，只能输出纯中文自然语言！绝对禁止把上一步 run_python 返回的 JSON 外壳（如 {\"success\": true, \"stdout\": ...}）直接复制进 answer 中！必须把 stdout 里的文字干净地提取出来输出。违反者将判定为任务失败！")
-
     full_prompt = "\n\n".join(prompt_parts)
 
     raw = ""

@@ -110,52 +110,45 @@ def create_transfer(sender_id: int, receiver_id: int, amount: float, message: st
             print("转账气泡插入失败:", e)
 
         # 跨网转账：事务外发 httpx，失败走 outbox
-    if _receiver_is_remote and tx_id:
-        import httpx, os
-        from ..broadcast.node_relay import hive_headers
-        from .outbox.outbox_service import enqueue
-        _mx = os.environ.get("HIVE_MASTER", "http://47.96.87.147:8001")
-        _pl = {
-            "idempotency_key": idempotency_key or ("tx-" + str(tx_id)),
-            "sender_sases_id": _sender_sases,
-            "target_sases_id": _receiver_sases,
-            "amount": amount,
-            "credit_type": credit_type,
-            "message": message or ""
-        }
-        _ok = False
-        _hdrs = {}
-        try:
-            _hdrs = hive_headers()
-            with httpx.Client(timeout=5, trust_env=False, headers=_hdrs) as _cli:
-                _resp = _cli.post(_mx + "/hive/sync/transfer", json=_pl)
-            if 200 <= _resp.status_code < 300:
-                _body = _resp.json()
-                if _body.get("status") == "ok" or _body.get("skipped"):
-                    _ok = True
-        except Exception as _e:
-            print("[create_transfer] httpx error:", _e)
-        if _ok:
+        if _receiver_is_remote and tx_id:
+            import httpx, os
+            from ..broadcast.node_relay import hive_headers
+            from .outbox.outbox_service import enqueue
+            _mx = os.environ.get("HIVE_MASTER", "http://47.96.87.147:8001")
+            _pl = {
+                "idempotency_key": idempotency_key or ("tx-" + str(tx_id)),
+                "sender_sases_id": _sender_sases,
+                "target_sases_id": _receiver_sases,
+                "amount": amount,
+                "credit_type": credit_type,
+                "message": message or ""
+            }
+            _ok = False
+            _hdrs = {}
             try:
-                import time
-                for _r in range(3):
-                    try:
-                        with db_cursor(commit=True) as _uc:
-                            _uc.execute("UPDATE transactions SET status='completed', completed_at=? WHERE id=?", (datetime.now().isoformat(), tx_id))
-                        break
-                    except Exception as _ue:
-                        if _r == 2: print("[create_transfer] 更新状态失败(锁):", _ue)
-                        else: time.sleep(1)
-            except Exception as _ue:
-                print("[create_transfer] update status error:", _ue)
-        else:
-            try:
-                enqueue(_mx + "/hive/sync/transfer", _pl, extra_headers=_hdrs)
-                print("[create_transfer] queued to outbox tx_id=" + str(tx_id))
-            except Exception as _qe:
-                print("[create_transfer] outbox enqueue error:", _qe)
+                _hdrs = hive_headers()
+                with httpx.Client(timeout=5, trust_env=False, headers=_hdrs) as _cli:
+                    _resp = _cli.post(_mx + "/hive/sync/transfer", json=_pl)
+                if 200 <= _resp.status_code < 300:
+                    _body = _resp.json()
+                    if _body.get("status") == "ok" or _body.get("skipped"):
+                        _ok = True
+            except Exception as _e:
+                print("[create_transfer] httpx error:", _e)
+            if _ok:
+                try:
+                    with db_cursor(commit=True) as _uc:
+                        _uc.execute("UPDATE transactions SET status='completed', completed_at=? WHERE id=?", (datetime.now().isoformat(), tx_id))
+                except Exception as _ue:
+                    print("[create_transfer] update status error:", _ue)
+            else:
+                try:
+                    enqueue(_mx + "/hive/sync/transfer", _pl, extra_headers=_hdrs)
+                    print("[create_transfer] queued to outbox tx_id=" + str(tx_id))
+                except Exception as _qe:
+                    print("[create_transfer] outbox enqueue error:", _qe)
 
-    return tx_id, None
+        return tx_id, None
 
 
 # ========== 红包（先冻结，后领取/退回） ==========

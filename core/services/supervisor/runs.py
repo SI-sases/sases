@@ -70,6 +70,27 @@ def get_active_run(user_id):
 
     return run
 
+    # 只有 running 状态才检查超时；proposed 等用户确认，不自动清
+    if run and run.get('status') == 'running':
+        try:
+            from datetime import timedelta
+            history = json.loads(run['history'] or '[]')
+            last_at = None
+            if history:
+                last_at = history[-1].get('at')
+            if not last_at:
+                last_at = run.get('created_at')
+            if last_at:
+                last_dt = datetime.fromisoformat(last_at.replace('Z', '').replace(' ', 'T'))
+                if datetime.now() - last_dt > timedelta(minutes=5):
+                    print('[supervisor] run ' + str(run['id']) + ' 超时 30 分钟，自动中断')
+                    finish_run(run['id'], 'timeout')
+                    return None
+        except Exception as e:
+            print('[supervisor] 超时检测失败: ' + str(e))
+
+    return run
+
 
 def create_run(user_id, conversation_id, supervisor_id, goal, task_type=None, max_rounds: int = None):
     with db_cursor(commit=True) as cur:
@@ -125,7 +146,7 @@ def finish_run(run_id, status='completed'):
         if _conv_id:
             from ..swarm.helpers import _insert_message as _im_fin
             if status == 'completed':
-                _msg_fin = '[SUMMARY]:✅ 任务已完成'
+                _msg_fin = '[SUMMARY]:OK 执行已结束'
                 try:
                     import json
                     with db_cursor() as _c_his:
@@ -133,11 +154,25 @@ def finish_run(run_id, status='completed'):
                         _his_row = _c_his.fetchone()
                         if _his_row and _his_row['history']:
                             _hist = json.loads(_his_row['history'])
-                            if _hist:
-                                for _step in reversed(_hist):
-                                    if _step.get('answer'):
-                                        _msg_fin = '[SUMMARY]:' + str(_step['answer'])
-                                        break
+                            if _hist and len(_hist) > 0:
+                                _last = _hist[-1]
+                                # 优先从 exec 字段提取（如果有具体的输出结果）
+                                _exec_str = _last.get('exec', '')
+                                if '|' in _exec_str:
+                                    _ans = _exec_str.split('|')[-1].strip()
+                                    if _ans:
+                                        _msg_fin = '[SUMMARY]:' + _ans
+                                # 备用方案：从 review.goal_reason 里提取
+                                else:
+                                    _review = _last.get('review', {})
+                                    _reason = _review.get('goal_reason', '')
+                                    import re
+                                    match = re.search(r"(?:返回|得到)\s*(.*?)[，。]", _reason)
+                                    if match:
+                                        _ans = match.group(1).strip()
+                                        _msg_fin = '[SUMMARY]:' + _ans
+                                    elif _reason:
+                                        _msg_fin = '[SUMMARY]:' + _reason[:100] + '...'
                 except Exception as _e_hist:
                     print('[supervisor] history 提取异常:', _e_hist)
             try:

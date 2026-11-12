@@ -20,8 +20,7 @@ class SendMessageRequest(BaseModel):
     content: str
     sender_agent_id: Optional[str] = None
     mode: Optional[str] = "normal"  # normal / free / swarm
-    max_steps: Optional[int] = None
-    enabled_api_ids: Optional[list] = None  # -1=不限，None=默认8
+    max_steps: Optional[int] = None  # -1=不限，None=默认8
 
 
 class ConversationCreateRequest(BaseModel):
@@ -71,27 +70,6 @@ async def get_messages(
 
 @router.post("/send")
 async def send_message(body: SendMessageRequest, user_id: int = Depends(get_current_user)):
-
-    # ===== #4 任务半锁死拦截 =====
-    if body.content and body.content.strip().startswith("#4"):
-        try:
-            from ..db import db_cursor
-            from datetime import datetime
-            from fastapi import HTTPException
-            with db_cursor() as _cur:
-                _cur.execute("SELECT expire_at FROM device_bindings WHERE user_id=?", (user_id,))
-                _row = _cur.fetchone()
-                if not _row:
-                    raise HTTPException(status_code=403, detail="⚠️ 您的授权未激活或已过期，无法执行 #4 任务。请前往启动器激活卡密。")
-                _expire_str = _row['expire_at'] if isinstance(_row, dict) else _row[0]
-                if datetime.fromisoformat(_expire_str) < datetime.now():
-                    raise HTTPException(status_code=403, detail="⚠️ 您的授权未激活或已过期，无法执行 #4 任务。请前往启动器激活卡密。")
-        except HTTPException:
-            raise
-        except Exception as e:
-            print(f"[卡密拦截异常] {e}")
-            raise HTTPException(status_code=500, detail="内部授权校验异常")
-    # ==============================
     result = await message_service.send_message(
         user_id=user_id,
         conversation_id=body.conversation_id,
@@ -100,7 +78,6 @@ async def send_message(body: SendMessageRequest, user_id: int = Depends(get_curr
         sender_agent_id=body.sender_agent_id,
         mode=body.mode,
         max_steps=body.max_steps,
-        enabled_api_ids=body.enabled_api_ids,
         msg_type=body.msg_type,
         attachments=body.attachments
     )

@@ -1224,30 +1224,3 @@ def init_db():
 if __name__ == '__main__':
     init_db()
     print("Database initialized successfully.")
-
-def _init_license_tables():
-    with db_cursor(commit=True) as cur:
-        cur.execute("""CREATE TABLE IF NOT EXISTS license_keys (
-            key_code TEXT PRIMARY KEY,
-            key_type TEXT,
-            status TEXT DEFAULT 'unused',
-            duration_days INTEGER,
-            seed_reward_total REAL,
-            seed_reward_daily REAL,
-            created_by TEXT,
-            created_at TEXT
-        )""")
-        cur.execute("""CREATE TABLE IF NOT EXISTS device_bindings (
-            user_id INTEGER,
-            device_fingerprint TEXT,
-            activated_at TEXT,
-            expire_at TEXT,
-            PRIMARY KEY (user_id, device_fingerprint)
-        )""")
-    print("✅ 卡密系统核心表初始化就绪")
-
-# 挂载到现有的 init_db 最后
-_orig_init = init_db
-def init_db():
-    _orig_init()
-    _init_license_tables()

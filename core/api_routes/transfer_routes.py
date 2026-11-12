@@ -11,21 +11,6 @@ from ..auth_service import SECRET_KEY
 from ..db import db_cursor
 from ..services import transfer_service
 
-import time
-from fastapi import HTTPException
-
-_rate_limit_dict = {}
-
-def _check_rate_limit(user_id: int):
-    now = time.time()
-    if user_id not in _rate_limit_dict:
-        _rate_limit_dict[user_id] = []
-    # 清理 60 秒前的记录
-    _rate_limit_dict[user_id] = [t for t in _rate_limit_dict[user_id] if now - t < 60]
-    if len(_rate_limit_dict[user_id]) >= 5:
-        raise HTTPException(status_code=429, detail="⚠️ 操作过于频繁，请稍后再试（每分钟限制 5 次）")
-    _rate_limit_dict[user_id].append(now)
-
 router = APIRouter(prefix="/transfer", tags=["transfer"])
 
 security = HTTPBearer()

@@ -156,9 +156,6 @@ class HarnessRuntime:
             pass
 
     def invoke_tool(self, module_id: str, params: Dict[str, Any]) -> ToolInvokeResponse:
-        if module_id.startswith("ext_api_"):
-            from .tool_gateway import invoke_tool as gw_invoke_tool
-            return gw_invoke_tool(module_id, params)
         import time as _t2
         _start = _t2.time()
         info = self._modules.get(module_id)
