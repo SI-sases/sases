@@ -5,7 +5,7 @@ from ... import config
 from ...db import db_cursor
 from .. import memory_service
 from .. import feedback_service
-from .prompts import COMMANDER_SYSTEM_PROMPT
+from .prompts import REPLAN_SYSTEM_PROMPT,  COMMANDER_SYSTEM_PROMPT
 # 占位，待读取后精确修改, REPLAN_SYSTEM_PROMPT
 from .reviewer import UNRECOVERABLE_KEYWORDS
 from .memory_cache import _pending
@@ -17,7 +17,7 @@ from .task_state import _load_task_state
 async def generate_script_for_task(user_id, conversation_id, user_input, failed_results):
     """常规拆解失败时，让 LLM 直接生成 Python 脚本。返回脚本代码或 None。"""
     try:
-        from .prompts import SCRIPT_FALLBACK_PROMPT
+        from .prompts import REPLAN_SYSTEM_PROMPT,  SCRIPT_FALLBACK_PROMPT
     except Exception as _e_imp:
         print("[script_fallback] import SCRIPT_FALLBACK_PROMPT 失败: " + str(_e_imp))
         return None
