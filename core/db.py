@@ -1221,6 +1221,60 @@ def init_db():
         cur.execute("CREATE INDEX IF NOT EXISTS idx_feedback_reason ON task_feedback(reason_tag)")
         print("[db] task_feedback 表就绪")
 
+        # ========== P0-B: 商业化卡密与付费墙（v0.50.0） ==========
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS license_keys (
+                key_code TEXT PRIMARY KEY,
+                key_type TEXT,
+                duration_days INTEGER,
+                seed_reward_total REAL,
+                seed_reward_daily REAL,
+                status TEXT DEFAULT 'unused',
+                banned_at TEXT,
+                ban_reason TEXT,
+                created_at TEXT
+            )
+        """)
+
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS device_bindings (
+                user_id INTEGER,
+                device_fingerprint TEXT,
+                license_key TEXT,
+                activated_at TEXT,
+                expire_at TEXT,
+                PRIMARY KEY (user_id, device_fingerprint)
+            )
+        """)
+        _ensure_column(cur, "license_keys", "banned_at", "TEXT")
+        _ensure_column(cur, "license_keys", "ban_reason", "TEXT")
+        _ensure_column(cur, "device_bindings", "license_key", "TEXT")
+
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_device_bindings_key ON device_bindings(license_key)")
+
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS exec_audit (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                device_fp TEXT,
+                task_hash TEXT,
+                allowed INTEGER,
+                reason TEXT,
+                created_at TEXT NOT NULL
+            )
+        """)
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_exec_audit_user ON exec_audit(user_id, created_at)")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_exec_audit_time ON exec_audit(created_at)")
+
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS system_config (
+                key TEXT PRIMARY KEY,
+                value TEXT,
+                updated_at TEXT
+            )
+        """)
+        print("[db] 商业化卡密 + 执行审计 + 系统配置表就绪")
+
 if __name__ == '__main__':
     init_db()
     print("Database initialized successfully.")
