@@ -270,6 +270,10 @@ class MainWindow(QMainWindow):
         self.btn_activate.clicked.connect(self._do_activate)
         license_layout.addWidget(self.btn_activate)
         
+        self.lbl_license_expire = QLabel("")
+        license_layout.addWidget(self.lbl_license_expire)
+        self._update_license_expire()
+
         self.lbl_license_status = QLabel("")
         self.lbl_license_status.setStyleSheet("color: #ff9500; font-size: 13px; margin-top: 10px;")
         license_layout.addWidget(self.lbl_license_status)
@@ -346,6 +350,34 @@ class MainWindow(QMainWindow):
             if url: f.write(f"DEEPSEEK_BASE_URL={url}\n")
             if model: f.write(f"MODEL_NAME={model}\n")
         QMessageBox.information(self, "成功", "配置已保存，重启服务生效。")
+
+    def _update_license_expire(self):
+        import os, json
+        lic_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "license.json")
+        if os.path.exists(lic_path):
+            try:
+                with open(lic_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    exp = data.get("expire_at", "")
+                    if exp:
+                        self.lbl_license_expire.setText(f"当前授权有效期至：{exp[:10]}")
+                        self.lbl_license_expire.setStyleSheet("color: #34c759; font-size: 13px;")
+                        return
+            except: pass
+        
+        cfg_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "launcher_config.json")
+        if os.path.exists(cfg_path):
+            try:
+                with open(cfg_path, "r", encoding="utf-8") as f:
+                    cfg = json.load(f)
+                    exp = cfg.get("license_expire_at")
+                    if exp:
+                        self.lbl_license_expire.setText(f"当前授权有效期至：{exp[:10]}")
+                        self.lbl_license_expire.setStyleSheet("color: #34c759; font-size: 13px;")
+                        return
+            except: pass
+        self.lbl_license_expire.setText("当前未激活或授权已失效")
+        self.lbl_license_expire.setStyleSheet("color: #ff9500; font-size: 13px;")
 
     def _do_activate(self):
         key = self.license_input.text().strip()
