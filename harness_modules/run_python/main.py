@@ -83,14 +83,6 @@ def _check_ast(code):
 
 
 def run(params):
-
-    import re
-    _code_str = params.get('code', '') if isinstance(params, dict) else ''
-    _forbidden_keywords = ['users.db', 'import sqlite3', 'import core', 'os.remove', 'shutil.rmtree']
-    for _kw in _forbidden_keywords:
-        if _kw in _code_str:
-            return {'success': False, 'error': f'⚠️ 涉及底层资产或系统文件操作，已被安全沙箱物理拦截！({_kw})'}
-
     os.environ['PYTHONIOENCODING'] = 'utf-8'
     os.environ['PYTHONUTF8'] = '1'
     code = params.get('code', '')

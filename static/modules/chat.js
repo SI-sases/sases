@@ -318,8 +318,7 @@ async function sendMessage() {
       content: text,
       sender_agent_id: chatState.senderAgentId,
       mode: chatState.mode,
-      max_steps: _maxSteps,
-      enabled_api_ids: window.currentSessionAPIs || []
+      max_steps: _maxSteps
     });
 
     if (!chatState.conversationId) {
@@ -359,21 +358,7 @@ async function sendMessage() {
     }
   } catch (err) {
     updateMessageStatus(tempId, 'failed');
-    
-    let errorText = "发送失败";
-    try {
-        const parsed = JSON.parse(err.message);
-        errorText = parsed.detail || parsed.message || parsed.error || err.message;
-    } catch (e) {
-        errorText = err.message;
-    }
-    
-    if (typeof appendMessage === 'function') {
-         appendMessage('assistant', errorText, '系统提示', null, new Date().toISOString(), false, chatState);
-    } else {
-        console.error('未找到 appendMessage 函数，报错:', errorText);
-    }
-}
+  }
 }
 
 // ========== 草稿任务 / Task编辑器 / 草稿任务 / Task编辑器 ==========
