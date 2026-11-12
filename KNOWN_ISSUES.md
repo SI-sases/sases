@@ -1,7 +1,20 @@
  
-## 2026-11-12 P2 ÒÅÁô£ºsupervisor ĞøÂÖ±ÀÀ£ 
+## 2026-11-12 P2 supervisor Ö± 
  
-- ÏÖÏó£º`[supervisor] ĞøÂÖÊ§°Ü: name 'run' is not defined` + `finish_run -
-- Ó°Ïì£ºÈÎÎñÖ»Ö´ĞĞ 1 ²½¾Í½áÊø£¬ÓÃ»§¿´µ½"OK Ö´ĞĞÒÑ½áÊø"ÊÇ¼ÙÍê³É 
-- ¶¨Î»£º`core/services/supervisor/continuation.py` »ò `core/services/swarm/executor_callback.py` ÀïµÄ `check_and_continue` 
-- ĞŞ¸´£ºP0-E Íê³Éºó´¦Àí£¬ÓÅÏÈ¼¶ÖĞ 
+- `[supervisor] Ê§: name 'run' is not defined` + `finish_run -
+- Ó°ì£ºÖ»Ö´ 1 Í½Ã»"OK Ö´Ñ½"Ç¼ 
+- Î»`core/services/supervisor/continuation.py`  `core/services/swarm/executor_callback.py`  `check_and_continue` 
+- Ş¸P0-E ÉºÈ¼ 
+
+## 2026-11-12 P0 åå¾…å¤„ç†
+
+- [é«˜] build_portable.py å¿…é¡»å« core/keys/license_pub.pemï¼ˆå¦åˆ™å®¢æˆ·ç«¯æ— æ³•æ¿€æ´»ï¼‰
+- [ä¸­] P2 é—ç•™ supervisor ç»­è½®å´©æºƒï¼ˆname run is not definedï¼‰
+- [ä¸­] ok_legacy_plaintext æ˜¯è¿‡æ¸¡æ–¹æ¡ˆï¼Œç­¾ license.json å‰ç«¯æ”¹é€ ååº”å…³æ‰
+- [ä½] check_exec çš„ free_mode åˆ†æ”¯ä¸å†™å®¡è®¡
+- [ä½] license.json çš„ user_id ä¸å‚ä¸æœ¬åœ°æ ¡éªŒï¼Œé äº‘ç«¯ (user_id, fp) åŒ¹é…ä¿æŠ¤ï¼Œéœ€æ–‡æ¡£åŒ–
+
+## 2026-11-13 P2 é—ç•™å·²ä¿®å¤
+
+- [x] supervisor ç»­è½®å´©æºƒï¼šcontinuation.py:135 æ— æ¡ä»¶ return + decider.py:47 run æœªå®šä¹‰ï¼Œå‡å·²ä¿®
+- [x] å¤šè½®ä»»åŠ¡èƒ½çœŸæ­£è·‘å®Œï¼Œfinish_run çŠ¶æ€ä» error å˜ completed
