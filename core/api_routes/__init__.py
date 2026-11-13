@@ -33,4 +33,3 @@ from . import compute_routes
 from . import yunchong_routes
 
 from . import hive_task_routes
-from . import license_routes

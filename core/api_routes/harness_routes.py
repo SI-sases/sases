@@ -35,32 +35,6 @@ async def get_modules(user_id: int = Depends(get_current_user)):
 
 @router.post("/execute")
 async def execute(body: ExecuteRequest, user_id: int = Depends(get_current_user)):
-    # ===== P0-E: /harness/execute 门禁（防未付费用户绕过 #1~#4 直调 API）=====
-    try:
-        from core.services.license_service import get_cached_exec_token, verify_exec_token
-        _tok = get_cached_exec_token()
-        if not verify_exec_token(_tok):
-            raise HTTPException(status_code=403, detail="exec_token_invalid")
-        import json as _j_lic
-        try:
-            _p = _j_lic.loads(_tok)["payload"]
-            _tok_uid = int(_p.get("uid", -1))
-        except Exception:
-            raise HTTPException(status_code=403, detail="token_parse_error")
-        try:
-            if isinstance(user_id, dict):
-                _req_uid = int(user_id.get("id") or user_id.get("user_id") or -1)
-            else:
-                _req_uid = int(user_id)
-        except Exception:
-            _req_uid = -1
-        if _req_uid != _tok_uid:
-            raise HTTPException(status_code=403, detail="token_user_mismatch")
-    except HTTPException:
-        raise
-    except ImportError:
-        raise HTTPException(status_code=500, detail="license_service_missing")
-    # ===== P0-E end =====
     try:
         result = harness_service.execute_module(body.module_id, body.params)
         return {"result": result}
