@@ -83,3 +83,4 @@ keys/*.pem
 core/keys/*.pem 
 license.json
 launcher_config.json
+_archive/
