@@ -118,46 +118,8 @@ async def send_group_message(group_id: int, body: GroupMessageRequest, user_id: 
     # 检测 @智能体 触发 AI 回复
     if not body.agent_id:
         import asyncio as _aio
-        _aio.create_task(_handle_at_agent(group_id, user_id, body.content))
+        _aio.create_task(group_service.handle_at_agent(group_id, user_id, body.content))
     return {"status": "sent"}
-
-
-async def _handle_at_agent(group_id, user_id, content):
-    """@智能体触发 AI 回复（异步后台）"""
-    from ..services import group_service, group_resource_service
-    from ..db import db_cursor
-    agent_name, question = group_service.parse_at_prefix(content)
-    if not agent_name:
-        return
-    if group_service._is_human_in_group(group_id, agent_name):
-        return
-    agent_id = group_service._find_agent_id_by_name(group_id, agent_name)
-    if not agent_id:
-        return
-    with db_cursor() as cur:
-        cur.execute("SELECT id FROM group_resource_pool WHERE group_id=? AND agent_id=? AND enabled=1", (group_id, agent_id))
-        if not cur.fetchone():
-            return
-    if not question:
-        question = '你好'
-    ok, reply = await group_resource_service.call_agent_with_group_resource(group_id, user_id, agent_id, question)
-    if not ok:
-        reply = f'⚠️ ' + str(reply)
-    group_service.insert_agent_message(group_id, agent_id, reply, trigger_user_id=user_id)
-    try:
-        from .ws_routes import broadcast_to_group
-        with db_cursor() as cur:
-            cur.execute("SELECT global_group_id FROM groups WHERE id=?", (group_id,))
-            _r = cur.fetchone()
-        if _r and _r['global_group_id']:
-            await broadcast_to_group(_r['global_group_id'], {
-                'type': 'message',
-                'content': reply,
-                'sender_id': None,
-                'sender_agent_id': agent_id,
-            })
-    except Exception as _e:
-        print('[at-agent] ws push failed:', _e)
 
 
 @router.get("/{group_id}/members")
