@@ -38,6 +38,27 @@ def list_modules():
 
 def execute_module(module_id: str, params: dict):
     """动态加载并执行指定模块"""
+    # ===== P0: render 分类拦截 =====
+    try:
+        import sqlite3 as _sqlite_p0
+        _conn_p0 = _sqlite_p0.connect("users.db")
+        _cur_p0 = _conn_p0.cursor()
+        _cur_p0.execute("SELECT api_category FROM api_registry WHERE api_id=?", (module_id,))
+        _row_p0 = _cur_p0.fetchone()
+        _conn_p0.close()
+        _cat_p0 = _row_p0[0] if _row_p0 else None
+    except Exception:
+        _cat_p0 = None
+    if _cat_p0 == "render":
+        return {
+            "status": "rendered",
+            "render": module_id,
+            "params": params,
+            "needs_frontend": True,
+            "review_strategy": "skip",
+        }
+    # ===== P0 end =====
+
     base_dir = _get_modules_dir()
     module_dir = os.path.join(base_dir, module_id)
     if not os.path.isdir(module_dir):
