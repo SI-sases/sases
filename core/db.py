@@ -1221,6 +1221,27 @@ def init_db():
         cur.execute("CREATE INDEX IF NOT EXISTS idx_feedback_reason ON task_feedback(reason_tag)")
         print("[db] task_feedback 表就绪")
 
+
+        # ===== P0: api_registry =====
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS api_registry (
+                api_id TEXT PRIMARY KEY,
+                endpoint TEXT,
+                description TEXT,
+                params_schema TEXT,
+                capability_tags TEXT,
+                api_category TEXT DEFAULT 'harness',
+                task_mode TEXT DEFAULT 'sync',
+                status TEXT DEFAULT 'active',
+                created_at TEXT,
+                updated_at TEXT
+            )
+        """)
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_api_category ON api_registry(api_category, status)")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_api_status ON api_registry(status)")
+        print("[db] api_registry ok")
+        # ===== P0 end =====
+
 if __name__ == '__main__':
     init_db()
     print("Database initialized successfully.")
