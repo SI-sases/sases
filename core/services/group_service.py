@@ -856,3 +856,42 @@ def toggle_mute(group_id, user_id, muted):
     with db_cursor(commit=True) as cur:
         cur.execute('UPDATE group_members SET is_muted=? WHERE group_id=? AND user_id=?', (1 if muted else 0, group_id, user_id))
     return True, {'is_muted': bool(muted)}
+
+
+async def handle_at_agent(group_id, user_id, content):
+    """@智能体触发 AI 回复（异步后台）"""
+    from . import group_resource_service
+    agent_name, question = parse_at_prefix(content)
+    if not agent_name:
+        return
+    if _is_human_in_group(group_id, agent_name):
+        return
+    agent_id = _find_agent_id_by_name(group_id, agent_name)
+    if not agent_id:
+        return
+    with db_cursor() as cur:
+        cur.execute("SELECT id FROM group_resource_pool WHERE group_id=? AND agent_id=? AND enabled=1", (group_id, agent_id))
+        if not cur.fetchone():
+            return
+    if not question:
+        question = '你好'
+    ok, reply = await group_resource_service.call_agent_with_group_resource(group_id, user_id, agent_id, question)
+    if not ok:
+        reply = f'⚠️ ' + str(reply)
+    insert_agent_message(group_id, agent_id, reply, trigger_user_id=user_id)
+    try:
+        from ..api_routes.ws_routes import broadcast_to_group
+        with db_cursor() as cur:
+            cur.execute("SELECT global_group_id FROM groups WHERE id=?", (group_id,))
+            _r = cur.fetchone()
+        if _r and _r['global_group_id']:
+            await broadcast_to_group(_r['global_group_id'], {
+                'type': 'message',
+                'content': reply,
+                'sender_id': None,
+                'sender_agent_id': agent_id,
+            })
+    except Exception as _e:
+        print('[at-agent] ws push failed:', _e)
+
+
