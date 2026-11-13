@@ -199,8 +199,6 @@ from .api_routes import (
     swarm_routes,
     hive_task_routes,
     version_routes,
-    auth_check_routes,
-    license_routes,
 )
 
 
@@ -810,8 +808,6 @@ def create_app() -> FastAPI:
     app.include_router(hive_task_routes.router)
     app.include_router(feedback_routes.router)
     app.include_router(version_routes.router)
-    app.include_router(auth_check_routes.router, tags=["auth-check"])
-    app.include_router(license_routes.router)
 
     @app.get("/static/index.html", response_class=HTMLResponse)
     async def serve_index():
