@@ -67,7 +67,7 @@ async def send_message(
     msg_type: str = "standard",
     max_steps: int = None,
     attachments: list = None
-):
+, enabled_api_ids=None):
     print(f"[MSG_DEBUG] content={content!r} | mode={mode!r} | agent_id={agent_id!r} | msg_type={msg_type}")
 
     # ===== P0-D: 付费墙预检（#1~#4 执行类消息必须通过 license 检查）=====
@@ -109,6 +109,49 @@ async def send_message(
             print('[message] 好友投递失败: ' + str(_e_fc))
 
     _scan_content = _normalize_prefix(content)
+
+    # ===== #5 定时任务解析 =====
+    if _scan_content.strip().startswith('#5:') or _scan_content.strip().startswith('#5：'):
+        import re
+        from .. import scheduled_task_service
+        
+        _body = _scan_content.strip()[3:].lstrip('：: ')
+        _match = re.match(r'每天(\d+)点(?:(\d+)分)?\s+(.+)', _body)
+        if _match:
+            hour = int(_match.group(1))
+            minute = int(_match.group(2)) if _match.group(2) else 0
+            template = _match.group(3)
+            cron = f"{minute} {hour} * * *"
+            
+            try:
+                _cid = conversation_id
+                _sid = sender_agent_id or agent_id
+                
+                _tid = scheduled_task_service.create_task(
+                    user_id=user_id,
+                    name=template[:10],
+                    cron_expr=cron,
+                    task_template=template,
+                    conversation_id=_cid,
+                    supervisor_id=_sid
+                )
+                _task = scheduled_task_service.get_task(_tid)
+                _reply = f"✅ 定时任务已创建！\n任务内容：{template}\n执行时间：每天 {hour:02d}:{minute:02d}\n下次执行：{_task['next_run_at'][:16]}"
+            except Exception as _e:
+                _reply = f"❌ 定时任务创建失败：{_e}"
+        else:
+            _reply = "❌ 格式错误。请使用：`#5: 每天5点 整理邮件` 或 `#5: 每天14点30分 备份数据库`"
+            
+        return {
+            'conversation_id': conversation_id,
+            'user_message': content,
+            'assistant_reply': _reply,
+            'agent_id': agent_id,
+            'sender_agent_id': sender_agent_id,
+            'mode': mode,
+        }
+    # =======================
+
     # #0 清锁（最先拦截，绕过所有锁检查）
     if isinstance(content, str) and content.strip().startswith('#0'):
         import os
@@ -458,6 +501,7 @@ async def send_message(
                             user_input=content,
                             supervisor_id=sender_agent_id or agent_id,
                             supervisor_run_id=_run_id,
+                            enabled_api_ids=enabled_api_ids,
                         )
                         # v0.38.0: precheck 拦截时，自动重试一次（用 reason 修正 prompt）
                         if _plan_result and isinstance(_plan_result, dict) and _plan_result.get('status') == 'no_plan' and 'precheck blocked' in str(_plan_result.get('reason', '')):
@@ -470,6 +514,7 @@ async def send_message(
                                     user_input=_retry_input,
                                     supervisor_id=sender_agent_id or agent_id,
                                     supervisor_run_id=_run_id,
+                            enabled_api_ids=enabled_api_ids,
                                 )
                             except Exception as _e_retry:
                                 print('[supervisor] precheck 重试失败: ' + str(_e_retry))
