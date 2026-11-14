@@ -1,3 +1,11 @@
+import httpx
+_orig_init = httpx.Client.__init__
+def _new_init(self, *args, **kwargs):
+    kwargs["default_encoding"] = "utf-8"
+    _orig_init(self, *args, **kwargs)
+httpx.Client.__init__ = _new_init
+
+# core/config.py
 # core/config.py
 import os
 from dotenv import load_dotenv
@@ -5,27 +13,14 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ========== DeepSeek API 配置（系统默认） ==========
-def _get_db_api_key():
-    try:
-        import sqlite3
-        _db = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "users.db")
-        if os.path.exists(_db):
-            _c = sqlite3.connect(_db)
-            _row = _c.execute("SELECT api_key_encrypted FROM model_configs WHERE model_type IN ('api', 'api_key') LIMIT 1").fetchone()
-            _c.close()
-            if _row and _row[0]:
-                from core.security import decrypt_api_key
-                return decrypt_api_key(_row[0])
-    except Exception:
-        pass
-    return ""
-
-DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY") or _get_db_api_key() or "sk-dummy-key-for-startup"
+DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY", "")
 DEEPSEEK_BASE_URL = os.environ.get("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1")
 MODEL_NAME = os.environ.get("MODEL_NAME", "deepseek-v4-flash")
 
 # ========== 蜂群/节点标识 ==========
 NODE_ID = os.environ.get("SASES_NODE_ID", "node-A")
+
+# anchor-check: restart-signal-path-fix
 
 # ========== Embedding 配置（用于知识库语义检索） ==========
 # 优先用专用 Embedding API，未配置时回退到 DeepSeek 配置
@@ -99,6 +94,8 @@ SHARED_LOG_FILE = os.environ.get("SHARED_LOG_FILE", "shared_pollinate_log.jsonl"
 CONTRIBUTION_LOG_DB = os.environ.get("CONTRIBUTION_LOG_DB", "users.db")
 
 # ========== 相似度与积分规则 ==========
+# 注意：SIMILARITY_THRESHOLD 是旧版 TF-IDF 使用的阈值
+# 新版 knowledge_service 使用 embedding 时会用独立的阈值，不使用这个值
 SIMILARITY_THRESHOLD = float(os.environ.get("SIMILARITY_THRESHOLD", "0.30"))
 EXTERNAL_SEED_REWARD = int(os.environ.get("EXTERNAL_SEED_REWARD", "5"))
 MANUAL_POLLINATE_BASIC_REWARD = int(os.environ.get("MANUAL_POLLINATE_BASIC_REWARD", "3"))
@@ -138,6 +135,9 @@ REPLAN_MAX_TOKENS = int(os.environ.get("REPLAN_MAX_TOKENS", "16000"))
 SUMMARY_MAX_TOKENS = 41003
 
 # ========== 蜂群模式（防篡改） ==========
+# off: 关闭（单用户，默认）
+# alert: 只告警（联邦早期，多信任方）
+# enforce: 强制（积分挂钩真实价值时）
 HIVE_MODE = os.environ.get("SASES_HIVE_MODE", "off").lower().strip()
 if HIVE_MODE not in ("off", "alert", "enforce"):
     HIVE_MODE = "off"
@@ -149,10 +149,3 @@ HIVE_HEARTBEAT_INTERVAL = int(os.environ.get("SASES_HIVE_HEARTBEAT_INTERVAL", "3
 
 # 每轮最大拆解步数（环境变量可调）
 MAX_STEPS = int(os.environ.get("SASES_MAX_STEPS", "8"))
-
-# ====================================================
-# 全局硬编码：强制覆盖 .env 的环境变量，指向云端主节点
-# ====================================================
-HIVE_MODE = 'alert'
-HIVE_PEERS = ['http://127.0.0.1:8001']
-HIVE_NODE_ID = 'local-node'  # 【必须加这一行】否则不会触发发送

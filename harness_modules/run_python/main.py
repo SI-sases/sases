@@ -4,8 +4,7 @@ import tempfile
 import os
 import sys
 
-MAX_CODE_LEN = 5000
-TIMEOUT = 150
+MAX_CODE_LEN = 50000
 TIMEOUT = 120
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -90,13 +89,9 @@ def run(params):
         return {'success': False, 'error': 'missing code'}
     if len(code) > MAX_CODE_LEN:
         return {'success': False, 'error': 'code too long'}
-        if "'''" in code or '"""' in code:
-            return {'success': False, 'error': '❌【语法拦截】禁止使用三引号！请立刻改用 "\\n".join([...]) 拼接文本，或改用多次短小的 replace。'}
     err = _check_ast(code)
     if err:
-        # 如果遇到语法错误，给出极其明确的重写建议
-        _friendly_err = err + "\n\n💡【急救提示】你的代码存在语法错误（大概率是引号嵌套或 f-string 截断）。\n请立刻重写：1. 千万不要嵌套双引号！ 2. 写脚本修改代码时，统一用单引号，多行文本用双引号加\n拼接。 3. 不要在 f-string 里塞复杂的字典或对象！"
-        return {'success': False, 'error': _friendly_err}
+        return {'success': False, 'error': err}
     tmp = None
     try:
         preamble = PREAMBLE.replace('REPO_ROOT_PLACEHOLDER', REPO_ROOT.replace(chr(92), '/'))
@@ -111,7 +106,7 @@ def run(params):
         r = subprocess.run([sys.executable, tmp], capture_output=True, text=True, timeout=TIMEOUT, encoding='utf-8', errors='replace', cwd=REPO_ROOT, env=_env)
         _err_msg = (r.stderr or '')[:500] if r.returncode != 0 else None
         return {
-            'success': (r.returncode == 0) and not any(m in (r.stdout or '') for m in ('❌', 'Traceback', 'SyntaxError')),
+            'success': r.returncode == 0,
             'stdout': (r.stdout or '')[:3000],
             'stderr': (r.stderr or '')[:1000],
             'error': _err_msg,

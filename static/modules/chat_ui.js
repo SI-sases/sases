@@ -109,9 +109,7 @@ export function createMessageElement(role, content, senderName, messageId, timeI
     if (msg_type === 'file' && attachments && attachments.length > 0) {
         return renderFileBubble(`[FILE]:${attachments[0].name}|${attachments[0].size || 0}|${attachments[0].url}`, role, senderName);
     }
-    if (typeof content === 'string' && content.startsWith('[RED_PACKET]:')) { return renderRedPacketBubble(content, role, senderName); }
-    if (typeof content === 'string' && content.startsWith('[TRANSFER]:')) { return renderTransferBubble(content, role, senderName); }
-
+    if (typeof content === 'string' && content.startsWith('[RED_PACKET]:')) { return renderRedPacketBubble(content); }
   if (typeof content === 'string' && content.startsWith('[IMAGE]:')) { return renderImageBubble(content, role, senderName); }
   if (typeof content === 'string' && content.startsWith('[FILE]:')) { return renderFileBubble(content, role, senderName); }
   const wrapper = document.createElement('div');
@@ -423,194 +421,44 @@ export function renderImageBubble(content, role = 'user', senderName = null) {
 }
 
 
-export function renderTransferBubble(content, role = 'user', senderName = null) {
-  let data = {};
-  try { data = JSON.parse(content.substring(11)); } catch (e) {}
-  const amount = data.amount || 0;
-  const typeStr = data.credit_type === 'compute' ? '算力' : '积分';
-  const icon = data.credit_type === 'compute' ? '⚡' : '💰';
-  const note = data.message || '转账';
-  const isSelf = role === 'user';
-  
-  const el = document.createElement('div');
-  el.className = 'transfer-bubble';
-  el.style.cssText = isSelf 
-    ? 'background:linear-gradient(135deg, #f59e0b, #f97316);color:#fff;padding:12px;border-radius:8px;cursor:pointer;width:200px;'
-    : 'background:#fff;color:#333;padding:12px;border-radius:8px;cursor:pointer;width:200px;border:1px solid #e5e5e5;';
-    
-  el.innerHTML = `<div style="font-size:14px;font-weight:bold;margin-bottom:8px;">${icon} ${note}</div>
-                  <div style="font-size:24px;font-weight:bold;color:${isSelf ? '#fff' : '#f59e0b'};">${amount} <span style="font-size:14px;font-weight:normal;color:${isSelf ? '#fff' : '#666'};">${typeStr}</span></div>
-                  <div style="font-size:12px;opacity:0.9;margin-top:8px;border-top:1px solid ${isSelf ? 'rgba(255,255,255,0.3)' : '#eee'};padding-top:4px;">转账</div>`;
-                  
-  el.onclick = () => {
-    let html = `
-      <div style="padding: 30px 20px; text-align: center; background: #f4f4f4; min-height: 100vh;">
-        <div style="font-size: 40px; margin-bottom: 10px;">${icon}</div>
-        <div style="font-size: 24px; font-weight: bold; margin-bottom: 20px;">${amount} ${typeStr}</div>
-        <div style="color: #666; margin-bottom: 10px;">${note}</div>
-        <div style="color: #f59e0b; font-size: 14px;">✅ 已实时到账</div>
-      </div>
-    `;
-    if (window.openSubpage) {
-      window.openSubpage('转账详情', html, { returnAction: () => { window.closeSubpage(); } });
-    } else {
-      alert(`转账详情\n金额：${amount} ${typeStr}\n备注：${note}\n(实时到账)`);
-    }
-  };
-  
-  const wrapper = document.createElement('div');
-  wrapper.style.display = 'flex';
-  wrapper.style.justifyContent = isSelf ? 'flex-end' : 'flex-start';
-  wrapper.appendChild(el);
-  return wrapper;
+export function renderRedPacketBubble(content) {
+
+function renderTransferBubble(text) {
+    const parts = String(text).replace('[TRANSFER]:', '').split('|');
+    const amount = parts[0] || '0';
+    const note = parts[1] || '';
+    const el = document.createElement('div');
+    el.className = 'transfer-bubble';
+    el.style.cssText = 'background:#f59e0b;color:#fff;padding:8px 12px;border-radius:8px;cursor:pointer;';
+    el.innerHTML = '<div style="font-size:12px;">💰 转账</div><div style="font-size:18px;font-weight:bold;">' + amount + ' 积分</div>' + (note ? '<div style="font-size:12px;">' + note + '</div>' : '');
+    return el;
 }
 
-export function renderRedPacketBubble(content, role = 'user', senderName = null) {
   let data = {};
-  try { data = JSON.parse(content.substring(13)); } catch (e) {}
-  const _myId = localStorage.getItem('sases_user_id');
-  // 优先用 sender_id 判断是不是自己发的，如果没有 sender_id 再回退到 role
-  const isSelf = data.sender_id ? (String(data.sender_id) === String(_myId)) : (role === 'user');
-  
-  const senderTitle = isSelf ? '我发出的红包' : `${data.sender_name || senderName || '好友'}的红包`;
-  
+  try { data = JSON.parse(content.substring(12)); } catch (e) {}
   const div = document.createElement('div');
   div.className = 'red-packet-bubble';
   div.dataset.redPacketTx = data.tx_id || '';
-  div.style.cssText = 'background:linear-gradient(135deg, #ef4444, #f43f5e);color:#fff;padding:12px;border-radius:8px;cursor:pointer;width:200px;';
-  div.innerHTML = `<div style="font-size:14px;display:flex;align-items:center;">🧧 ${senderTitle}</div>
-                   <div style="font-size:24px;font-weight:bold;margin-top:8px;">¥${data.amount || 0}</div>
-                   ${data.message ? `<div style="font-size:12px;opacity:0.85;margin-top:8px;">${data.message}</div>` : ''}`;
-                   
-  div.onclick = async () => {
-    if (!data.tx_id) return;
-    
-    let detailData = null;
-    try {
-      const res = await fetch('/transfer/detail/' + data.tx_id, { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('sases_token') } });
-      if (res.ok) {
-        detailData = await res.json();
-      }
-    } catch(e) {}
-
-    let statusText = (detailData && detailData.status === 'completed') ? '已领取' : '未领取';
-
-    if (isSelf) {
-      if (window.openSubpage) {
-        window.openSubpage('红包详情', `
-          <div style="background:#f4f4f4;min-height:100vh;padding-top:40px;text-align:center;">
-            <div style="width:80px;height:80px;background:#ef4444;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 15px;">🧧</div>
-            <div style="font-size:18px;color:#333;">我发出的红包</div>
-            <div style="color:#888;margin-top:10px;font-size:14px;">${data.message || '恭喜发财，大吉大利'}</div>
-            <div style="font-size:32px;font-weight:bold;margin-top:20px;color:#333;">¥${data.amount || 0}</div>
-            <div style="color:#ef4444;margin-top:10px;font-size:16px;font-weight:bold;">${statusText}</div>
-          </div>
-        `, { returnAction: () => window.closeSubpage() });
-      }
-      return;
-    }
-
-    // 如果已经领过，直接显示灰色的“已领”页面
-    if (statusText === '已领取') {
-      if (window.openSubpage) {
-        window.openSubpage('红包详情', `
-          <div style="background:#f4f4f4;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding-top:40px;">
-            <div style="width:80px;height:80px;background:#ddd;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;margin-bottom:15px;">🧧</div>
-            <div style="font-size:18px;font-weight:bold;color:#333;margin-bottom:10px;">${data.sender_name || '好友'}发出的红包</div>
-            <div style="color:#888;margin-bottom:40px;font-size:14px;">${data.message || '恭喜发财，大吉大利'}</div>
-            
-            <div style="width:120px;height:120px;background:#eee;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#999;font-size:36px;font-weight:bold;">
-              已领
-            </div>
-            <div style="margin-top:20px;font-size:16px;color:#f59e0b;font-weight:bold;">手慢了，红包派完了 / 已存入零钱</div>
-          </div>
-        `, { returnAction: () => window.closeSubpage() });
-      }
-      return;
-    }
-
-    // 未领取的状态，显示金色的开字
-    let html = `
-      <div style="background:#f4f4f4;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding-top:40px;">
-        <div style="width:80px;height:80px;background:#ddd;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;margin-bottom:15px;">🧧</div>
-        <div style="font-size:18px;font-weight:bold;color:#333;margin-bottom:10px;">${data.sender_name || '好友'}发出的红包</div>
-        <div style="color:#888;margin-bottom:40px;font-size:14px;">${data.message || '恭喜发财，大吉大利'}</div>
-        
-        <div id="rp-btn-open" style="width:120px;height:120px;background:linear-gradient(135deg,#f59e0b,#f97316);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:36px;font-weight:bold;cursor:pointer;box-shadow:0 10px 20px rgba(245,158,11,0.3);">
-          開
-        </div>
-        <div id="rp-msg" style="margin-top:20px;font-size:16px;color:#f59e0b;font-weight:bold;"></div>
-      </div>
-    `;
-    
-    if (window.openSubpage) {
-      window.openSubpage('拆红包', html, { returnAction: () => window.closeSubpage() });
-      
-      setTimeout(() => {
-        const btn = document.getElementById('rp-btn-open');
-        if (btn) {
-          btn.onclick = async () => {
-            if (btn.getAttribute('data-loading') === '1') return;
-            btn.setAttribute('data-loading', '1');
-            btn.textContent = '...';
-            try {
-              const token = localStorage.getItem('sases_token');
-              const res = await fetch('/transfer/claim', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                body: JSON.stringify({ tx_id: data.tx_id })
-              });
-              const resData = await res.json();
-              const msgEl = document.getElementById('rp-msg');
-              if (res.ok) {
-                btn.style.background = '#eee';
-                btn.style.color = '#999';
-                btn.style.boxShadow = 'none';
-                btn.textContent = '已领';
-                if (msgEl) msgEl.textContent = '🎉 领取成功，积分已到账';
-                setTimeout(() => {
-                  window.closeSubpage();
-                  if (window.loadMessages && window.chatState && window.chatState.conversationId) {
-                    window.loadMessages(window.chatState.conversationId);
-                  }
-                }, 1500);
-              } else {
-                // 如果没有 ok，说明可能是已经领过，或者已过期
-                const errMsg = resData.detail || resData.error || '';
-                btn.style.background = '#eee';
-                btn.style.color = '#999';
-                btn.style.boxShadow = 'none';
-                btn.textContent = '已领';
-                btn.setAttribute('data-loading', '0');
-                if (msgEl) {
-                  msgEl.style.color = '#f59e0b'; // 改成微信的橙色
-                  if (errMsg.includes('completed')) {
-                    msgEl.textContent = '手慢了，红包派完了 / 已存入零钱';
-                  } else {
-                    msgEl.textContent = '红包已失效';
-                  }
-                }
-              }
-            } catch (e) {
-              btn.textContent = '開';
-              btn.setAttribute('data-loading', '0');
-              const msgEl = document.getElementById('rp-msg');
-              if (msgEl) {
-                msgEl.style.color = '#ef4444';
-                msgEl.textContent = '网络异常或已领取';
-              }
-            }
-          };
-        }
-      }, 100);
-    }
-  };
-  
-  const wrapper = document.createElement('div');
-  wrapper.style.display = 'flex';
-  wrapper.style.justifyContent = isSelf ? 'flex-end' : 'flex-start';
-  wrapper.appendChild(div);
-  return wrapper;
+  const t1 = document.createElement('div');
+  t1.style.fontSize = '13px';
+  t1.style.opacity = '0.9';
+  t1.textContent = '🧧 红包';
+  div.appendChild(t1);
+  const t2 = document.createElement('div');
+  t2.style.fontSize = '20px';
+  t2.style.fontWeight = '700';
+  t2.style.marginTop = '4px';
+  t2.textContent = '¥' + (data.amount || 0);
+  div.appendChild(t2);
+  if (data.message) {
+    const t3 = document.createElement('div');
+    t3.style.fontSize = '12px';
+    t3.style.opacity = '0.85';
+    t3.style.marginTop = '4px';
+    t3.textContent = data.message;
+    div.appendChild(t3);
+  }
+  return div;
 }
 
 export function renderGroupRedPacketBubble(content) {

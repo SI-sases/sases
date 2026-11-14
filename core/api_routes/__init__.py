@@ -6,8 +6,6 @@ from . import harness_routes
 from . import agi_routes
 from . import space_routes
 from . import group_routes
-from . import license_routes
-from . import scheduled_routes
 from . import model_routes
 from . import agent_routes
 from . import chat_routes
@@ -35,5 +33,3 @@ from . import compute_routes
 from . import yunchong_routes
 
 from . import hive_task_routes
-from . import user_api_routes
-from . import scheduled_routes

@@ -1,144 +1,3 @@
-from core.services.outbox.outbox_worker import outbox_worker
-
-async def poll_cross_network_messages():
-    import asyncio, httpx, os
-    from core.db import db_cursor
-    from core.broadcast.ws_hub import broadcast_to_user
-
-    _master_url = os.environ.get("HIVE_MASTER", "http://127.0.0.1:8001")
-    
-    while True:
-        try:
-            await asyncio.sleep(1) # 刚才说的改成1秒，提高实时性
-            
-            with db_cursor() as cur:
-                cur.execute("SELECT id, sases_id FROM users WHERE username NOT LIKE 'remote_%'")
-                user = cur.fetchone()
-                if not user: 
-                    continue
-                user_id = user["id"]
-                sases_id = user["sases_id"]
-
-            url = f"{_master_url}/hive/sync/pull_messages?sases_id={sases_id}"
-            
-            headers = {}
-            try:
-                from core.broadcast.node_relay import hive_headers
-                headers = hive_headers()
-            except:
-                pass
-                
-            async with httpx.AsyncClient(timeout=5, trust_env=False, headers=headers) as client:
-                resp = await client.get(url)
-                
-                if resp.status_code == 200:
-                    data = resp.json()
-                    msgs = data.get("messages", [])
-                    
-                    for m in msgs:
-                        try:
-                            conv_id = None
-                            local_msg_id = None
-                            
-                            with db_cursor(commit=True) as cur:
-                                cur.execute("SELECT id FROM users WHERE sases_id=?", (m["sender_sases"],))
-                                sender_row = cur.fetchone()
-                                if not sender_row: 
-                                    continue
-                                sender_uid = sender_row["id"]
-
-                                cur.execute("SELECT id FROM conversations WHERE user_id=? AND target_user_id=? AND is_friend_chat=1", (user_id, sender_uid))
-                                conv = cur.fetchone()
-                                if not conv: 
-                                    continue
-                                conv_id = conv["id"]
-
-                                cur.execute("SELECT id FROM messages WHERE conversation_id=? AND content=? AND sender='friend'", (conv_id, m["content"]))
-                                if cur.fetchone(): 
-                                    continue
-
-                                cur.execute("INSERT INTO messages (conversation_id, sender, content, sender_agent_id, msg_type, attachments) VALUES (?, 'friend', ?, ?, ?, ?)", (conv_id, m["content"], m["sender_agent_id"], m["msg_type"], m["attachments"]))
-                                local_msg_id = cur.lastrowid
-
-                            # 【关键修复】确保缩进正确，且字段完整
-                            if conv_id and local_msg_id:
-                                await broadcast_to_user(user_id, {
-                                    "type": "sases_new_message", 
-                                    "sender": "friend",
-                                    "conversation_id": conv_id, 
-                                    "message_id": local_msg_id,
-                                    "content": m["content"], 
-                                    "sender_agent_id": m["sender_agent_id"],
-                                    "sender_name": "远端好友",
-                                    "msg_type": m.get("msg_type") or "standard", 
-                                    "attachments": m.get("attachments"),
-                                    "timestamp": str(m.get("created_at"))
-                                })
-                                print(f"[跨网拉取] 🎉 成功接收云端消息: {m['content']}")
-                                
-                                # 刷新前端会话列表
-                                await broadcast_to_user(user_id, {"type": "refresh_conversations"})
-                                
-                        except Exception as inner_e:
-                            print(f"💥 [跨网单条消息处理异常] {inner_e}")
-            # --- 拉取好友请求 ---
-            req_url = f"{_master_url}/hive/sync/pull_friend_requests?sases_id={sases_id}"
-            async with httpx.AsyncClient(timeout=5, trust_env=False) as client:
-                resp_req = await client.get(req_url)
-                if resp_req.status_code == 200:
-                    reqs = resp_req.json().get("requests", [])
-                    for r in reqs:
-                        with db_cursor(commit=True) as cur:
-                            # 查对方的本地 id（如果不存在就建影子）
-                            cur.execute("SELECT id FROM users WHERE sases_id=?", (r["sender_sases"],))
-                            sender_row = cur.fetchone()
-                            if not sender_row:
-                                cur.execute("INSERT INTO users (username, password_hash, sases_id) VALUES (?, 'shadow', ?)", (r["sender_name"], r["sender_sases"]))
-                                sender_uid = cur.lastrowid
-                            else:
-                                sender_uid = sender_row["id"]
-
-                            # 防止重复插入
-                            cur.execute("SELECT id FROM agent_friendships WHERE user_id=? AND target_user_id=?", (sender_uid, user_id))
-                            if not cur.fetchone():
-                                cur.execute("INSERT INTO agent_friendships (user_id, friend_agent_id, target_user_id, status) VALUES (?, 'dummy', ?, 'pending')", (sender_uid, user_id))
-
-                        # 推送前端刷新
-                        await broadcast_to_user(user_id, {"type": "new_friend_request"})
-                        print(f"[跨网好友] 收到来自 {r['sender_name']} 的请求")
-
-            # --- 拉取群消息 ---
-            group_url = f"{_master_url}/hive/sync/pull_group_messages?sases_id={sases_id}"
-            async with httpx.AsyncClient(timeout=5, trust_env=False) as client:
-                resp_g = await client.get(group_url)
-                if resp_g.status_code == 200:
-                    data_g = resp_g.json()
-                    for m in data_g.get("messages", []):
-                        with db_cursor(commit=True) as cur:
-                            # 找本地群
-                            cur.execute("SELECT id FROM groups WHERE global_group_id=?", (m["global_group_id"],))
-                            g_row = cur.fetchone()
-                            if not g_row: continue
-                            local_gid = g_row["id"]
-
-                            # 找发送者(如果本地没有则忽略)
-                            cur.execute("SELECT id FROM users WHERE sases_id=?", (m["sender_sases"],))
-                            s_row = cur.fetchone()
-                            sender_uid = s_row["id"] if s_row else 1
-
-                            # 去重
-                            cur.execute("SELECT id FROM group_messages WHERE group_id=? AND content=? AND sender_id=?", (local_gid, m["content"], sender_uid))
-                            if cur.fetchone(): continue
-
-                            cur.execute("INSERT INTO group_messages (group_id, sender_id, sender_agent_id, content, msg_type, attachments) VALUES (?, ?, ?, ?, ?, ?)", (local_gid, sender_uid, m["sender_agent_id"], m["content"], m["msg_type"], m["attachments"]))
-                            local_msg_id = cur.lastrowid
-
-                        from core.api_routes.ws_routes import broadcast_to_group
-                        await broadcast_to_group(local_gid, {"type": "message", "content": m["content"], "sender_id": sender_uid})
-                        print(f"[跨网群聊] 收到群消息: {m['content']}")
-        except Exception as outer_e:
-            pass
-
 # core/bootstrap.py
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -170,7 +29,6 @@ from .api_routes import (
     agi_routes,
     space_routes,
     group_routes,
-    scheduled_routes,
     model_routes,
     agent_routes,
     chat_routes,
@@ -465,7 +323,6 @@ async def periodic_group_red_packet():
                         message='每日群福利', source_type='group_pool', packet_type='lucky'
                     )
                     if ok:
-                        print("[跨网轮询] 正在向云端拉取新消息...")
                         with db_cursor(commit=True) as cur:
                             cur.execute('UPDATE groups SET last_red_packet_date=? WHERE id=?', (today, g['id']))
                         print(f'[group-rp] group {g["id"]} sent {amount}')
@@ -516,12 +373,6 @@ async def periodic_red_packet_expire():
             await asyncio.sleep(3600)
 
 @asynccontextmanager
-
-
-
-
-
-
 async def lifespan(app: FastAPI):
     asyncio.create_task(supervisor_service.resume_restart_pending_runs())
     init_db()
@@ -554,7 +405,6 @@ async def lifespan(app: FastAPI):
         print(f"[备份] 启动备份异常: {e}")
 
     from .services import state_service as _state_svc
-    from .services.scheduled_scheduler import scheduled_task_scheduler
 
     # 蜂巢模块（环境变量控制）
     try:
@@ -568,11 +418,7 @@ async def lifespan(app: FastAPI):
 
     # 【秒级】
     _background_tasks.append(asyncio.create_task(executor_service.start_background_executor()))
-
-    _background_tasks.append(asyncio.create_task(outbox_worker()))
-
     _background_tasks.append(asyncio.create_task(periodic_syntax_check()))
-    _background_tasks.append(asyncio.create_task(poll_cross_network_messages()))
 
     # 【分钟级】
     _background_tasks.append(asyncio.create_task(periodic_rescue_maintenance()))
@@ -591,7 +437,6 @@ async def lifespan(app: FastAPI):
     _background_tasks.append(asyncio.create_task(_state_svc.periodic_state_sync(interval_hours=24)))
     _background_tasks.append(asyncio.create_task(periodic_airdrop()))
     _background_tasks.append(asyncio.create_task(periodic_hlc_health()))
-    _background_tasks.append(asyncio.create_task(scheduled_task_scheduler()))
 
 
     # 【预热】启动后预热一次（不参与周期）
@@ -648,9 +493,6 @@ async def lifespan(app: FastAPI):
 
 
 def create_app() -> FastAPI:
-    from core.migrations import ensure_schema
-    ensure_schema()
-
     app = FastAPI(title="SASES", version="0.15.4", lifespan=lifespan)
 
     # 统一错误返回格式（兼容 error / message 两种前端读取方式）
@@ -678,23 +520,10 @@ def create_app() -> FastAPI:
 
     @app.middleware("http")
     async def _replica_read_only_middleware(request, call_next):
-        """副本拦截 + 主节点验签 + 业务日志黑匣子。"""
-        import time, logging
-        start_t = time.time()
-        path = request.url.path
-        # 只有这些关键业务路径和报错才会被记录，心跳和静态资源将被无视
-        is_business = any(k in path for k in ["/messages/", "/commander/", "/swarm/", "/work/", "/agent/"])
-        
-        def _log_result(resp):
-            process_t = time.time() - start_t
-            if is_business or resp.status_code >= 400:
-                log_msg = f"[API] {request.method} {path} - {resp.status_code} ({process_t:.3f}s)"
-                print(log_msg, flush=True)
-                logging.getLogger("business").info(log_msg)
-            return resp
-
+        """副本拦截 + 主节点验签。"""
         from core.hive.config import REPLICA_MODE, FORWARD_MODE, HIVE_ROLE
         from fastapi.responses import JSONResponse
+
 
         # 动态判断当前角色（选举后可能已变更）
         try:
@@ -707,43 +536,24 @@ def create_app() -> FastAPI:
         # ========== 主节点：转发请求验证 ==========
         # 当选 master：本地处理（转发请求需先验签）
         if _current_role == "master" and request.headers.get("X-Hive-Forwarded") != "true":
-            try:
-                response = await call_next(request)
-            except Exception as e:
-                logging.getLogger("business").error(f"[API ERROR] {request.method} {path} - {str(e)}")
-                print(f"[API ERROR] {request.method} {path} - {str(e)}", flush=True)
-                raise
-            return _log_result(response)
+            return await call_next(request)
 
         if _current_role == "master" and request.headers.get("X-Hive-Forwarded") == "true":
             from core.node.forwarder import verify_forward_signature, check_and_record_request
             ok, err = verify_forward_signature(request.headers)
             if not ok:
-                return _log_result(JSONResponse({"error": "forward verification failed", "reason": err}, status_code=401))
+                return JSONResponse({"error": "forward verification failed", "reason": err}, status_code=401)
             request_id = request.headers.get("X-Hive-Request-Id")
             node_id = request.headers.get("X-Hive-From-Node")
             if request_id and check_and_record_request(request_id, node_id):
-                return _log_result(JSONResponse({"error": "duplicate request"}, status_code=409))
-            
-            try:
-                response = await call_next(request)
-            except Exception as e:
-                logging.getLogger("business").error(f"[API ERROR] {request.method} {path} - {str(e)}")
-                print(f"[API ERROR] {request.method} {path} - {str(e)}", flush=True)
-                raise
-            return _log_result(response)
+                return JSONResponse({"error": "duplicate request"}, status_code=409)
+            return await call_next(request)
 
         # ========== 副本：拦截写操作并转发 ==========
         if not REPLICA_MODE:
-            try:
-                response = await call_next(request)
-            except Exception as e:
-                logging.getLogger("business").error(f"[API ERROR] {request.method} {path} - {str(e)}")
-                print(f"[API ERROR] {request.method} {path} - {str(e)}", flush=True)
-                raise
-            return _log_result(response)
-            
+            return await call_next(request)
         if request.method in ("POST", "PUT", "PATCH", "DELETE"):
+            path = request.url.path
             if not (path.startswith("/token")
                     or path.startswith("/auth")
                     or path.startswith("/hive")):
@@ -755,21 +565,14 @@ def create_app() -> FastAPI:
                         dict(request.headers), request.url.query
                     )
                     if status is not None:
-                        return _log_result(JSONResponse(resp, status_code=status))
-                return _log_result(JSONResponse(
+                        return JSONResponse(resp, status_code=status)
+                return JSONResponse(
                     {"error": "read-only replica",
                      "message": "本节点为只读副本，写操作请到主节点",
                      "code": 403},
                     status_code=403,
-                ))
-                
-        try:
-            response = await call_next(request)
-        except Exception as e:
-            logging.getLogger("business").error(f"[API ERROR] {request.method} {path} - {str(e)}")
-            print(f"[API ERROR] {request.method} {path} - {str(e)}", flush=True)
-            raise
-        return _log_result(response)
+                )
+        return await call_next(request)
 
     app.include_router(auth_routes.router)
     app.include_router(seed_routes.router)
@@ -778,11 +581,6 @@ def create_app() -> FastAPI:
     app.include_router(agi_routes.router)
     app.include_router(space_routes.router)
     app.include_router(group_routes.router)
-    from .api_routes import user_api_routes
-    from .api_routes import license_routes
-    app.include_router(license_routes.router)
-    app.include_router(user_api_routes.router)
-    app.include_router(scheduled_routes.router)
     app.include_router(model_routes.router)
     app.include_router(agent_routes.router)
     app.include_router(chat_routes.router)

@@ -17,13 +17,12 @@
   <link rel="manifest" href="/static/manifest.json">
   <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
   <meta name="theme-color" content="#007aff">
-  <!-- 拼音库,用于智能体列表分组 -->
+  <!-- 拼音库，用于智能体列表分组 -->
   <script src="/static/modules/pinyin-pro.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-
 </head>
 <body>
-<a href="/static/downloads/sases.zip" id="download-client-btn" style="position:fixed;top:12px;right:16px;z-index:9999;background:#2563eb;color:#fff;padding:8px 14px;border-radius:8px;text-decoration:none;font-size:14px;box-shadow:0 2px 8px rgba(0,0,0,.2);">📥 下载桌面版</a>
+<a href="#" id="download-client-btn" style="position:fixed;top:12px;right:16px;z-index:9999;background:#2563eb;color:#fff;padding:8px 14px;border-radius:8px;text-decoration:none;font-size:14px;box-shadow:0 2px 8px rgba(0,0,0,.2);">📥 下载桌面版</a>
+
 
   <div id="app">
 
@@ -38,41 +37,41 @@
           </div>
 <div id="form-login" class="login-form active">
             <h2 class="login-title" id="login-title">SASES</h2>
-            <p class="login-subtitle" id="login-subtitle">登录你的账号 / Sign in to your account</p>
-            <input type="text" id="login-username" class="login-input" placeholder="用户名 / Username" autocomplete="username">
-            <input type="password" id="login-password" class="login-input" placeholder="密码 / Password" autocomplete="current-password">
-            <button id="login-btn" class="login-btn">登录 / Login</button>
+            <p class="login-subtitle" id="login-subtitle">登录你的账号</p>
+            <input type="text" id="login-username" class="login-input" placeholder="用户名" autocomplete="username">
+            <input type="password" id="login-password" class="login-input" placeholder="密码" autocomplete="current-password">
+            <button id="login-btn" class="login-btn">登录</button>
             <div class="agreement-row">
               <input type="checkbox" id="agree-checkbox">
               <label for="agree-checkbox" class="agreement-text" id="agreement-text">我已阅读并同意 <a href="#" id="user-agreement-link">用户协议</a> 和 <a href="#" id="privacy-policy-link">隐私政策</a></label>
             </div>
             <div class="login-links">
-              <a href="#" id="go-register">注册新账号 / Sign Up</a>
+              <a href="#" id="go-register">注册新账号</a>
               <span class="link-divider">·</span>
-              <a href="#" id="forgot-password">找回密码 / Forgot Password</a>
+              <a href="#" id="forgot-password">找回密码</a>
             </div>
           </div>
           <div id="form-register" class="login-form">
             <h2 class="login-title">SASES</h2>
-            <p class="login-subtitle">创建新账号 / Create Account</p>
-            <input type="text" id="reg-username" class="login-input" placeholder="用户名 / Username（3-20位，字母/数字/下划线 / 3-20 chars, letters/digits/underscore）">
-            <input type="password" id="reg-password" class="login-input" placeholder="密码 / Password（8-32位，必须含字母和数字 / 8-32 chars, must contain letters and digits）">
-            <input type="password" id="reg-password2" class="login-input" placeholder="确认密码 / Confirm Password">
-            <input type="email" id="reg-email" class="login-input" placeholder="邮箱（选填） / Email (optional)">
-            <button id="reg-submit" class="login-btn">注册 / Sign Up</button>
+            <p class="login-subtitle">创建新账号</p>
+            <input type="text" id="reg-username" class="login-input" placeholder="用户名（3-20位，字母/数字/下划线）">
+            <input type="password" id="reg-password" class="login-input" placeholder="密码（8-32位，必须含字母和数字）">
+            <input type="password" id="reg-password2" class="login-input" placeholder="确认密码">
+            <input type="email" id="reg-email" class="login-input" placeholder="邮箱（选填）">
+            <button id="reg-submit" class="login-btn">注册</button>
             <div class="login-links">
-              <a href="#" id="reg-back">← 返回登录 / Back to Login</a>
+              <a href="#" id="reg-back">← 返回登录</a>
             </div>
           </div>
           <div id="form-reset" class="login-form">
             <h2 class="login-title">SASES</h2>
-            <p class="login-subtitle">重置密码 / Reset Password</p>
-            <input type="text" id="reset-username" class="login-input" placeholder="用户名 / Username">
-            <input type="email" id="reset-email" class="login-input" placeholder="注册邮箱 / Registered Email">
-            <input type="password" id="reset-password" class="login-input" placeholder="新密码（8-32位） / New Password (8-32 chars)">
-            <button id="reset-submit" class="login-btn">重置密码 / Reset Password</button>
+            <p class="login-subtitle">重置密码</p>
+            <input type="text" id="reset-username" class="login-input" placeholder="用户名">
+            <input type="email" id="reset-email" class="login-input" placeholder="注册邮箱">
+            <input type="password" id="reset-password" class="login-input" placeholder="新密码（8-32位）">
+            <button id="reset-submit" class="login-btn">重置密码</button>
             <div class="login-links">
-              <a href="#" id="reset-back">← 返回登录 / Back to Login</a>
+              <a href="#" id="reset-back">← 返回登录</a>
             </div>
           </div>
         </div>
@@ -155,8 +154,6 @@
 
           <div id="param-bar" class="param-bar">
             <span id="param-rounds" class="param-pill" title="点击设置本轮最大步数">⚙️ 8步</span>
-            <div id="api-pill" class="param-pill" title="选择本次允许调用的外部 API" style="cursor:pointer; margin-left: 8px;">🔌 API</div>
-            
           </div>
           <div class="chat-input-area">
             <button id="toggle-voice-btn" class="voice-toggle-btn" aria-label="语音切换">🎤</button>
@@ -223,11 +220,6 @@
             <span>小程序</span>
             <span class="menu-arrow">›</span>
           </div>
-          <div class="side-menu-item" id="menu-external-api">
-            <span class="menu-icon">🔌</span>
-            <span>外部 API</span>
-            <span class="menu-arrow">›</span>
-          </div>
         </div>
       </div>
     </div>
@@ -266,9 +258,10 @@
     }
   </script>
 
-  <!-- 版本号已提升至 20261031，强制清除 Edge 浏览器缓存 -->
-  <script type="module" src="/static/modules/main.js?v=20261031"></script>
+  <script type="module" src="/static/modules/main.js?v=81"></script>
+<!-- test1 -->
+<!-- test2 -->
+<!-- test3 -->
 
-  <script src="/static/modules/me_external_api.js"></script>
 </body>
 </html>
