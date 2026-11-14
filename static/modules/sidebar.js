@@ -38,6 +38,17 @@ export function initSideDrawer() {
       openMarketPage();
     });
   }
+  
+  const menuExternalApi = document.getElementById('menu-external-api');
+  if (menuExternalApi) {
+    menuExternalApi.addEventListener('click', () => {
+      closeSideDrawer();
+      if (typeof window.__openExternalApiPage === 'function') {
+        window.__openExternalApiPage();
+      }
+    });
+  }
+
   if (menuMiniApps) {
     menuMiniApps.addEventListener('click', () => {
       closeSideDrawer();

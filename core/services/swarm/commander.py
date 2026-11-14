@@ -83,7 +83,8 @@ async def plan_task(
     require_confirmation: bool = False,
     supervisor_id: str = None,
     supervisor_run_id: int = None,
-    max_steps: int = None
+    max_steps: int = None,
+    enabled_api_ids: list = None
 ) -> Dict[str, Any]:
     if conversation_id and _has_active_task_in_conversation(conversation_id):
         err_msg = "[SUMMARY]:当前会话有正在执行的任务，请等待完成或取消后再提交新任务。"
@@ -251,6 +252,8 @@ async def plan_task(
     try:
         from ... import harness_runtime as _hr
         _tools = _hr.harness_runtime.list_tools()
+        if enabled_api_ids:
+            _tools = [t for t in _tools if t.get('id') in enabled_api_ids or f"ext_api_{t.get('id')}" in enabled_api_ids]
         if _tools:
             _tl = ['【当前可用 Harness 工具】']
             for _t in _tools:

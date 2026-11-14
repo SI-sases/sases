@@ -282,6 +282,7 @@ async function sendMessage() {
         if (content) {
           appendMessage('user', content, chatState.senderAgentId ? '智能体 / 智能体' : '我', null, new Date().toISOString(), false, chatState);
           await api.sendMessage({
+      enabled_api_ids: window.currentSessionAPIs || [],
             conversation_id: chatState.conversationId,
             agent_id: chatState.agentId,
             content: content,
@@ -313,6 +314,7 @@ async function sendMessage() {
     let _maxSteps = null;
     try { _maxSteps = getParamMaxSteps(); } catch (e) {}
     const data = await api.sendMessage({
+      enabled_api_ids: window.currentSessionAPIs || [],
       conversation_id: chatState.conversationId,
       agent_id: chatState.agentId,
       content: text,
@@ -407,6 +409,7 @@ window.__sasesUploadFile = async (file) => {
     const _content = '[FILE]:' + res.url + '|' + (file.name || 'file') + '|' + (file.size || 0);
     appendMessage('user', _content, chatState.senderAgentId ? '智能体 / 智能体' : '我', null, new Date().toISOString(), false, chatState);
     await api.sendMessage({
+      enabled_api_ids: window.currentSessionAPIs || [],
       conversation_id: chatState.conversationId,
       agent_id: chatState.agentId,
       content: _content,
@@ -431,6 +434,7 @@ window.__sasesUploadImage = async (file) => {
       return;
     }
     await api.sendMessage({
+      enabled_api_ids: window.currentSessionAPIs || [],
       conversation_id: chatState.conversationId,
       agent_id: chatState.agentId,
       content: '[IMAGE]:' + res.url,

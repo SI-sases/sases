@@ -1268,6 +1268,59 @@ def init_db():
         print("[db] scheduled_tasks 表就绪")
         # ===== P2.6 end =====
 
+
+        # ===== user_api_configs (P2.6) =====
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS user_api_configs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                api_name TEXT NOT NULL,
+                api_desc TEXT,
+                endpoint TEXT NOT NULL,
+                method TEXT DEFAULT 'GET',
+                auth_type TEXT DEFAULT 'none',
+                auth_key_encrypted TEXT,
+                auth_header_name TEXT DEFAULT 'Authorization',
+                params_example TEXT,
+                response_path TEXT,
+                capability_tags TEXT,
+                status TEXT DEFAULT 'active',
+                created_at TEXT NOT NULL
+            )
+        """)
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_uac_user ON user_api_configs(user_id, status)")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_uac_name ON user_api_configs(api_name)")
+        print("[db] user_api_configs ok")
+        # ===== P2.6 end =====
+
+
+        # ===== license_keys CDK =====
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS license_keys (
+                key_code TEXT PRIMARY KEY,
+                key_type TEXT,
+                duration_days INTEGER,
+                seed_reward_total REAL,
+                seed_reward_daily REAL,
+                status TEXT DEFAULT 'unused',
+                banned_at TEXT,
+                ban_reason TEXT,
+                created_at TEXT
+            )
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS device_bindings (
+                user_id INTEGER,
+                device_fingerprint TEXT,
+                license_key TEXT,
+                activated_at TEXT,
+                expire_at TEXT,
+                PRIMARY KEY (user_id, device_fingerprint)
+            )
+        """)
+        print("[db] license_keys CDK ok")
+        # ===== CDK end =====
+
 if __name__ == '__main__':
     init_db()
     print("Database initialized successfully.")
