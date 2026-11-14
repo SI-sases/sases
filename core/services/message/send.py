@@ -5,6 +5,7 @@ import httpx
 from datetime import datetime
 from typing import Optional
 from ...db import db_cursor
+from ..friend_gate import check_friend_gate
 
 
 def _normalize_prefix(content):
@@ -435,6 +436,7 @@ async def send_message(
                             user_input=content,
                             supervisor_id=sender_agent_id or agent_id,
                             supervisor_run_id=_run_id,
+                            enabled_api_ids=enabled_api_ids,
                         )
                         # v0.38.0: precheck 拦截时，自动重试一次（用 reason 修正 prompt）
                         if _plan_result and isinstance(_plan_result, dict) and _plan_result.get('status') == 'no_plan' and 'precheck blocked' in str(_plan_result.get('reason', '')):
@@ -447,6 +449,7 @@ async def send_message(
                                     user_input=_retry_input,
                                     supervisor_id=sender_agent_id or agent_id,
                                     supervisor_run_id=_run_id,
+                            enabled_api_ids=enabled_api_ids,
                                 )
                             except Exception as _e_retry:
                                 print('[supervisor] precheck 重试失败: ' + str(_e_retry))

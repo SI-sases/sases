@@ -14,8 +14,6 @@ async def deliver_to_linked_accounts(user_id, conversation_id, content, sender_a
         _sender_mode = 'normal'
         _target_mode = 'normal'
         _target_agent = None
-        _is_remote = False
-        _payload_to_send = None
 
         with db_cursor(commit=True) as cur:
             # 1. 查发送方模式
@@ -33,85 +31,35 @@ async def deliver_to_linked_accounts(user_id, conversation_id, content, sender_a
                 # 校验好友关系
                 cur.execute("SELECT 1 FROM agent_friendships WHERE status='accepted' AND ((user_id=? AND target_user_id=?) OR (user_id=? AND target_user_id=?))", (user_id, _target_uid, _target_uid, user_id))
                 if not cur.fetchone():
-                    raise ValueError(f"拦截：用户 {user_id} 与 {_target_uid} 尚未成为好友，拒绝投递。")
-
-                # 查对方用户信息判断是否跨网
-                cur.execute("SELECT username, sases_id FROM users WHERE id=?", (_target_uid,))
-                _target_info = cur.fetchone()
-                if _target_info:
-                    _target_sases = _target_info["sases_id"]
-                    _target_name = _target_info["username"] or ""
-                    if _target_name.startswith("remote_") or "shadow" in str(_target_name):
-                        _is_remote = True
-
-                # 3. 查对方的会话信息（仅用于获取模式和 agent）
+                    print(f'[message] 拦截：用户 {user_id} 与 {_target_uid} 尚未成为好友，拒绝投递。')
+                    return
+                
+                # 3. 查对方的会话信息（模式与绑定的智能体）
                 cur.execute("SELECT id, friend_mode, agent_id FROM conversations WHERE user_id=? AND target_user_id=? AND is_friend_chat=1", (_target_uid, user_id))
                 _t_conv = cur.fetchone()
                 if _t_conv:
                     _target_conv_id = _t_conv["id"]
                     _target_mode = _t_conv["friend_mode"] if _t_conv["friend_mode"] else 'normal'
                     _target_agent = _t_conv["agent_id"]
-
-                if _is_remote:
-                    # 跨网：准备 HTTP 请求 Payload
-                    cur.execute("SELECT sases_id FROM users WHERE id=?", (user_id,))
-                    _sender_sases = cur.fetchone()["sases_id"]
-                    _payload_to_send = {
-                        "target_sases_id": _target_sases, 
-                        "content": content, 
-                        "sender_sases_id": _sender_sases, 
-                        "sender_agent_id": sender_agent_id, 
-                        "msg_type": msg_type, 
-                        "attachments": attachments
-                    }
-                else:
-                    # 本地用户：直接写库
-                    if _target_conv_id:
-                        cur.execute("INSERT INTO messages (conversation_id, sender, content, sender_agent_id, msg_type, attachments) VALUES (?, ?, ?, ?, ?, ?)", (_target_conv_id, 'friend', content, sender_agent_id, msg_type, _att_str))
-                        _msg_id = cur.lastrowid
-                        cur.execute("UPDATE conversations SET updated_at=CURRENT_TIMESTAMP WHERE id=?", (_target_conv_id,))
+                    
+                    # 4. 写入对方数据库
+                    cur.execute(
+                        "INSERT INTO messages (conversation_id, sender, content, sender_agent_id, msg_type, attachments) VALUES (?, ?, ?, ?, ?, ?)",
+                        (_target_conv_id, 'friend', content, sender_agent_id, msg_type, _att_str)
+                    )
+                    _msg_id = cur.lastrowid
+                    cur.execute("UPDATE conversations SET updated_at=CURRENT_TIMESTAMP WHERE id=?", (_target_conv_id,))
 
         # ==========================================
-        # 事务提交后，执行网络请求或 A2A 判定
+        # 5. 事务提交后，执行 A2A 矩阵判定
         # ==========================================
-        
-        # 【核心修复】跨网发送必须在事务外面执行！
-        if _is_remote and _payload_to_send:
-            import httpx, os
-            from ..broadcast.node_relay import hive_headers
-            _master_url = os.environ.get("HIVE_MASTER", "http://47.96.87.147:8001")
-            print(f"[跨网投递] 准备发往云端: {_master_url}, 目标: {_payload_to_send['target_sases_id']}")
-
-            _send_ok = False
-            _send_err = ''
-            _hdrs = {}
-
-            try:
-                async with httpx.AsyncClient(timeout=5, trust_env=False, headers=hive_headers()) as client:
-                    resp = await client.post(f"{_master_url}/hive/sync/friend_message", json=_payload_to_send)
-                    print(f"[跨网投递] HTTP 发往云端: {resp.status_code}, 返回: {resp.text}")
-                    if 200 <= resp.status_code < 300:
-                        _send_ok = True
-                    else:
-                        _send_err = f'http_{resp.status_code}'
-            except Exception as e:
-                print(f"[跨网投递] 💥 发送失败: {e}")
-
-                _send_err = str(e)[:200]
-            if not _send_ok:
-                try:
-                    from core.services.outbox.outbox_service import enqueue
-                    _ob_id = enqueue(f"{_master_url}/hive/sync/friend_message", _payload_to_send, extra_headers=_hdrs)
-                    print(f"[跨网投递] ⏳ 已进 outbox ({_ob_id[:8]}), worker 将自动重试。原因: {_send_err}")
-                except Exception as _eq:
-                    print(f"[跨网投递] ❌ outbox 入队失败: {_eq}")
-
-
-        # 只有本地用户才有 _msg_id，才需要走后续的 WS 广播和 A2A
         if _target_uid and _target_conv_id and _msg_id:
             is_task = False
+            
+            # 只有双方都在自由模式，才进行复杂的智能体交互
             if _sender_mode == 'free' and _target_mode == 'free':
                 if sender_agent_id or _target_agent:
+                    # 测试期暴力破解：只要含有 #，直接视为任务，不再走 intent_service
                     if content.startswith('#') or ' #' in content:
                         is_task = True
                         print(f"[A2A] 检测到 # 号，强制视为任务！")
@@ -138,6 +86,7 @@ async def deliver_to_linked_accounts(user_id, conversation_id, content, sender_a
                     except Exception as e:
                         print(f"[A2A] 生成黄卡失败: {e}")
             else:
+                # 有一方不是自由模式，且试图执行，拦截并提示
                 if sender_agent_id or _target_agent or content.startswith("#"):
                     print(f"[A2A] 非双自由模式，拦截执行。A:{_sender_mode}, B:{_target_mode}")
                     with db_cursor(commit=True) as cur_warn:
@@ -164,7 +113,6 @@ async def deliver_to_linked_accounts(user_id, conversation_id, content, sender_a
                 print(f"[投递成功] 已推送给用户 {_target_uid}")
             except Exception as ex:
                 print(f"[投递广播失败] {ex}")
-                
     except Exception as e:
         print(f"[message] 跨账号投递失败: {e}")
 

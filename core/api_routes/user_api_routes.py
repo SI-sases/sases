@@ -19,6 +19,7 @@ def _get_uid(credentials: HTTPAuthorizationCredentials = Depends(security)):
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
+# 找到原来的 class ApiConfigCreate 替换为：
 class ApiConfigCreate(BaseModel):
     api_name: str
     api_desc: Optional[str] = ""
@@ -30,6 +31,29 @@ class ApiConfigCreate(BaseModel):
     params_example: Optional[str] = ""
     response_path: Optional[str] = ""
     capability_tags: Optional[str] = ""
+    task_mode: Optional[str] = "sync"
+    async_spec: Optional[str] = ""
+
+# 找到 @router.post("/add") 替换为：
+@router.post("/add")
+async def add_api(body: ApiConfigCreate, uid: str = Depends(_get_uid)):
+    with db_cursor(commit=True) as cur:
+        cur.execute("""
+            INSERT INTO user_api_configs 
+            (user_id, api_name, api_desc, endpoint, method, auth_type, auth_key_encrypted, auth_header_name, params_example, response_path, capability_tags, task_mode, async_spec, status, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', datetime('now'))
+        """, (uid, body.api_name, body.api_desc, body.endpoint, body.method, body.auth_type, body.auth_key, body.auth_header_name, body.params_example, body.response_path, body.capability_tags, body.task_mode, body.async_spec))
+        
+        new_id = cur.lastrowid
+        
+        # 核心：自动注册到 api_registry，让 AI 能看见
+        cur.execute("""
+            INSERT OR REPLACE INTO api_registry 
+            (api_id, description, api_category, task_mode, status, created_at)
+            VALUES (?, ?, 'external', ?, 'active', datetime('now'))
+        """, (f"ext_api_{new_id}", body.api_name, body.task_mode))
+        
+    return {"status": "ok", "id": new_id}
 
 @router.get("/list")
 async def list_apis(uid: str = Depends(_get_uid)):
