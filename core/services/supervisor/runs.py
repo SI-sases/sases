@@ -92,11 +92,11 @@ def get_active_run(user_id):
     return run
 
 
-def create_run(user_id, conversation_id, supervisor_id, goal, task_type=None, max_rounds: int = None):
+def create_run(user_id, conversation_id, supervisor_id, goal, task_type=None, max_rounds: int = None, trigger_type: str = 'user', trigger_task_id: str = None):
     with db_cursor(commit=True) as cur:
         _tt = task_type if task_type is not None else 'unknown'
         _mr = max_rounds if max_rounds is not None else MAX_ROUNDS
-        cur.execute("INSERT INTO supervisor_runs (user_id, conversation_id, supervisor_id, goal, status, current_round, max_rounds, history, task_type) VALUES (?, ?, ?, ?, 'running', 0, ?, '[]', ?)", (user_id, conversation_id, supervisor_id, goal, _mr, _tt))
+        cur.execute("INSERT INTO supervisor_runs (user_id, conversation_id, supervisor_id, goal, status, current_round, max_rounds, history, task_type, trigger_type, trigger_task_id) VALUES (?, ?, ?, ?, 'running', 0, ?, '[]', ?, ?, ?)", (user_id, conversation_id, supervisor_id, goal, _mr, _tt, trigger_type, trigger_task_id))
         return cur.lastrowid
 
 

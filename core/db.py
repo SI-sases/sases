@@ -1242,6 +1242,32 @@ def init_db():
         print("[db] api_registry ok")
         # ===== P0 end =====
 
+
+        # ===== P2.6: 定时任务表 =====
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS scheduled_tasks (
+                id TEXT PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                name TEXT NOT NULL,
+                cron_expr TEXT NOT NULL,
+                timezone TEXT DEFAULT 'Asia/Shanghai',
+                task_template TEXT NOT NULL,
+                task_params TEXT,
+                enabled INTEGER DEFAULT 1,
+                missed_policy TEXT DEFAULT 'catch_up',
+                failure_count INTEGER DEFAULT 0,
+                paused_reason TEXT,
+                last_run_at TEXT,
+                next_run_at TEXT,
+                created_at TEXT NOT NULL,
+                updated_at TEXT
+            )
+        """)
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_sched_due ON scheduled_tasks(enabled, next_run_at)")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_sched_user ON scheduled_tasks(user_id, enabled)")
+        print("[db] scheduled_tasks 表就绪")
+        # ===== P2.6 end =====
+
 if __name__ == '__main__':
     init_db()
     print("Database initialized successfully.")

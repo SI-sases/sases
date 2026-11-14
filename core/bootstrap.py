@@ -553,6 +553,7 @@ async def lifespan(app: FastAPI):
         print(f"[备份] 启动备份异常: {e}")
 
     from .services import state_service as _state_svc
+    from .services.scheduled_scheduler import scheduled_task_scheduler
 
     # 蜂巢模块（环境变量控制）
     try:
@@ -589,6 +590,7 @@ async def lifespan(app: FastAPI):
     _background_tasks.append(asyncio.create_task(_state_svc.periodic_state_sync(interval_hours=24)))
     _background_tasks.append(asyncio.create_task(periodic_airdrop()))
     _background_tasks.append(asyncio.create_task(periodic_hlc_health()))
+    _background_tasks.append(asyncio.create_task(scheduled_task_scheduler()))
 
 
     # 【预热】启动后预热一次（不参与周期）
