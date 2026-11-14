@@ -26,27 +26,7 @@ async def generate_script_for_task(user_id, conversation_id, user_input, failed_
         _reason = str(r.get('reason') or r.get('output') or '')[:150]
         failures_lines.append("- " + _cmd + " => " + _reason)
     failures_text = chr(10).join(failures_lines) if failures_lines else "(无)"
-    import re as _re
-    import os as _os
-    _file_ctx = ""
-    _m = _re.search(r'([a-zA-Z0-9_\-/]+\.(?:js|py|html|css|json))', str(user_input))
-    if _m:
-        _fp = _m.group(1)
-        _found_path = None
-        for _sp in ["", "static/modules/", "static/", "core/", "core/services/", "scripts/"]:
-            _test = _os.path.join(_sp, _fp) if _sp else _fp
-            if _os.path.exists(_test):
-                _found_path = _test
-                break
-        if _found_path:
-            try:
-                with open(_found_path, "r", encoding="utf-8") as _f:
-                    _content = "".join(_f.readlines()[:150])
-                    _file_ctx = f"【目标文件 {_found_path} 的真实前150行内容】：\n{_content}\n"
-            except Exception:
-                pass
-
-    prompt = SCRIPT_FALLBACK_PROMPT.replace("{file_context}", _file_ctx).replace("{goal}", str(user_input)[:500]).replace("{failures}", failures_text)
+    prompt = SCRIPT_FALLBACK_PROMPT.replace('{goal}', str(user_input)[:500]).replace('{failures}', failures_text)
     try:
         raw = await _call_llm(prompt, max_tokens=4000)
     except Exception as e:
@@ -83,8 +63,7 @@ async def plan_task(
     require_confirmation: bool = False,
     supervisor_id: str = None,
     supervisor_run_id: int = None,
-    max_steps: int = None,
-    enabled_api_ids: list = None
+    max_steps: int = None
 ) -> Dict[str, Any]:
     if conversation_id and _has_active_task_in_conversation(conversation_id):
         err_msg = "[SUMMARY]:当前会话有正在执行的任务，请等待完成或取消后再提交新任务。"
@@ -252,8 +231,6 @@ async def plan_task(
     try:
         from ... import harness_runtime as _hr
         _tools = _hr.harness_runtime.list_tools()
-        if enabled_api_ids:
-            _tools = [t for t in _tools if t.get('id') in enabled_api_ids or f"ext_api_{t.get('id')}" in enabled_api_ids]
         if _tools:
             _tl = ['【当前可用 Harness 工具】']
             for _t in _tools:

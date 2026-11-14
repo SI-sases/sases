@@ -11,13 +11,6 @@ def get_connection():
     conn.row_factory = sqlite3.Row
     if os.environ.get("SASES_DISABLE_FK", "false").lower() not in ("1", "true", "yes"):
         conn.execute("PRAGMA foreign_keys = ON")
-    # 开启 WAL 模式大幅缓解并发读写死锁
-    try:
-        conn.execute("PRAGMA journal_mode=WAL")
-        conn.execute("PRAGMA synchronous=NORMAL")
-    except Exception:
-        pass
-
     return conn
 
 def get_db():
@@ -84,16 +77,12 @@ def init_db():
         _ensure_column(cur, "users", "email", "TEXT")
         _ensure_column(cur, "users", "sases_id", "TEXT")
         _ensure_column(cur, "users", "credits", "REAL DEFAULT 0")
-        _ensure_column(cur, "users", "last_pulled_id", "INTEGER DEFAULT 0")
-        _ensure_column(cur, "users", "last_pulled_group_id", "INTEGER DEFAULT 0")
         _ensure_column(cur, "users", "gender", "TEXT")
         _ensure_column(cur, "users", "region", "TEXT")
         _ensure_column(cur, "users", "signature", "TEXT")
         _ensure_column(cur, "users", "onboarding_day", "INTEGER DEFAULT 1")
         _ensure_column(cur, "users", "onboarding_completed", "TEXT DEFAULT '[]'")
         _ensure_column(cur, "users", "onboarding_started_at", "TEXT")
-        _ensure_column(cur, "users", "handle", "TEXT")
-        _ensure_column(cur, "users", "display_name", "TEXT")
 
         # ========== API Key 表 ==========
         cur.execute("""
@@ -197,9 +186,6 @@ def init_db():
         _ensure_column(cur, "conversations", "mode", "TEXT DEFAULT 'normal'")
         _ensure_column(cur, "conversations", "unread_count", "INTEGER DEFAULT 0")
         _ensure_column(cur, "conversations", "is_pinned", "INTEGER DEFAULT 0")
-        _ensure_column(cur, "conversations", "target_user_id", "INTEGER")
-        _ensure_column(cur, "conversations", "is_friend_chat", "INTEGER DEFAULT 0")
-        _ensure_column(cur, "conversations", "friend_mode", "TEXT DEFAULT 'normal'")
 
         # ========== 消息表 ==========
         cur.execute("""
@@ -214,10 +200,12 @@ def init_db():
             )
         """)
         _ensure_column(cur, "messages", "sender_agent_id", "TEXT")
-        _ensure_column(cur, "messages", "msg_type", "TEXT DEFAULT 'standard'")
-        _ensure_column(cur, "messages", "attachments", "TEXT")
+        _ensure_column(cur, "messages", "msg_type", "TEXT")
         _ensure_column(cur, "messages", "hlc_ts", "TEXT")
         _ensure_column(cur, "messages", "origin_node", "TEXT")
+        _ensure_column(cur, "conversations", "hlc_ts", "TEXT")
+        _ensure_column(cur, "conversations", "origin_node", "TEXT")
+        _ensure_column(cur, "messages", "attachments", "TEXT")
 
         # ========== 好友关系表 ==========
         cur.execute("""
@@ -233,8 +221,6 @@ def init_db():
             )
         """)
         _ensure_column(cur, "agent_friendships", "target_user_id", "INTEGER")
-        _ensure_column(cur, "agent_friendships", "friend_mode", "TEXT DEFAULT 'normal'")
-        _ensure_column(cur, "agent_friendships", "auth_token", "TEXT")
 
         # ========== 群组表 ==========
         cur.execute("""
@@ -401,9 +387,6 @@ def init_db():
         _ensure_column(cur, "group_messages", "extra_data", "TEXT")
 
         _ensure_column(cur, "group_messages", "logical_clock", "INTEGER DEFAULT 0")
-        _ensure_column(cur, "group_messages", "msg_type", "TEXT DEFAULT 'standard'")
-        _ensure_column(cur, "group_messages", "attachments", "TEXT")
-        _ensure_column(cur, "group_messages", "hlc_ts", "TEXT")
 
 
         # ========== 统一知识库文档表（群知识库/工具手册/项目文档） ==========
@@ -1159,6 +1142,12 @@ def init_db():
         """)
         cur.execute("CREATE INDEX IF NOT EXISTS idx_suprun_user ON supervisor_runs(user_id)")
         _ensure_column(cur, "supervisor_runs", "task_type", "TEXT")
+        _ensure_column(cur, 'conversations', 'target_user_id', 'INTEGER')
+        _ensure_column(cur, 'conversations', 'is_friend_chat', 'INTEGER')
+        _ensure_column(cur, 'conversations', 'friend_mode', 'TEXT')
+        _ensure_column(cur, 'conversations', 'target_user_id', 'INTEGER')
+        _ensure_column(cur, 'conversations', 'is_friend_chat', 'INTEGER')
+        _ensure_column(cur, 'conversations', 'friend_mode', 'TEXT')
 
 
         # ========== 积分库（v0.20） ==========
@@ -1220,106 +1209,6 @@ def init_db():
         cur.execute("CREATE INDEX IF NOT EXISTS idx_feedback_rating ON task_feedback(rating, created_at)")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_feedback_reason ON task_feedback(reason_tag)")
         print("[db] task_feedback 表就绪")
-
-
-        # ===== P0: api_registry =====
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS api_registry (
-                api_id TEXT PRIMARY KEY,
-                endpoint TEXT,
-                description TEXT,
-                params_schema TEXT,
-                capability_tags TEXT,
-                api_category TEXT DEFAULT 'harness',
-                task_mode TEXT DEFAULT 'sync',
-                status TEXT DEFAULT 'active',
-                created_at TEXT,
-                updated_at TEXT
-            )
-        """)
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_api_category ON api_registry(api_category, status)")
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_api_status ON api_registry(status)")
-        print("[db] api_registry ok")
-        # ===== P0 end =====
-
-
-        # ===== P2.6: 定时任务表 =====
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS scheduled_tasks (
-                id TEXT PRIMARY KEY,
-                user_id INTEGER NOT NULL,
-                name TEXT NOT NULL,
-                cron_expr TEXT NOT NULL,
-                timezone TEXT DEFAULT 'Asia/Shanghai',
-                task_template TEXT NOT NULL,
-                task_params TEXT,
-                enabled INTEGER DEFAULT 1,
-                missed_policy TEXT DEFAULT 'catch_up',
-                failure_count INTEGER DEFAULT 0,
-                paused_reason TEXT,
-                last_run_at TEXT,
-                next_run_at TEXT,
-                created_at TEXT NOT NULL,
-                updated_at TEXT
-            )
-        """)
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_sched_due ON scheduled_tasks(enabled, next_run_at)")
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_sched_user ON scheduled_tasks(user_id, enabled)")
-        print("[db] scheduled_tasks 表就绪")
-        # ===== P2.6 end =====
-
-
-        # ===== user_api_configs (P2.6) =====
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS user_api_configs (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
-                api_name TEXT NOT NULL,
-                api_desc TEXT,
-                endpoint TEXT NOT NULL,
-                method TEXT DEFAULT 'GET',
-                auth_type TEXT DEFAULT 'none',
-                auth_key_encrypted TEXT,
-                auth_header_name TEXT DEFAULT 'Authorization',
-                params_example TEXT,
-                response_path TEXT,
-                capability_tags TEXT,
-                status TEXT DEFAULT 'active',
-                created_at TEXT NOT NULL
-            )
-        """)
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_uac_user ON user_api_configs(user_id, status)")
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_uac_name ON user_api_configs(api_name)")
-        print("[db] user_api_configs ok")
-        # ===== P2.6 end =====
-
-
-        # ===== license_keys CDK =====
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS license_keys (
-                key_code TEXT PRIMARY KEY,
-                key_type TEXT,
-                duration_days INTEGER,
-                seed_reward_total REAL,
-                seed_reward_daily REAL,
-                status TEXT DEFAULT 'unused',
-                banned_at TEXT,
-                ban_reason TEXT,
-                created_at TEXT
-            )
-        """)
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS device_bindings (
-                user_id INTEGER,
-                device_fingerprint TEXT,
-                license_key TEXT,
-                activated_at TEXT,
-                expire_at TEXT,
-                PRIMARY KEY (user_id, device_fingerprint)
-            )
-        """)
-        print("[db] license_keys CDK ok")
-        # ===== CDK end =====
 
 if __name__ == '__main__':
     init_db()

@@ -151,25 +151,6 @@ async def handle_step_done(
                         if _ans_rev and not _ans_rev.get('goal_achieved'):
                             _ans_ok = False
                             print('[supervisor] answer 产出但目标未达成，强制发起下一轮')
-                            if not task.get("_script_fallback_tried"):
-                                task["_script_fallback_tried"] = True
-                                print("[swarm] 触发强制兜底，尝试生成上下文脚本")
-                                try:
-                                    from .commander import generate_script_for_task
-                                    _script_fb = await generate_script_for_task(
-                                        task["user_id"], conversation_id, task["user_text"], task["results"]
-                                    )
-                                    if _script_fb:
-                                        task["steps"] = [{"step": 1, "type": "harness", "module_id": "run_python", "params": {"code": _script_fb}}]
-                                        task["results"] = []
-                                        task["done"] = set()
-                                        task["retry_count"] = 0
-                                        _save_pending(task)
-                                        _insert_message(conversation_id, "[SUPERVISOR_PROGRESS]:任务卡住，已降级为脚本模式", sender_agent_id=task.get("commander_id"))
-                                        print("[swarm] 自动兜底成功，构造 run_python")
-                                        return {"status": "script_fallback", "task_id": task_id}
-                                except Exception as _e_sf:
-                                    print("[swarm] 自动兜底异常: " + str(_e_sf))
                             _next_task = '[MODIFY] ' + (_ans_rev.get('next_hint') or '继续完成目标')
                             await plan_task(
                                 user_id=task["user_id"],
@@ -304,13 +285,6 @@ async def handle_step_done(
                     _continue, _ = await supervisor_service.check_and_continue(_run_id, summary, plan_text=_steps_text, exec_text=_exec_text, review=_review)
                     
                     # 强制拦截：如果总结器判定未完成，无视 _continue 的返回值，直接强制续轮
-                    # [系统熔断] 超过 3 轮强制终止，绝不无限循环
-                    _r_obj = get_run(_run_id) if _run_id else None
-                    if _r_obj and _r_obj.get('current_round', 0) >= 3:
-                        print('[supervisor] 物理熔断触发：超过 3 轮强制结束！')
-                        supervisor_service.finish_run(_run_id, 'force_terminated')
-                        return {'status': 'failed', 'task_id': task_id, 'summary': '死循环熔断'}
-
                     if _review and isinstance(_review, dict) and _review.get('goal_achieved') is False:
                         _force_retry_count = task.get('_force_retry_count', 0)
                         if _force_retry_count < 2:
@@ -460,11 +434,7 @@ async def handle_step_done(
                     _insert_message(conversation_id, "[SUPERVISOR_PROGRESS]:降级为脚本模式", sender_agent_id=task.get("commander_id"))
                     print("[swarm] 脚本降级成功，已构造单步 run_python task")
                     return {"status": "script_fallback", "task_id": task_id}
-                print("[swarm] 脚本降级失败，强制结束任务，防止死循环")
-                _insert_message(conversation_id, "[SUMMARY]:❌ 任务执行失败。AI连续重试且无法生成兜底脚本，已强制终止。", sender_agent_id=_summary_sender(task))
-                del _pending[task_id]
-                _delete_pending_from_db(task_id)
-                return {"status": "failed", "task_id": task_id}
+                print("[swarm] 脚本降级失败，走原汇总路径")
             if failed:
                 print(f"[swarm] 重试次数已达上限，标记失败并汇总")
             else:
@@ -551,25 +521,6 @@ async def handle_step_done(
                         if _ans_rev and not _ans_rev.get('goal_achieved'):
                             _ans_ok = False
                             print('[supervisor] answer 产出但目标未达成，强制发起下一轮')
-                            if not task.get("_script_fallback_tried"):
-                                task["_script_fallback_tried"] = True
-                                print("[swarm] 触发强制兜底，尝试生成上下文脚本")
-                                try:
-                                    from .commander import generate_script_for_task
-                                    _script_fb = await generate_script_for_task(
-                                        task["user_id"], conversation_id, task["user_text"], task["results"]
-                                    )
-                                    if _script_fb:
-                                        task["steps"] = [{"step": 1, "type": "harness", "module_id": "run_python", "params": {"code": _script_fb}}]
-                                        task["results"] = []
-                                        task["done"] = set()
-                                        task["retry_count"] = 0
-                                        _save_pending(task)
-                                        _insert_message(conversation_id, "[SUPERVISOR_PROGRESS]:任务卡住，已降级为脚本模式", sender_agent_id=task.get("commander_id"))
-                                        print("[swarm] 自动兜底成功，构造 run_python")
-                                        return {"status": "script_fallback", "task_id": task_id}
-                                except Exception as _e_sf:
-                                    print("[swarm] 自动兜底异常: " + str(_e_sf))
                             _next_task = '[MODIFY] ' + (_ans_rev.get('next_hint') or '继续完成目标')
                             await plan_task(
                                 user_id=task["user_id"],

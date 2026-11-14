@@ -47,38 +47,7 @@ import { t } from './me_i18n.js';
 
 let initialized = false;
 
-window.openMyCard = function() {
-  var cardUrl = 'http://47.96.87.147:8001/static/u.html?id=' + (sasesId || '');
-  var name = (displayName || username || '');
-  var handle = (username || '');
-  var html = '<div style="padding:24px;text-align:center;">' +
-    '<div style="font-size:20px;font-weight:600;margin-bottom:6px;">' + name + '</div>' +
-    '<div style="color:#888;margin-bottom:20px;">@' + handle + '</div>' +
-    '<div id="qrcode-container" style="display:inline-block;padding:12px;background:#fff;border-radius:12px;"></div>' +
-    '<div style="margin-top:20px;"><button id="copy-card-link" style="padding:10px 24px;border:none;border-radius:8px;background:#07c160;color:#fff;font-size:15px;">复制链接</button></div>' +
-    '</div>';
-  window.openSubpage('我的名片', html, { returnAction: function() { openMe(); } });
-  setTimeout(function() {
-    var el = document.getElementById('qrcode-container');
-    if (el && typeof QRCode !== 'undefined') {
-      new QRCode(el, { text: cardUrl, width: 180, height: 180 });
-    }
-    var btn = document.getElementById('copy-card-link');
-    if (btn) {
-      btn.onclick = function() {
-        navigator.clipboard.writeText(cardUrl).then(function() {
-          if (typeof showToast === 'function') { showToast('链接已复制'); }
-        });
-      };
-    }
-  }, 100);
-}
-
-
 export function initMe() {
-
-  var myCardEl = document.getElementById('menu-my-card');
-  if (myCardEl) { myCardEl.onclick = openMyCard; }
   if (initialized) return;
   initialized = true;
 
@@ -113,11 +82,15 @@ export function initMe() {
         <span class="menu-label">${t('wallet')}</span>
         <span class="menu-arrow">›</span>
       </div>
+    </div>
+    <div class="me-menu">
       <div class="me-menu-item" id="menu-knowledge">
         <span class="menu-icon">📚</span>
         <span class="menu-label">个人知识库</span>
         <span class="menu-arrow">›</span>
       </div>
+    </div>
+    <div class="me-menu">
       <div class="me-menu-item" id="menu-settings">
         <span class="menu-icon">⚙️</span>
         <span class="menu-label">${t('settings')}</span>
@@ -222,13 +195,9 @@ async function openPersonalInfo() {
       const newName = await _showWxEditModal(t('nickname'), username);
       if (newName && newName.trim()) {
         try {
-          await api.updateUserProfile({ nickname: newName.trim() });
+          await api.updateUserProfile({ username: newName.trim() });
           localStorage.setItem('sases_username', newName.trim());
           alert(t('update_success'));
-        if (window.loadConversations) window.loadConversations();
-        if (window.renderContacts) window.renderContacts();
-        // 强制刷新页面以防底层组件未挂载，如果不需要刷新页面可注释掉下面这行
-        // window.location.reload();
           window.closeSubpage();
           initMe();
         } catch (e) { alert(t('update_failed') + ': ' + e.message); }
@@ -363,7 +332,7 @@ async function openContributions() {
     else {
       contribHtml = '<div class="me-menu">';
       history.forEach(item => {
-        const date = new Date(item.created_at).toLocaleString('en-US');
+        const date = new Date(item.created_at).toLocaleString('zh-CN');
         contribHtml += `<div class="me-menu-item"><span class="menu-label">${item.action || t('my_contributions')}</span><span class="menu-value">${item.points > 0 ? '+' : ''}${item.points}</span></div><div style="padding:0 12px 8px;font-size:12px;color:#999;">${date} · ${item.detail || ''}</div>`;
       });
       contribHtml += '</div>';
@@ -380,10 +349,10 @@ window.openContributions = openContributions;
 async function deleteDocAndRefresh(sourceFile) {
   try {
     await api.deleteMyDoc(sourceFile);
-    alert(t('me.deleted'));
+    alert('已删除');
     openKnowledgeBase();
   } catch (e) {
-    alert(t('me.delete_failed') + e.message);
+    alert('删除失败：' + e.message);
   }
 }
 
@@ -398,7 +367,7 @@ function showDocContextMenu(x, y, sourceFile) {
   _menu.style.left = x + 'px';
   _menu.style.top = y + 'px';
   _menu.style.display = 'block';
-  _menu.innerHTML = '<div class="context-menu-item" data-action="open">' + t('open_document') + '</div>' + '<div class="context-menu-item" data-action="delete" style="color:#e64340;">' + t('delete') + '</div>';
+  _menu.innerHTML = '<div class="context-menu-item" data-action="open">打开文档</div>' + '<div class="context-menu-item" data-action="delete" style="color:#e64340;">删除</div>';
   document.body.appendChild(_menu);
   _menu.querySelector('[data-action="open"]').addEventListener('click', function() {
     _menu.remove();
@@ -406,7 +375,7 @@ function showDocContextMenu(x, y, sourceFile) {
   });
   _menu.querySelector('[data-action="delete"]').addEventListener('click', function() {
     _menu.remove();
-    if (confirm(t('confirm_delete_doc') + sourceFile + t('delete_irreversible'))) {
+    if (confirm('确定删除《' + sourceFile + '》？删除后不可恢复。')) {
       deleteDocAndRefresh(sourceFile);
     }
   });
@@ -426,7 +395,7 @@ document.addEventListener('click', function(e) {
     var target = e.target;
     var isAbout = false;
     while (target && target !== document) {
-        if (target.innerText && target.innerText.trim() === t('about_sases')) {
+        if (target.innerText && target.innerText.trim() === '关于 SASES') {
             isAbout = true;
             break;
         }
@@ -437,7 +406,7 @@ document.addEventListener('click', function(e) {
             '<h2 style="color: #007aff; margin-bottom: 5px;">SASES</h2>' +
             '<p style="color: #888; font-size: 14px; margin-bottom: 30px;">v1.0.0-Release</p>' +
             '<div style="text-align: left; background: #fff; padding: 15px; border-radius: 8px; line-height: 1.8; font-size: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">' +
-                '<p><strong>' + t('open_source_license') + '：</strong>MIT License</p>' +
+                '<p><strong>开源协议：</strong>MIT License</p>' +
                 '<p><strong>项目地址：</strong><a href="https://github.com/SI-sases/sases" target="_blank" style="color: #007aff; text-decoration: none;">github.com/SI-sases/sases</a></p>' +
                 '<p><strong>商业化说明：</strong>个人学习、研究及企业内部使用完全免费。如需作为商业产品对外提供服务，必须获得官方商业授权。</p>' +
             '</div>' +

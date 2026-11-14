@@ -49,71 +49,50 @@ async def search_agents(q: str, include_self: bool = False, user_id: int = Depen
     return {"results": results}
 
 @router.post("/friend-request")
+async def send_friend_request(request: Request):
+    try:
+        body = await request.json()
+        target = body.get("target_sases_id")
+        from ..db import db_cursor
+        with db_cursor(commit=True) as cur:
+            cur.execute("SELECT id FROM users WHERE sases_id=?", (target,))
+            u = cur.fetchone()
+            if not u:
+                return {"status": "error", "message": "找不到该 SASES ID 的用户"}
+            t_uid = u["id"]
+            sender_id = body.get("sender_sases_id", "unknown")
+            cur.execute("INSERT OR IGNORE INTO conversations (user_id, target_user_id, title, is_friend_chat, updated_at) VALUES (?, ?, ?, 1, datetime('now'))", (t_uid, sender_id, f"好友 {sender_id}"))
+            return {"status": "success", "message": "添加成功"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@router.post("/friend-request")
 async def send_friend_request(body: FriendRequest, user_id: int = Depends(get_current_user)):
     # 1. 如果传了 target_sases_id，说明是加真人好友
     if body.target_sases_id:
-        try:
-            with db_cursor(commit=True) as cur:
-                cur.execute("SELECT id, username FROM users WHERE sases_id=?", (body.target_sases_id,))
-                target = cur.fetchone()
-                if not target:
-                    # 跨服兜底：自动在本地创建影子账号
-                    shadow_username = f"remote_{body.target_sases_id[-6:]}"
-                    try:
-                        cur.execute("INSERT INTO users (username, password_hash, sases_id, credits) VALUES (?, 'shadow', ?, 0)", (shadow_username, body.target_sases_id))
-                    except Exception:
-                        pass # 防止并发重复创建报错
-                    cur.execute("SELECT id, username FROM users WHERE sases_id=?", (body.target_sases_id,))
-                    target = cur.fetchone()
-                    print(f"[跨服加好友] 已创建影子账号: {shadow_username}")
+        with db_cursor(commit=True) as cur:
+            cur.execute("SELECT id FROM users WHERE sases_id=?", (body.target_sases_id,))
+            target = cur.fetchone()
+            if not target:
+                raise HTTPException(status_code=404, detail="找不到该 SASES ID 的用户")
+            
+            target_user_id = target["id"]
+            if target_user_id == user_id:
+                raise HTTPException(status_code=400, detail="不能添加自己为好友")
                 
-                if not target:
-                    raise HTTPException(status_code=500, detail="影子账号创建失败")
-                
-                target_user_id = target["id"]
-                if target_user_id == user_id:
-                    raise HTTPException(status_code=400, detail="不能添加自己为好友")
-                
-                _target_username = target["username"] if target["username"] else ""
-                
-                # 本地留底（防止因重复添加报错导致后续不执行）
-                cur.execute("SELECT id FROM agent_friendships WHERE user_id=? AND target_user_id=?", (user_id, target_user_id))
-                exist = cur.fetchone()
-                if not exist:
-                    cur.execute("INSERT INTO agent_friendships (user_id, friend_agent_id, target_user_id, status, friend_mode) VALUES (?, 'dummy', ?, 'pending', 'normal')", (user_id, target_user_id))
-                
-                # 强制创建会话，确保前端列表能看到
-                cur.execute("SELECT id FROM conversations WHERE user_id=? AND target_user_id=? AND is_friend_chat=1", (user_id, target_user_id))
-                if not cur.fetchone():
-                    cur.execute("INSERT INTO conversations (user_id, target_user_id, title, is_friend_chat, friend_mode) VALUES (?, ?, ?, 1, 'normal')", (user_id, target_user_id, _target_username))
-
-                # 判断是否是远端影子用户
-                if _target_username.startswith("remote_") or "shadow" in str(_target_username):
-                    import httpx, os
-                    from ..broadcast.node_relay import hive_headers
-                    _master_url = os.environ.get("HIVE_MASTER", "http://47.96.87.147:8001")
+            # 查是否已经是好友或待同意
+            cur.execute("SELECT status FROM agent_friendships WHERE user_id=? AND target_user_id=?", (user_id, target_user_id))
+            exist = cur.fetchone()
+            if exist:
+                if exist["status"] == "accepted":
+                    raise HTTPException(status_code=400, detail="你们已经是好友了")
+                elif exist["status"] == "pending":
+                    raise HTTPException(status_code=400, detail="请求已发送，等待对方同意")
                     
-                    cur.execute("SELECT sases_id FROM users WHERE id=?", (user_id,))
-                    _sender_sases = cur.fetchone()["sases_id"]
-                    
-                    _payload = {
-                        "target_sases_id": body.target_sases_id,
-                        "sender_sases_id": _sender_sases
-                    }
-                    
-                    print(f"[跨网加好友] 准备向 {_master_url} 发送请求, payload={_payload}")
-                    try:
-                        resp = httpx.post(f"{_master_url}/hive/sync/friend_request", json=_payload, headers=hive_headers(), timeout=5, trust_env=False)
-                        print(f"[跨网加好友] 发送成功! HTTP {resp.status_code}, 返回: {resp.text}")
-                    except Exception as e:
-                        print(f"[跨网加好友] 💥 发送失败! 异常信息: {e}")
-                        
-            return {"status": "request_sent"}
-        except HTTPException:
-            raise
-        except Exception as e:
-            print(f"[send_friend_request 异常] {e}")
-            raise HTTPException(status_code=500, detail=str(e))
+            # 插入真实好友请求
+            cur.execute("INSERT INTO agent_friendships (user_id, friend_agent_id, target_user_id, status, friend_mode) VALUES (?, 'dummy', ?, 'pending', 'normal')", (user_id, target_user_id))
+        return {"status": "request_sent"}
 
     # 2. 如果传了 agent_id，说明是原有的加智能体功能
     elif body.agent_id:
@@ -141,21 +120,16 @@ async def accept_friend_request(body: AcceptRequest, user_id: int = Depends(get_
             if not row:
                 raise PermissionError("好友请求不存在或已处理")
             
-            sender_id = row["user_id"]       # 发起请求的人
-            receiver_id = row["target_user_id"]     # 同意请求的人 (当前用户)
+            sender_id = row[0]       # 发起请求的人
+            receiver_id = row[1]     # 同意请求的人 (当前用户)
             
             # 2. 更新好友关系为 accepted
             cur.execute("UPDATE agent_friendships SET status='accepted' WHERE id=?", (body.request_id,))
-
-            # [修复] 建立反向好友关系
-            cur.execute("SELECT 1 FROM agent_friendships WHERE user_id=? AND target_user_id=?", (receiver_id, sender_id))
-            if not cur.fetchone():
-                cur.execute("INSERT INTO agent_friendships (user_id, friend_agent_id, target_user_id, status, friend_mode) VALUES (?, 'dummy', ?, 'accepted', 'normal')", (receiver_id, sender_id))
-
+            
             # 3. 为发起者建会话 (如果不存在)
             cur.execute('SELECT username FROM users WHERE id=?', (receiver_id,))
             _recv_row = cur.fetchone()
-            _recv_name = _recv_row["username"] if _recv_row and _recv_row["username"] else f'User{receiver_id}'
+            _recv_name = _recv_row[0] if _recv_row and _recv_row[0] else f'User{receiver_id}'
 
             cur.execute("SELECT id FROM conversations WHERE user_id=? AND target_user_id=? AND is_friend_chat=1", (sender_id, receiver_id))
             if not cur.fetchone():
@@ -164,22 +138,12 @@ async def accept_friend_request(body: AcceptRequest, user_id: int = Depends(get_
             # 4. 为接收者建会话 (如果不存在)
             cur.execute('SELECT username FROM users WHERE id=?', (sender_id,))
             _send_row = cur.fetchone()
-            _send_name = _send_row["username"] if _send_row and _send_row["username"] else f'User{sender_id}'
+            _send_name = _send_row[0] if _send_row and _send_row[0] else f'User{sender_id}'
 
             cur.execute("SELECT id FROM conversations WHERE user_id=? AND target_user_id=? AND is_friend_chat=1", (receiver_id, sender_id))
             if not cur.fetchone():
                 cur.execute("INSERT INTO conversations (user_id, target_user_id, title, is_friend_chat, friend_mode) VALUES (?, ?, ?, 1, 'normal')", (receiver_id, sender_id, _send_name))
                 
-            cur.execute("SELECT username, sases_id FROM users WHERE id=?", (sender_id,))
-            _sender = cur.fetchone()
-            if _sender:
-                import httpx, os
-                _master_url = os.environ.get("HIVE_MASTER", "http://47.96.87.147:8001")
-                cur.execute("SELECT sases_id FROM users WHERE id=?", (user_id,))
-                _my_sases = cur.fetchone()["sases_id"]
-                try:
-                    httpx.post(_master_url + "/hive/sync/accept_friend", json={"sender_sases_id": _sender["sases_id"], "target_sases_id": _my_sases}, timeout=3)
-                except Exception: pass
         return {"status": "accepted"}
     except PermissionError as e:
         raise HTTPException(status_code=403, detail=str(e))
@@ -217,11 +181,8 @@ async def api_suggest_reply(body: CallAgentRequest, user_id: int = Depends(get_c
         raise HTTPException(status_code=400, detail=str(e))
 
 # ================= 好友代理模式切换 =================
-from typing import Optional
-
 class FriendModeRequest(BaseModel):
-    target_user_id: Optional[int] = None
-    conversation_id: Optional[int] = None
+    target_user_id: int
     mode: str
 
 @router.post("/friend-mode")
@@ -231,26 +192,16 @@ async def set_friend_mode(body: FriendModeRequest, user_id: int = Depends(get_cu
     
     try:
         with db_cursor(commit=True) as cur:
-            real_target_id = body.target_user_id
-            if body.conversation_id:
-                cur.execute("SELECT target_user_id FROM conversations WHERE id=? AND user_id=?", (body.conversation_id, user_id))
-                row = cur.fetchone()
-                if row:
-                    real_target_id = row["target_user_id"]
-            
-            if not real_target_id:
-                raise HTTPException(status_code=400, detail="缺少目标用户ID或会话ID")
-
             # 检查好友关系
-            cur.execute("SELECT id FROM agent_friendships WHERE user_id=? AND target_user_id=? AND status='accepted'", (user_id, real_target_id))
+            cur.execute("SELECT id FROM agent_friendships WHERE user_id=? AND target_user_id=? AND status='accepted'", (user_id, body.target_user_id))
             if not cur.fetchone():
                 raise HTTPException(status_code=403, detail="你们还不是好友")
                 
-            # 更新好友关系表
-            cur.execute("UPDATE agent_friendships SET friend_mode=? WHERE user_id=? AND target_user_id=?", (body.mode, user_id, real_target_id))
+            # 更新好友关系表中的模式
+            cur.execute("UPDATE agent_friendships SET friend_mode=? WHERE user_id=? AND target_user_id=?", (body.mode, user_id, body.target_user_id))
             
-            # 精确更新会话模式
-            cur.execute("UPDATE conversations SET friend_mode=? WHERE user_id=? AND target_user_id=? AND is_friend_chat=1", (body.mode, user_id, real_target_id))
+            # 精确更新当前与这个好友的会话模式（加上 target_user_id 防止误改别人的）
+            cur.execute("UPDATE conversations SET friend_mode=? WHERE user_id=? AND target_user_id=? AND is_friend_chat=1", (body.mode, user_id, body.target_user_id))
             
         return {"status": "ok", "mode": body.mode}
     except HTTPException:
@@ -258,14 +209,3 @@ async def set_friend_mode(body: FriendModeRequest, user_id: int = Depends(get_cu
     except Exception as e:
         print(f"[friend-mode 报错] {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-
-class SessionAgentRequest(BaseModel):
-    conversation_id: int
-    agent_id: str
-
-@router.post("/bind-session-agent")
-async def bind_session_agent(body: SessionAgentRequest, user_id: int = Depends(get_current_user)):
-    from ..db import db_cursor
-    with db_cursor(commit=True) as cur:
-        cur.execute("UPDATE conversations SET agent_id=? WHERE id=? AND user_id=?", (body.agent_id, body.conversation_id, user_id))
-    return {"status": "ok"}

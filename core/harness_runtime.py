@@ -155,50 +155,7 @@ class HarnessRuntime:
         except Exception:
             pass
 
-    async def invoke_tool(self, module_id: str, params: Dict[str, Any] = None) -> ToolInvokeResponse:
-        import sqlite3
-        try:
-            conn = sqlite3.connect('users.db')
-            cur = conn.cursor()
-            cur.execute("SELECT api_category FROM api_registry WHERE api_id=?", (module_id,))
-            row = cur.fetchone()
-            conn.close()
-            cat = row[0] if row else 'harness'
-        except Exception:
-            cat = 'harness'
-        
-        if cat == 'render':
-            return ToolInvokeResponse(module_id=module_id, success=True, result={"status": "rendered", "render": module_id, "params": params})
-        
-        return self._invoke_tool_legacy(module_id, params or {})
-
-
-    def _invoke_tool_legacy(self, module_id: str, params: Dict[str, Any]) -> ToolInvokeResponse:
-        # ===== P0: api_category =====
-        try:
-            import sqlite3 as _sqlite_p0
-            _conn_p0 = _sqlite_p0.connect("users.db")
-            _cur_p0 = _conn_p0.cursor()
-            _cur_p0.execute("SELECT api_category FROM api_registry WHERE api_id=?", (module_id,))
-            _row_p0 = _cur_p0.fetchone()
-            _conn_p0.close()
-            _cat_p0 = _row_p0[0] if _row_p0 else None
-        except Exception:
-            _cat_p0 = None
-        if _cat_p0 == "render":
-            return ToolInvokeResponse(
-                module_id=module_id,
-                success=True,
-                result={
-                    "status": "rendered",
-                    "render": module_id,
-                    "params": params,
-                    "needs_frontend": True,
-                    "review_strategy": "skip",
-                },
-            )
-        # ===== P0 end =====
-
+    def invoke_tool(self, module_id: str, params: Dict[str, Any]) -> ToolInvokeResponse:
         import time as _t2
         _start = _t2.time()
         info = self._modules.get(module_id)

@@ -13,7 +13,6 @@ security = HTTPBearer()
 
 
 class SendMessageRequest(BaseModel):
-    enabled_api_ids: list = None
     msg_type: Optional[str] = "standard"
     attachments: Optional[list] = None
     conversation_id: Optional[int] = None
@@ -78,7 +77,6 @@ async def send_message(body: SendMessageRequest, user_id: int = Depends(get_curr
         content=body.content,
         sender_agent_id=body.sender_agent_id,
         mode=body.mode,
-        enabled_api_ids=body.enabled_api_ids,
         max_steps=body.max_steps,
         msg_type=body.msg_type,
         attachments=body.attachments

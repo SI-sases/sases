@@ -1,14 +1,8 @@
 # core/services/local_embedding.py
 import os
 import numpy as np
-try:
-    import onnxruntime as ort
-    from transformers import AutoTokenizer
-except ImportError:
-    ort = None
-    AutoTokenizer = None
-    print("[LocalEmbedding] Missing deps, fallback to API mode")
-
+import onnxruntime as ort
+from transformers import AutoTokenizer
 
 
 class LocalEmbedding:

@@ -17,136 +17,43 @@ def get_sent_red_packets(user_id, limit=50):
         )
         return [dict(r) for r in cur.fetchall()]
 
-import json
-def create_transfer(sender_id: int, receiver_id: int, amount: float, message: str = '', credit_type: str = 'credits', conversation_id: int = None, idempotency_key: str = None):
+def create_transfer(sender_id: int, receiver_id: int, amount: float, message: str = ''):
     """转账：立即扣发送方，加接收方，一步完成"""
     if amount <= 0:
         return None, "金额必须大于0"
     if sender_id == receiver_id:
         return None, "不能转账给自己"
 
-    _receiver_is_remote = False
-    _receiver_sases = None
-    _sender_sases = None
-    with db_cursor() as _rc:
-        _rc.execute("SELECT username, sases_id FROM users WHERE id=?", (receiver_id,))
-        _r = _rc.fetchone()
-        if _r:
-            _uname = _r["username"] or ""
-            if _uname.startswith("remote_") or "shadow" in str(_uname):
-                _receiver_is_remote = True
-                _receiver_sases = _r["sases_id"]
-    if _receiver_is_remote:
-        with db_cursor() as _sc:
-            _sc.execute("SELECT sases_id FROM users WHERE id=?", (sender_id,))
-            _sr = _sc.fetchone()
-            if _sr:
-                _sender_sases = _sr["sases_id"]
-
     with db_cursor(commit=True) as cur:
-        if idempotency_key:
-            cur.execute("SELECT id FROM transactions WHERE idempotency_key=?", (idempotency_key,))
-            _exist = cur.fetchone()
-            if _exist:
-                return _exist["id"], None
-        if credit_type == 'compute':
-            cur.execute("SELECT balance FROM user_compute_balance WHERE user_id=?", (sender_id,))
-            row = cur.fetchone()
-            if not row or row["balance"] < amount:
-                return None, "算力余额不足"
-            cur.execute("UPDATE user_compute_balance SET balance = balance - ? WHERE user_id=?", (amount, sender_id))
-            if not _receiver_is_remote:
-                cur.execute("INSERT INTO user_compute_balance (user_id, balance) VALUES (?, ?) ON CONFLICT(user_id) DO UPDATE SET balance = balance + ?", (receiver_id, amount, amount))
-        else:
-            cur.execute("SELECT credits FROM users WHERE id=?", (sender_id,))
-            row = cur.fetchone()
-            if not row or row["credits"] < amount:
-                return None, "积分不足"
-            cur.execute("UPDATE users SET credits = credits - ? WHERE id=?", (amount, sender_id))
-            if not _receiver_is_remote:
-                cur.execute("UPDATE users SET credits = credits + ? WHERE id=?", (amount, receiver_id))
+        # 检查余额
+        cur.execute("SELECT credits FROM users WHERE id=?", (sender_id,))
+        row = cur.fetchone()
+        if not row or row["credits"] < amount:
+            return None, "积分不足"
+
+        # 扣发送方
+        cur.execute("UPDATE users SET credits = credits - ? WHERE id=?", (amount, sender_id))
+        # 加接收方
+        cur.execute("UPDATE users SET credits = credits + ? WHERE id=?", (amount, receiver_id))
 
         now = datetime.now().isoformat()
-        _tx_status = "pending" if _receiver_is_remote else "completed"
-        _tx_rx_node = "remote" if _receiver_is_remote else "local"
+        # 记录交易
         cur.execute("""
             INSERT INTO transactions
-            (sender_id, receiver_id, amount, tx_type, status, message, completed_at, credit_type, idempotency_key, receiver_node_id)
-            VALUES (?, ?, ?, 'transfer', ?, ?, ?, ?, ?, ?)
-        """, (sender_id, receiver_id, amount, _tx_status, message, now, credit_type, idempotency_key, _tx_rx_node))
+            (sender_id, receiver_id, amount, tx_type, status, message, completed_at)
+            VALUES (?, ?, ?, 'transfer', 'completed', ?, ?)
+        """, (sender_id, receiver_id, amount, message, now))
         tx_id = cur.lastrowid
 
+        # 积分日志
         cur.execute("""
             INSERT INTO contribution_log (user_id, action, event_type, points, detail)
             VALUES (?, '转账支出', 'transfer', ?, ?)
-        """, (sender_id, -amount, f"向用户{receiver_id}转账({credit_type})"))
+        """, (sender_id, -amount, f"向用户{receiver_id}转账"))
         cur.execute("""
             INSERT INTO contribution_log (user_id, action, event_type, points, detail)
             VALUES (?, '转账收入', 'transfer', ?, ?)
-        """, (receiver_id, amount, f"来自用户{sender_id}的转账({credit_type})"))
-
-        # 插入双向气泡
-        try:
-
-            payload = {"tx_id": tx_id, "amount": amount, "credit_type": credit_type, "message": message or "转账"}
-            msg_content = "[TRANSFER]:" + json.dumps(payload, ensure_ascii=False)
-            now_str = datetime.now().isoformat()
-
-            a_conv_id = conversation_id
-            if not a_conv_id:
-                cur.execute("SELECT id FROM conversations WHERE user_id=? AND target_user_id=? AND is_friend_chat=1", (sender_id, receiver_id))
-                r = cur.fetchone()
-                if r: a_conv_id = r["id"]
-
-            cur.execute("SELECT id FROM conversations WHERE user_id=? AND target_user_id=? AND is_friend_chat=1", (receiver_id, sender_id))
-            r2 = cur.fetchone()
-            b_conv_id = r2["id"] if r2 else None
-
-            if a_conv_id:
-                cur.execute("INSERT INTO messages (conversation_id, sender, content, created_at) VALUES (?, 'user', ?, ?)", (a_conv_id, msg_content, now_str))
-            if b_conv_id:
-                cur.execute("INSERT INTO messages (conversation_id, sender, content, created_at) VALUES (?, 'user', ?, ?)", (b_conv_id, msg_content, now_str))
-        except Exception as e:
-            print("转账气泡插入失败:", e)
-
-        # 跨网转账：事务外发 httpx，失败走 outbox
-        if _receiver_is_remote and tx_id:
-            import httpx, os
-            from ..broadcast.node_relay import hive_headers
-            from .outbox.outbox_service import enqueue
-            _mx = os.environ.get("HIVE_MASTER", "http://47.96.87.147:8001")
-            _pl = {
-                "idempotency_key": idempotency_key or ("tx-" + str(tx_id)),
-                "sender_sases_id": _sender_sases,
-                "target_sases_id": _receiver_sases,
-                "amount": amount,
-                "credit_type": credit_type,
-                "message": message or ""
-            }
-            _ok = False
-            _hdrs = {}
-            try:
-                _hdrs = hive_headers()
-                with httpx.Client(timeout=5, trust_env=False, headers=_hdrs) as _cli:
-                    _resp = _cli.post(_mx + "/hive/sync/transfer", json=_pl)
-                if 200 <= _resp.status_code < 300:
-                    _body = _resp.json()
-                    if _body.get("status") == "ok" or _body.get("skipped"):
-                        _ok = True
-            except Exception as _e:
-                print("[create_transfer] httpx error:", _e)
-            if _ok:
-                try:
-                    with db_cursor(commit=True) as _uc:
-                        _uc.execute("UPDATE transactions SET status='completed', completed_at=? WHERE id=?", (datetime.now().isoformat(), tx_id))
-                except Exception as _ue:
-                    print("[create_transfer] update status error:", _ue)
-            else:
-                try:
-                    enqueue(_mx + "/hive/sync/transfer", _pl, extra_headers=_hdrs)
-                    print("[create_transfer] queued to outbox tx_id=" + str(tx_id))
-                except Exception as _qe:
-                    print("[create_transfer] outbox enqueue error:", _qe)
+        """, (receiver_id, amount, f"来自用户{sender_id}的转账"))
 
         return tx_id, None
 
@@ -154,12 +61,10 @@ def create_transfer(sender_id: int, receiver_id: int, amount: float, message: st
 # ========== 红包（先冻结，后领取/退回） ==========
 
 def create_red_packet(sender_id: int, receiver_id: int, amount: float,
-                      message: str = '', expire_hours: int = RED_PACKET_EXPIRE_HOURS, credit_type: str = 'credits'):
+                      message: str = '', expire_hours: int = RED_PACKET_EXPIRE_HOURS):
     """发红包：立即扣发送方积分（冻结），等待接收方领取"""
     if amount <= 0:
         return None, "金额必须大于0"
-    if amount > 300:
-        return None, "红包最大金额不能超过300积分"
     if sender_id == receiver_id:
         return None, "不能发红包给自己"
 
@@ -179,9 +84,9 @@ def create_red_packet(sender_id: int, receiver_id: int, amount: float,
         # 创建 pending 红包
         cur.execute("""
             INSERT INTO transactions
-            (sender_id, receiver_id, amount, tx_type, status, message, expires_at, credit_type)
-            VALUES (?, ?, ?, 'red_packet', 'pending', ?, ?, ?)
-        """, (sender_id, receiver_id, amount, message, expires.isoformat(), credit_type))
+            (sender_id, receiver_id, amount, tx_type, status, message, expires_at)
+            VALUES (?, ?, ?, 'red_packet', 'pending', ?, ?)
+        """, (sender_id, receiver_id, amount, message, expires.isoformat()))
         tx_id = cur.lastrowid
 
         # 积分日志（支出）

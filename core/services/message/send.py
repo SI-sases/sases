@@ -5,21 +5,6 @@ import httpx
 from datetime import datetime
 from typing import Optional
 from ...db import db_cursor
-from ..friend_gate import check_friend_gate
-
-
-def _normalize_prefix(content):
-    """把 #N xxx / #N：xxx / #N:xxx 统一成 #N:xxx；*0/*1 同理"""
-    import re
-    if not content or not isinstance(content, str):
-        return content
-    s = content.strip()
-    m = re.match(r'^([#*][0-4])(?![0-9a-zA-Z])', s)
-    if m:
-        prefix = m.group(1)
-        rest = s[len(prefix):].lstrip('：: ' + chr(9))
-        return prefix + ':' + rest
-    return content
 
 
 def _sases_fallback_cid():
@@ -86,45 +71,6 @@ async def send_message(
         except Exception as _e_fc:
             print('[message] 好友投递失败: ' + str(_e_fc))
 
-    # ===== P0-D: 付费墙预检（#1~#4 执行类消息必须通过 license 检查）=====
-    if isinstance(content, str):
-        import re as _re_lic
-        _pref_check = _normalize_prefix(content)
-        if isinstance(_pref_check, str) and _re_lic.match(r'^#[1-4]:', _pref_check):
-            try:
-                from ...services.license_service import verify_license_json, get_exec_token
-            except ImportError:
-                from core.services.license_service import verify_license_json, get_exec_token
-            _lic_ok, _lic_reason = verify_license_json()
-            if not _lic_ok:
-                raise HTTPException(status_code=403, detail=f"授权未激活: {_lic_reason}")
-            try:
-                from launcher.hardware import get_hardware_fingerprint
-                _fp = get_hardware_fingerprint()
-            except Exception:
-                _fp = "unknown"
-            _tok = get_exec_token(user_id, _fp)
-            if not _tok:
-                raise HTTPException(status_code=403, detail="云端授权校验失败")
-    # ===== P0-D end =====
-
-    _att_str = json.dumps(attachments) if attachments else None
-
-    # 跨账号投递：好友会话的任何消息（文字/图片/文件）都投递
-    if conversation_id:
-        try:
-            with db_cursor() as _c_fc:
-                _c_fc.execute('SELECT is_friend_chat FROM conversations WHERE id=?', (conversation_id,))
-                _r_fc = _c_fc.fetchone()
-            if _r_fc and _r_fc['is_friend_chat'] == 1:
-                from .friend_chat import handle_friend_message
-                _friend_res = await handle_friend_message(user_id, conversation_id, content, sender_agent_id, msg_type, attachments, _att_str, agent_id, mode)
-                if _friend_res is not None:
-                    return _friend_res
-        except Exception as _e_fc:
-            print('[message] 好友投递失败: ' + str(_e_fc))
-
-    _scan_content = _normalize_prefix(content)
     # #0 清锁（最先拦截，绕过所有锁检查）
     if isinstance(content, str) and content.strip().startswith('#0'):
         import os
@@ -184,75 +130,9 @@ async def send_message(
             'clear_lock': True
         }
 
-    # *2 管理员广播（对普通用户隐藏）
-    if isinstance(_scan_content, str) and _scan_content.strip().startswith('*2:'):
-        from ... import auth_service as _auth
-        if not _auth.is_admin(user_id):
-            # 普通用户拦截，静默替换为普通聊天，不暴露 *2 存在
-            _scan_content = content
-        
-        _bcast_msg = _scan_content.strip()[3:].lstrip('：: ')
-        if not _bcast_msg:
-            return {
-                'conversation_id': conversation_id,
-                'user_message': content,
-                'assistant_reply': '❌ 广播内容不能为空。',
-                'agent_id': agent_id,
-                'sender_agent_id': sender_agent_id,
-                'mode': mode,
-            }
-            
-        try:
-            with db_cursor(commit=True) as _cur_b:
-                _cur_b.execute("SELECT id, username FROM users")
-                _users = _cur_b.fetchall()
-                _count = 0
-                import datetime as _dt_mod
-                _now = _dt_mod.datetime.now().isoformat()
-                
-                for _u in _users:
-                    _uid = _u['id']
-                    if _uid == user_id:
-                        continue
-                    
-                    _target_agent = f"sases_assistant_{_uid}"
-                    _cur_b.execute("SELECT id FROM conversations WHERE user_id=? AND agent_id=?", (_uid, _target_agent))
-                    _conv_row = _cur_b.fetchone()
-                    
-                    if _conv_row:
-                        _cid = _conv_row['id']
-                    else:
-                        _cur_b.execute("INSERT INTO conversations (user_id, agent_id, title) VALUES (?, ?, 'SASES 助手')", (_uid, _target_agent))
-                        _cid = _cur_b.lastrowid
-                        
-                    _cur_b.execute(
-                        "INSERT INTO messages (conversation_id, sender, content, sender_agent_id, msg_type, attachments, created_at) VALUES (?, 'assistant', ?, ?, 'standard', NULL, ?)",
-                        (_cid, f"📢 [系统广播] {_bcast_msg}", _target_agent, _now)
-                    )
-                    _cur_b.execute("UPDATE conversations SET updated_at=? WHERE id=?", (_now, _cid))
-                    _count += 1
-                    
-            return {
-                'conversation_id': conversation_id,
-                'user_message': None, # 管理员界面不展示 *2 指令原文
-                'assistant_reply': f'✅ 广播成功，已向 {_count} 个用户发送。',
-                'agent_id': agent_id,
-                'sender_agent_id': sender_agent_id,
-                'mode': mode,
-            }
-        except Exception as _e_b:
-            return {
-                'conversation_id': conversation_id,
-                'user_message': content,
-                'assistant_reply': '❌ 广播发送失败：' + str(_e_b),
-                'agent_id': agent_id,
-                'sender_agent_id': sender_agent_id,
-                'mode': mode,
-            }
-
     # *0 脚本执行（调度员内部能力，用户不可见）
-    if isinstance(_scan_content, str) and _scan_content.strip().startswith('*0:'):
-        _script_body = _scan_content.strip()
+    if isinstance(content, str) and (content.strip().startswith('*0:') or content.strip().startswith('*0：')):
+        _script_body = content.strip()
         for _pfx0 in ('*0：', '*0:'):
             if _script_body.startswith(_pfx0):
                 _script_body = _script_body[len(_pfx0):].lstrip()
@@ -266,35 +146,6 @@ async def send_message(
                 'sender_agent_id': sender_agent_id,
                 'mode': mode,
             }
-        # 自然语言自动转 Python 代码（*0 只接受 Python，非代码内容用 LLM 转换）
-        try:
-            import ast as _ast0
-            _ast0.parse(_script_body)
-        except SyntaxError:
-            try:
-                from ..swarm.llm_parser import _call_llm as _llm0
-                _nl_prompt = '把下面的自然语言需求转换成一段完整可执行的 Python 脚本。只输出代码，不要任何解释、不要 markdown 代码块标记。需求：' + _script_body
-                _nl_sys = '你是 Python 代码生成器。用户给出自然语言需求，你输出可直接运行的 Python 代码。必须符合 Python 语法，禁止 markdown 代码块标记（禁止 ```），禁止解释文字。'
-                _converted = await _llm0(_nl_prompt, system_prompt=_nl_sys, max_tokens=800)
-                _converted = _converted.strip()
-                if _converted.startswith(chr(96) + chr(96) + chr(96)):
-                    _cl = _converted.split(chr(10))
-                    if _cl and _cl[0].startswith(chr(96) + chr(96) + chr(96)):
-                        _cl = _cl[1:]
-                    if _cl and _cl[-1].strip() == chr(96) + chr(96) + chr(96):
-                        _cl = _cl[:-1]
-                    _converted = chr(10).join(_cl)
-                _ast0.parse(_converted)
-                _script_body = _converted
-            except Exception as _e_nl:
-                return {
-                    'conversation_id': conversation_id,
-                    'user_message': content,
-                    'assistant_reply': '⚠️ 内容既不是合法 Python，也无法自动转换。请提供 Python 代码，或换种描述。原因：' + str(_e_nl)[:150],
-                    'agent_id': agent_id,
-                    'sender_agent_id': sender_agent_id,
-                    'mode': mode,
-                }
         if len(_script_body) > 50000:
             return {
                 'conversation_id': conversation_id,
@@ -428,9 +279,9 @@ async def send_message(
     _numbered_prefix_matched = False
     _force_swarm = False
     for _p, _m in COMMAND_PREFIX_MAP.items():
-        if _scan_content.startswith(_p):
+        if content.startswith(_p):
             _numbered_prefix_matched = True
-            content = _scan_content[len(_p):].lstrip()
+            content = content[len(_p):].lstrip()
             if _m == "exec":
                 content = "执行：" + content
             elif _m == "task":
@@ -474,7 +325,6 @@ async def send_message(
                             user_input=content,
                             supervisor_id=sender_agent_id or agent_id,
                             supervisor_run_id=_run_id,
-                            enabled_api_ids=enabled_api_ids,
                         )
                         # v0.38.0: precheck 拦截时，自动重试一次（用 reason 修正 prompt）
                         if _plan_result and isinstance(_plan_result, dict) and _plan_result.get('status') == 'no_plan' and 'precheck blocked' in str(_plan_result.get('reason', '')):
@@ -487,7 +337,6 @@ async def send_message(
                                     user_input=_retry_input,
                                     supervisor_id=sender_agent_id or agent_id,
                                     supervisor_run_id=_run_id,
-                            enabled_api_ids=enabled_api_ids,
                                 )
                             except Exception as _e_retry:
                                 print('[supervisor] precheck 重试失败: ' + str(_e_retry))
@@ -581,7 +430,7 @@ async def send_message(
                 or any(_k in content for _k in ('导入知识库','加入知识库','存到知识库','存到项目库','导入项目库','加到知识库'))
             )
             _skip_kb_qa = (
-                _scan_content.startswith('*1:')
+                content.startswith('*1:') or content.startswith('*1：')
                 or content.startswith('[用户发了一张图片]')
                 or content.startswith('[用户发了一个文件')
                 or _raw_content.startswith('[IMAGE]:')
@@ -652,9 +501,9 @@ async def send_message(
             _uni_text = None
             _uni_target = 'kb'
             if True:
-                for _up in ('*1:',):
-                    if _scan_content.startswith(_up):
-                        _uni_body = _scan_content[len(_up):].strip()
+                for _up in ('*1：', '*1:'):
+                    if content.startswith(_up):
+                        _uni_body = content[len(_up):].strip()
                         if '项目库' in _uni_body.split('\n', 1)[0]:
                             _uni_target = 'project'
                         _uni_lines = _uni_body.split('\n', 1)
@@ -666,7 +515,7 @@ async def send_message(
                                     break
                         break
             # 单行 *1: 且含图片语义 → 关联最近图片导入
-            if not _uni_text and isinstance(content, str) and _scan_content.startswith('*1:'):
+            if not _uni_text and isinstance(content, str) and content.startswith(('*1:', '*1：')):
                 from datetime import datetime as _dtn
                 _img_uni_body = content[3:].strip()
                 if any(_k in _img_uni_body for _k in ('图片', '这张图', '上图', '刚才的图', '图上的')):
@@ -703,24 +552,6 @@ async def send_message(
                         'sender_agent_id': sender_agent_id,
                         'mode': mode,
                         'import_mode': 'image'
-                    }
-            # 单行 *1: 且非图片 → 提示用户用两行格式
-            if not _uni_text and isinstance(content, str) and _scan_content.startswith('*1:'):
-                _single_body = _scan_content[3:].strip()
-                _hint_body = _single_body
-                for _sp in ('导入项目库：', '导入项目库:', '导入项目库', '导入知识库：', '导入知识库:', '导入知识库', '内容如下：', '内容如下', '内容：', '内容:'):
-                    if _hint_body.startswith(_sp):
-                        _hint_body = _hint_body[len(_sp):].strip()
-                        break
-                if _hint_body:
-                    return {
-                        'conversation_id': conversation_id,
-                        'user_message': content,
-                        'assistant_reply': '📋 知识库导入需要两行格式：' + chr(10) + chr(10) + '第一行：*1: 导入知识库（或 *1: 导入项目库）' + chr(10) + '第二行：要导入的正文内容' + chr(10) + chr(10) + '示例：' + chr(10) + '*1: 导入知识库' + chr(10) + '这是要导入的正文。',
-                        'agent_id': agent_id,
-                        'sender_agent_id': sender_agent_id,
-                        'mode': mode,
-                        'import_mode': 'star1_hint'
                     }
             if _uni_text:
                 try:
@@ -877,10 +708,7 @@ async def send_message(
                 # 直达通道：单工具任务不走 swarm（v0.32.0）
                 try:
                     from . import direct_channel as _dc
-                    if not _numbered_prefix_matched:
-                        _dc_ok, _dc_reply = await _dc.try_direct(content, user_id=user_id, conversation_id=conversation_id)
-                    else:
-                        _dc_ok, _dc_reply = False, ""
+                    _dc_ok, _dc_reply = await _dc.try_direct(content, user_id=user_id, conversation_id=conversation_id)
                     if _dc_ok:
                         with db_cursor(commit=True) as _cur_dc:
                             _cur_dc.execute(
@@ -1127,12 +955,7 @@ async def send_message(
             cur.execute("SELECT * FROM model_configs WHERE id=? AND user_id=?", (agent_id, user_id))
             model_row = cur.fetchone()
         if not model_row:
-            # 【新增】SASES 助手作为留言板，不报错
-            _is_sases_assist = str(agent_id or '').startswith('sases_assistant')
-            if _is_sases_assist:
-                assistant_reply = "📢 留言已收到，系统管理员上线后会处理你的反馈。"
-            else:
-                assistant_reply = "错误：找不到绑定的智能体模型"
+            assistant_reply = "错误：找不到绑定的智能体模型"
         else:
             model_config = dict(model_row)
             # 项目库检索（v0.17.0）— 仅 SASES 助手

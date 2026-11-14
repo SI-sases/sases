@@ -27,8 +27,6 @@ function getPinyinInitial(name) {
 }
 
 function hashColor(input) {
-  if (!input) input = 'default_agent';
-  input = String(input);
   let hash = 0;
   for (let i = 0; i < input.length; i++) {
     hash = input.charCodeAt(i) + ((hash << 5) - hash);
@@ -48,35 +46,21 @@ async function fetchAgents() {
     const myData = await api.listMyAgents();
     myAgents = myData.agents || [];
   } catch (e) {
-    console.warn('获取智能体列表失败 to get agent list', e);
+    console.warn('获取智能体列表失败', e);
   }
   try {
     const friendData = await api.listFriendAgents();
-    const rawFriends = friendData.friends || [];
-    // [核心防弹衣] 前端兜底去重，防止后端返回重复项
-    const seen = new Set();
-    friendAgents = rawFriends.filter(f => {
-      if (!f.target_user_id) return false;
-      if (seen.has(f.target_user_id)) return false;
-      seen.add(f.target_user_id);
-      return true;
-    });
+    friendAgents = friendData.friends || [];
   } catch (e) {
-    console.warn('获取好友智能体失败 to get friend agents', e);
+    console.warn('获取好友智能体失败', e);
   }
 }
 
 function generateAgentRow(agent, type) {
-  // 兼容处理：好友列表可能没有 agent_id，用 target_user_id 兜底
-  const aid = agent.agent_id || agent.target_user_id || 'unknown';
-  const aname = agent.name || agent.owner || '未命名';
-  
-  const bgColor = hashColor(aid);
+  const bgColor = hashColor(agent.agent_id);
   const statusClass = getStatusDotClass(agent);
-  
-  const nameHtml = type === 'my' ? `${aname}${agent.type === 'local' ? ' <span style="color:green;font-size:12px;">授粉+2</span>' : ''}` : aname;
-  const desc = type === 'my' ? (agent.detail || agent.capability || '') : `${agent.owner || ''} - ${agent.detail || ''}`;
-  
+  const name = type === 'my' ? `${agent.name}${agent.type === 'local' ? ' <span style="color:green;font-size:12px;">授粉+2</span>' : ''}` : agent.name;
+  const desc = type === 'my' ? (agent.detail || agent.capability) : `${agent.owner} · ${agent.detail}`;
   const actions = type === 'my' ? `
     <button class="swipe-btn share-btn" data-action="share">${t('share_settings')}</button>
     <button class="swipe-btn delete-btn" data-action="delete">${t('delete')}</button>
@@ -86,16 +70,16 @@ function generateAgentRow(agent, type) {
   `;
 
   return `
-    <div class="swipe-row" data-agent-id="${aid}" data-agent-name="${aname}" data-agent-type="${type}" ${type === 'friend' ? `data-conversation-id="${agent.conversation_id || ''}" data-target-user-id="${agent.target_user_id || ''}"` : ''}>
+    <div class="swipe-row" data-agent-id="${agent.agent_id}" data-agent-name="${agent.name}" data-agent-type="${type}" ${type === 'friend' ? `data-conversation-id="${agent.conversation_id || ''}" data-target-user-id="${agent.target_user_id || ''}"` : ''}>
       <div class="agent-row">
         <div class="agent-avatar" style="background: ${bgColor};">
-          ${aname.charAt(0)}
+          ${agent.name.charAt(0)}
           <span class="${statusClass}"></span>
         </div>
         <div class="agent-info">
-          <div class="agent-name">${nameHtml}</div>
+          <div class="agent-name">${name}</div>
           <div class="agent-desc">${desc}</div>
-          <div class="agent-id-display" style="font-size:12px;color:#999;">ID: ${aid}</div>
+          <div class="agent-id-display" style="font-size:12px;color:#999;">ID: ${agent.agent_id}</div>
         </div>
       </div>
       <div class="swipe-actions">
@@ -104,7 +88,6 @@ function generateAgentRow(agent, type) {
     </div>
   `;
 }
-
 
 function closeAllSwipe() {
   if (currentOpenRow) {
@@ -179,15 +162,15 @@ async function renderContacts(container) {
     letterIndexHtml += '</div>';
   }
 
-  // 移除多余的单独加好友按钮,保持微信风格
+  // 移除多余的单独加好友按钮，保持微信风格
   container.innerHTML = `
     <div class="subpage-search-bar" style="margin-bottom:10px;">
       <input type="text" id="contact-search-input" class="search-input" placeholder="${t('search_placeholder')}">
     </div>
     <div class="me-menu">
-      <div class="me-menu-item" data-entry="new-agent">添加朋友/智能体</div>
-      <div class="me-menu-item" data-entry="api-agent"> ${t('api_agent')}</div>
-      <div class="me-menu-item" data-entry="group-chat">&#128101; ${t('group_chat')}</div>
+      <div class="me-menu-item" data-entry="new-agent">🧑‍🤝‍🧑 添加朋友/智能体</div>
+      <div class="me-menu-item" data-entry="api-agent">🔑 ${t('api_agent')}</div>
+      <div class="me-menu-item" data-entry="group-chat">👥 ${t('group_chat')}</div>
     </div>
     <div class="section-title">${t('my_agents')}</div>
     ${myAgentsHtml}
@@ -249,7 +232,7 @@ async function renderContacts(container) {
       const agentType = row.dataset.agentType;
       
     if (agentType === 'friend') {
-      // 好友智能体:弹出名片页
+      // 好友智能体：弹出名片页
       const convId = row.dataset.conversationId ? parseInt(row.dataset.conversationId) : null;
       const targetUserId = row.dataset.targetUserId ? parseInt(row.dataset.targetUserId) : null;
 
@@ -268,10 +251,6 @@ async function renderContacts(container) {
             btn.onclick = () => {
               if (window.closeSubpage) window.closeSubpage();
               setTimeout(() => {
-            if (targetUserId) {
-              localStorage.setItem('sases_current_target_uid', targetUserId);
-            }
-
                 openChatWindow(convId, agentName, agentId, agentType, 1, 'normal', targetUserId);
               }, 100);
             };
@@ -279,7 +258,7 @@ async function renderContacts(container) {
         }, 100);
       }
     } else {
-      // 我的智能体:强开空白会话,不传历史
+      // 我的智能体：强开空白会话，不传历史
       openChatWindow(null, agentName, agentId, agentType);
     }
     });
@@ -353,12 +332,12 @@ function filterAgents(query) {
   });
 }
 
-// ==================== 添加朋友 / 智能体页(参考微信) ====================
+// ==================== 添加朋友 / 智能体页（参考微信） ====================
 function openNewAgentPage() {
   const contentHtml = `
     <div style="padding: 10px 0;">
       <div style="background: #fff; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
-        <div style="font-weight: 600; margin-bottom: 10px; font-size: 15px;">&#128269; 添加新好友 (通过 SASES ID)</div>
+        <div style="font-weight: 600; margin-bottom: 10px; font-size: 15px;">🔍 添加新好友 (通过 SASES ID)</div>
         <div style="display: flex; gap: 8px;">
           <input type="text" class="search-input" id="add-user-input" placeholder="输入对方 SASES ID (如 sases_xxx)" style="flex:1;">
           <button class="search-btn" id="add-user-btn">添加</button>
@@ -366,7 +345,7 @@ function openNewAgentPage() {
       </div>
 
       <div style="background: #fff; border-radius: 8px; padding: 15px;">
-        <div style="font-weight: 600; margin-bottom: 10px; font-size: 15px;">&#129302; 搜索并添加智能体</div>
+        <div style="font-weight: 600; margin-bottom: 10px; font-size: 15px;">🤖 搜索并添加智能体</div>
         <div class="subpage-search-bar" style="margin-bottom:0;">
           <input type="text" class="search-input" id="agent-search-input" placeholder="搜索智能体名称...">
           <button class="search-btn" id="search-agent-btn">搜索</button>
@@ -388,7 +367,7 @@ function openNewAgentPage() {
     // 添加用户事件
     document.getElementById('add-user-btn').addEventListener('click', async () => {
       const sasesId = document.getElementById('add-user-input').value.trim();
-      if (!sasesId) return alert('请输入 enter input enter enter enter enter enter enter enter enter enter enter input enter enter SASES ID');
+      if (!sasesId) return alert('请输入 SASES ID');
       
       try {
         const res = await fetch('/agents/friend-request', {
@@ -400,10 +379,10 @@ function openNewAgentPage() {
           body: JSON.stringify({ target_sases_id: sasesId })
         });
         const data = await res.json();
-        if (res.ok) alert('✅ 好友请求已发送,等待对方同意！');
+        if (res.ok) alert('✅ 好友请求已发送，等待对方同意！');
         else alert('❌ 发送失败: ' + (data.detail || data.message || '未知错误'));
       } catch (e) {
-        alert('网络错误 error: ' + e.message);
+        alert('网络错误: ' + e.message);
       }
     });
 
@@ -439,7 +418,7 @@ async function searchAgents(q) {
           <div class="agent-avatar" style="background: ${hashColor(agent.agent_id)};">${agent.name.charAt(0)}</div>
           <div class="agent-info">
             <div class="agent-name">${agent.name}</div>
-            <div class="agent-desc">${agent.owner} - ${agent.detail}</div>
+            <div class="agent-desc">${agent.owner} · ${agent.detail}</div>
             <div class="agent-id-display" style="font-size:12px;color:#999;">ID: ${agent.agent_id}</div>
           </div>
           <button class="add-friend-btn" data-agent-id="${agent.agent_id}">${t('add_friend')}</button>
@@ -452,18 +431,18 @@ async function searchAgents(q) {
       btn.addEventListener('click', async (e) => {
         e.stopPropagation();
         const agentId = btn.dataset.agentId;
-        // 注意:这里调用的是加智能体的旧API,如果需要区分,可以在 api.sendFriendRequest 里传 agent_id
+        // 注意：这里调用的是加智能体的旧API，如果需要区分，可以在 api.sendFriendRequest 里传 agent_id
         await sendFriendRequest(agentId);
       });
     });
   } catch (e) {
-    resultsContainer.innerHTML = `<div class="subpage-placeholder">搜索失败:${e.message}</div>`;
+    resultsContainer.innerHTML = `<div class="subpage-placeholder">搜索失败：${e.message}</div>`;
   }
 }
 
 async function sendFriendRequest(agentId) {
   try {
-    // 这里保持原有逻辑(假设 api.js 里有这个方法)
+    // 这里保持原有逻辑（假设 api.js 里有这个方法）
     await api.sendFriendRequest(agentId);
     alert(t('request_sent'));
   } catch (e) {
@@ -506,8 +485,6 @@ async function loadFriendRequests() {
           await api.acceptFriendRequest(requestId);
           alert(t('accepted') || '已同意');
           loadFriendRequests();
-          if (window.loadFriendAgents) window.loadFriendAgents();
-          if (window.initMessages) window.initMessages();
         } catch (err) { alert('操作失败: ' + err.message); }
       });
     });
@@ -523,7 +500,7 @@ async function loadFriendRequests() {
       });
     });
   } catch (e) {
-    container.innerHTML = `<div class="subpage-placeholder">加载失败 failed failed:${e.message}</div>`;
+    container.innerHTML = `<div class="subpage-placeholder">加载失败：${e.message}</div>`;
   }
 }
 
@@ -542,7 +519,7 @@ async function openGroupChatList() {
       groups.forEach(group => {
         groupsHtml += `
           <div class="me-menu-item group-item" data-group-id="${group.id}" data-group-name="${group.name}">
-            <span class="menu-icon">&#128101;</span>
+            <span class="menu-icon">👥</span>
             <div class="menu-text">
               <div class="menu-title">${group.name}</div>
               <div class="menu-desc">${group.member_count} ${t('member_count')}</div>
@@ -553,7 +530,7 @@ async function openGroupChatList() {
       groupsHtml += '</div>';
     }
   } catch (e) {
-    groupsHtml = `<div class="subpage-placeholder">加载失败 failed failed:${e.message}</div>`;
+    groupsHtml = `<div class="subpage-placeholder">加载失败：${e.message}</div>`;
   }
 
   const contentHtml = `
