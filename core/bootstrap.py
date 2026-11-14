@@ -170,6 +170,7 @@ from .api_routes import (
     agi_routes,
     space_routes,
     group_routes,
+    scheduled_routes,
     model_routes,
     agent_routes,
     chat_routes,
@@ -777,6 +778,7 @@ def create_app() -> FastAPI:
     app.include_router(agi_routes.router)
     app.include_router(space_routes.router)
     app.include_router(group_routes.router)
+    app.include_router(scheduled_routes.router)
     app.include_router(model_routes.router)
     app.include_router(agent_routes.router)
     app.include_router(chat_routes.router)
