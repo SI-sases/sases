@@ -779,6 +779,8 @@ def create_app() -> FastAPI:
     app.include_router(space_routes.router)
     app.include_router(group_routes.router)
     from .api_routes import user_api_routes
+    from .api_routes import license_routes
+    app.include_router(license_routes.router)
     app.include_router(user_api_routes.router)
     app.include_router(scheduled_routes.router)
     app.include_router(model_routes.router)

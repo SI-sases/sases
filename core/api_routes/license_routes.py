@@ -14,7 +14,7 @@ from ..db import db_cursor
 
 router = APIRouter(prefix="/auth/license", tags=["License"])
 
-_PRIV_PATH = os.environ.get("SASES_LICENSE_PRIV", "/root/sases/keys/license_priv.pem")
+_PRIV_PATH = os.environ.get("SASES_LICENSE_PRIV", os.path.join(os.path.dirname(__file__), "..", "keys", "license_priv.pem"))
 
 
 def _sign_license(user_id: int, device_fp: str, expire_at: str) -> str:

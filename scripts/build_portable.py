@@ -55,9 +55,10 @@ def build():
         src = os.path.join(ROOT, item)
         if os.path.exists(src):
             if os.path.isdir(src):
-                shutil.copytree(src, os.path.join(BUILD_DIR, item))
+                shutil.copytree(src, os.path.join(BUILD_DIR, item), ignore=shutil.ignore_patterns('users.db', '.env', 'license.json', 'sases.log', 'launcher_config.json', '.git', '__pycache__'))
             else:
-                shutil.copy2(src, os.path.join(BUILD_DIR, item))
+                if item not in ('users.db', '.env', 'license.json', 'sases.log', 'launcher_config.json'):
+                    shutil.copy2(src, os.path.join(BUILD_DIR, item))
 
     print("4. 复制本地依赖包 (自动过滤巨型库)...")
     venv_site = os.path.join(ROOT, "venv312", "Lib", "site-packages")
