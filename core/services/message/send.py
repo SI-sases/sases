@@ -86,6 +86,44 @@ async def send_message(
         except Exception as _e_fc:
             print('[message] 好友投递失败: ' + str(_e_fc))
 
+    # ===== P0-D: 付费墙预检（#1~#4 执行类消息必须通过 license 检查）=====
+    if isinstance(content, str):
+        import re as _re_lic
+        _pref_check = _normalize_prefix(content)
+        if isinstance(_pref_check, str) and _re_lic.match(r'^#[1-4]:', _pref_check):
+            try:
+                from ...services.license_service import verify_license_json, get_exec_token
+            except ImportError:
+                from core.services.license_service import verify_license_json, get_exec_token
+            _lic_ok, _lic_reason = verify_license_json()
+            if not _lic_ok:
+                raise HTTPException(status_code=403, detail=f"授权未激活: {_lic_reason}")
+            try:
+                from launcher.hardware import get_hardware_fingerprint
+                _fp = get_hardware_fingerprint()
+            except Exception:
+                _fp = "unknown"
+            _tok = get_exec_token(user_id, _fp)
+            if not _tok:
+                raise HTTPException(status_code=403, detail="云端授权校验失败")
+    # ===== P0-D end =====
+
+    _att_str = json.dumps(attachments) if attachments else None
+
+    # 跨账号投递：好友会话的任何消息（文字/图片/文件）都投递
+    if conversation_id:
+        try:
+            with db_cursor() as _c_fc:
+                _c_fc.execute('SELECT is_friend_chat FROM conversations WHERE id=?', (conversation_id,))
+                _r_fc = _c_fc.fetchone()
+            if _r_fc and _r_fc['is_friend_chat'] == 1:
+                from .friend_chat import handle_friend_message
+                _friend_res = await handle_friend_message(user_id, conversation_id, content, sender_agent_id, msg_type, attachments, _att_str, agent_id, mode)
+                if _friend_res is not None:
+                    return _friend_res
+        except Exception as _e_fc:
+            print('[message] 好友投递失败: ' + str(_e_fc))
+
     _scan_content = _normalize_prefix(content)
     # #0 清锁（最先拦截，绕过所有锁检查）
     if isinstance(content, str) and content.strip().startswith('#0'):

@@ -1,5 +1,6 @@
 # core/api_routes/harness_routes.py
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter
+from ..services.license_service import get_cached_exec_token, verify_exec_token, Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from typing import Optional, Dict, Any
@@ -35,6 +36,15 @@ async def get_modules(user_id: int = Depends(get_current_user)):
 
 @router.post("/execute")
 async def execute(body: ExecuteRequest, user_id: int = Depends(get_current_user)):
+
+    # ===== L3 执行层门禁 =====
+    _tok = get_cached_exec_token()
+    if not verify_exec_token(_tok):
+        from fastapi import HTTPException
+        raise HTTPException(status_code=403, detail="exec_token_invalid")
+    # =======================
+
+# ===== P0-E: /harness/execute 门禁（防未付费用户绕过 #1~#4 直调 API）=====
     try:
         result = harness_service.execute_module(body.module_id, body.params)
         return {"result": result}
