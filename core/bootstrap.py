@@ -524,6 +524,7 @@ async def periodic_red_packet_expire():
 
 
 async def lifespan(app: FastAPI):
+    from .services.scheduled_scheduler import scheduled_task_scheduler
     asyncio.create_task(supervisor_service.resume_restart_pending_runs())
     init_db()
 
@@ -591,6 +592,7 @@ async def lifespan(app: FastAPI):
     _background_tasks.append(asyncio.create_task(_state_svc.periodic_state_sync(interval_hours=24)))
     _background_tasks.append(asyncio.create_task(periodic_airdrop()))
     _background_tasks.append(asyncio.create_task(periodic_hlc_health()))
+    _background_tasks.append(asyncio.create_task(scheduled_task_scheduler()))
 
 
     # 【预热】启动后预热一次（不参与周期）
@@ -777,6 +779,9 @@ def create_app() -> FastAPI:
     app.include_router(agi_routes.router)
     app.include_router(space_routes.router)
     app.include_router(group_routes.router)
+    from .api_routes import scheduled_routes, user_api_routes
+    app.include_router(scheduled_routes.router)
+    app.include_router(user_api_routes.router)
     app.include_router(model_routes.router)
     app.include_router(agent_routes.router)
     app.include_router(chat_routes.router)
