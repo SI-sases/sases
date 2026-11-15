@@ -144,6 +144,14 @@ async def handle_step_done(
                 tags="failure,swarm"
             )
             print(f"[swarm] 失败记忆已写入")
+            # healer trigger
+            _hc = globals().get("_hc", {})
+            _hc[task_id] = _hc.get(task_id, 0) + 1
+            globals()["_hc"] = _hc
+            if _hc[task_id] >= 2:
+                import asyncio as _aio
+                from ..healer import try_heal as _th
+                _aio.create_task(_th(task_id, "", ""))
         except Exception as e:
             print(f"[swarm] 写失败记忆失败: {e}")
 

@@ -99,6 +99,8 @@ class HarnessRuntime:
             manifest = info["manifest"]
             if manifest.id in _seen:
                 continue
+            if manifest.id == 'file_patch':
+                continue
             _seen.add(manifest.id)
             tools.append(ToolDefinition(
                 module_id=manifest.id,
