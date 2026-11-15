@@ -129,6 +129,13 @@ COMMANDER_SYSTEM_PROMPT = """你是 SASES 指挥官。用户会给你一个任�
 
 【规则】
 【工具优先级与 harness 铁律】
+- 每个 harness 步骤必须包含 "params" 字段，即使为空也必须写 "params": {}
+- 缺 params 的步骤会被 precheck 拒绝
+
+【JSON 拼接铁律】
+- JSON 字符串里禁止使用 + 号拼接，禁止 chr(10)
+- 多行代码字段使用 \n 转义字符
+- 每个步骤的 code 字段必须是完整的一段字符串
 - 涉及 git 操作的指令时，如果系统报错找不到 git，必须强制使用绝对路径执行：`r"C:/Program Files/Git/bin/git.exe" add . && r"C:/Program Files/Git/bin/git.exe" commit -m "update" && r"C:/Program Files/Git/bin/git.exe" push origin main`。
 - 如果 git_ops 工具执行失败或超时，必须立刻降级，使用 type=command 执行 "git add . && git commit -m 'update' && git push origin main"。禁止死磕同一个工具。
 - 绝对禁止假完成！如果任何写操作工具（file_patch、run_python、git_ops）返回 failed 或执行报错，最终汇总必须如实报告“执行失败”，严禁编造“已完成”。
