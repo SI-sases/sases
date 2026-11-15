@@ -117,7 +117,8 @@ def cancel_run(run_id, user_id):
 
 def finish_run(run_id, status='completed'):
     _TERMINAL = ('completed', 'failed', 'cancelled', 'rejected', 'plan_failed',
-                 'no_progress', 'timeout', 'interrupted', 'error', 'waiting_user')
+                 'no_progress', 'timeout', 'interrupted', 'error', 'waiting_user',
+                 'insufficient_credits')
     try:
         with db_cursor() as _c_chk:
             _c_chk.execute('SELECT status FROM supervisor_runs WHERE id=?', (run_id,))
