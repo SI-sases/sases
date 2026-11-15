@@ -117,7 +117,7 @@ async def deliver_to_linked_accounts(user_id, conversation_id, content, sender_a
                         print(f"[A2A] 检测到 # 号，强制视为任务！")
                     else:
                         try:
-                            from .. import intent_service
+                            from . import intent_service
                             _is_greeting = intent_service._is_obvious_chat(content)
                             if not _is_greeting and not content.startswith("[IMAGE]:") and not content.startswith("[FILE]:"):
                                 is_task = await intent_service.is_task_intent(content)
@@ -172,7 +172,7 @@ async def deliver_to_linked_accounts(user_id, conversation_id, content, sender_a
 async def deliver_via_relay(sender_sases_id, target_sases_id, content, sender_agent_id=None, msg_type='standard', attachments=None):
     try:
         import httpx
-        from ... import config
+        from .. import config
         if not getattr(config, 'HIVE_PEERS', None):
             return
         peer = config.HIVE_PEERS[0]

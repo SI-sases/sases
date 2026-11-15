@@ -5,17 +5,14 @@ __pycache__/
 *.pyd
 .pytest_cache/
 *.egg-info/
-
 # ========== 数据库（含 WAL/SHM） ==========
 *.db
 *.db-wal
 *.db-shm
-
 # ========== 备份 ==========
 *.bak*
 .backups/
 backups/
-
 # ========== 日志 & 运行时数据 ==========
 *.log
 logs/
@@ -24,26 +21,22 @@ restart_signal.txt
 data/tool_usage.jsonl
 data/direct_channel.jsonl
 data/direct_channel.jsonl.*
-
 # ========== 敏感配置 ==========
 .env
 sases_default.env
 *.key
 *.bin
 *.pem
-
 # ========== 上传 / 节点 / 知识库 ==========
 uploads/
 hive-nodes/
 kb/
 archive/
-
 # ========== 训练 / LoRA ==========
 lora/
 lora_adapter/
 training_data/
 seeds/
-
 # ========== 打包产物（🔥 核心修复：防止临时包和下载包污染仓库） ==========
 build_portable/
 static/downloads/
@@ -54,7 +47,6 @@ launcher/dist/
 *.spec
 build/
 dist/
-
 # ========== 虚拟环境 ==========
 venv/
 venv312/
@@ -62,22 +54,19 @@ python312/
 python-embed/
 launcher/dist/venv/
 launcher/dist/python-embed/
-
 # ========== 模型 ==========
 bge-small-zh-onnx/
-
 # ========== 临时修复脚本 ==========
 /fix_*.py
-
 # ========== 编辑器 ==========
 .vscode/
 .idea/
-
 # ========== 自动生成文档 ==========
 docs/SASES_STATE.md
 # WireGuard keys (no extension)
 privatekey
 publickey
-
 keys/*.pem
 core/keys/*.pem 
+scripts/orphans_report.json
+_archive/

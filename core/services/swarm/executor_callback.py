@@ -3,7 +3,7 @@
 def _force_retry_if_not_achieved(run_id, review):
     if isinstance(review, dict) and review.get('goal_achieved') is False:
         print('[supervisor] FORCE_RETRY: 任务未完成，强制触发下一轮')
-        from .runs import get_run, finish_run
+        from ..supervisor.runs import get_run, finish_run
         run = get_run(run_id)
         if run and run['status'] == 'running':
             # 不改状态，直接在外部调度
