@@ -131,10 +131,9 @@ async def generate_test_steps(task: dict, step_result: dict, trigger_reason: str
       system_prompt = REVIEWER_DEEP_PROMPT.format(goal=goal, step_result=step_desc)
 
       resp = await call_llm(
+          f"触发原因：{trigger_reason}\n请输出测试步骤 JSON。",
           system_prompt=system_prompt,
-          user=f"触发原因：{trigger_reason}\n请输出测试步骤 JSON。",
           max_tokens=800,
-          temperature=0.1,
       )
 
       steps = _parse_json_array(resp)

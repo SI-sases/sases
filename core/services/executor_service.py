@@ -380,12 +380,12 @@ async def _execute_task(task: Dict[str, Any]):
                     # v2.7.0: 检测 command 首个词是否为 harness 工具别名
                     _first_word = cmd.split(None, 1)[0].lower() if cmd else ""
                     _alias_map = {
-                        "file_write": "file_patch",
-                        "write_file": "file_patch",
-                        "fs_create": "file_patch",
-                        "create_file": "file_patch",
-                        "save_file": "file_patch",
-                        "edit_file": "file_patch",
+                        "file_write": "file_write",
+                        "write_file": "file_write",
+                        "fs_create": "file_write",
+                        "create_file": "file_write",
+                        "save_file": "file_write",
+                        "edit_file": "file_write",
                         "read_file": "file_read",
                         "search_text": "grep_code",
                         "list_files": "dir_tree",
