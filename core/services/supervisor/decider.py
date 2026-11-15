@@ -47,8 +47,25 @@ async def task_summarizer(task):
     _goal_text = task.get('goal', '') or task.get('user_text', '') or ''
     _modify_keywords = r'改|写|加|删|创建|新增|替换|重构|更新|修复'
     if re.search(_modify_keywords, _goal_text):
-        _has_success_patch = any(r.get('command') == 'file_patch' and r.get('status') == 'success' for r in _res)
-        _has_success_python = any(r.get('command') == 'run_python' and r.get('status') == 'success' for r in _res)
+        # [P1-0b] 宽松判断：任何成功的写操作都算修改成功
+        print(f"[task_summarizer DEBUG] _res 数量={len(_res)}")
+        for _di, _dr in enumerate(_res):
+            print(f"  [{_di}] command={_dr.get('command')!r} module_id={_dr.get('module_id')!r} status={_dr.get('status')!r}")
+        _WRITE_TOOLS = ('file_patch', 'run_python', 'file_write', 'file_replace_range')
+        _has_success_patch = False
+        for _r in _res:
+            if _r.get('status') != 'success':
+                continue
+            _cmd = str(_r.get('command', ''))
+            _mod = str(_r.get('module_id', ''))
+            for _tool in _WRITE_TOOLS:
+                if _tool in _cmd or _tool in _mod:
+                    _has_success_patch = True
+                    print(f"[task_summarizer] 命中写操作: tool={_tool}, cmd={_cmd[:50]}, mod={_mod[:50]}")
+                    break
+            if _has_success_patch:
+                break
+        _has_success_python = _has_success_patch
 
         if not _has_success_patch and not _has_success_python:
             print("[防假成功] 任务涉及修改，但没有任何成功的 patch 或脚本记录，强行打回！")
@@ -277,8 +294,11 @@ async def task_summarizer(task):
     try:
         _action_kws = ['改成', '改为', '修改', '删除', '删掉', '新增', '添加', '创建', '写入', '替换', '移动', '插入', '修复']
         _need_patch = any(k in user_text for k in _action_kws) and not _is_readonly_task
+        # [P1-0b] 白名单扩展：run_python / file_write 也算写操作
+        _WRITE_TOOLS_V2 = ('file_patch', 'run_python', 'file_write')
         _has_patch_ok = any(
-            str(r.get('command') or r.get('module_id') or '') == 'file_patch' and r.get('status') == 'success'
+            str(r.get('command') or r.get('module_id') or '') in _WRITE_TOOLS_V2
+            and r.get('status') == 'success'
             for r in results
         )
         if _need_patch and _has_patch_ok and not _is_readonly_task:

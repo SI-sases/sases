@@ -312,6 +312,12 @@ async def handle_step_done(
                         return {'status': 'failed', 'task_id': task_id, 'summary': '死循环熔断'}
 
                     if _review and isinstance(_review, dict) and _review.get('goal_achieved') is False:
+                    # [P1-0b] run 状态检查：insufficient_credits / failed / completed 后不再 FORCE_RETRY
+                        _r_chk = get_run(_run_id) if _run_id else None
+                        _r_st = (_r_chk or {}).get("status", "")
+                        if _r_st in ("insufficient_credits", "failed", "completed"):
+                            print(f"[supervisor] run 状态={_r_st}，跳过 FORCE_RETRY，直接终止")
+                            return {"status": "failed", "task_id": task_id, "summary": f"任务因 {_r_st} 终止"}
                         _force_retry_count = task.get('_force_retry_count', 0)
                         if _force_retry_count < 2:
                             task['_force_retry_count'] = _force_retry_count + 1
@@ -705,6 +711,12 @@ async def handle_step_done(
                     
                     # 强制拦截：如果总结器判定未完成，无视 _continue 的返回值，直接强制续轮
                     if _review and isinstance(_review, dict) and _review.get('goal_achieved') is False:
+                    # [P1-0b] run 状态检查：insufficient_credits / failed / completed 后不再 FORCE_RETRY
+                        _r_chk = get_run(_run_id) if _run_id else None
+                        _r_st = (_r_chk or {}).get("status", "")
+                        if _r_st in ("insufficient_credits", "failed", "completed"):
+                            print(f"[supervisor] run 状态={_r_st}，跳过 FORCE_RETRY，直接终止")
+                            return {"status": "failed", "task_id": task_id, "summary": f"任务因 {_r_st} 终止"}
                         _force_retry_count = task.get('_force_retry_count', 0)
                         if _force_retry_count < 2:
                             task['_force_retry_count'] = _force_retry_count + 1

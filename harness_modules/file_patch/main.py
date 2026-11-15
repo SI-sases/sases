@@ -165,7 +165,7 @@ def _mode_snippet(abs_path, safe_path, params):
         _chk = f.read()
     if new_content not in _chk:
         with open(abs_path, "w", encoding="utf-8") as f:
-            f.write(original)
+            f.write(new_content)  # 回滚到刚写入的 new_content（original 未定义，修复 NameError）
         raise ValueError(f"写入校验失败：{safe_path} 实际写入内容与预期不符（可能被截断），已自动回滚。")
 
     return {
@@ -433,7 +433,13 @@ def run(params):
     except Exception:
         pass
 
-    result = _run_inner(params)
+    # 外层异常兜底：任何 ValueError/RuntimeError 必须返回 success=false，绝不吞错
+    try:
+        result = _run_inner(params)
+    except ValueError as _e:
+        return {"success": False, "error": str(_e), "file_path": _fp}
+    except Exception as _e:
+        return {"success": False, "error": f"{type(_e).__name__}: {_e}", "file_path": _fp}
     if isinstance(result, dict) and result.get('success'):
         fp = params.get('file_path') or ''
         if fp and (fp.endswith('.js') or fp.endswith('.py')):
