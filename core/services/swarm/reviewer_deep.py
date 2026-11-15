@@ -115,7 +115,7 @@ async def generate_test_steps(task: dict, step_result: dict, trigger_reason: str
   try:
       # 延迟 import 避免循环依赖
       from .prompts import REVIEWER_DEEP_PROMPT
-      from ..llm_client import call_llm  # 复用现有 LLM 客户端
+      from .llm_parser import _call_llm as call_llm  # 复用现有 LLM 客户端
 
       goal = task.get("user_text", "") or task.get("goal", "")
       step_desc = json.dumps(
