@@ -75,6 +75,46 @@ async def handle_step_done(
     review_result, review_reason = review_step(original_step, status, output)
 
     task["done"].add(step_id)
+
+    # [P1-0c] L2 深度审核接入：所有步骤 done 后触发，只触发一次
+    if review_result == "pass" and not task.get("_deep_review_done"):
+        try:
+            if len(task["done"]) == len(task["steps"]):
+                task["_deep_review_done"] = True
+                from .reviewer_deep import (
+                    should_deep_review, mark_deep_review_used,
+                    generate_test_steps, execute_test_steps_sync,
+                )
+                _l2_input = {
+                    "task_id": task_id,
+                    "module_id": original_step.get("module_id") or original_step.get("type"),
+                    "params": original_step.get("params") or {},
+                    "status": status,
+                    "output": output,
+                    "diff_bytes": payload.get("diff_bytes", 0),
+                }
+                _should, _reason = should_deep_review(task, _l2_input)
+                if _should:
+                    mark_deep_review_used(task_id)
+                    print(f"[L2] 触发深度审核: {_reason}")
+                    _test_steps = await generate_test_steps(task, _l2_input, _reason)
+                    if _test_steps:
+                        _test_results = await execute_test_steps_sync(_test_steps)
+                        for _tr in _test_results:
+                            task["results"].append({
+                                "step": "L2-" + str(_tr["step"]),
+                                "description": "L2 深度审核测试",
+                                "command": _tr.get("type", "test"),
+                                "status": _tr.get("status", "failed"),
+                                "output": (_tr.get("output") or "")[:500],
+                            })
+                        _pass = sum(1 for r in _test_results if r.get("status") == "success")
+                        print(f"[L2] 测试完成 {_pass}/{len(_test_results)} 通过")
+                    else:
+                        print("[L2] 审核员未生成测试步骤，跳过")
+        except Exception as _e_l2:
+            print(f"[L2] 接入异常（已降级为 L1）: {type(_e_l2).__name__}: {_e_l2}")
+
     task["results"].append({
         "step": step_id,
         "description": payload.get("description", ""),
