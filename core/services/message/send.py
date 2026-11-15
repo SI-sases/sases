@@ -886,6 +886,40 @@ async def send_message(
                     print('[supervisor] 对话模式失败: ' + str(_che))
 
             if is_task:
+                # [P1-0c-a] 积分拦截：派单前检查，避免消耗 API 后才报积分不足
+                try:
+                    from .. import credit_service as _cs_gate
+                    _need_credit_gate = (
+                        _force_swarm
+                        or _numbered_prefix_matched
+                        or content.strip().startswith(('#1', '#2', '#3', '#4'))
+                    )
+                    if _need_credit_gate:
+                        _bal_gate = _cs_gate.get_balance(user_id)
+                        if _bal_gate < 5:
+                            print(f"[P1-0c-a] 积分不足拦截: balance={_bal_gate} < 5")
+                            _gate_msg = f"\u26a0\ufe0f 积分不足（当前 {_bal_gate}，至少需要 5 积分才能执行指令）。请先充值或等待空投后再试。"
+                            with db_cursor(commit=True) as _cur_gate:
+                                _cur_gate.execute(
+                                    "INSERT INTO messages (conversation_id, sender, content, msg_type, attachments) VALUES (?, 'assistant', ?, 'standard', '[]')",
+                                    (conversation_id, _gate_msg)
+                                )
+                                _cur_gate.execute(
+                                    "UPDATE conversations SET updated_at=? WHERE id=?",
+                                    (datetime.now().isoformat(), conversation_id)
+                                )
+                            return {
+                                'conversation_id': conversation_id,
+                                'user_message': content,
+                                'assistant_reply': _gate_msg,
+                                'agent_id': agent_id,
+                                'sender_agent_id': sender_agent_id,
+                                'mode': mode,
+                                'credit_gate': True
+                            }
+                except Exception as _e_gate:
+                    print(f"[P1-0c-a] 积分拦截异常（已放行）: {type(_e_gate).__name__}: {_e_gate}")
+
                 from core.services.friend_gate import check_friend_gate
                 _gate_res = check_friend_gate(user_id, conversation_id, sender_agent_id, content, agent_id, mode)
                 if _gate_res:
