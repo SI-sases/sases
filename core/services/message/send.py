@@ -894,8 +894,11 @@ async def send_message(
                         or _numbered_prefix_matched
                         or content.strip().startswith(('#1', '#2', '#3', '#4'))
                     )
+                    # [P1-0c-a-DEBUG] 打出每个变量的值
+                    print(f"[P1-0c-a-DEBUG] _force_swarm={_force_swarm}, _numbered_prefix_matched={_numbered_prefix_matched}, content[:10]={content.strip()[:10]!r}, _need={_need_credit_gate}")
                     if _need_credit_gate:
                         _bal_gate = _cs_gate.get_balance(user_id)
+                        print(f"[P1-0c-a-DEBUG] get_balance(user_id={user_id}) = {_bal_gate}")
                         if _bal_gate < 5:
                             print(f"[P1-0c-a] 积分不足拦截: balance={_bal_gate} < 5")
                             _gate_msg = f"\u26a0\ufe0f 积分不足（当前 {_bal_gate}，至少需要 5 积分才能执行指令）。请先充值或等待空投后再试。"
