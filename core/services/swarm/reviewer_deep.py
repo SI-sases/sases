@@ -195,3 +195,64 @@ async def dispatch_test_task(task: dict, test_steps: list) -> Optional[str]:
   except Exception as e:
       print(f"[reviewer-deep] 派发失败: {e}")
       return None
+
+
+# ============================================================
+# P1-0c 新增：同步执行测试步骤（供 executor_callback 调用）
+# ============================================================
+async def execute_test_steps_sync(test_steps):
+    """同步执行测试步骤，返回结果列表
+
+    支持：command / verify_syntax / run_python / file_read
+    """
+    import subprocess as _sp
+    results = []
+
+    for step in (test_steps or [])[:3]:  # 最多 3 步
+        _type = step.get("type", "")
+        _params = step.get("params", {}) or {}
+        _step_no = step.get("step", len(results) + 1)
+
+        try:
+            if _type == "command":
+                _cmd = _params.get("command", "")
+                if not _cmd:
+                    results.append({
+                        "step": _step_no, "type": _type,
+                        "status": "skipped", "output": "空命令",
+                    })
+                    continue
+                _r = _sp.run(_cmd, shell=True, capture_output=True,
+                             text=True, timeout=60, encoding="utf-8",
+                             errors="replace")
+                results.append({
+                    "step": _step_no, "type": _type,
+                    "status": "success" if _r.returncode == 0 else "failed",
+                    "output": ((_r.stdout or "") + (_r.stderr or ""))[:500],
+                })
+            else:
+                # verify_syntax / run_python / file_read
+                from ...harness_runtime import invoke_tool
+                _tool_result = await invoke_tool(_type, _params)
+                if hasattr(_tool_result, "success"):
+                    _ok = _tool_result.success
+                    _out = str(getattr(_tool_result, "output", ""))[:500]
+                elif isinstance(_tool_result, dict):
+                    _ok = _tool_result.get("success") or _tool_result.get("syntax_ok")
+                    _out = str(_tool_result)[:500]
+                else:
+                    _ok = False
+                    _out = str(_tool_result)[:500]
+                results.append({
+                    "step": _step_no, "type": _type,
+                    "status": "success" if _ok else "failed",
+                    "output": _out,
+                })
+        except Exception as _e:
+            results.append({
+                "step": _step_no, "type": _type,
+                "status": "failed",
+                "output": f"异常: {type(_e).__name__}: {_e}"[:500],
+            })
+
+    return results
