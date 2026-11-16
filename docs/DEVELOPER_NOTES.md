@@ -519,7 +519,7 @@ python -c "import hashlib; files=\['<路径1>','<路径2>']; \[print(f, '主:', 
 4. **openSubpage 缺 returnAction**：返回时会退回主界面，不是上一级
 5. **时区必须存 UTC**：蜂巢计划多节点，本地时间会乱套
 6. **insert 脚本误判**：检查已存在要匹配 = function 或 = async function 定义
-7. **file_patch old_snippet 必须唯一**：多行匹配失败时用更长锚点或 run_python
+7. **run_python old_snippet 必须唯一**：多行匹配失败时用更长锚点或 run_python
 8. **定时任务 WS 广播**：任务/红包入库后要主动广播，否则用户不刷新看不到
 
 ### 12.3 定时任务分组（14 个任务，4 组）
@@ -541,7 +541,7 @@ python -c "import hashlib; files=\['<路径1>','<路径2>']; \[print(f, '主:', 
 ### 12.5 工具手册预置列表（15 条）
 
 存在 knowledge_docs.scope='manual'：
-- file_patch / file_read / run_python / grep_code / dir_tree / verify_syntax
+- run_python / file_read / run_python / grep_code / dir_tree / verify_syntax
 - api_call / web_fetch / git_ops
 - 锚点选择 / 换行符 / 空行处理 / 参数名 / 保护文件 / restart_pending
 
@@ -590,13 +590,13 @@ python -c "import sqlite3; from jose import jwt; c=sqlite3.connect('users.db').c
 python scripts/run_forever.py
 ```
 
-### 13.2 file_patch 锚点铁律（5 条）
+### 13.2 run_python 锚点铁律（5 条）
 
 1. **优先单行锚点**：避免多行 `\n` 在 Windows 上匹配失败
 2. **锚点必须唯一**：改动前用 `grep_code` 确认
 3. **避开正则符号**：锚点里不写 `$`、`\d`、`\s` 等
 4. **改动前先 file_read**：看一眼真实内容再生成锚点
-5. **多行 + 转义复杂时改用 run_python**：用字符串替换比 file_patch 稳
+5. **多行 + 转义复杂时改用 run_python**：用字符串替换比 run_python 稳
 
 ### 13.3 run_python 特殊字符处理
 
