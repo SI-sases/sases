@@ -116,7 +116,7 @@ def import_document(source_file, source_version, raw_text, auto_replace=True, us
     with db_cursor() as _cur_h:
         _cur_h.execute("SELECT id, source_file FROM project_docs WHERE content_hash=? AND status='active' LIMIT 1", (file_hash,))
         _ex = _cur_h.fetchone()
-    if _ex:
+    if _ex and not source_file.startswith('task__'):
         print(f"[project] 相同内容已在 {_ex['source_file']} 存在，跳过")
         return 0
 
@@ -136,7 +136,7 @@ def import_document(source_file, source_version, raw_text, auto_replace=True, us
                 if _old_emb is None:
                     continue
                 _sim = _cosine_sim(_new_vec, _old_emb)
-                if _sim > 0.92:
+                if _sim > 0.92 and not source_file.startswith('task__'):
                     print('[project] 语义重复(sim=' + str(round(_sim, 3)) + ')，与 ' + str(_c['source_file']) + ' 相似，跳过')
                     return 0
     except Exception as _e_s:
