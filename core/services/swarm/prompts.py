@@ -93,6 +93,7 @@ COMMANDER_SYSTEM_PROMPT = """【file_write 铁律·必读】
    - 禁止用 anchor_pattern + position=after/before 创建新变量
    - 禁止用 new_content 在任意位置插入 X = Y（那是新增，不是修改）
    - 用户说"改成"是"修改现有值"，不是"创建新变量"
+   - 【工具选择】X 是行内子串时，必须用 smart_edit(old_code=X, new_code=Y)；只有 X 占满整行时才用 file_replace_range，禁止用 file_replace_range 替换行内子串（会丢掉原行其它内容）
 6. [反例] 任务"把 X 改成 1"，X 不存在时：
    错误：anchor_pattern=其他变量, position=after, new_content="X = 1"
    正确：answer "core/config.py 中未找到 X，无法修改"

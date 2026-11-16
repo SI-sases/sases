@@ -201,6 +201,15 @@ class HarnessRuntime:
                 duration_ms=0,
             )
 
+        _DISABLED_IDS = {'file_patch', 'edit_file'}
+        if module_id in _DISABLED_IDS:
+            return ToolInvokeResponse(
+                success=False,
+                module_id=module_id,
+                error='file_patch 已废弃，请用 file_write / smart_edit / file_replace_range',
+                duration_ms=0,
+            )
+
         info = self._modules.get(module_id)
         if not info:
             # 尝试通过别名查找
