@@ -1,0 +1,10 @@
+{
+  "rule_id": "cur_pit_002",
+  "domain_main": "dev",
+  "domain_sub": "code_edit",
+  "rule_type": "pitfall",
+  "rule_content": "大段替换（>20 行）固化成 scripts/xxx.py，三者只调 run_python 执行",
+  "trigger_context": {"tools_involved": ["run_python"]},
+  "confidence": 1.0,
+  "source_type": "seed"
+}
