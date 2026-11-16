@@ -352,11 +352,10 @@ def sync_rules_from_active():
         print("[sync] 删除过期规则: {}".format(rid))
 
     for rid, rule in active_rules.items():
-        _now = __import__('datetime').datetime.now().isoformat()
         with db_cursor(commit=True) as cur:
             cur.execute(
-                "INSERT OR REPLACE INTO cognitive_rules (rule_id, domain_main, domain_sub, rule_content, trigger_context, confidence, status, created_at, updated_at) VALUES (?,?,?,?,?,?,'active',?,?)",
-                (rule['rule_id'], rule.get('domain_main',''), rule.get('domain_sub',''), rule.get('rule_content',''), json.dumps(rule.get('trigger_context',{})), rule.get('confidence',1.0), _now, _now)
+                "INSERT OR REPLACE INTO cognitive_rules (rule_id, domain_main, domain_sub, rule_type, rule_content, trigger_context, confidence, source_type, status) VALUES (?,?,?,?,?,?,?,?,'active')",
+                (rule['rule_id'], rule.get('domain_main',''), rule.get('domain_sub',''), rule.get('rule_type','pitfall'), rule.get('rule_content',''), json.dumps(rule.get('trigger_context',{})), rule.get('confidence',1.0), rule.get('source_type','seed'))
             )
         print("[sync] 投喂规则: {}".format(rid))
 
@@ -382,6 +381,74 @@ def sync_rules_from_active():
 
     p.write_text(s, encoding='utf-8')
     print('  PATCHED')
+    return _try_compile(p)
+
+@register('prompts_cleanup_A')
+def patch_prompts_cleanup_A():
+    """A批：清空壳 + 修明确失效 + 加归档纪律"""
+    p = ROOT / 'core/services/swarm/prompts.py'
+    s = p.read_text(encoding='utf-8')
+
+    if '【归档纪律（v0.41.0' in s:
+        print('  ALREADY_DONE')
+        return True
+
+    changes = []
+
+    # 1. 删空壳【执行优先级铁律】
+    old1 = '【执行优先级铁律】' + NL + NL
+    if old1 in s:
+        s = s.replace(old1, '', 1)
+        changes.append('del 执行优先级铁律')
+
+    # 2. 删空壳【规则】
+    old2 = '【规则】' + NL + '【工具优先级与 harness 铁律】'
+    if old2 in s:
+        s = s.replace(old2, '【工具优先级与 harness 铁律】', 1)
+        changes.append('del 规则')
+
+    # 3. 修孤立"整体覆写"行
+    old3 = '    整体覆写: overwrite=true + new_content'
+    new3 = '  - file_write: file_path + new_content；新建加 create_if_missing=true'
+    if old3 in s:
+        s = s.replace(old3, new3, 1)
+        changes.append('fix 整体覆写')
+
+    # 4. 修别名映射
+    old4 = '都必须写成 module_id="写操作工具"'
+    new4 = '都必须写成 module_id="file_write"'
+    if old4 in s:
+        s = s.replace(old4, new4, 1)
+        changes.append('fix 别名映射')
+
+    # 5. 修改文件指向三工具
+    old5 = '· 改文件 → 写操作工具'
+    new5 = '· 改文件 → file_write(整文件) / smart_edit(片段) / file_replace_range(行号)'
+    if old5 in s:
+        s = s.replace(old5, new5, 1)
+        changes.append('fix 改文件三工具')
+
+    # 6. 加归档纪律段（在【整理类任务约束】前插入）
+    anchor6 = '【整理类任务约束（用户说"整理/归类/分类"时，必须遵守）】'
+    if anchor6 in s:
+        new6 = (
+            '【归档纪律（v0.41.0，违反必回退）】' + NL +
+            '- 任务完成后只输出 [SUMMARY]，绝不自动调用 archive_task.py' + NL +
+            '- 用户明确说"执行归档"时，才调：python scripts/archive_task.py --task <任务名>' + NL +
+            '- 归档前必须先跑 --dry-run，展示将移动的文件' + NL +
+            '- 归档后自检 task_context 残留、task__ 分片残留必须为 0' + NL +
+            '- 归档是用户的权利，不是三者的判断' + NL + NL +
+            anchor6
+        )
+        s = s.replace(anchor6, new6, 1)
+        changes.append('add 归档纪律')
+
+    if not changes:
+        print('  NO_CHANGES')
+        return False
+
+    print('  changes: ' + ', '.join(changes))
+    p.write_text(s, encoding='utf-8')
     return _try_compile(p)
 
 
