@@ -7,8 +7,8 @@ BACKUP_DIR = '.backups'
 FORBIDDEN_PARTS = ('.env', 'users.db', 'secret_key', 'api_key_encryption')
 FORBIDDEN_EXT = ('.key', '.bin', '.pem', '.crt', '.db', '.sqlite')
 SELF_PROTECTED = (
-    'harness_modules/file_patch/main.py',
-    'harness_modules/file_patch/manifest.json',
+    'harness_modules/file_replace_range/main.py',
+    'harness_modules/file_replace_range/manifest.json',
     'core/services/executor_service.py',
 )
 import re as _re
@@ -96,6 +96,11 @@ def run(params):
     before = lines[:start_line - 1]
     after = lines[end_line:]
     nc = new_content
+    if not is_insert and start_line <= total and nc:
+        _old_line = lines[start_line - 1]
+        _old_indent = _old_line[:len(_old_line) - len(_old_line.lstrip())]
+        if not nc.startswith(_old_indent):
+            nc = _old_indent + nc.lstrip()
     if nc and not nc.endswith(chr(10)):
         nc = nc + chr(10)
     new_lines = before + ([nc] if nc else []) + after
