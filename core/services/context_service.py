@@ -8,10 +8,17 @@ NL = chr(10)
 def build_enriched_prompt(user_id, conversation_id, content, project_ctx):
     parts = []
 
+    try:
+        for _tc in memory_service.recall_by_type(user_id, 'task_context', top_k=2):
+            parts.append('【当前任务（必读）】' + NL + str(_tc.get('content', '')))
+    except Exception as _tc_e:
+        print('[context] task_context recall failed: ' + str(_tc_e))
+
     hist_lines = []
+    _hist_limit = 2 if parts else 10
     try:
         with db_cursor() as cur:
-            cur.execute('SELECT sender, content FROM messages WHERE conversation_id=? ORDER BY id DESC LIMIT 10', (conversation_id,))
+            cur.execute('SELECT sender, content FROM messages WHERE conversation_id=? ORDER BY id DESC LIMIT ?', (conversation_id, _hist_limit))
             rows = list(cur.fetchall())
         for r in reversed(rows):
             t = str(r['content'] or '')

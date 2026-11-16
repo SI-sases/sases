@@ -9,6 +9,7 @@
 import json
 import re
 import time
+import asyncio
 from typing import Optional
 
 # ============================================================
@@ -232,7 +233,7 @@ async def execute_test_steps_sync(test_steps):
             else:
                 # verify_syntax / run_python / file_read
                 from ...harness_runtime import invoke_tool
-                _tool_result = await invoke_tool(_type, _params)
+                _tool_result = await asyncio.to_thread(invoke_tool, _type, _params)
                 if hasattr(_tool_result, "success"):
                     _ok = _tool_result.success
                     _out = str(getattr(_tool_result, "output", ""))[:500]

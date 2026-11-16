@@ -1200,7 +1200,7 @@ async def send_message(
         else:
             model_config = dict(model_row)
             # 项目库检索（v0.17.0）— 仅 SASES 助手
-            _is_sases_chat = 'sases' in (model_config.get('name') or '').lower()
+            _is_sases_chat = True  # inject
             _is_import_local = (            '导入知识库' in content or '加入知识库' in content or '存到知识库' in content or '存到项目库' in content or '导入项目库' in content or '加到知识库' in content)
             enriched_query = content
             if _is_sases_chat and not _is_import_local:
@@ -1211,8 +1211,9 @@ async def send_message(
                         _top = chunks[0].get("score", 0)
                         if _top > 0.55:
                             project_text = project_service.format_chunks_for_prompt(chunks)
-                            enriched_query = project_text + "\n\n【用户问题】\n" + content
-                            print(f"[message] 项目库高分命中 {_top:.3f}")
+                            from .. import context_service as _ctx_hi
+                            enriched_query = _ctx_hi.build_enriched_prompt(user_id, conversation_id, content, project_text)
+                            print(f"[message] 项目库高分命中 {_top:.3f}(含 task_context)")
                         else:
                             from .. import context_service
                             _ctx_lo = project_service.format_chunks_for_prompt(chunks)
