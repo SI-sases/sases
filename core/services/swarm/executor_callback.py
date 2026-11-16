@@ -151,7 +151,7 @@ async def handle_step_done(
             if _hc[task_id] >= 2:
                 import asyncio as _aio
                 from ..healer import try_heal as _th
-                _aio.create_task(_th(task_id, "", ""))
+                _aio.create_task(_th(task_id, str(fail_content) if "fail_content" in dir() else str(locals().get("fail_content", "")), ""))
         except Exception as e:
             print(f"[swarm] 写失败记忆失败: {e}")
 
