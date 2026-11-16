@@ -35,6 +35,10 @@ def _validate_path(file_path):
 
 
 def run(params):
+    _content = params.get("content") or params.get("text") or ""
+    if isinstance(_content, str) and _content.strip().startswith('{"success"') and '"file_path"' in _content:
+        return {"success": False, "error": "content 看起来是 file_read 的 JSON 返回值，请先提取 data[\"content\"] 字段后再写入"}
+
     file_path = params.get("file_path", "")
     content = params.get("content", "")
     safe_path = _validate_path(file_path)
