@@ -41,6 +41,8 @@ def load_harness_modules(modules_dir: str = HARNESS_MODULES_DIR) -> Dict[str, di
         module_dir = os.path.join(modules_dir, module_id)
         if not os.path.isdir(module_dir):
             continue
+        if module_id.startswith('_disabled_'):
+            continue
         manifest = _load_manifest(module_dir)
         if manifest is None:
             continue

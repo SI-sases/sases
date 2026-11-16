@@ -96,7 +96,17 @@ def run(params):
     before = lines[:start_line - 1]
     after = lines[end_line:]
     nc = new_content
-    if not is_insert and start_line <= total and nc:
+    _insert_indent = ''
+    if is_insert and nc:
+        _ref_idx = start_line - 1
+        if _ref_idx >= len(lines) and total > 0:
+            _ref_idx = total - 1
+        if 0 <= _ref_idx < len(lines):
+            _ref_line = lines[_ref_idx]
+            _insert_indent = _ref_line[:len(_ref_line) - len(_ref_line.lstrip())]
+        if _insert_indent and not nc.startswith(_insert_indent):
+            nc = _insert_indent + nc.lstrip()
+    elif not is_insert and start_line <= total and nc:
         _old_line = lines[start_line - 1]
         _old_indent = _old_line[:len(_old_line) - len(_old_line.lstrip())]
         if not nc.startswith(_old_indent):
