@@ -19,6 +19,7 @@ from .task_state import _save_task_state
 from .summarizer import _summarize, _summary_sender
 from .commander import plan_task, replan_failed_steps
 from .helpers import _insert_message
+from ..supervisor.runs import get_run
 
 
 def _push_script_output(conversation_id, task):
