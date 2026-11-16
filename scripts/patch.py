@@ -458,6 +458,139 @@ def patch_prompts_cleanup_C1():
     p.write_text(s, encoding='utf-8')
     return _try_compile(p)
 
+@register('prompts_cleanup_B')
+def patch_prompts_cleanup_B():
+    """B批合并：执行铁律5→8 + 前提验证6→9，删7个重复段（阈值采用3文件）"""
+    p = ROOT / 'core/services/swarm/prompts.py'
+    s = p.read_text(encoding='utf-8')
+
+    if '2. 单文件原子化' in s and '7. 符号插入幂等' in s:
+        print('  ALREADY_DONE')
+        return True
+
+    changes = []
+
+    # ===== 合并 A：执行铁律组 =====
+    # A1: 扩展 5 条 → 8 条
+    old_exec = (
+        '【执行铁律（最高优先级，严禁违背）】\n'
+        '1. 任务原子化：任务涉及修改超过 3 个文件时，立刻停止执行并输出拆解建议。\n'
+        '2. 物理凭证：严禁凭空声称已完成。每次 写操作后必须展示工具返回的 success 状态，无凭证不结案。\n'
+        '3. 链路贯穿：修改数据结构（如 Pydantic 模型）时，必须搜索其传递链（Route -> Service -> DB），确保新字段透传。\n'
+        '4. 锚点先读：写文件工具报错时，禁止盲目重试。必须立刻 file_read 重新获取真实原文。\n'
+        '5. 写后必读：凡声称改动代码的步骤，下一步必须紧跟 file_read 读取验证。'
+    )
+    new_exec = (
+        '【执行铁律（最高优先级，严禁违背）】\n'
+        '1. 任务原子化：任务涉及修改超过 3 个文件时，立刻停止执行并输出拆解建议。\n'
+        '2. 单文件原子化：同一个文件要改 3 处以上时，立刻停止，回复"单文件修改点过多，请分批次执行"。\n'
+        '3. 物理凭证：严禁凭空声称已完成。每次 写操作后必须展示工具返回的 success 状态，无凭证不结案。\n'
+        '4. 链路贯穿：修改数据结构（如 Pydantic 模型）时，必须搜索其传递链（Route -> Service -> DB），确保新字段透传。\n'
+        '5. 锚点先读：写文件工具报错时，禁止盲目重试。必须立刻 file_read 重新获取真实原文。\n'
+        '6. 写后必读：凡声称改动代码的步骤，下一步必须紧跟 file_read 读取验证。\n'
+        '7. 最终结案：任务描述含"修改/实现/增加"动词但执行历史无实际写操作 → 判定失败，必须立刻调用工具，不准只输出代码位置。\n'
+        '8. 凭证核对：总结时若没有写文件工具返回 "success": true 的凭证，禁止输出"修改成功"，必须如实报告"任务失败"。'
+    )
+    if old_exec in s:
+        s = s.replace(old_exec, new_exec, 1)
+        changes.append('A1 执行铁律5→8')
+
+    # A2: 删【任务原子化】段（已合并为第 1 条）
+    old = '\n\n【任务原子化】如果用户下达的任务涉及修改超过 3 个文件，你必须立刻停止执行，输出拆解建议，不允许强行推进。\n'
+    if old in s:
+        s = s.replace(old, '\n', 1)
+        changes.append('A2 删任务原子化')
+
+    # A3: 删【强制原子化操作】段（第1条合并第1条，第2条合并第2条）
+    old = (
+        '\n\n【强制原子化操作】\n'
+        '1. 你单次执行的任务，如果涉及 2 个或以上的文件修改，必须立刻停止，回复"任务过大，请指定先改哪一个文件"。\n'
+        '2. 如果同一个文件要改 3 处以上，必须立刻停止，回复"单文件修改点过多，请分批次执行"。\n'
+    )
+    if old in s:
+        s = s.replace(old, '\n', 1)
+        changes.append('A3 删强制原子化')
+
+    # A4: 删【最终结案标准】段（合并为第 7 条）
+    old = (
+        '\n\n【最终结案标准】\n'
+        '如果你的任务描述中包含"修改"、"实现"、"增加"等动词，但你在执行历史中没有任何 写文件工具或 run_python 的实际写操作，系统将判定你的任务完全失败！你必须立刻调用工具进行修改，不准只输出代码位置。\n'
+    )
+    if old in s:
+        s = s.replace(old, '\n', 1)
+        changes.append('A4 删最终结案标准')
+
+    # A5: 删【物理凭证铁律】段（合并为第 8 条）
+    old = (
+        '\n\n【物理凭证铁律】\n'
+        '在任何总结回复中，如果你没有看到 写文件工具 工具返回 "success": true 的凭证，绝对禁止输出"修改成功"。你必须如实汇报"任务失败，原因是工具报错"，不准编造结果。\n'
+    )
+    if old in s:
+        s = s.replace(old, '\n', 1)
+        changes.append('A5 删物理凭证铁律')
+
+    # ===== 合并 B：前提验证组 =====
+    # B1: 前提验证 6 条 → 9 条
+    old = (
+        '6. [反例] 任务"把 X 改成 1"，X 不存在时：\n'
+        '   错误：anchor_pattern=其他变量, position=after, new_content="X = 1"\n'
+        '   正确：answer "core/config.py 中未找到 X，无法修改"'
+    )
+    new = (
+        old + '\n'
+        '7. 符号插入幂等：插入 def/class/模块级常量前，先 grep_code 搜索符号名；已存在则修改现有定义，禁止重复插入。同一锚点连续 2 轮执行同一 new_content 时，先 file_read 确认是否已插入成功，禁止无脑重试。\n'
+        '8. 先定义后调用：写"调用 xxx()"或"引用 xxx 变量"的代码前，必须 grep_code 确认已定义或 file_read 确认已 import；都不存在则先定义再写调用，禁止凭空写出未定义的函数调用。\n'
+        '9. 文件假设纪律：不要假设文件存在，做任何 patch 前先用 grep_code 或 file_read 确认路径，禁止凭记忆猜路径。'
+    )
+    if old in s:
+        s = s.replace(old, new, 1)
+        changes.append('B1 前提验证6→9')
+
+    # B2: 删【符号插入幂等性】段（合并为第 7 条）
+    old = (
+        '\n\n【符号插入幂等性（重要）】\n'
+        '插入任何 def / class / 模块级常量前：\n'
+        '1. 先 grep_code 搜索目标符号名\n'
+        '2. 已存在则禁止再插入，改为修改现有定义\n'
+        '3. 不存在才用 anchor_pattern 插入\n'
+        '同一锚点连续 2 轮执行同一 new_content 时：\n'
+        '- 停下来 file_read 确认是否已插入成功\n'
+        '- 禁止无脑重试\n'
+        'Python 特性提醒：同文件 def 同名会覆盖前一个，不会报错。\n'
+        '历史教训：2026-10-05，三者给 main_window.py 用同一锚点插入 _find_available_port 两次，导致函数重复。\n'
+    )
+    if old in s:
+        s = s.replace(old, '\n', 1)
+        changes.append('B2 删符号插入幂等')
+
+    # B3: 删【先定义后调用】段（合并为第 8 条）
+    old = (
+        '\n\n【先定义后调用（重要）】\n'
+        '写任何"调用 xxx()"或"引用 xxx 变量"的代码前，必须先确认：\n'
+        '1. 该函数/变量在同文件里已定义 → 用 grep_code 确认\n'
+        '2. 或已 import 进来 → 用 file_read 确认 import 行\n'
+        '3. 如果都不存在，先定义，再写调用\n'
+        '禁止凭空写出未定义的函数调用。\n'
+        '历史教训：2026-10-03，指挥官在 main_window.py 里写了 ensure_default_config()，但当时 launcher_config.py 里还没有这个函数，导致运行时 AttributeError。\n'
+    )
+    if old in s:
+        s = s.replace(old, '\n', 1)
+        changes.append('B3 删先定义后调用')
+
+    # B4: 删【文件假设纪律】段（合并为第 9 条）
+    old = '\n\n【文件假设纪律】不要假设文件存在（如 red_packet_routes.py 可能不存在）。做任何 patch 前先用 grep_code 或 file_read 确认路径。\n'
+    if old in s:
+        s = s.replace(old, '\n', 1)
+        changes.append('B4 删文件假设纪律')
+
+    if not changes:
+        print('  NO_CHANGES')
+        return False
+
+    print('  changes: ' + ', '.join(changes))
+    p.write_text(s, encoding='utf-8')
+    return _try_compile(p)
+
 @register('prompts_cleanup_A')
 def patch_prompts_cleanup_A():
     """A批：清空壳 + 修明确失效 + 加归档纪律"""
