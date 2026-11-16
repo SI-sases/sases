@@ -252,6 +252,18 @@ class HarnessRuntime:
         try:
             result = handler(params)
             duration_ms = int((_time.time() - start) * 1000)
+            _result_is_fail = isinstance(result, dict) and result.get('success') is False
+            if _result_is_fail:
+                _err = result.get('error', 'tool returned success=False')
+                self._circuit_record(module_id, False)
+                self._log_tool_usage(module_id, params, False, duration_ms, _err)
+                return ToolInvokeResponse(
+                    success=False,
+                    module_id=module_id,
+                    result=result,
+                    error=str(_err),
+                    duration_ms=duration_ms,
+                )
             self._circuit_record(module_id, True)
             self._log_tool_usage(module_id, params, True, duration_ms)
             return ToolInvokeResponse(

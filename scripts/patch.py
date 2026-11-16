@@ -383,6 +383,81 @@ def sync_rules_from_active():
     print('  PATCHED')
     return _try_compile(p)
 
+@register('prompts_cleanup_C1')
+def patch_prompts_cleanup_C1():
+    """C1：全局替换 写操作工具→写文件工具 + 加定义 + 删 file_patch 参数速查段"""
+    p = ROOT / 'core/services/swarm/prompts.py'
+    s = p.read_text(encoding='utf-8')
+
+    if '写文件工具 = file_write' in s:
+        print('  ALREADY_DONE')
+        return True
+
+    changes = []
+
+    # 1. 全局替换：写操作工具 → 写文件工具
+    n_replace = s.count('写操作工具')
+    if n_replace > 0:
+        s = s.replace('写操作工具', '写文件工具')
+        changes.append('replace 写操作工具 {} 处'.format(n_replace))
+
+    # 2. 在【file_read/file_write 调用铁律】后加定义
+    anchor_def = '【file_read/file_write 调用铁律】'
+    if anchor_def in s:
+        def_block = (
+            anchor_def + NL +
+            '写文件工具 = file_write（整文件覆写）/ smart_edit（片段替换 old_code+new_code）/ file_replace_range（按行号替换）。' + NL +
+            '以下所有"写文件工具"均指这三个，按任务特征选择；禁止凭空构造参数。' + NL + NL
+        )
+        s = s.replace(anchor_def + NL, def_block, 1)
+        changes.append('add 写文件工具定义')
+
+    # 3. 删除 file_patch 参数速查段（250-252 行，原【harness 工具参数速查】里的 file_patch 条目）
+    old_250 = (
+        '- 写文件工具: file_path(必填) + 三选一模式：' + NL +
+        '    锚点模式: anchor_pattern + position(before/after/replace_line) + new_content' + NL +
+        '    精确片段: old_snippet + new_snippet + expected_count' + NL
+    )
+    if old_250 in s:
+        s = s.replace(old_250, '', 1)
+        changes.append('del 参数速查 file_patch')
+
+    # 4. 删除 file_patch 使用规则段（306-312 行）
+    old_306 = (
+        '- 写文件工具：修改项目文件（允许目录：static/ / core/ / scripts/ / docs/）。支持两种模式：' + NL +
+        '- 锚点模式（推荐）：anchor_pattern + position(after/before/replace_line) + new_content' + NL +
+        '- 精确片段：old_snippet + new_snippet + expected_count' + NL
+    )
+    if old_306 in s:
+        # 找这一段的完整结束（a) b) 两条）
+        idx = s.find(old_306)
+        if idx >= 0:
+            # 向前找上一行【】段头，向后找 6 行
+            end_idx = s.find(NL + 'a) old_snippet', idx)
+            if end_idx < 0:
+                s = s.replace(old_306, '', 1)
+                changes.append('del 使用规则 file_patch')
+            else:
+                # 扩展到 b) 结束
+                b_end = s.find(NL + NL, end_idx + 100)
+                if b_end > 0:
+                    s = s[:idx] + s[b_end+2:]
+                    changes.append('del 使用规则 file_patch')
+
+    # 5. 删除第 374 行（第 5 条 file_patch 参数）
+    old_374 = '5. 写文件工具 参数：file_path / anchor_pattern / position / new_content 或 file_path / old_snippet / new_snippet / expected_count' + NL
+    if old_374 in s:
+        s = s.replace(old_374, '', 1)
+        changes.append('del 第5条 file_patch 参数')
+
+    if not changes:
+        print('  NO_CHANGES')
+        return False
+
+    print('  changes: ' + ', '.join(changes))
+    p.write_text(s, encoding='utf-8')
+    return _try_compile(p)
+
 @register('prompts_cleanup_A')
 def patch_prompts_cleanup_A():
     """A批：清空壳 + 修明确失效 + 加归档纪律"""

@@ -1,3 +1,12 @@
+### 工具层：invoke_tool 的 success 有两层语义
+- 第一层：handler 有没有抛异常（调用成功）
+- 第二层：run() 返回的 result.success（业务成功）
+- 修前只看第一层，导致所有"业务失败"被当成功
+- 修后两层都看，任何工具返回 {'success': False} 都会被正确上报
+- 影响：file_replace_range、verify_patch、verify_syntax、run_python 等所有返回 success 字段的工具
+
+
+
 \## 2026-11-08
 
 
@@ -206,3 +215,48 @@
 - 根因：`anchor_b = '_background_tasks.append(...)'` 没带 4 空格，`str.replace` 只替换子串，替换后新加行没缩进
 - 规避：**函数体内的锚点必须带前导空格**，`anchor = '    _background_tasks...'` 而不是 `'_background_tasks...'`
 - 教训：`str.replace` 是子串替换，不是行级替换。锚点必须包含足够的上下文（含缩进）才能精确
+
+### 5.7 project_docs 检索 query 要含核心关键词
+- 现象：query = "SASES 当前状态" 命中 0 条；query = "SASES" 命中 3 条
+- 根因：BGE 对短 query + 长内容的相似度敏感，泛化词（"当前状态"）会稀释语义
+- 规避：
+  - 检索 query 必须含 1-2 个具体关键词（项目名、模块名、技术词）
+  - 不要用纯泛化词（"当前状态"、"最近怎样"、"东西在哪"）
+  - 0 命中时先换 query 试，不要立刻怀疑数据
+- 阈值 0.48 是合理的：`SASES` 能命中说明数据没问题
+
+### 工具层：file_replace_range 替换单行不保留缩进
+- 现象：`file_replace_range(start_line=10, end_line=10, new_content='api2')` 把原行 `            raise Exception(...)` 换成 0 缩进的 `api2`，破坏语法
+- 根因：替换时直接 `new_lines = before + [new_content] + after`，没取原行缩进
+- 修复：取原行前导空格拼到 new_content 前
+- 教训：行级替换工具必须处理缩进
+
+### 工具层：SELF_PROTECTED 必须包含工具自己
+- 原 file_patch 有自我保护，file_patch 废弃后 file_replace_range 继承了位置但没继承保护
+- 修复：SELF_PROTECTED 换成 file_replace_range 的 main.py + manifest.json
+- 教训：工具自我保护是防止 AI 改坏工具本身，每个写入类工具都该有
+
+### 异步审核：reviewer_deep 不能直接 await invoke_tool
+- 现象：`TypeError: object ToolInvokeResponse can't be used in 'await' expression`
+- 根因：`invoke_tool` 是同步函数，返回 ToolInvokeResponse，不能 await
+- 修复：`await asyncio.to_thread(invoke_tool, ...)`
+- 教训：同步函数包 async 上下文必须走 to_thread
+
+### 工具层：harness 模块改了必须 reload
+- 现象：改了 `harness_modules/xxx/main.py`，但 invoke_tool 跑的还是旧代码
+- 根因：`harness_runtime` 单例缓存模块对象，文件改了不重启不 reload
+- 规避：改 harness 工具后必须 `get_runtime().reload_modules()` 或重启服务
+- 教训：**harness 热更新是显式动作，不是自动**。三者调 `harness_reload` 工具也是同理
+
+### 工具层：invoke_tool 忽略 run() 返回的 success: False
+- 现象：工具 run() 返回 `{'success': False, 'error': '...'}`，但 `ToolInvokeResponse.success` 是 True
+- 根因：`invoke_tool` 只看 handler 有没有抛异常，不看 result 的 success 字段
+- 影响：所有工具的“业务失败”被当成功，上层判断全部错
+- 修复：handler 返回后检查 result.get('success') is False，是则 ToolInvokeResponse.success=False
+- 教训：**工具返回值两层语义**：`success`（调用成功）vs `result.success`（业务成功）。两层都要检查
+
+### 工具层：SELF_PROTECTED 生效依赖重启，reload_modules 不彻底
+- 现象：改 `harness_modules/xxx/main.py` 后 `reload_modules()`，但 invoke_tool 还是跑旧代码
+- 根因：`del sys.modules[module_name]` 只删顶层模块，跨模块 import 引用仍缓存旧代码
+- 规避：改 harness 工具后必须重启服务，不能只 reload
+- 长期：`_load_module_function` 前先清所有 `harness_*` 开头的 sys.modules 键

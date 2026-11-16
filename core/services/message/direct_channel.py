@@ -294,6 +294,12 @@ def _cleanup_old_inner(days: int):
 
 async def try_direct(content: str, user_id=None, conversation_id=None):
     """一站式入口：预筛 + 判断 + 执行。返回 (success: bool, result: str)"""
+    # 明确指定工具调用时，直达不插手（走 swarm 严格执行）
+    # 明确指定工具调用时，直达不插手（走 swarm 严格执行）
+    _explicit_tool_call = ('type=harness', 'type:harness', 'module_id=')
+    if any(kw in content for kw in _explicit_tool_call) or content.lstrip().startswith('调用 harness'):
+        return False, ""
+    
     if not _should_try_direct(content):
         return False, ""
     # 先强判（不走 LLM）
