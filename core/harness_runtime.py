@@ -222,7 +222,7 @@ class HarnessRuntime:
             )
 
         manifest = info.get('manifest')
-        handler = info.get('handler') or info.get('invoke') or info.get('callable')
+        handler = info.get('handler') or info.get('invoke') or info.get('callable') or info.get('run_fn')
 
         # 权限检查
         if manifest:
@@ -250,7 +250,7 @@ class HarnessRuntime:
             )
 
         try:
-            result = handler(**params) if isinstance(params, dict) else handler(params)
+            result = handler(params)
             duration_ms = int((_time.time() - start) * 1000)
             self._circuit_record(module_id, True)
             self._log_tool_usage(module_id, params, True, duration_ms)
