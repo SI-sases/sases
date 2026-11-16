@@ -6,6 +6,9 @@ from ...security import decrypt_api_key, normalize_provider
 
 async def call_model_with_config(model_config: dict, query: str) -> str:
     try:
+        if not model_config:
+            raise Exception("未找到模型配置，请先在「我的 → 模型管理」绑定 API Key")
+
         if model_config["model_type"] == "api":
             provider = normalize_provider(model_config["provider"])
             api_key = decrypt_api_key(model_config["api_key_encrypted"])
