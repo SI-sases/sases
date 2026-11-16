@@ -43,4 +43,166 @@
 ### 坑 6：PowerShell -replace 处理含中文的 UTF-8 文件导致乱码
 - 现象：执行 PowerShell 的 -replace 替换 chat_ui.js 内容后，所有中文变成乱码（如 '我' 变成 '鎴?'），且吞掉单引号引发 SyntaxError
 - 根因：Windows PowerShell 5.1 的 Set-Content 默认使用系统 ANSI 编码（中文环境为 GBK），读写 UTF-8 文件时破坏中文字符
-- 修复：绝对不要用 PowerShell -replace 改含中文的代码文件。用 Python 脚本（显式 encoding='utf-8'）或 file_patch 工具
+- 修复：绝对不要用 PowerShell -replace 改含中文的代码文件。用 Python 脚本（显式 encoding='utf-8'）或 run_python 工具
+
+
+## safety_memory 直接 SQL 插入不生成 embedding
+- 现象：recall 召回不到，`length(embedding)` 为 NULL
+- 根因：embedding 由 memory_service.remember() 生成，SQL 直插绕过
+- 规避：写入用 remember() API，或插入后跑 backfill_embeddings
+- 兜底：bootstrap.py 定时任务（待实施）
+
+## 降权 SQL 必须加 memory_type 过滤
+- 错误写法：UPDATE safety_memory SET importance=0.1 WHERE content LIKE '%xxx%'
+- 后果：会把新任务的 task_context 也降权（id=93 被误伤）
+- 正确写法：UPDATE ... WHERE memory_type='file_patch_pattern' AND content LIKE '%xxx%'
+
+
+## patch.py 维护策略
+- 短补丁（≤30 行）进 patch.py，方便重放
+- 长补丁（>30 行）直接在源码改，git commit 里体现
+- 补丁稳定 3 个月后合并回源码，从 patch.py 删除
+- 目标：patch.py 保持在 200-500 行内，不是无限膨胀
+
+
+# SASES 常见坑点清单
+
+## 一、工具层
+
+### 1.1 file_patch old_snippet 分支崩溃
+- 现象：`UnboundLocalError: cannot access local variable 'new_content'`
+- 触发：传 `old_snippet` + `new_snippet` + `expected_count`
+- 根因：`_mode_snippet` 分支里 `new_content` 变量未赋值
+- 规避：**优先 run_python 字符串替换**，或 file_patch 的 `anchor_pattern` 模式
+- 状态：目录已从三者可见范围移除（改名 `_disabled_file_patch`），prompts.py 已清
+
+### 1.2 run_python 不能做的事
+- 禁止 `import subprocess / socket / ctypes / multiprocessing / signal`
+- 禁止 `import py_compile / compileall`
+- 禁止启动外部进程
+- 适合：字符串处理、文件读写（走 `write_file` / `open`，有路径白名单）、简单计算
+- **需要跑外部脚本时**：三者指令写 `type=command`，写 `python scripts/xxx.py`；或用户 CMD 直接执行
+
+### 1.3 三者按行号打补丁会越改越乱
+- 现象：连续 3 次重拆，缩进错误从 line 305 → 304 → 306 反复挪动
+- 根因：三者按"锚点行位置"逐行插入，每次改 1 行后行号变了，下次对不上
+- 规避：**整函数替换**，或**精确字符串匹配替换**，不要按行号逐行插入
+
+### 1.4 grep_code 扫到副本目录
+- 现象：搜索 `harness_reload` 出来 `build_portable/...` 副本，噪音大
+- 根因：`SKIP_DIRS` 漏了 `build_portable`、`python312`、`dist`、`release`、`logs`
+- 规避：`SKIP_DIRS` 已扩展（patch.py 的 `grep_skip_dirs`）
+- 遗留：`decider.py.broken_20261101` 这类 `.broken_` 备份没跳过，`SKIP_NAME_MARKERS` 里待加
+
+### 1.5 直达通道会劫持"明确指定工具"的指令
+- 现象：发 `调用 harness 工具（module_id=run_python）`，直达理解成 `file_read + grep`
+- 根因：`_should_try_direct` 只看"有文件路径"，不看"已指定工具"
+- 规避：`try_direct` 开头加 `_explicit_tool_call` 判断（patch.py 的 `direct_no_hijack`）
+
+### 1.6 直达空消息
+- 现象：`messages` 表出现 `content=""` 的 assistant 记录，聊天窗口空白
+- 根因：`try_direct` 返回空字符串，`send.py` 照样 INSERT
+- 规避：直达返回空时不写消息，或写"未找到匹配内容"（待修）
+
+## 二、记忆库
+
+### 2.1 直接 SQL 插 safety_memory 不生成 embedding
+- 现象：`recall` 召回不到，`length(embedding)` 为 NULL
+- 根因：embedding 由 `memory_service.remember()` 生成，SQL 直插绕过
+- 规避：写入用 `remember()` API，或插入后跑 `backfill_embeddings`
+- **兜底方案**：`bootstrap.py` 定时任务每 30 分钟跑一次 `backfill_embeddings`（见第二部分）
+
+### 2.2 降权 SQL 必须加 memory_type 过滤
+- 错误写法：`UPDATE safety_memory SET importance=0.1 WHERE content LIKE '%xxx%'`
+- 后果：会把新任务的 `task_context` 也降权（id=93 被误伤）
+- 正确写法：`UPDATE ... WHERE memory_type='xxx_type' AND content LIKE '%xxx%'`
+
+### 2.3 语义检索对短 query 命中率低
+- 现象：所有 93 条记忆，query"当前任务是什么"，最高 sim=0.527，全部 < 0.55 阈值
+- 根因：BGE-small-zh 对短 query（7 个字）vs 长 content（几十字）天然相似度低
+- **不要降全局阈值**：降到 0.45 会召回一堆历史任务，污染上下文
+- 规避：**关键上下文走 recall_by_type 确定性注入**，不走语义检索
+
+### 2.4 task_context 必须走 recall_by_type
+- 位置：`context_service.build_enriched_prompt`
+- 逻辑：`memory_service.recall_by_type(user_id, 'task_context', top_k=2)` 精确按类型查，不用相似度
+- 效果：只要用户有 task_context，必注入，不受模型能力影响
+- 对所有用户生效，按 user_id 隔离
+
+## 三、上下文注入
+
+### 3.1 项目库高分命中跳过 build_enriched_prompt
+- 现象：`[message] 项目库高分命中 0.676` 后直接拼 project_text，task_context 完全没注入
+- 根因：`send.py` 1212-1215 行高分分支没调 `build_enriched_prompt`
+- 规避：patch.py 的 `send_proj_high_ctx`，高分时也走 `build_enriched_prompt`
+
+### 3.2 会话历史 10 条盖过 task_context
+- 现象：新会话能答对，旧会话答"149 个文件"（旧任务）
+- 根因：`build_enriched_prompt` 里历史 10 条紧跟 task_context，LLM 看到旧任务优先相信
+- 规避：有 task_context 时历史只取 2 条（patch.py 的 `ctx_task_context` 的 `_hist_limit`）
+
+### 3.3 _is_sases_chat 只认 'sases' 名字
+- 现象：用户配置的"调度"名字不含 `sases`，判 False，走"仅注入历史"分支，不读项目库
+- 规避：patch.py 的 `send_is_sases_chat`，改成 `True`，所有智能体都注入上下文
+
+## 四、数据一致性
+
+### 4.1 init_db 从来不是唯一真相来源
+- 问题：表、字段、索引分散在 CREATE TABLE、migrations.py、手工 SQL 四个地方
+- 后果：新环境部署时缺表缺字段，启动后才爆
+- 规避：所有"加表/加字段"必须挂到 `init_db()` 末尾调 migrations
+- 现状：`init_db` 已集成 `apply_migrations` + `apply_hlc_groundwork`
+
+### 4.2 数据库字段必须 PRAGMA 确认
+- 教训：AI 说"已加字段"的次数很多，实际没加的次数也很多
+- 规避：每次改表后跑 `PRAGMA table_info(表名)` 确认
+
+## 五、工具链与流程
+
+### 5.1 patch.py 维护策略
+- 短补丁（≤30 行）进 `scripts/patch.py`，方便重放
+- 长补丁（>30 行）直接在源码改，git commit 里体现
+- 补丁稳定 3 个月后合并回源码，从 patch.py 删除
+- 目标：patch.py 保持在 200-500 行内，不是无限膨胀
+- 新机器部署：`python scripts/patch.py --all` 一键恢复
+
+### 5.2 CMD 转义
+- 多行 `python -c` 在 CMD 下会截断
+- `$`、`{}`、反引号在 CMD 下会转义
+- 复杂逻辑：写脚本文件，`python scripts/xxx.py` 执行
+- 简单查询：单行 `python -c "..."`，用 `chr()` 拼特殊字符
+
+### 5.3 修改 core/ 必须重启
+- 改 `core/` 下 `.py` 文件 → 必须 `Ctrl+C` + 重启
+- 改 `static/` 下 `.js` / `.css` → 硬刷新（Ctrl+Shift+F5）即可
+- 改 `harness_modules/` → 调 `harness_reload` 工具即可，不用重启
+
+### 5.4 三者重拆上限
+- 连续 3 次重拆未修好 → 停手
+- 每次重拆烧 2 积分，改错方向损失更大
+- 停手后：用户手动看日志 + 写脚本修 + 走 CMD 执行
+
+## 六、验证与审计
+
+### 6.1 verify_patch 的 all_checks_passed 审核员不检查
+- 现象：`verify_patch` 返回 `success: true` 但 `all_checks_passed: false`，审核员判 `pass`
+- 根因：`reviewer.py` 只看 `success`，不看 `all_checks_passed`
+- 影响：补丁没落地被当成成功
+- 待修：`reviewer.py` 加 `all_checks_passed` 判断
+
+### 6.2 三者"假成功"
+- 已加防护：`file_patch` 写后读回校验、`run_python` 备份
+- 仍需注意：AI 说"已改"，必须 `grep_code` 或 `file_read` 物理验证
+
+## 七、直达通道
+
+### 7.1 直达回显的两种返回格式
+- `file_read` 不带 `grep` → 返回 `{"content": "..."}`，能回显
+- `file_read` 带 `grep` → 返回 `{"matches": [...]}`，`execute_direct` 取 `content` 拿不到，返回空
+- 待修：`execute_direct` 加 `matches` 格式化分支
+
+### 5.5 patch.py 字符串锚点必须带缩进
+- 现象：`IndentationError: unexpected indent`，插入的代码变成 0 缩进
+- 根因：`anchor_b = '_background_tasks.append(...)'` 没带 4 空格，`str.replace` 只替换子串，替换后新加行没缩进
+- 规避：**函数体内的锚点必须带前导空格**，`anchor = '    _background_tasks...'` 而不是 `'_background_tasks...'`
+- 教训：`str.replace` 是子串替换，不是行级替换。锚点必须包含足够的上下文（含缩进）才能精确
