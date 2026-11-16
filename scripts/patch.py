@@ -264,6 +264,53 @@ def patch_run_python_backup():
 
 # ==================== 入口 ====================
 
+@register('bootstrap_memory_backfill')
+def patch_bootstrap_memory_backfill():
+    """bootstrap.py 加 periodic_memory_backfill，每 30 分钟补齐 embedding"""
+    p = ROOT / 'core/bootstrap.py'
+    s = p.read_text(encoding='utf-8')
+    if 'periodic_memory_backfill' in s:
+        print('  ALREADY_DONE')
+        return True
+
+    # 锚点 A：函数定义插到 periodic_red_packet_expire 之后、@asynccontextmanager 之前
+    anchor_a = '            await asyncio.sleep(3600)' + NL + NL + '@asynccontextmanager'
+    if anchor_a not in s:
+        print('  [A] ANCHOR_NOT_FOUND')
+        return False
+
+    func_def = (
+        'async def periodic_memory_backfill():' + NL +
+        '    """每 30 分钟补齐一次缺失的 embedding，防新写入踩坑。"""' + NL +
+        '    await asyncio.sleep(60)' + NL +
+        '    while True:' + NL +
+        '        try:' + NL +
+        '            from .services import memory_service' + NL +
+        '            n = await asyncio.to_thread(memory_service.backfill_embeddings, 200)' + NL +
+        '            if n > 0:' + NL +
+        '                print("[memory-backfill] 补齐 {} 条".format(n))' + NL +
+        '        except Exception as e:' + NL +
+        '            print("[memory-backfill] 失败: {}".format(e))' + NL +
+        '        await asyncio.sleep(1800)' + NL +
+        NL
+    )
+
+    new_a = '            await asyncio.sleep(3600)' + NL + NL + NL + func_def + '@asynccontextmanager'
+    s = s.replace(anchor_a, new_a, 1)
+    print('  [A] func defined')
+
+    # 锚点 B：注册
+    anchor_b = '    _background_tasks.append(asyncio.create_task(periodic_hlc_health()))'
+    if anchor_b not in s:
+        print('  [B] ANCHOR_NOT_FOUND')
+        return False
+    new_b = anchor_b + NL + '    _background_tasks.append(asyncio.create_task(periodic_memory_backfill()))'
+    s = s.replace(anchor_b, new_b, 1)
+    print('  [B] registered')
+
+    p.write_text(s, encoding='utf-8')
+    return _try_compile(p)
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--list', action='store_true', help='列出所有补丁')

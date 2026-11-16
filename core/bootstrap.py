@@ -516,6 +516,20 @@ async def periodic_red_packet_expire():
             print(f'[rp-expire] error: {e}')
             await asyncio.sleep(3600)
 
+
+async def periodic_memory_backfill():
+    """每 30 分钟补齐一次缺失的 embedding，防新写入踩坑。"""
+    await asyncio.sleep(60)
+    while True:
+        try:
+            from .services import memory_service
+            n = await asyncio.to_thread(memory_service.backfill_embeddings, 200)
+            if n > 0:
+                print("[memory-backfill] 补齐 {} 条".format(n))
+        except Exception as e:
+            print("[memory-backfill] 失败: {}".format(e))
+        await asyncio.sleep(1800)
+
 @asynccontextmanager
 
 
@@ -592,6 +606,7 @@ async def lifespan(app: FastAPI):
     _background_tasks.append(asyncio.create_task(_state_svc.periodic_state_sync(interval_hours=24)))
     _background_tasks.append(asyncio.create_task(periodic_airdrop()))
     _background_tasks.append(asyncio.create_task(periodic_hlc_health()))
+    _background_tasks.append(asyncio.create_task(periodic_memory_backfill()))
     _background_tasks.append(asyncio.create_task(scheduled_task_scheduler()))
 
 
