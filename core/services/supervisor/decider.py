@@ -290,17 +290,16 @@ async def task_summarizer(task):
             print(f'[supervisor] task_summarizer 终轮提示词命中: {_fl_count} 条 file:line')
             return {'goal_achieved': True, 'goal_reason': f'报告含 {_fl_count} 条 file:line 具体结论', 'missing': [], 'next_hint': ''}
 
-    # v0.38.0: 假完成拦截 —— 任务含修改动词但无 file_patch 成功
+    # v0.38.0: 假完成拦截 —— 任务含修改动词但无写操作成功
     try:
         _action_kws = ['改成', '改为', '修改', '删除', '删掉', '新增', '添加', '创建', '写入', '替换', '移动', '插入', '修复']
         _need_patch = any(k in user_text for k in _action_kws) and not _is_readonly_task
         # [P1-0b] 白名单扩展：run_python / file_write 也算写操作
-        _WRITE_TOOLS_V2 = ('file_patch', 'run_python', 'file_write')
-        _has_patch_ok = any(
-            str(r.get('command') or r.get('module_id') or '') in _WRITE_TOOLS_V2
-            and r.get('status') == 'success'
-            for r in results
-        )
+        _WRITE_TOOLS_V2 = ('file_write', 'smart_edit', 'file_replace_range', 'run_python')
+        def _match_write_tool(r):
+            _s = str(r.get('command') or r.get('module_id') or '')
+            return r.get('status') == 'success' and any(t in _s for t in _WRITE_TOOLS_V2)
+        _has_patch_ok = any(_match_write_tool(r) for r in results)
         if _need_patch and _has_patch_ok and not _is_readonly_task:
             # 只要有成功的 file_patch，就允许有小报错，直接判定完成
             return {'goal_achieved': True, 'goal_reason': '已完成修改动作', 'missing': [], 'next_hint': ''}
@@ -311,7 +310,7 @@ async def task_summarizer(task):
             )
             if not _any_not_found:
                 print('[supervisor] task_summarizer 假完成拦截: 任务含修改动词但无 file_patch 成功')
-                return {'goal_achieved': False, 'goal_reason': '任务要求修改但无 file_patch / ssh_exec / run_python / run_forever 任何写操作成功凭证', 'missing': ['实际修改'], 'next_hint': '用 file_patch 实际执行修改，禁止只报告不修改'}
+                return {'goal_achieved': False, 'goal_reason': '任务要求修改但无 file_write/smart_edit/file_replace_range/run_python 任何写操作成功凭证', 'missing': ['实际修改'], 'next_hint': '用 file_write/smart_edit/file_replace_range 实际执行修改，禁止只报告不修改'}
     except Exception as _e_fake:
         print('[supervisor] 假完成判定异常: ' + str(_e_fake))
     
