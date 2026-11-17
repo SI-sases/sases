@@ -60,15 +60,23 @@ def build_context(user_id, conversation_id, query, mode='execute', supervisor_id
         print("[supervisor] build_context 历史读取失败: " + str(e))
     try:
         from .. import memory_service
+        _tc_chat = memory_service.recall_by_type(user_id, 'task_context', top_k=2)
+        if _tc_chat:
+            _tc_text = chr(10).join(str(m.get('content') or '') for m in _tc_chat)
+            parts.append("【当前任务（必读）】" + chr(10) + _tc_text)
+        else:
+            parts.append("【当前任务（必读）】当前没有活跃任务。用户问“当前任务是什么”时，直接回答“当前没有活跃任务”，禁止从历史记忆或经验记录推断。")
         mems = memory_service.recall(user_id, query, 2)
         for m in (mems or []):
+            if m.get('memory_type') == 'task_context':
+                continue
             mc = (m.get("content") or "")[:100] if isinstance(m, dict) else ""
             if mc:
-                parts.append("记忆：" + mc)
+                parts.append("【历史记忆】" + mc)
     except Exception as e:
         print("[supervisor] build_context 记忆读取失败: " + str(e))
     if mode == 'chat':
-        _allow_project = bool(supervisor_id) and supervisor_id.startswith('sases_assistant')
+        _allow_project = bool(supervisor_id) and (supervisor_id.startswith('sases_assistant') or supervisor_id.startswith('sases_api_'))
         if _allow_project:
             try:
                 from .. import project_service

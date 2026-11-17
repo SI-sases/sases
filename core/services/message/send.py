@@ -1207,6 +1207,7 @@ async def send_message(
                 try:
                     from .. import project_service
                     chunks = project_service.retrieve_project_chunks(content, top_k=3, threshold=0.35, user_id=user_id)
+                    print(f"[chunks_DEBUG] user_id={user_id} count={len(chunks)}")
                     if chunks:
                         _top = chunks[0].get("score", 0)
                         if _top > 0.55:
