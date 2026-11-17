@@ -42,6 +42,10 @@ def build_next_input(run_id):
 async def task_summarizer(task):
     # [系统宪法] 只要有产出，第2轮起直接完成，绝不空转重试
     _res = task.get('results', [])
+    # [loop-guard] stop endless [MODIFY] re-plan chain
+    if str(task.get('user_text', '')).count('[MODIFY]') >= 2:
+        print('[loop-guard] MODIFY chain reached limit, stop retry and wait for user input')
+        return {'goal_achieved': True, 'goal_reason': 'retry limit reached, waiting for user input', 'missing': [], 'next_hint': ''}
     # 【物理防假死】强制校验
     import re
     _goal_text = task.get('goal', '') or task.get('user_text', '') or ''
@@ -51,7 +55,7 @@ async def task_summarizer(task):
         print(f"[task_summarizer DEBUG] _res 数量={len(_res)}")
         for _di, _dr in enumerate(_res):
             print(f"  [{_di}] command={_dr.get('command')!r} module_id={_dr.get('module_id')!r} status={_dr.get('status')!r}")
-        _WRITE_TOOLS = ('file_patch', 'run_python', 'file_write', 'file_replace_range')
+        _WRITE_TOOLS = ('file_patch', 'run_python', 'file_write', 'file_replace_range', 'smart_edit')
         _has_success_patch = False
         for _r in _res:
             if _r.get('status') != 'success':
