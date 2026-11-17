@@ -35,12 +35,14 @@ def _validate_path(file_path):
 
 
 def run(params):
-    _content = params.get("content") or params.get("text") or ""
+    _content = params.get("content") or params.get("new_content") or params.get("text") or ""
+    if not _content and not params.get("allow_empty"):
+        return {"success": False, "error": "content 为空，拒绝写入空文件。如确需空文件请传 allow_empty=true"}
     if isinstance(_content, str) and _content.strip().startswith('{"success"') and '"file_path"' in _content:
         return {"success": False, "error": "content 看起来是 file_read 的 JSON 返回值，请先提取 data[\"content\"] 字段后再写入"}
 
     file_path = params.get("file_path", "")
-    content = params.get("content", "")
+    content = _content
     safe_path = _validate_path(file_path)
     abs_path = os.path.abspath(safe_path)
 
