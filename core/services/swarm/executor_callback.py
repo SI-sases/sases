@@ -578,6 +578,18 @@ async def handle_step_done(
                                 continue
                             _seen_lines.add(_ln_num)
                             _facts.append({"file": _file_name, "line": _ln_num, "text": _m.group(2).strip()[:100]})
+                        # P2-facts: file_read/file_write/smart_edit 场景兜底
+                        _mid_r = str(_r.get("module_id") or _r.get("command") or "")
+                        if _mid_r in ("file_read", "file_write", "smart_edit", "file_replace_range", "verify_syntax"):
+                            _fp_r = ""
+                            if isinstance(_d, dict):
+                                _fp_r = _d.get("file_path") or _d.get("file") or ""
+                            if not _fp_r:
+                                _fp_m = _re_st.findall(r"[\w/\-]+\.\w{1,6}", _out)
+                                _fp_r = _fp_m[0] if _fp_m else _file_name
+                            if _fp_r and _fp_r not in _seen_lines:
+                                _seen_lines.add(_fp_r)
+                                _facts.append({"file": _fp_r, "line": 0, "text": _mid_r + " ok"})
                     _save_task_state(f"run_{_rid_state}", task.get("user_id"), {
                         "facts": _facts[-15:],
                         "pending": [],

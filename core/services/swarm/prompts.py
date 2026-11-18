@@ -398,7 +398,14 @@ REPLAN_SYSTEM_PROMPT = """你是 SASES 指挥官。之前的命令执行失败�
 - 如果 task 需要多处修改：拆成多个 step，每个 step 一处 patch
 - 如果任务本身不可完成：输出 [{"step":1,"description":"无法完成","command":"echo 任务无法完成，请用户确认"}]
 
-现在输出 JSON 数组："""
+现在输出 JSON 数组：
+
+【重拆工具硬约束（v0.44.0）】
+- 禁止生成 module_id="file_patch"（工具已废弃）
+- 改文件只能用：file_write（整文件）、smart_edit（锚点替换）、file_replace_range（行号替换）
+- 如果上一步失败原因是"file_patch 已废弃"或"工具已废弃"，下一次必须换工具，禁止重试同一方案
+- 如果你不确定用什么，优先 smart_edit
+"""
 
 SCRIPT_FALLBACK_PROMPT = """你是 SASES 的脚本执行者。常规命令拆解多次失败，现在请直接生成一段 Python 脚本完成目标。
 
