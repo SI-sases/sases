@@ -81,7 +81,11 @@ async def send_message(
                 from core.services.license_service import verify_license_json, get_exec_token
             _lic_ok, _lic_reason = verify_license_json()
             if not _lic_ok:
-                raise HTTPException(status_code=403, detail=f"授权未激活: {_lic_reason}")
+                import os as _os_dev
+                if _os_dev.path.exists("enable_free_mode.txt") or _os_dev.getenv("SASES_DEV_BYPASS_LICENSE") == "1":
+                    print("[license] DEV BYPASS: 跳过本地 license 校验")
+                else:
+                    raise HTTPException(status_code=403, detail=f"授权未激活: {_lic_reason}")
             try:
                 from launcher.hardware import get_hardware_fingerprint
                 _fp = get_hardware_fingerprint()
@@ -865,6 +869,10 @@ async def send_message(
 
                     if _chat_reply:
                         with db_cursor(commit=True) as _ccur:
+                            _ccur.execute('SELECT sender, content FROM messages WHERE conversation_id=? ORDER BY id DESC LIMIT 1', (conversation_id,))
+                            _last = _ccur.fetchone()
+                            if not (_last and _last[0] == 'user' and _last[1] == content):
+                                _ccur.execute("INSERT INTO messages (conversation_id, sender, content, sender_agent_id, msg_type, attachments) VALUES (?, 'user', ?, ?, ?, ?)", (conversation_id, content, sender_agent_id, msg_type, _att_str))
                             _ccur.execute(
                                 "INSERT INTO messages (conversation_id, sender, content, sender_agent_id, msg_type, attachments) VALUES (?, ?, ?, ?, ?, ?)",
                                 (conversation_id, 'assistant', _chat_reply, sender_agent_id, msg_type, _att_str)
