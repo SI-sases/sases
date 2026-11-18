@@ -97,7 +97,13 @@ def create_run(user_id, conversation_id, supervisor_id, goal, task_type=None, ma
         _tt = task_type if task_type is not None else 'unknown'
         _mr = max_rounds if max_rounds is not None else MAX_ROUNDS
         cur.execute("INSERT INTO supervisor_runs (user_id, conversation_id, supervisor_id, goal, status, current_round, max_rounds, history, task_type) VALUES (?, ?, ?, ?, 'running', 0, ?, '[]', ?)", (user_id, conversation_id, supervisor_id, goal, _mr, _tt))
-        return cur.lastrowid
+        _new_id = cur.lastrowid
+    try:
+        from core.services.task_state_service import open_task
+        open_task(conversation_id, _new_id, goal, user_id)
+    except Exception as _e_ts_open:
+        print('[task_state] open_task 失败: ' + str(_e_ts_open))
+    return _new_id
 
 
 def cancel_run(run_id, user_id):
@@ -215,6 +221,12 @@ def finish_run(run_id, status='completed'):
             print('[supervisor] finish_run 推送: ' + _msg_fin)
     except Exception as _e_fin:
         print('[supervisor] finish_run 推送失败: ' + str(_e_fin))
+    try:
+        from core.services.task_state_service import finish_task
+        if _conv_id:
+            finish_task(_conv_id, status)
+    except Exception as _e_ts_fin:
+        print('[task_state] finish_task 失败: ' + str(_e_ts_fin))
     print('[supervisor] finish_run: ' + str(run_id) + ' -> ' + status)
 
 # (旧版 build_context 已删除，用第 12 行版本)
