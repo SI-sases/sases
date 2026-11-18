@@ -152,6 +152,25 @@ def finish_run(run_id, status='completed'):
     try:
         if _conv_id:
             from ..swarm.helpers import _insert_message as _im_fin
+            # P0-4: 失败时给用户明确消息
+            _FAILED_P04 = ('failed', 'no_progress', 'timeout', 'error', 'plan_failed', 'insufficient_credits', 'interrupted')
+            if status in _FAILED_P04:
+                _title_p04 = {'failed': '❌ 任务失败', 'no_progress': '⚠️ 任务卡住（无进展）', 'timeout': '⏱ 任务超时', 'error': '❌ 任务出错', 'plan_failed': '⚠️ 任务拆解失败', 'insufficient_credits': '💰 积分不足', 'interrupted': '⚠️ 任务被中断'}.get(status, '❌ 任务失败')
+                _reason_p04 = ''
+                try:
+                    from core.services import task_state_service as _tss_p04
+                    _snap_p04 = _tss_p04.get_snapshot(_conv_id)
+                    _fs_p04 = _snap_p04.get('failed_summary') or []
+                    if _fs_p04:
+                        _reason_p04 = str(_fs_p04[-1].get('reason', ''))[:100]
+                except Exception:
+                    pass
+                _msg_fin = _title_p04 + (chr(10) + '原因：' + _reason_p04 if _reason_p04 else '')
+                try:
+                    _im_fin(_conv_id, '[SUMMARY]:' + _msg_fin, sender_agent_id=_sup_id)
+                except Exception as _e_msg_p04:
+                    print('[P0-4] 失败消息发送失败: ' + str(_e_msg_p04))
+                return
             if status == 'completed':
                 _msg_fin = '[SUMMARY]:OK 执行已结束'
                 try:

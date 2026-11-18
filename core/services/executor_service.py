@@ -76,6 +76,28 @@ _running_task_ids: set = set()
 _global_semaphore: Optional[asyncio.Semaphore] = None
 
 
+
+
+# P2A2: 物理拦截 file_read JSON 污染 old_code
+def _check_old_code_pollution(module_id, params):
+    """检测 old_code/old_snippet/old_content 是否被 file_read JSON 污染"""
+    if not isinstance(params, dict):
+        return None
+    for key in ("old_code", "old_snippet", "old_content"):
+        v = params.get(key)
+        if isinstance(v, str):
+            sv = v.strip()
+            if sv.startswith('{"success"') or sv.startswith("{'success'"):
+                return {
+                    "success": False,
+                    "error": (
+                        "参数 " + key + " 看起来是 file_read 的 JSON 返回值。"
+                        "请先提取 content 字段后再传给 " + str(module_id)
+                    )
+                }
+    return None
+
+
 def _get_semaphore() -> asyncio.Semaphore:
     global _global_semaphore
     if _global_semaphore is None:
@@ -198,6 +220,12 @@ async def _run_command(cmd: str, timeout: int = DEFAULT_TIMEOUT) -> tuple:
 async def _run_harness(module_id: str, params: Dict[str, Any]) -> tuple:
     start = datetime.datetime.now()
     try:
+        # P2A2: 拦截 old_code 被 file_read JSON 污染
+        _pollution = _check_old_code_pollution(module_id, params)
+        if _pollution:
+            dur = int((datetime.datetime.now() - start).total_seconds() * 1000)
+            return f"Harness 失败: {_pollution['error']}", "failed", dur
+        
         response = await asyncio.to_thread(harness_runtime.invoke_tool, module_id, params)
         dur = int((datetime.datetime.now() - start).total_seconds() * 1000)
 

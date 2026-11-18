@@ -648,19 +648,15 @@ async def lifespan(app: FastAPI):
 
     yield
 
-    summary_task.cancel()
-    debug_task.cancel()
-    rescue_task.cancel()
-    backup_task.cancel()
-    executor_task.cancel()
-    cleanup_task.cancel()
-    _state_task.cancel()
+    # 遍历 _background_tasks 取消所有后台任务（旧代码引用了未定义的变量）
+    for _t in _background_tasks:
+        try:
+            _t.cancel()
+        except Exception as _e_c:
+            print('[bootstrap] task cancel err: ' + str(_e_c))
 
     if '_restart_watch_task' in dir():
         _restart_watch_task.cancel()
-    pattern_task.cancel()
-    git_push_task.cancel()
-    syntax_check_task.cancel()
 
 
 def create_app() -> FastAPI:
