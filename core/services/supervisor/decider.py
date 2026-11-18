@@ -394,7 +394,7 @@ async def decide_next_step(run_id):
             _action_words = ['实现', '打通', '改', '加', '建', '修复', '增加', '添加', '删除', '创建', '完成']
             _need_action = any(w in _goal for w in _action_words)
             _history_str = json.dumps(history, ensure_ascii=False)
-            _has_patch = '[success] file_patch' in _history_str or '[success]harness_reload' in _history_str or '[success] harness_reload' in _history_str
+            _has_patch = '[success] file_patch' in _history_str or '[success]harness_reload' in _history_str or '[success] harness_reload' in _history_str or any(('[success] ' + _t) in _history_str or ('[success]' + _t) in _history_str for _t in ('smart_edit', 'file_replace_range', 'file_write', 'run_python'))
             if _need_action and not _has_patch and _result.get('action') == 'done':
                 print('[supervisor] 强制覆盖 done → execute（历史无 file_patch）')
                 _result['action'] = 'execute'
