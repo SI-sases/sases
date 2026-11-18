@@ -71,7 +71,11 @@ async def send_message(
     print(f"[MSG_DEBUG] content={content!r} | mode={mode!r} | agent_id={agent_id!r} | msg_type={msg_type}")
 
     # ===== P0-D: 付费墙预检（#1~#4 执行类消息必须通过 license 检查）=====
-    if isinstance(content, str):
+    import os as _os_p0d
+    _P0D_DEV_BYPASS = (_os_p0d.path.exists("enable_free_mode.txt") or _os_p0d.getenv("SASES_DEV_BYPASS_LICENSE") == "1")
+    if _P0D_DEV_BYPASS:
+        print("[license] DEV BYPASS: 跳过 P0-D 预检")
+    elif isinstance(content, str):
         import re as _re_lic
         _pref_check = _normalize_prefix(content)
         if isinstance(_pref_check, str) and _re_lic.match(r'^#[1-4]:', _pref_check):

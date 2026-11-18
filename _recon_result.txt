@@ -1,0 +1,156 @@
+============================================================
+1. DB SCHEMA
+============================================================
+
+[conversations]
+  id                             INTEGER
+  user_id                        INTEGER
+  agent_id                       TEXT
+  title                          TEXT
+  mode                           TEXT
+  unread_count                   INTEGER
+  is_pinned                      INTEGER
+  created_at                     TEXT
+  updated_at                     TEXT
+  target_user_id                 INTEGER
+  is_friend_chat                 INTEGER
+  friend_mode                    TEXT
+
+[supervisor_runs]
+  id                             INTEGER
+  user_id                        INTEGER
+  conversation_id                INTEGER
+  supervisor_id                  TEXT
+  goal                           TEXT
+  status                         TEXT
+  current_round                  INTEGER
+  max_rounds                     INTEGER
+  credits_used                   INTEGER
+  history                        TEXT
+  created_at                     TEXT
+  finished_at                    TEXT
+  task_type                      TEXT
+
+[messages]
+  id                             INTEGER
+  conversation_id                INTEGER
+  sender                         TEXT
+  content                        TEXT
+  sender_agent_id                TEXT
+  created_at                     TEXT
+  msg_type                       TEXT
+  attachments                    TEXT
+  hlc_ts                         TEXT
+  origin_node                    TEXT
+
+[swarm_pending_tasks]
+  id                             INTEGER
+  task_id                        TEXT
+  conversation_id                INTEGER
+  user_id                        INTEGER
+  commander_id                   TEXT
+  executor_id                    TEXT
+  user_text                      TEXT
+  steps                          TEXT
+  results                        TEXT
+  done_steps                     TEXT
+  retry_count                    INTEGER
+  is_draft                       INTEGER
+  cancelled                      INTEGER
+  no_plan                        INTEGER
+  status                         TEXT
+  created_at                     TEXT
+  updated_at                     TEXT
+  supervisor_run_id              INTEGER
+  supervisor_id                  TEXT
+
+[scheduled_tasks]
+  id                             TEXT
+  user_id                        INTEGER
+  name                           TEXT
+  cron_expr                      TEXT
+  timezone                       TEXT
+  task_template                  TEXT
+  task_params                    TEXT
+  enabled                        INTEGER
+  missed_policy                  TEXT
+  failure_count                  INTEGER
+  paused_reason                  TEXT
+  last_run_at                    TEXT
+  next_run_at                    TEXT
+  created_at                     TEXT
+  updated_at                     TEXT
+  is_active                      INTEGER
+  consecutive_failures           INTEGER
+
+============================================================
+2. KEY FILES
+============================================================
+  N core/services/task_state_service.py (0B)
+  Y core/services/intent_service.py (6143B)
+  Y core/services/message/send.py (71770B)
+  N core/services/context.py (0B)
+  Y core/services/swarm/prompts.py (32777B)
+  Y core/services/swarm/commander.py (26130B)
+  Y core/services/swarm/executor_callback.py (52146B)
+  Y core/services/swarm/reviewer_deep.py (8900B)
+  Y core/services/supervisor/runs.py (12681B)
+  Y core/services/supervisor/decider.py (24778B)
+  Y core/harness_runtime.py (11849B)
+  Y core/bootstrap.py (37879B)
+  Y core/db.py (55935B)
+  Y harness_modules/file_patch/main.py (20956B)
+
+============================================================
+3. KEY FUNCTIONS (line)
+============================================================
+  L95 create_run: def create_run(user_id, conversation_id, supervisor_id, goal, task_type=None, max_rounds: 
+  L118 finish_run: def finish_run(run_id, status='completed'):
+  L103 cancel_run: def cancel_run(run_id, user_id):
+  L39 handle_step_done: async def handle_step_done(
+  N classify: not found
+  N build_enriched_prompt: no file
+  N review_step: not found
+
+============================================================
+4. KEY RULES
+============================================================
+  N prompts:file_patch已废弃: 0
+  N prompts:file_patch总: 0
+  Y prompts:file_write: 13
+  N prompts:file_read返回值: 0
+  N runtime:DEPRECATED_TOOLS: 0
+  Y db:_ensure_column: 117
+
+============================================================
+5. INTENT SERVICE
+============================================================
+  CHAT_PATTERNS: 2
+  TASK_VERBS: 2
+  TASK_NOUNS: 2
+  is_task: 1
+  return词: set()
+
+============================================================
+6. #4 分支
+============================================================
+  L73: # ===== P0-D: 付费墙预检（#1~#4 执行类消息必须通过 license 检查）=====
+  L455: _numbered_prefix_matched = False
+  L459: _numbered_prefix_matched = True
+  L617: if not _skip_kb_qa and not _is_operation and not _numbered_prefix_matched and not _is_greeting and _
+  L894: or _numbered_prefix_matched
+  L895: or content.strip().startswith(('#1', '#2', '#3', '#4'))
+  L898: print(f"[P1-0c-a-DEBUG] _force_swarm={_force_swarm}, _numbered_prefix_matched={_numbered_prefix_matc
+  L944: if not _numbered_prefix_matched:
+
+============================================================
+7. file_patch 拦截位置
+============================================================
+  core/harness_runtime.py:L209: error='file_patch 已废弃，请用 file_write / smart_edit / file_replace_range',
+
+============================================================
+8. 最近3 runs
+============================================================
+  id=44 st=completed goal=在 docs/ 目录下创建 LIFECYCLE_TEST.md 文件，内容为一行：生命周期测试通过  t=2026-11-16 23:02:54
+  id=43 st=completed goal=在 docs/ 下创建 LIFECYCLE_TEST.md，内容为一行：生命周期测试通过 - 202 t=2026-11-16 22:59:52
+  id=42 st=completed goal=在 docs/tasks/active/CURRENT_TASK.md 第 3 行前插入 X = 1 t=2026-11-16 22:48:23

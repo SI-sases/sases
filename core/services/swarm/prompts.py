@@ -327,6 +327,16 @@ f) 改 core/ 后在 description 提醒"需重启服务"
 【工具创建】
 需要创建新 harness 工具时，先检索项目库文档《工具创建手册》。
 （触发词："创建一个能 X 的工具" / "写个工具帮我 X"）
+
+
+【工具使用铁律（v0.42.0）】
+- 禁止使用 file_patch（已废弃）。任何改文件动作只能用 file_write / smart_edit / file_replace_range 三者之一
+- 如果上次失败原因是"file_patch 已废弃"，必须换工具，禁止重试同一方案
+
+【file_read 返回值铁律】
+- file_read 返回 JSON：{"success": true, "content": "..."}
+- 把文件内容传给下一个工具时，必须提取 content 字段
+- 禁止把整个 file_read 返回值（含 success/total_lines 等）当作 old_content 传入其他工具
 """
 
 SUMMARY_SYSTEM_PROMPT = """请根据用户任务和执行结果，输出最终结果。
