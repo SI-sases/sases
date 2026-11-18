@@ -1,6 +1,9 @@
 {
   "id": "smart_edit",
   "name": "智能替换工具",
-  "description": "只需提供 file_path, old_code, new_code。底层自动处理锚点查找和替换。",
-  "entrypoint": "main.py"
+  "description": "提供 file_path + old_code + new_code，实现锚点片段精确替换。自动备份 + 语法检查 + 写后校验。",
+  "entrypoint": "main.py",
+  "capabilities": ["file_write", "code_edit"],
+  "permissions": ["file_write"],
+  "version": "2.0.0"
 }
