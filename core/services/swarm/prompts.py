@@ -337,6 +337,17 @@ f) 改 core/ 后在 description 提醒"需重启服务"
 - file_read 返回 JSON：{"success": true, "content": "..."}
 - 把文件内容传给下一个工具时，必须提取 content 字段
 - 禁止把整个 file_read 返回值（含 success/total_lines 等）当作 old_content 传入其他工具
+
+
+【工具ID英文铁律（v0.43.0）】
+- module_id 只能是英文小写 + 下划线，如 file_write / smart_edit / file_replace_range
+- 禁止使用中文 module_id（如 "写文件工具"），系统无法识别
+- 禁止使用带空格的 module_id
+- 常用工具正确写法：
+  * 改文件 → smart_edit（锚点替换）或 file_write（整文件写）或 file_replace_range（行号替换）
+  * 读文件 → file_read
+  * 搜索 → grep_code
+  * 跑脚本 → run_python
 """
 
 SUMMARY_SYSTEM_PROMPT = """请根据用户任务和执行结果，输出最终结果。
