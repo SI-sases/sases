@@ -458,6 +458,117 @@ async def send_message(
         except Exception as _e:
             print('[message] enrich 失败: ' + str(_e))
 
+    # ===== P2-2: 会话级续接（在 #4 判定之前）=====
+    if conversation_id and isinstance(content, str):
+        _p2_prefixes = ("#1", "#2", "#3", "#4", "草稿", "编辑")
+        if not content.strip().startswith(_p2_prefixes):
+            try:
+                from core.services import intent_service as _is_p2
+                from core.services import task_state_service as _ts_p2
+                _sess = _is_p2.classify_session_intent(content, conversation_id)
+                if _sess in ("resume", "query", "pause", "cancel"):
+                    _snap = _ts_p2.get_snapshot(conversation_id)
+                    _st = _snap.get("status", "idle")
+                    _prog = _snap.get("progress", {})
+                    _reply = None
+
+                    if _sess == "cancel":
+                        if _st in ("running", "paused", "failed"):
+                            try:
+                                from core.services.supervisor import runs as _runs_p2
+                                from core.db import db_cursor as _dbc_p2
+                                with _dbc_p2() as _c_p2:
+                                    _c_p2.execute(
+                                        "SELECT id FROM supervisor_runs WHERE conversation_id=? AND status IN ('running','paused','failed','awaiting') ORDER BY id DESC LIMIT 1",
+                                        (conversation_id,)
+                                    )
+                                    _r_p2 = _c_p2.fetchone()
+                                if _r_p2:
+                                    _rid = _r_p2[0] if not isinstance(_r_p2, dict) else _r_p2["id"]
+                                    _runs_p2.cancel_run(_rid, user_id)
+                                    _ts_p2.finish_task(conversation_id, "cancelled")
+                                _reply = "已取消当前任务"
+                            except Exception as _e_p2:
+                                _reply = "取消失败：" + str(_e_p2)[:80]
+                        else:
+                            _reply = "当前没有可取消的任务"
+
+                    elif _sess == "pause":
+                        if _st == "running":
+                            try:
+                                _ts_p2.finish_task(conversation_id, "paused")
+                                _reply = "任务已暂停，说'继续'恢复"
+                            except Exception as _e_p2:
+                                _reply = "暂停失败：" + str(_e_p2)[:80]
+                        else:
+                            _reply = "当前没有正在运行的任务"
+
+                    elif _sess == "resume":
+                        if _st == "running":
+                            _reply = "任务正在执行中（" + str(_prog.get("completed", 0)) + "/" + str(_prog.get("total", 0)) + "），请稍等"
+                        elif _st == "paused":
+                            try:
+                                import json as _json_p2
+                                from core.db import db_cursor as _dbc_p2b
+                                _snap2 = dict(_snap)
+                                _snap2["status"] = "running"
+                                with _dbc_p2b(commit=True) as _c_p2b:
+                                    _c_p2b.execute(
+                                        "UPDATE conversations SET active_task_status='running', active_task_snapshot=? WHERE id=?",
+                                        (_json_p2.dumps(_snap2, ensure_ascii=False), conversation_id)
+                                    )
+                                _reply = "已恢复，从第 " + str(_prog.get("current_step", 1)) + " 步继续"
+                            except Exception as _e_p2:
+                                _reply = "恢复失败：" + str(_e_p2)[:80]
+                        elif _st == "failed":
+                            _fs = _snap.get("failed_summary") or []
+                            _reason = str(_fs[-1].get("reason", ""))[:100] if _fs else "未知"
+                            _reply = "上次失败（" + _reason + "）。说'重试'重新执行，或说'取消'放弃"
+                        elif _st == "completed":
+                            _reply = "上个任务已完成。需要新任务请直接说"
+                        else:
+                            _reply = "当前没有进行中的任务"
+
+                    elif _sess == "query":
+                        _reply = (
+                            "当前任务：" + str(_snap.get("goal", ""))
+                            + "\n状态：" + str(_st)
+                            + "  进度：" + str(_prog.get("completed", 0)) + "/" + str(_prog.get("total", 0))
+                        )
+                        if _snap.get("current_step_desc"):
+                            _reply += "\n当前步骤：" + str(_snap.get("current_step_desc"))
+                        _fs = _snap.get("failed_summary") or []
+                        if _fs:
+                            _reply += "\n最近失败：步骤" + str(_fs[-1].get("step", "")) + " " + str(_fs[-1].get("reason", ""))[:60]
+
+                    if _reply:
+                        try:
+                            _ts_p2.set_user_intent(conversation_id, _sess, content)
+                        except Exception:
+                            pass
+                        from datetime import datetime as _dt_p2
+                        with db_cursor(commit=True) as _c_ins:
+                            _c_ins.execute(
+                                "INSERT INTO messages (conversation_id, sender, content, sender_agent_id, msg_type) VALUES (?, 'user', ?, ?, 'standard')",
+                                (conversation_id, content, sender_agent_id)
+                            )
+                            _c_ins.execute(
+                                "INSERT INTO messages (conversation_id, sender, content, sender_agent_id, msg_type) VALUES (?, 'assistant', ?, ?, 'standard')",
+                                (conversation_id, _reply, sender_agent_id)
+                            )
+                            _c_ins.execute('UPDATE conversations SET updated_at=? WHERE id=?', (_dt_p2.now().isoformat(), conversation_id))
+                        return {
+                            "conversation_id": conversation_id,
+                            "user_message": content,
+                            "assistant_reply": _reply,
+                            "agent_id": agent_id,
+                            "sender_agent_id": sender_agent_id,
+                            "mode": mode,
+                        }
+            except Exception as _e_p2_outer:
+                print("[P2-2] 续接处理失败: " + str(_e_p2_outer))
+    # ===== P2-2 end =====
+
     # ========== 检测草稿前缀 ==========
     require_confirmation = REQUIRE_TASK_CONFIRMATION
     _numbered_prefix_matched = False

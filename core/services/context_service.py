@@ -50,6 +50,28 @@ def build_enriched_prompt(user_id, conversation_id, content, project_ctx):
     if fail:
         parts.append('【失败教训】' + NL + fail)
 
+    # P2-3: 注入活跃任务快照（区别于 task_context，这是运行时状态）
+    try:
+        from core.services import task_state_service as _ts_p23
+        _snap_p23 = getattr(_ts_p23, 'get_snapshot_fresh', _ts_p23.get_snapshot)(conversation_id) if conversation_id else {}
+        if _snap_p23 and _snap_p23.get("goal") and _snap_p23.get("status") in ("running", "paused", "failed"):
+            _prog_p23 = _snap_p23.get("progress", {})
+            _task_hdr = (
+                "【当前运行任务状态】" + NL
+                + "目标：" + str(_snap_p23.get("goal", "")) + NL
+                + "状态：" + str(_snap_p23.get("status", ""))
+                + "  进度：" + str(_prog_p23.get("completed", 0)) + "/" + str(_prog_p23.get("total", 0)) + NL
+            )
+            if _snap_p23.get("current_step_desc"):
+                _task_hdr += "当前步骤：" + str(_snap_p23.get("current_step_desc")) + NL
+            _fs_p23 = _snap_p23.get("failed_summary") or []
+            if _fs_p23:
+                _last_p23 = _fs_p23[-1]
+                _task_hdr += "最近失败：步骤" + str(_last_p23.get("step", "")) + " · " + str(_last_p23.get("reason", ""))[:80] + NL
+            parts.append(_task_hdr)
+    except Exception as _e_p23:
+        print("[P2-3] 注入任务快照失败: " + str(_e_p23))
+
     base = (project_ctx + ' 【用户问】 ' + content) if project_ctx else content
     if parts:
         return (NL + NL).join(parts) + (NL + NL) + base
