@@ -29,6 +29,26 @@ def build_enriched_prompt(user_id, conversation_id, content, project_ctx):
     except Exception as e:
         print('[context] history failed: ' + str(e))
 
+    # head anchor: earliest user messages once the conversation outgrows the recent window
+    try:
+        _head_lines = []
+        with db_cursor() as cur:
+            cur.execute('SELECT id FROM messages WHERE conversation_id=? ORDER BY id DESC LIMIT ?', (conversation_id, _hist_limit))
+            _win = [x['id'] for x in cur.fetchall()]
+            if len(_win) >= _hist_limit:
+                cur.execute('SELECT id, content FROM messages WHERE conversation_id=? AND sender=? AND id<? ORDER BY id ASC LIMIT 6', (conversation_id, 'user', min(_win)))
+                for x in cur.fetchall():
+                    _ht = str(x['content'] or '').strip()
+                    if not _ht or _ht.startswith(('*0', '[TASK]:', '[STEP_DONE]:', '[SUMMARY]:', '[RED_PACKET]')):
+                        continue
+                    _head_lines.append('用户: ' + _ht[:600])
+                    if len(_head_lines) >= 2:
+                        break
+        if _head_lines:
+            parts.append('【会话开头（更早的内容，供参考）】' + NL + NL.join(_head_lines))
+    except Exception as _he:
+        print('[context] head anchor skipped: ' + str(_he))
+
     if hist_lines:
         parts.append('【会话历史】' + NL + NL.join(hist_lines))
 
