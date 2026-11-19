@@ -127,3 +127,56 @@ def set_user_intent(conv_id, intent, message):
     snap["last_user_message"] = (message or "")[:200]
     snap["updated_at"] = _now()
     _update(conv_id, snap["task_id"], snap["status"], snap)
+
+
+_TERMINAL_RUN = ("completed", "failed", "cancelled", "canceled", "loop_detected", "no_progress", "stopped", "aborted", "error")
+
+
+def _judge_snapshot(snap, run_status, now, max_age_hours=24):
+    st = snap.get("status")
+    age_h = None
+    try:
+        age_h = (now - datetime.fromisoformat(str(snap.get("updated_at")))).total_seconds() / 3600.0
+    except Exception:
+        age_h = None
+    if st == "running":
+        if run_status is None or run_status in _TERMINAL_RUN or (age_h is not None and age_h > 12):
+            if age_h is not None and age_h > max_age_hours:
+                return "zombie_old"
+            return "zombie"
+        return "ok"
+    if st in ("paused", "failed"):
+        if age_h is not None and age_h > max_age_hours:
+            return "expired"
+    return "ok"
+
+
+def get_snapshot_fresh(conv_id, max_age_hours=24):
+    snap = get_snapshot(conv_id)
+    if not snap:
+        return {}
+    try:
+        run_status = None
+        if snap.get("status") == "running":
+            if snap.get("task_id") is None:
+                return snap
+            with db_cursor() as cur:
+                cur.execute("SELECT status FROM supervisor_runs WHERE id=?", (snap.get("task_id"),))
+                r = cur.fetchone()
+            if r:
+                run_status = r["status"] if isinstance(r, dict) else r[0]
+        verdict = _judge_snapshot(snap, run_status, datetime.utcnow(), max_age_hours)
+        if verdict == "expired":
+            return {}
+        if verdict in ("zombie", "zombie_old"):
+            snap["status"] = "failed"
+            snap["finished_at"] = _now()
+            fs = snap.get("failed_summary") or []
+            fs.append({"step": (snap.get("progress") or {}).get("current_step", 0), "tool": "", "reason": "zombie snapshot, run is no longer active"})
+            snap["failed_summary"] = fs[-5:]
+            _update(conv_id, snap.get("task_id"), "failed", snap)
+            if verdict == "zombie_old":
+                return {}
+        return snap
+    except Exception:
+        return snap

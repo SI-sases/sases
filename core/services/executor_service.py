@@ -83,7 +83,7 @@ def _check_old_code_pollution(module_id, params):
     """检测 old_code/old_snippet/old_content 是否被 file_read JSON 污染"""
     if not isinstance(params, dict):
         return None
-    for key in ("old_code", "old_snippet", "old_content"):
+    for key in ("old_code", "old_snippet", "old_content", "new_code", "new_content", "content"):
         v = params.get(key)
         if isinstance(v, str):
             sv = v.strip()
