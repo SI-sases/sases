@@ -176,7 +176,8 @@ def get_snapshot_fresh(conv_id, max_age_hours=24):
             snap["failed_summary"] = fs[-5:]
             _update(conv_id, snap.get("task_id"), "failed", snap)
             if verdict == "zombie_old":
-                return {}
+                # 保留 snapshot 让用户能看到"任务失败了"，而不是完全消失
+                return snap
         return snap
     except Exception:
         return snap
