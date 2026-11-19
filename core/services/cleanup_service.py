@@ -168,7 +168,7 @@ def scan_test_marks(dry_run: bool = True) -> dict:
     return {'dry_run': dry_run, 'count': len(findings), 'findings': findings}
 
 
-def cleanup_stale_task_state(keep_per_task: int = 1, days: int = 7) -> int:
+def cleanup_stale_task_state(keep_per_task: int = 1, days: int = 0) -> int:
     """清理 task_state 类型记忆：每个 task_id 只保留最新 N 条，并删除超 N 天的记录"""
     deleted = 0
     try:
@@ -198,7 +198,7 @@ def cleanup_stale_task_state(keep_per_task: int = 1, days: int = 7) -> int:
 
 
 
-def cleanup_stale_task_state(keep_per_task: int = 1, days: int = 7) -> int:
+def cleanup_stale_task_state(keep_per_task: int = 1, days: int = 0) -> int:
     """清理 task_state 类型记忆：
     1) 每个 task_id 只保留最新 N 条
     2) 超过 N 天的全部删除
