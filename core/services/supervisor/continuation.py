@@ -114,7 +114,7 @@ async def check_and_continue(run_id, last_summary, plan_text=None, exec_text=Non
             _any_patch = False
             for _h in _recent5:
                 _etxt = str(_h.get('exec', ''))
-                if '[success] file_patch' in _etxt or '[success] run_python' in _etxt or '[success] verify_patch' in _etxt:
+                if '[success] file_patch' in _etxt or '[success] run_python' in _etxt or '[success] verify_patch' in _etxt or any(('[success] ' + _t) in _etxt or ('[success]' + _t) in _etxt for _t in ('smart_edit', 'file_replace_range', 'file_write')):
                     _any_patch = True
                     break
             if not _any_patch:
