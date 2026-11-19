@@ -132,11 +132,12 @@ async def handle_step_done(
     if review_result == "retry":
         try:
             fail_cmd = original_step.get("command", "") or original_step.get("module_id", "")
+            _skip_fm = str(task_id).startswith("script_") or any(_w in str(review_reason) for _w in ("forbidden", "path 不合法", "Harness 失败: None"))
             fail_content = (
                 f"命令「{fail_cmd[:150]}」执行失败。\n"
                 f"失败原因：{review_reason}"
             )
-            memory_service.remember(
+            (lambda **_k: None if _skip_fm else memory_service.remember(**_k))(
                 user_id=task["user_id"],
                 memory_type="failure_pattern",
                 content=fail_content,
@@ -144,7 +145,7 @@ async def handle_step_done(
                 importance=0.5,
                 tags="failure,swarm"
             )
-            print(f"[swarm] 失败记忆已写入")
+            print("[swarm] 失败记忆已跳过" if _skip_fm else "[swarm] 失败记忆已写入")
             # healer trigger
             _hc = globals().get("_hc", {})
             _hc[task_id] = _hc.get(task_id, 0) + 1
