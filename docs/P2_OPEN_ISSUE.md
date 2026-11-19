@@ -1,1 +1,1 @@
-现象: conversations.active_task_id 为空 
+下一轮: 查 task_state_service.py 的 finish_task + _judge_snapshot 实现 
