@@ -165,3 +165,44 @@ async def is_task_intent(content: str) -> bool:
         if re.search(r'(搜|查|找|看|读|写|改|跑|列|抓|下载|统计|分析)', content):
             return True
     return llm_result
+
+
+# P2-1: 会话级意图分类（续接 / 查询 / 暂停 / 取消 / 新任务）
+# 不修改现有 is_task_intent，新增独立函数，只被 send.py 续接分支调用
+_CONTINUE_WORDS = (
+    "继续", "接着", "往下", "下一步", "执行吧", "好的", "可以",
+    "开始执行", "继续执行", "重试", "再来一次", "恢复",
+    "go on", "continue", "resume", "retry"
+)
+_QUERY_WORDS = (
+    "怎么样了", "进度", "到哪了", "到哪一步", "完成了吗",
+    "好了没", "做完了吗", "还在跑吗", "状态",
+    "怎么样", "如何了", "什么情况"
+)
+_PAUSE_WORDS = ("暂停", "停一下", "先停", "pause", "stop")
+_CANCEL_WORDS = ("取消", "算了", "不做了", "不要了", "cancel", "abort")
+
+
+def classify_session_intent(content: str, conversation_id: int = None) -> str:
+    """P2-1: 返回 resume / query / pause / cancel / new_task"""
+    if not conversation_id:
+        return "new_task"
+    try:
+        from core.services import task_state_service
+        snap = task_state_service.get_snapshot(conversation_id)
+    except Exception:
+        return "new_task"
+    if not snap or not snap.get("goal"):
+        return "new_task"
+    s = (content or "").strip().lower()
+    if not s:
+        return "new_task"
+    if any(w in s for w in _CANCEL_WORDS):
+        return "cancel"
+    if any(w in s for w in _PAUSE_WORDS):
+        return "pause"
+    if any(w in s for w in _CONTINUE_WORDS):
+        return "resume"
+    if any(w in s for w in _QUERY_WORDS):
+        return "query"
+    return "new_task"
