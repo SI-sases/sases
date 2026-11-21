@@ -50,7 +50,13 @@ async def _call_llm(prompt: str, system_prompt: str = "", max_tokens: int = None
     try:
         import hashlib as _hashlib
         from ..llm_usage_service import record_from_response
-        _ph = _hashlib.sha256((system_prompt or "").encode("utf-8")).hexdigest()[:12]
+        try:
+            from .prompts import BASE_SYSTEM as _base, BASE_PREFIX_HASH as _base_hash
+            _uses_base = (system_prompt or "").startswith(_base[:60])
+        except Exception:
+            _uses_base = False
+            _base_hash = ""
+        _ph = _base_hash if _uses_base else _hashlib.sha256((system_prompt or "").encode("utf-8")).hexdigest()[:12]
         record_from_response(resp, user_id=user_id, conversation_id=conversation_id,
                              purpose=purpose, prefix_hash=_ph)
     except Exception as _e_usage:
