@@ -39,3 +39,33 @@ async def get_llm_usage(days: int = 7, user_id: int = Depends(get_current_user))
         "summary": llm_usage_service.summary(user_id, days),
         "recent": llm_usage_service.recent(user_id, 20),
     }
+
+
+@router.get("/agent-runs")
+async def get_agent_runs(days: int = 7, user_id: int = Depends(get_current_user)):
+    from datetime import datetime, timedelta
+    from ..db import db_cursor
+    from ..services import llm_usage_service
+    cut = (datetime.utcnow() - timedelta(days=max(1, int(days or 7)))).isoformat()
+    with db_cursor() as cur:
+        cur.execute(
+            "SELECT status, COUNT(*) AS n FROM supervisor_runs WHERE created_at>=? GROUP BY status",
+            (cut,),
+        )
+        by_status = {r["status"]: r["n"] for r in cur.fetchall()}
+    total = sum(by_status.values())
+    completed = by_status.get("completed", 0)
+    failed = by_status.get("failed", 0) + by_status.get("plan_failed", 0)
+    usage = llm_usage_service.summary(user_id, days)
+    return {
+        "days": days,
+        "runs": {
+            "total": total,
+            "completed": completed,
+            "failed": failed,
+            "running": by_status.get("running", 0),
+            "success_rate": round(completed / total, 4) if total else 0.0,
+            "by_status": by_status,
+        },
+        "llm": usage,
+    }
