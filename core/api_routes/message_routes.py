@@ -1,5 +1,7 @@
 # core/api_routes/message_routes.py
+import json
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from typing import Optional
@@ -30,6 +32,14 @@ class SendMessageRequest(BaseModel):
 class ConversationCreateRequest(BaseModel):
     agent_id: Optional[str] = None
     title: Optional[str] = "新会话"
+
+
+class StreamMessageRequest(BaseModel):
+    conversation_id: int
+    content: str
+    sender_agent_id: Optional[str] = None
+    msg_type: Optional[str] = "standard"
+    attachments: Optional[list] = None
 
 
 class PinRequest(BaseModel):
@@ -70,6 +80,45 @@ async def get_messages(
     if messages is None:
         raise HTTPException(status_code=404, detail="会话不存在")
     return {"messages": messages}
+
+
+def _sse(obj) -> str:
+    return "data: " + json.dumps(obj, ensure_ascii=False, default=str) + "\n\n"
+
+
+@router.post("/stream")
+async def stream_message(body: StreamMessageRequest, user_id: int = Depends(get_current_user)):
+    async def gen():
+        try:
+            from ..db import db_cursor
+            with db_cursor() as cur:
+                cur.execute("SELECT 1 FROM conversations WHERE id=? AND user_id=?",
+                            (body.conversation_id, user_id))
+                if not cur.fetchone():
+                    yield _sse({"type": "error", "error": "会话不存在"})
+                    return
+
+            from ..services.intent_service import route_intent
+            _ir = route_intent(body.content)
+            _fallback = (_ir.get("intent") != "chat"
+                         or body.content.lstrip().startswith("#")
+                         or (body.msg_type and body.msg_type != "standard"))
+            if _fallback:
+                from ..services.message.send import send_message
+                res = await send_message(
+                    user_id=user_id, conversation_id=body.conversation_id,
+                    content=body.content, sender_agent_id=body.sender_agent_id)
+                yield _sse({"type": "final", "data": res})
+                return
+
+            from ..services.chat_stream import stream_chat
+            async for ev in stream_chat(user_id, body.conversation_id, body.content):
+                yield _sse(ev)
+        except Exception as e:
+            yield _sse({"type": "error", "error": str(e)})
+
+    return StreamingResponse(gen(), media_type="text/event-stream",
+                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 
 @router.post("/send")
