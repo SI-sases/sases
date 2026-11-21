@@ -242,6 +242,44 @@ async def send_message(
         except Exception as _e_fast:
             print("[fast] 失败，回退旧路径: " + str(_e_fast))
 
+    # A3.5: strict 也走同一 loop（失败回退旧四角色）
+    if conversation_id and (agent_mode or '').strip().lower() == 'strict' \
+            and __import__("os").getenv("SASES_AGENT_LOOP", "1") != "0":
+        try:
+            from ..supervisor import runs as _runs_s
+            from .. import fast_agent as _fa_s
+            _rid_s = _runs_s.create_run(user_id, conversation_id, sender_agent_id or agent_id or "", content)
+            _fr_s = await _fa_s.run_fast(
+                user_id, conversation_id, content,
+                allowed_tool_ids=enabled_tool_ids,
+                max_steps=(max_steps if (max_steps and max_steps > 0) else 8),
+                mode="strict", run_id=_rid_s,
+            )
+            if _fr_s.get("status") == "awaiting_approval":
+                return {
+                    'conversation_id': conversation_id, 'user_message': content,
+                    'assistant_reply': '⏸ 等待审批：' + str(_fr_s.get("tool") or ""),
+                    'agent_id': agent_id, 'sender_agent_id': sender_agent_id,
+                    'mode': mode, 'strict_mode': True, 'awaiting_approval': True,
+                }
+            _reply_s = (_fr_s.get("content") or "").strip()
+            if _reply_s:
+                from .reply import insert_message as _ins_s
+                _ins_s(conversation_id, _reply_s, msg_type=msg_type, attachments=_att_str,
+                       sync_agent=False)
+                try:
+                    _runs_s.finish_run(_rid_s, 'completed')
+                except Exception:
+                    pass
+                return {
+                    'conversation_id': conversation_id, 'user_message': content,
+                    'assistant_reply': _reply_s, 'agent_id': agent_id,
+                    'sender_agent_id': sender_agent_id, 'mode': mode,
+                    'strict_mode': True, 'steps': _fr_s.get("steps"),
+                }
+        except Exception as _e_strict_loop:
+            print("[strict] loop 失败，回退旧路径: " + str(_e_strict_loop))
+
     # #0 清锁（最先拦截，绕过所有锁检查）
     if isinstance(content, str) and content.strip().startswith('#0'):
         import os

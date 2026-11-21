@@ -68,10 +68,10 @@ def tool_schema(t) -> dict:
 
 
 async def run_fast(user_id: int, conversation_id: int, goal: str,
-                   allowed_tool_ids=None, max_steps: int = 8) -> dict:
+                   allowed_tool_ids=None, max_steps: int = 8, mode: str = "fast", run_id=None) -> dict:
     if os.getenv("SASES_AGENT_LOOP", "1") != "0":
         from .agent_loop import run as _run_loop
-        return await _run_loop(user_id, conversation_id, goal, allowed_tool_ids, max_steps)
+        return await _run_loop(user_id, conversation_id, goal, allowed_tool_ids, max_steps, run_id, mode)
     from core.harness_runtime import harness_runtime
     tools = sorted(harness_runtime.list_tools(), key=lambda t: getattr(t, "module_id", "") or "")
     if allowed_tool_ids:

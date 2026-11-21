@@ -6,7 +6,7 @@ import json
 
 from core import tool_gateway
 from core.services import agent_memory
-from core.services.agent_policy import before_tool, after_tool, WRITE_TOOLS
+from core.services.agent_policy import before_tool, after_tool, WRITE_TOOLS, ApprovalRequired
 from core.services.swarm.llm_parser import client, MODEL
 from core.services.swarm.prompts import BASE_SYSTEM, BASE_PREFIX_HASH
 
@@ -90,7 +90,18 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
                 args = json.loads(c.function.arguments or "{}")
             except Exception:
                 args = {}
-            await before_tool(user_id, conversation_id, run_id, step, name, args)
+            try:
+                await before_tool(user_id, conversation_id, run_id, step, name, args)
+            except ApprovalRequired as _ar:
+                if run_id:
+                    try:
+                        from core.db import db_cursor
+                        with db_cursor(commit=True) as _c_ap:
+                            _c_ap.execute("UPDATE supervisor_runs SET status='awaiting_approval' WHERE id=?", (run_id,))
+                    except Exception:
+                        pass
+                return {"status": "awaiting_approval", "content": "等待审批：" + str(_ar.tool),
+                        "step": _ar.step, "tool": _ar.tool, "steps": step, "history": used}
             try:
                 r = await tool_gateway.invoke_tool_async(name, args)
                 ok = bool(getattr(r, "success", False))
