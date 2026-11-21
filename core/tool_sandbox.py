@@ -7,6 +7,23 @@
 import json
 import os
 import subprocess
+import threading
+
+_ACTIVE_PROCS = set()
+_CANCEL = threading.Event()
+_PROC_LOCK = threading.Lock()
+
+
+def cancel_active():
+    """P1-5: 取消当前所有沙箱子进程。"""
+    _CANCEL.set()
+    with _PROC_LOCK:
+        procs = list(_ACTIVE_PROCS)
+    for p in procs:
+        try:
+            p.kill()
+        except Exception:
+            pass
 import sys
 import tempfile
 import time
@@ -47,21 +64,36 @@ def run_external_tool(module_dir: str, entrypoint: str = "main.py",
                 "scratch": _scratch,
             }, ensure_ascii=False)
             try:
-                proc = subprocess.run(
+                _CANCEL.clear()
+                proc = subprocess.Popen(
                     [sys.executable, "-I", RUNNER],
-                    input=payload.encode("utf-8"),
-                    capture_output=True,
-                    timeout=timeout,
+                    stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
                     cwd=_scratch,
                     env=_env(),
                 )
-            except subprocess.TimeoutExpired:
-                dur = int((time.time() - start) * 1000)
-                return False, None, "工具执行超时（>" + str(timeout) + " 秒），已终止", dur
+                with _PROC_LOCK:
+                    _ACTIVE_PROCS.add(proc)
+                try:
+                    stdout_b, stderr_b = proc.communicate(payload.encode("utf-8"), timeout=timeout)
+                except subprocess.TimeoutExpired:
+                    proc.kill()
+                    stdout_b, stderr_b = proc.communicate()
+                    dur = int((time.time() - start) * 1000)
+                    return False, None, "工具执行超时（>" + str(timeout) + " 秒），已终止", dur
+                finally:
+                    with _PROC_LOCK:
+                        _ACTIVE_PROCS.discard(proc)
+                if _CANCEL.is_set():
+                    dur = int((time.time() - start) * 1000)
+                    return False, None, "任务已取消，工具已终止", dur
+            except Exception as _e_proc:
+                return False, None, "沙箱启动失败: " + str(_e_proc), int((time.time() - start) * 1000)
 
             dur = int((time.time() - start) * 1000)
-            stdout = (proc.stdout or b"").decode("utf-8", "replace")
-            stderr = (proc.stderr or b"").decode("utf-8", "replace")
+            stdout = (stdout_b or b"").decode("utf-8", "replace")
+            stderr = (stderr_b or b"").decode("utf-8", "replace")
             line = ""
             for _line in stdout.splitlines():
                 if _line.startswith(_MARKER):

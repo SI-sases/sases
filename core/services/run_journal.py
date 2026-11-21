@@ -136,6 +136,27 @@ def is_stalled(run_id: int, seconds: int = 180) -> bool:
     return hb < (datetime.utcnow() - timedelta(seconds=int(seconds))).replace(microsecond=0).isoformat()
 
 
+def is_cancelled(run_id: int) -> bool:
+    if not run_id:
+        return False
+    with db_cursor() as cur:
+        cur.execute("SELECT status FROM supervisor_runs WHERE id=?", (run_id,))
+        r = cur.fetchone()
+    if not r:
+        return False
+    st = r["status"] if isinstance(r, dict) else r[0]
+    return st in ("cancelled", "interrupted")
+
+
+def mark_interrupted(run_id: int):
+    if not run_id:
+        return
+    with db_cursor(commit=True) as cur:
+        cur.execute("UPDATE supervisor_runs SET status='interrupted', finished_at=? WHERE id=? "
+                    "AND status IN ('running','cancelled','restart_pending')",
+                    (_now(), run_id))
+
+
 # ========== P0-3 副作用幂等 ==========
 def effect_get(key: str):
     if not key:

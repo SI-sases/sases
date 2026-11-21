@@ -119,6 +119,11 @@ def cancel_run(run_id, user_id):
                 print('[supervisor] cancel_run ' + str(run_id) + ' 同时取消 ' + str(_n) + ' 个 swarm 任务')
     except Exception as e:
         print('[supervisor] cancel_run 中断 swarm 失败: ' + str(e))
+    try:
+        from ...tool_sandbox import cancel_active
+        cancel_active()
+    except Exception as e:
+        print('[supervisor] 取消沙箱进程失败: ' + str(e))
     return _ok
 
 
