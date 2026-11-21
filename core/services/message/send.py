@@ -1,6 +1,7 @@
 import base64
 import asyncio
 import json
+import os
 import httpx
 from datetime import datetime
 from typing import Optional
@@ -268,7 +269,13 @@ async def send_message(
                 }
             print("[fast] 空结果，回退旧路径")
         except Exception as _e_fast:
-            print("[fast] 失败，回退旧路径: " + str(_e_fast))
+            print("[fast] 失败: " + str(_e_fast))
+            if os.getenv("SASES_LEGACY_EXEC", "0") != "1":
+                return {
+                    'conversation_id': conversation_id, 'user_message': content,
+                    'assistant_reply': '⚠️ 执行失败：' + str(_e_fast),
+                    'agent_id': agent_id, 'sender_agent_id': sender_agent_id, 'mode': mode,
+                }
 
     # A3.5: strict 也走同一 loop（失败回退旧四角色）
     if conversation_id and (agent_mode or '').strip().lower() == 'strict' \
@@ -306,7 +313,13 @@ async def send_message(
                     'strict_mode': True, 'steps': _fr_s.get("steps"),
                 }
         except Exception as _e_strict_loop:
-            print("[strict] loop 失败，回退旧路径: " + str(_e_strict_loop))
+            print("[strict] loop 失败: " + str(_e_strict_loop))
+            if os.getenv("SASES_LEGACY_EXEC", "0") != "1":
+                return {
+                    'conversation_id': conversation_id, 'user_message': content,
+                    'assistant_reply': '⚠️ 执行失败：' + str(_e_strict_loop),
+                    'agent_id': agent_id, 'sender_agent_id': sender_agent_id, 'mode': mode,
+                }
 
     # #0 清锁（最先拦截，绕过所有锁检查）
     if isinstance(content, str) and content.strip().startswith('#0'):

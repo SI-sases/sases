@@ -144,11 +144,14 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
                             and any(h.get("tool") in WRITE_TOOLS for h in used))
             if _need_review:
                 try:
-                    messages.append({"role": "user", "content":
-                                     "请审核上面的执行结果。只回答 PASS，或列出具体问题（不超过 5 条）。"})
+                    _rev_messages = tool_pruner.prune_messages(messages)[0]
+                    if len(_rev_messages) > 21:
+                        _rev_messages = [_rev_messages[0]] + _rev_messages[-20:]
+                    _rev_messages = _rev_messages + [{"role": "user", "content":
+                                     "请审核上面的执行结果。只回答 PASS，或列出具体问题（不超过 5 条）。"}]
                     rr = await asyncio.to_thread(
                         client.chat.completions.create,
-                        model=MODEL, messages=messages, temperature=0.2, max_tokens=800,
+                        model=MODEL, messages=_rev_messages, temperature=0.2, max_tokens=800,
                         extra_body={"thinking": {"type": "disabled"}},
                     )
                     review = (rr.choices[0].message.content or "").strip()

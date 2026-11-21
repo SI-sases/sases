@@ -45,27 +45,47 @@ def _finish(run_id, conversation_id, supervisor_id, status, content, source):
         text = "✅ 已完成" if status == "completed" else "⚠️ 任务未完成：" + str(status)
     if os.getenv("SASES_MEMORY_WRITE", "1") == "1" and status == "completed":
         _min_chars = int(os.getenv("SASES_MEMORY_MIN_CHARS", "20"))
-        if len(text) < _min_chars:
-            return
+        if len(text) >= _min_chars:
+            try:
+                from . import memory_service, project_service
+                with db_cursor() as _mc:
+                    _mc.execute("SELECT user_id, goal FROM supervisor_runs WHERE id=?", (run_id,))
+                    _mr = _mc.fetchone()
+                if _mr:
+                    _uid = int(_mr["user_id"])
+                    _goal = str(_mr["goal"] or "")
+                    try:
+                        memory_service.remember(_uid, "task_result", text[:2000],
+                                                task_id=str(run_id), importance=0.6)
+                    except Exception as _e_mem:
+                        print("[memory] 写入失败: " + str(_e_mem))
+                    try:
+                        project_service.import_execution_note(str(run_id), _uid, _goal, text[:2000], "", "success")
+                    except Exception as _e_pj:
+                        print("[project] 写入失败: " + str(_e_pj))
+            except Exception as _e_m4:
+                print("[memory] M4 写入失败: " + str(_e_m4))
+    if os.getenv("SASES_MEMORY_WRITE", "1") == "1" and status in ("failed", "timeout", "error"):
         try:
             from . import memory_service, project_service
-            with db_cursor() as _mc:
-                _mc.execute("SELECT user_id, goal FROM supervisor_runs WHERE id=?", (run_id,))
-                _mr = _mc.fetchone()
-            if _mr:
-                _uid = int(_mr["user_id"])
-                _goal = str(_mr["goal"] or "")
+            with db_cursor() as _fc:
+                _fc.execute("SELECT user_id, goal FROM supervisor_runs WHERE id=?", (run_id,))
+                _fr = _fc.fetchone()
+            if _fr:
+                _uid = int(_fr["user_id"])
+                _goal = str(_fr["goal"] or "")
+                _fail_text = ("失败任务：" + _goal[:300] + "\n原因：" + text[:800]).strip()
                 try:
-                    memory_service.remember(_uid, "task_result", text[:2000],
-                                            task_id=str(run_id), importance=0.6)
-                except Exception as _e_mem:
-                    print("[memory] 写入失败: " + str(_e_mem))
+                    memory_service.remember(_uid, "failure_pattern", _fail_text,
+                                            task_id=str(run_id), importance=0.5)
+                except Exception as _e_fm:
+                    print("[memory] 失败记忆写入失败: " + str(_e_fm))
                 try:
-                    project_service.import_execution_note(str(run_id), _uid, _goal, text[:2000], "", "success")
-                except Exception as _e_pj:
-                    print("[project] 写入失败: " + str(_e_pj))
-        except Exception as _e_m4:
-            print("[memory] M4 写入失败: " + str(_e_m4))
+                    project_service.import_execution_note(str(run_id), _uid, _goal, text[:2000], "", "failure")
+                except Exception as _e_fp:
+                    print("[project] 失败笔记写入失败: " + str(_e_fp))
+        except Exception as _e_m4f:
+            print("[memory] 失败记忆流程失败: " + str(_e_m4f))
     if source == "group":
         try:
             from . import group_service

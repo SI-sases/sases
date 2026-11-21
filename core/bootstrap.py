@@ -571,6 +571,12 @@ async def lifespan(app: FastAPI):
     from .services.scheduled_scheduler import scheduled_task_scheduler
     asyncio.create_task(supervisor_service.resume_restart_pending_runs())
     init_db()
+    try:
+        from .services.fts_service import ensure as _fts_ensure
+        _fts_ensure()
+        print("[fts] memory/project FTS ready")
+    except Exception as _e_fts:
+        print("[fts] 初始化失败: " + str(_e_fts))
 
     # 启动时清理中断的 run 和任务（v0.18.0，v0.37.2 加强）
     try:
