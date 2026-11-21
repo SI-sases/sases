@@ -309,7 +309,12 @@ async def task_summarizer(task):
     # v0.38.0: 假完成拦截 —— 任务含修改动词但无写操作成功
     try:
         _action_kws = ['改成', '改为', '修改', '删除', '删掉', '新增', '添加', '创建', '写入', '替换', '移动', '插入', '修复']
-        _need_patch = any(k in user_text for k in _action_kws) and not _is_readonly_task
+        _user_original = task.get('user_text', '') or ''
+        _is_diagnosis_task = any(k in _user_original[:30] for k in ('看下', '看看', '查下', '查一下', '为什么', '怎么回事', '什么原因', '哪里不对', '帮我看看'))
+        if _is_diagnosis_task:
+            _need_patch = False
+        else:
+            _need_patch = any(k in user_text for k in _action_kws) and not _is_readonly_task
         # [P1-0b] 白名单扩展：run_python / file_write 也算写操作
         _WRITE_TOOLS_V2 = ('file_write', 'smart_edit', 'file_replace_range', 'run_python')
         def _match_write_tool(r):
