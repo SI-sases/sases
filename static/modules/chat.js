@@ -314,6 +314,78 @@ async function streamSendMessage(payload, state) {
   return { data: finalData, streamed: !!bubble, streamedText: text };
 }
 
+async function refreshChatMeta(agentId, isFriendChat) {
+  const el = document.getElementById('chat-window-meta');
+  if (!el) return;
+  if (isFriendChat === 1 || !agentId) {
+    el.textContent = '';
+    el.onclick = null;
+    return;
+  }
+  try {
+    if (!window.__sasesModelsCache) {
+      const d = await api.listModels();
+      window.__sasesModelsCache = {};
+      (d.models || []).forEach(m => { window.__sasesModelsCache[m.id] = m; });
+    }
+  } catch (e) {}
+  const m = window.__sasesModelsCache && window.__sasesModelsCache[agentId];
+  const parts = [];
+  if (m) {
+    if (m.provider) parts.push(m.provider);
+    if (m.model_name) parts.push(m.model_name);
+  }
+  parts.push('#' + String(agentId).slice(-6));
+  el.textContent = parts.join(' · ');
+  el.title = '点击切换智能体';
+  el.onclick = function (e) { e.stopPropagation(); openAgentSwitch(agentId); };
+}
+
+function openAgentSwitch(currentId) {
+  let menu = document.getElementById('agent-switch-menu');
+  if (menu) { menu.remove(); return; }
+  menu = document.createElement('div');
+  menu.id = 'agent-switch-menu';
+  menu.className = 'param-menu show';
+  menu.style.cssText = 'position:fixed;width:240px;max-height:300px;overflow-y:auto;z-index:9999;background:#fff;border:1px solid #e5e5e5;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.14);padding:6px;font-size:12px;';
+  const meta = document.getElementById('chat-window-meta');
+  const r = meta ? meta.getBoundingClientRect() : { left: 100, bottom: 80 };
+  menu.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 250)) + 'px';
+  menu.style.top = (r.bottom + 6) + 'px';
+  menu.innerHTML = '<div style="padding:4px 6px;color:#999">切换智能体</div><div id="agent-switch-list" style="padding:6px;color:#999">加载中...</div>';
+  document.body.appendChild(menu);
+  api.listModels().then(function (d) {
+    const list = document.getElementById('agent-switch-list');
+    if (!list) return;
+    const models = d.models || [];
+    if (!models.length) { list.textContent = '还没有智能体'; return; }
+    list.innerHTML = '';
+    models.forEach(function (m) {
+      const row = document.createElement('div');
+      row.style.cssText = 'padding:7px 8px;border-radius:6px;cursor:pointer;' + (m.id === currentId ? 'background:#eef4ff;' : '');
+      row.innerHTML = '<div>' + (m.name || m.id) + '</div><div style="font-size:10px;color:#999">' +
+        (m.provider || '') + (m.model_name ? ' · ' + m.model_name : '') + ' · #' + String(m.id).slice(-6) + '</div>';
+      row.onclick = function () {
+        menu.remove();
+        openChatWindow(null, m.name || m.id, m.id, 'my');
+      };
+      list.appendChild(row);
+    });
+  }).catch(function () {
+    const list = document.getElementById('agent-switch-list');
+    if (list) list.textContent = '加载失败';
+  });
+  setTimeout(function () {
+    const close = function (e) {
+      if (!menu.contains(e.target) && e.target.id !== 'chat-window-meta') {
+        menu.remove();
+        document.removeEventListener('click', close);
+      }
+    };
+    document.addEventListener('click', close);
+  }, 0);
+}
+
 async function sendMessage() {
   const input = document.getElementById('chat-input');
 
@@ -622,6 +694,7 @@ export function openChatWindow(conversationId, chatName, agentId = null, agentTy
   }
 
   if (titleEl) titleEl.textContent = chatName || '会话 / 会话';
+  refreshChatMeta(agentId, isFriendChat);
 
   // 如果是新建会话（ / 如果是新建会话（conversationId为空），清空聊天框历史
   if (!conversationId) {
