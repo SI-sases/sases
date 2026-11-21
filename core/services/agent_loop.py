@@ -54,6 +54,13 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
     used = []
 
     for step in range(1, max_steps + 1):
+        if step > 1:
+            try:
+                if await maybe_compact(conversation_id, user_id):
+                    messages = [{"role": "system", "content": BASE_SYSTEM}] + agent_memory.history(conversation_id)
+                    print("[ctx] compacted mid-run, rebuilt messages")
+            except Exception as _e_mid:
+                print("[ctx] mid-run compact 失败: " + str(_e_mid))
         req_messages = messages
         pruned_count = 0
         if os.getenv("SASES_TOOL_PRUNER", "1") != "0":
