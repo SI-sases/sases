@@ -411,6 +411,14 @@ async def _run_harness(module_id: str, params: Dict[str, Any], user_id=None, tas
                        conversation_id=None, run_id=None) -> tuple:
     start = datetime.datetime.now()
     try:
+        # P1-5: 已取消则不再启动工具
+        if run_id:
+            try:
+                from . import run_journal as _rj_c
+                if _rj_c.is_cancelled(run_id):
+                    return "任务已取消", "interrupted", 0
+            except Exception:
+                pass
         # P0-3: 副作用幂等（重试/重复派发复用上次结果）
         if idem_key and module_id in _SIDE_EFFECT:
             try:
@@ -697,6 +705,14 @@ async def _execute_task(task: Dict[str, Any]):
         except Exception as _e_pause:
             print("[executor] pause check failed: " + str(_e_pause))
         if _run_state in ("paused", "cancelled", "interrupted"):
+            if _run_state == "cancelled" and _run_id and _rj:
+                try:
+                    _rj.mark_interrupted(_run_id)
+                    from . import trace_service as _tr_c
+                    _tr_c.emit(_run_id, conversation_id, 1, "run_end",
+                               content="任务被用户取消", status="interrupted")
+                except Exception as _e_c:
+                    print("[journal] mark_interrupted 失败: " + str(_e_c))
             if task_id not in _paused_logged:
                 _paused_logged.add(task_id)
                 print("[executor] run " + str(task.get("supervisor_run_id")) + " 状态=" + str(_run_state) + "，任务暂停，step " + str(step.get("step")) + " 未执行")
