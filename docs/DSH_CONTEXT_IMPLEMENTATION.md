@@ -46,7 +46,8 @@
 - 记忆/项目检索需 `SASES_RUNTIME_RECALL=1`
 - 关键词兜底：`keyword_search.py`（中文 bigram + 英文词）
 - 只拼在请求尾部，不写 `agent_messages`
-- 开关：`SASES_RUNTIME_CONTEXT=1`，默认关
+- 开关：`SASES_RUNTIME_CONTEXT=1`，默认开
+- 记忆/项目：`SASES_RUNTIME_RECALL=1`，默认开
 
 A/B（10 个问题）：
 
@@ -113,8 +114,8 @@ head 4096 + marker + tail 1024
 |---|---|---|
 | `SASES_TOOL_PRUNER` | 1 | 工具裁剪 |
 | `SASES_TOKEN_COMPACT` | 1 | token 压缩 |
-| `SASES_RUNTIME_CONTEXT` | 0 | 任务状态注入 |
-| `SASES_RUNTIME_RECALL` | 0 | 记忆/项目注入 |
+| `SASES_RUNTIME_CONTEXT` | 1 | 任务状态注入 |
+| `SASES_RUNTIME_RECALL` | 1 | 记忆/项目注入 |
 | `SASES_MEMORY_WRITE` | 0 | 结果写回记忆 |
 | `SASES_CTX_WINDOW` | 131072 | 窗口 |
 | `SASES_CTX_OUTPUT` | 4096 | 输出预留 |
