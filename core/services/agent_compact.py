@@ -12,9 +12,9 @@ from ..db import db_cursor
 from . import token_meter
 
 
-async def maybe_compact(conversation_id, user_id, keep=20, threshold=40):
+async def maybe_compact(conversation_id, user_id, keep=20, threshold=40, force=False):
     if os.getenv("SASES_TOKEN_COMPACT", "1") == "1":
-        return await _token_compact(conversation_id, user_id)
+        return await _token_compact(conversation_id, user_id, force=force)
     return await _count_compact(conversation_id, user_id, keep, threshold)
 
 
@@ -67,7 +67,7 @@ async def _count_compact(conversation_id, user_id, keep=20, threshold=40):
     return True
 
 
-async def _token_compact(conversation_id, user_id):
+async def _token_compact(conversation_id, user_id, force=False):
     if not conversation_id:
         return False
     with db_cursor() as cur:
@@ -89,7 +89,7 @@ async def _token_compact(conversation_id, user_id):
         output_cap=int(os.getenv("SASES_CTX_OUTPUT", "4096")),
         headroom=int(os.getenv("SASES_CTX_HEADROOM", "32768")),
     )
-    if before < budget["threshold"]:
+    if before < budget["threshold"] and not force:
         return False
 
     retain = budget["retain_tokens"]

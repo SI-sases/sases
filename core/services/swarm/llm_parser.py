@@ -37,7 +37,7 @@ async def _call_llm(prompt: str, system_prompt: str = "", max_tokens: int = None
         _is_ctx = any(k in _msg for k in ("context", "maximum", "too long", "length", "token limit"))
         if (not _retry) and _is_ctx and conversation_id:
             try:
-                from ..unified_context import maybe_compact
+                from ..agent_compact import maybe_compact
                 if await maybe_compact(conversation_id, user_id, force=True):
                     print("[swarm] 上下文超限，已压缩并重试")
                     return await _call_llm(prompt, system_prompt, max_tokens, purpose,
