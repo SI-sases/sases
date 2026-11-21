@@ -17,6 +17,7 @@
   "params": {
     "file_path": {
       "type": "string",
+      "required": true,
       "desc": "必填"
     },
     "lines": {

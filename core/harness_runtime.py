@@ -246,6 +246,19 @@ class HarnessRuntime:
                     duration_ms=duration_ms,
                 )
 
+        # P1-1: 参数 Schema 校验（不合法不执行）
+        if manifest:
+            try:
+                from core.tool_schema import validate_params
+                _ok_args, _arg_err = validate_params(manifest, params)
+                if not _ok_args:
+                    duration_ms = int((_time.time() - start) * 1000)
+                    self._log_tool_usage(module_id, params, False, duration_ms, _arg_err)
+                    return ToolInvokeResponse(
+                        success=False, module_id=module_id, error=_arg_err, duration_ms=duration_ms)
+            except Exception as _e_args:
+                print("[schema] 校验失败: " + str(_e_args))
+
         # v0.47: 外部工具一律进沙箱子进程，绝不进程内执行
         if info.get("external"):
             try:
