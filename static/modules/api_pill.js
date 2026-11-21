@@ -2,8 +2,40 @@
 // 胶囊面板：外部 API / 工具 / 技能，按权限域分组；右侧 ⋯ 可设置显示哪些组
 (function () {
   var STORE = 'sases_capsules_v1';
+  var PERM_KEY = 'sases_perms_v1';
   var state = { apis: [], tools: [], skills: [], hidden: [] };
   var groups = [];
+  var perms = { web: false, write: false, schedule: true };
+
+  function loadPerms() {
+    try {
+      var raw = localStorage.getItem(PERM_KEY);
+      if (!raw) return;
+      var p = JSON.parse(raw);
+      perms.web = !!p.web;
+      perms.write = !!p.write;
+      perms.schedule = p.schedule !== false;
+    } catch (e) {}
+  }
+
+  function savePerms() {
+    try { localStorage.setItem(PERM_KEY, JSON.stringify(perms)); } catch (e) {}
+  }
+
+  function permsHtml() {
+    var rows = [
+      ['web', '联网', '允许读取网页 / 调用外部 API'],
+      ['write', '改文件', '允许修改项目文件（需确认）'],
+      ['schedule', '定时', '允许创建定时任务']
+    ];
+    var h = '<div class="cp-perms"><div class="cp-ptitle">能力开关</div>';
+    rows.forEach(function (r) {
+      h += '<label class="cp-perm"><input type="checkbox" data-perm="' + r[0] + '" ' +
+        (perms[r[0]] ? 'checked' : '') + '><span>' + r[1] + '</span>' +
+        '<span class="cp-pdesc">' + r[2] + '</span></label>';
+    });
+    return h + '</div>';
+  }
 
   function load() {
     try {
@@ -52,6 +84,10 @@
       'font-family:system-ui,-apple-system,sans-serif;font-size:13px}',
       '#capsule-panel.show{display:flex}',
       '#capsule-panel .cp-tabs{display:flex;border-bottom:1px solid #eee;background:#fafafa}',
+      '#capsule-panel .cp-perms{padding:8px 10px;border-bottom:1px solid #eee;background:#fbfcff}',
+      '#capsule-panel .cp-ptitle{font-size:11px;color:#888;margin-bottom:4px}',
+      '#capsule-panel .cp-perm{display:flex;align-items:center;gap:6px;padding:3px 0;font-size:12px;cursor:pointer}',
+      '#capsule-panel .cp-pdesc{color:#aaa;font-size:10px;margin-left:auto}',
       '#capsule-panel .cp-tab{flex:1;text-align:center;padding:8px 0;cursor:pointer;color:#666}',
       '#capsule-panel .cp-tab.active{color:#007aff;font-weight:600;box-shadow:inset 0 -2px 0 #007aff}',
       '#capsule-panel .cp-body{flex:1;overflow-y:auto;padding:6px 8px}',
@@ -99,7 +135,7 @@
     var tabs = [
       ['api', '外部 API'], ['tool', '工具'], ['skill', '技能']
     ];
-    var html = '<div class="cp-tabs">';
+    var html = permsHtml() + '<div class="cp-tabs">';
     tabs.forEach(function (t) {
       html += '<div class="cp-tab ' + (_tab === t[0] ? 'active' : '') + '" data-tab="' + t[0] + '">' + t[1] + '</div>';
     });
@@ -133,6 +169,12 @@
 
     _panel.querySelectorAll('.cp-tab').forEach(function (el) {
       el.onclick = function () { _tab = el.dataset.tab; render(); };
+    });
+    _panel.querySelectorAll('.cp-perm input').forEach(function (el) {
+      el.onchange = function () {
+        perms[el.dataset.perm] = el.checked;
+        savePerms();
+      };
     });
     _panel.querySelectorAll('.cp-item input').forEach(function (el) {
       el.onchange = function () {
@@ -212,6 +254,7 @@
 
   document.addEventListener('DOMContentLoaded', function () {
     css();
+    loadPerms();
     load();
     syncGlobals();
     updatePill();

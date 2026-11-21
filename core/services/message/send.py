@@ -175,6 +175,35 @@ async def send_message(
         except Exception as _e_fc:
             print('[message] 好友投递失败: ' + str(_e_fc))
 
+    # UX-1: 意图识别（用户不用写 # 前缀）
+    try:
+        from .. import intent_service as _intent_svc
+        _ir = _intent_svc.route_intent(content)
+        print("[intent] " + str(_ir))
+        if _ir.get("intent") == "schedule" and not content.lstrip().startswith("#5"):
+            _snap = {"apis": enabled_api_ids or [], "tools": enabled_tool_ids or [], "skills": enabled_skill_ids or []}
+            if _ir.get("normalized"):
+                content = "#5: " + _ir["normalized"]
+            elif _ir.get("weekly") and conversation_id:
+                from .. import scheduled_task_service
+                _wk = _ir["weekly"]
+                _cron = "%d %d * * %d" % (_wk["minute"], _wk["hour"], _wk["weekday"])
+                _tid = scheduled_task_service.create_task(
+                    user_id=user_id, name=_wk["task"][:10], cron_expr=_cron,
+                    task_template=_wk["task"], conversation_id=conversation_id,
+                    supervisor_id=sender_agent_id or agent_id or "", capsule_snapshot=_snap)
+                _t = scheduled_task_service.get_task(_tid)
+                return {
+                    "conversation_id": conversation_id, "user_message": content,
+                    "assistant_reply": "✅ 每周任务已创建：%s\n下次执行：%s" % (
+                        _wk["task"], str((_t or {}).get("next_run_at") or "")[:16]),
+                    "agent_id": agent_id, "sender_agent_id": sender_agent_id, "mode": mode,
+                }
+        elif (agent_mode or "auto").strip().lower() == "auto" and _ir.get("mode"):
+            agent_mode = _ir["mode"]
+    except Exception as _e_int:
+        print("[intent] 识别失败: " + str(_e_int))
+
     _scan_content = _normalize_prefix(content)
 
     # ===== #5 定时任务解析 =====
