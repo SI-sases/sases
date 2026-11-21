@@ -25,7 +25,8 @@ function _injectStyle() {
   if (document.getElementById('chr-style')) return;
   const css = `
 #chat-history-rail{position:absolute;right:10px;top:50%;transform:translateY(-50%);
-  width:198px;max-height:58vh;background:rgba(255,255,255,.94);border:1px solid rgba(0,0,0,.08);
+  width:198px;max-height:58vh;background:rgba(255,255,255,.97);border:1px solid rgba(0,0,0,.08);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
   border-radius:12px;box-shadow:0 6px 22px rgba(0,0,0,.10);z-index:12;display:flex;
   flex-direction:column;overflow:hidden;font-size:12px;font-family:system-ui,-apple-system,sans-serif}
 #chat-history-rail .chr-head{display:flex;align-items:center;gap:6px;padding:8px 10px;
@@ -89,7 +90,7 @@ function _ensure() {
   head.appendChild(_el('span', null, '最近会话'));
   head.appendChild(_el('span', 'chr-count', ''));
   head.title = '折叠';
-  head.onclick = () => _applyCollapsed(true);
+  head.onclick = () => _applyCollapsed(true, true);
   _rail.appendChild(head);
 
   _listEl = _el('div', 'chr-list');
@@ -98,17 +99,19 @@ function _ensure() {
   _openBtn = _el('div', null, '历史');
   _openBtn.id = 'chat-rail-open';
   _openBtn.title = '展开最近会话';
-  _openBtn.onclick = () => _applyCollapsed(false);
+  _openBtn.onclick = () => _applyCollapsed(false, true);
 
   win.appendChild(_rail);
   win.appendChild(_openBtn);
-  _applyCollapsed(_collapsed);
+  _applyCollapsed(_collapsed, false);
   return true;
 }
 
-function _applyCollapsed(v) {
+function _applyCollapsed(v, persist) {
   _collapsed = !!v;
-  try { localStorage.setItem(STORE_KEY, _collapsed ? '1' : '0'); } catch (e) {}
+  if (persist) {
+    try { localStorage.setItem(STORE_KEY, _collapsed ? '1' : '0'); } catch (e) {}
+  }
   const win = document.getElementById('view-chat-window');
   if (_rail) _rail.style.display = _collapsed ? 'none' : 'flex';
   if (_openBtn) _openBtn.style.display = _collapsed ? 'block' : 'none';
@@ -237,6 +240,6 @@ setInterval(_tick, 1200);
 window.SASES = window.SASES || {};
 window.SASES.chatHistoryRail = {
   refresh: refreshChatRail,
-  toggle: () => _applyCollapsed(!_collapsed),
-  open: () => _applyCollapsed(false),
+  toggle: () => _applyCollapsed(!_collapsed, true),
+  open: () => _applyCollapsed(false, true),
 };
