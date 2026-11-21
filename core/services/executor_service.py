@@ -535,6 +535,87 @@ def _substitute_params(params: Any, previous_outputs: Dict[int, str]) -> Any:
 
 # ========== 汇报 ==========
 
+_PARALLEL_READ_TOOLS = {"file_read", "grep_code", "dir_tree", "web_fetch", "api_call", "read_user_doc"}
+
+
+def _is_parallel_read(step) -> bool:
+    try:
+        mid = str(step.get("module_id") or "")
+        if mid not in _PARALLEL_READ_TOOLS:
+            return False
+        if str(step.get("command") or "").strip():
+            return False
+        if step.get("depends_on"):
+            return False
+        blob = json.dumps(step, ensure_ascii=False)
+        if re.search(r"\{\{?step\d+", blob):
+            return False
+        return True
+    except Exception:
+        return False
+
+
+async def _prefetch_read_steps(task, steps, previous_outputs, run_id, owner, rj, conversation_id):
+    """P1-4: 独立只读步骤并行执行；写/有占位符/有依赖的步骤保持串行。"""
+    if os.getenv("SASES_PARALLEL_STRICT", "0") != "1":
+        return steps
+    cands = [s for s in steps if _is_parallel_read(s)]
+    if len(cands) < 2:
+        return steps
+
+    async def one(step):
+        sid = step.get("step")
+        mid = step.get("module_id")
+        if run_id and rj:
+            try:
+                rj.heartbeat(run_id, owner)
+                rj.step_begin(run_id, str(sid), str(mid), owner, key=str(run_id) + ":" + str(sid))
+            except Exception:
+                pass
+        try:
+            from . import trace_service as _tr
+            _tr.emit(run_id, conversation_id, 2, "step_start",
+                     content="步骤 " + str(sid) + "：" + str(step.get("description") or "")[:120],
+                     tool=str(mid)[:80], status="running")
+        except Exception:
+            pass
+        out, status, dur = await _run_harness(
+            str(mid), step.get("params") or step.get("arguments") or {},
+            task.get("user_id"), task.get("task_id"),
+            idem_key=(str(run_id) + ":" + str(sid)) if run_id else None,
+            conversation_id=conversation_id, run_id=run_id,
+        )
+        return step, sid, out, status, dur
+
+    res = await asyncio.gather(*[one(s) for s in cands], return_exceptions=True)
+    done_ids = []
+    for item in res:
+        if isinstance(item, Exception):
+            print("[parallel] 只读步骤异常: " + str(item))
+            continue
+        step, sid, out, status, dur = item
+        done_ids.append(sid)
+        if run_id and rj:
+            try:
+                rj.step_end(run_id, str(sid), status, error=None if status == "success" else str(out)[:300])
+            except Exception:
+                pass
+        if status == "success":
+            previous_outputs[sid] = out
+        payload = {
+            "task_id": task.get("task_id"), "step": sid,
+            "description": step.get("description", ""), "status": status,
+            "output": str(out)[:5000], "display": _render_step_display(step, out), "duration_ms": dur,
+        }
+        try:
+            await _report_step_done(conversation_id, payload, task.get("executor_id"))
+        except Exception as _e_rep:
+            print("[parallel] 汇报失败: " + str(_e_rep))
+    if done_ids:
+        print("[parallel] 并行完成只读步骤 " + str(len(done_ids)) + " 个")
+    return [s for s in steps if s.get("step") not in set(done_ids)]
+
+
 async def _report_step_done(conversation_id: int, payload: Dict[str, Any], executor_id: str):
     """把 [STEP_DONE] 写入消息表，并触发审核"""
     content = "[STEP_DONE]:" + json.dumps(payload, ensure_ascii=False)
@@ -599,6 +680,10 @@ async def _execute_task(task: Dict[str, Any]):
     for r in results:
         if r.get("status") == "success":
             previous_outputs[r["step"]] = r.get("output", "")
+
+    # P1-4: 独立只读步骤并行（默认由 SASES_PARALLEL_STRICT=1 开启）
+    pending_steps = await _prefetch_read_steps(
+        task, pending_steps, previous_outputs, _run_id, _owner, _rj, conversation_id)
 
     for step in pending_steps:
         # P1-A2: 暂停/取消检查（每步开始前）
