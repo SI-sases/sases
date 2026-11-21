@@ -7,11 +7,15 @@ from . import credit_service
 from . import license_service
 
 
-def create_task(user_id, name, cron_expr, task_template, conversation_id, supervisor_id, timezone='Asia/Shanghai'):
+def create_task(user_id, name, cron_expr, task_template, conversation_id, supervisor_id, timezone='Asia/Shanghai', capsule_snapshot=None):
     task_id = 'sched_' + uuid.uuid4().hex[:16]
     now = datetime.now().isoformat()
     next_run = _compute_next_run(cron_expr)
-    params = json.dumps({'conversation_id': conversation_id, 'supervisor_id': supervisor_id})
+    params = json.dumps({
+        'conversation_id': conversation_id,
+        'supervisor_id': supervisor_id,
+        'capsule_snapshot': capsule_snapshot or {},
+    })
     with db_cursor(commit=True) as cur:
         cur.execute(
             "INSERT INTO scheduled_tasks (id, user_id, name, cron_expr, timezone, task_template, task_params, enabled, missed_policy, failure_count, next_run_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, 1, 'catch_up', 0, ?, ?, ?)",
@@ -106,6 +110,9 @@ async def execute_task(task):
             user_input=goal,
             supervisor_id=sid,
             supervisor_run_id=run_id,
+            enabled_api_ids=(params.get('capsule_snapshot') or {}).get('apis') or None,
+            enabled_tool_ids=(params.get('capsule_snapshot') or {}).get('tools') or None,
+            enabled_skill_ids=(params.get('capsule_snapshot') or {}).get('skills') or None,
         )
 
         # plan_task 返回 None / no_plan / error 时，标记 run 失败，避免永久卡 running
@@ -141,14 +148,28 @@ async def execute_task(task):
 
 
 def _compute_next_run(cron_expr):
-    """极简 cron：只支持 'M H * * *'（每天固定时间）"""
+    """极简 cron：支持 'M H * * *'（每天）、'M H * * D'（每周，0=周一）、'M */N * * *'（每 N 小时）。"""
     parts = (cron_expr or '').split()
-    if len(parts) >= 2 and parts[0].isdigit() and parts[1].isdigit():
-        minute = int(parts[0])
-        hour = int(parts[1])
-        now = datetime.now()
-        next_run = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
-        if next_run <= now:
-            next_run += timedelta(days=1)
-        return next_run.isoformat()
-    return (datetime.now() + timedelta(days=1)).isoformat()
+    now = datetime.now()
+    try:
+        if len(parts) >= 5 and parts[1].startswith('*/') and parts[1][2:].isdigit():
+            step = max(1, int(parts[1][2:]))
+            minute = int(parts[0])
+            nxt = now.replace(minute=minute, second=0, microsecond=0)
+            while nxt <= now:
+                nxt += timedelta(hours=step)
+            return nxt.isoformat()
+        if len(parts) >= 2 and parts[0].isdigit() and parts[1].isdigit():
+            minute = int(parts[0])
+            hour = int(parts[1])
+            nxt = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+            if len(parts) >= 5 and parts[4].isdigit():
+                target = int(parts[4])  # 0=Monday
+                days_ahead = (target - now.weekday()) % 7
+                nxt = nxt + timedelta(days=days_ahead)
+            if nxt <= now:
+                nxt += timedelta(days=7 if (len(parts) >= 5 and parts[4].isdigit()) else 1)
+            return nxt.isoformat()
+    except Exception as e:
+        print('[scheduled] _compute_next_run 失败: ' + str(e))
+    return (now + timedelta(days=1)).isoformat()
