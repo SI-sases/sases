@@ -7,41 +7,17 @@ from typing import Optional
 from ...db import db_cursor
 from fastapi import HTTPException
 from .router import normalize_prefix as _normalize_prefix, should_fast as _should_fast
+from .ingest import classify_task_type as _classify_task_type, fallback_conversation_id as _sases_fallback_cid
 
-
-def _sases_fallback_cid():
-    try:
-        with db_cursor() as _sases_cur:
-            _sases_cur.execute("SELECT conversation_id FROM messages WHERE sender='user' ORDER BY id DESC LIMIT 1")
-            _sases_row = _sases_cur.fetchone()
-            if _sases_row:
-                try:
-                    _sases_val = _sases_row['conversation_id']
-                except Exception:
-                    _sases_val = _sases_row[0]
-                if _sases_val:
-                    print('[supervisor] auto_run fallback conversation_id=' + str(_sases_val))
-                    return _sases_val
-    except Exception:
-        pass
-    return 0
 
 from .constants import REQUIRE_TASK_CONFIRMATION, COMMAND_PREFIX_MAP, DRAFT_PREFIXES
 from .conversations import create_conversation, get_messages, mark_conversation_read
 from .model_call import call_model_with_config
 from .attachments import _enrich_attachment
 
-def _classify_task_type(goal):
-    _g = str(goal or '')
-    if any(k in _g for k in ('探测', '列出', '统计', '看', '读')):
-        return 'simple_probe'
-    if any(k in _g for k in ('重构', '重写', '打通')):
-        return 'refactor'
-    if any(k in _g for k in ('加', '实现', '新增', '创建', '参考')):
-        return 'feature_dev'
-    if any(k in _g for k in ('改', '修')):
-        return 'code_edit'
-    return 'unknown'
+def _sases_fallback_cid():
+    from .ingest import fallback_conversation_id
+    return fallback_conversation_id()
 
 
 
