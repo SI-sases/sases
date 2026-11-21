@@ -8,6 +8,34 @@ from core import tool_gateway
 from core.services.swarm.llm_parser import client, MODEL
 from core.services.swarm.prompts import COMMANDER_SYSTEM_PROMPT
 
+_READ_TOOLS = {"file_read", "grep_code", "dir_tree", "web_fetch", "api_call",
+               "read_user_doc", "verify_claim", "verify_patch"}
+
+
+async def _execute_calls(calls, step):
+    """P1-4: 同一轮只读工具并行；含写/执行工具时串行。"""
+    async def one(c):
+        name = c.function.name
+        try:
+            args = json.loads(c.function.arguments or "{}")
+        except Exception:
+            args = {}
+        try:
+            r = await tool_gateway.invoke_tool_async(name, args)
+            text = str(r.result)[:4000] if getattr(r, "success", False) else ("ERROR: " + str(getattr(r, "error", "")))
+        except Exception as e:
+            text = "ERROR: " + str(e)
+        return {"id": c.id, "tool": name, "args": args,
+                "ok": not text.startswith("ERROR"), "text": text, "step": step}
+
+    if calls and all((c.function.name or "") in _READ_TOOLS for c in calls):
+        return await asyncio.gather(*[one(c) for c in calls])
+    out = []
+    for c in calls:
+        out.append(await one(c))
+    return out
+
+
 _TYPE_MAP = {
     "int": "integer", "integer": "integer", "float": "number", "number": "number",
     "bool": "boolean", "boolean": "boolean", "string": "string",
@@ -86,18 +114,9 @@ async def run_fast(user_id: int, conversation_id: int, goal: str,
             } for c in calls],
         })
 
-        for c in calls:
-            name = c.function.name
-            try:
-                args = json.loads(c.function.arguments or "{}")
-            except Exception:
-                args = {}
-            try:
-                r = await tool_gateway.invoke_tool_async(name, args)
-                text = str(r.result)[:4000] if getattr(r, "success", False) else ("ERROR: " + str(getattr(r, "error", "")))
-            except Exception as e:
-                text = "ERROR: " + str(e)
-            history.append({"step": step, "tool": name, "args": args, "ok": not text.startswith("ERROR")})
-            messages.append({"role": "tool", "tool_call_id": c.id, "content": text})
+        _results = await _execute_calls(calls, step)
+        for _r in _results:
+            history.append({"step": step, "tool": _r["tool"], "args": _r["args"], "ok": _r["ok"]})
+            messages.append({"role": "tool", "tool_call_id": _r["id"], "content": _r["text"]})
 
     return {"status": "max_steps", "content": "达到步数上限，未完成任务。", "steps": max_steps, "history": history}
