@@ -253,7 +253,7 @@ def finish_run(run_id, status='completed'):
                     print('[P0-4] 失败消息发送失败: ' + str(_e_msg_p04))
                 return
             if status == 'completed':
-                _msg_fin = '[SUMMARY]:OK 执行已结束'
+                _msg_fin = '[SUMMARY]:✅ 已完成\n• 做了什么：任务结束\n• 结果：见上方进度卡/产物\n• 下一步：可继续追问，或让我撤销本次修改'
                 try:
                     import json
                     with db_cursor() as _c_his:
@@ -285,7 +285,7 @@ def finish_run(run_id, status='completed'):
             try:
                 _msg_fin
             except NameError:
-                _msg_fin = '[SUMMARY]:OK 执行已结束'
+                _msg_fin = '[SUMMARY]:✅ 已完成\n• 做了什么：任务结束\n• 结果：见上方进度卡/产物\n• 下一步：可继续追问，或让我撤销本次修改'
             _im_fin(_conv_id, _msg_fin, sender_agent_id=_sup_id)
             # [A2A 跨端回传] 如果是好友会话，将执行结果投递回发起方
             try:

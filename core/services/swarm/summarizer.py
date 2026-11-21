@@ -149,7 +149,7 @@ async def _summarize(user_text: str, results: List[Dict[str, Any]], user_id: int
             _line += chr(10) + '  工具输出:' + chr(10) + '    ' + _out
         result_lines.append(_line)
     result_text = chr(10).join(result_lines)
-    prompt = f"【背景】用户请求：{user_text}\n\n【执行过程】\n{result_text}\n\n【要求】请直接输出最终结果，用于展示给用户。\n- 绝对不要重复用户请求的内容。\n- 如果工具返回了具体内容（文件内容、数据、答案），直接原样呈现。\n- 如果任务只是完成某个操作（如改代码、发消息），用一句话说明完成情况。\n- 直接输出结果本身，不要任何前缀、标题、格式说明。"
+    prompt = f"【背景】用户请求：{user_text}\n\n【执行过程】\n{result_text}\n\n【输出格式】固定三段，简洁：\n1. 做了什么：一句话概括\n2. 结果：具体结果（文件/数据/答案原样呈现）\n3. 下一步：建议或可选的后续操作\n不要重复用户请求，不要输出 JSON，不要标题以外的格式说明。"
     try:
         _raw_sum = await _call_llm(prompt, SUMMARY_SYSTEM_PROMPT, max_tokens=config.SUMMARY_MAX_TOKENS,
                                    purpose="summary", user_id=user_id, conversation_id=conversation_id)
