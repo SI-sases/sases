@@ -95,14 +95,8 @@ async def confirm(body: ConfirmBody, user_id: int = Depends(get_current_user)):
     _run = supervisor_service.get_run(body.run_id)
     if _run:
         try:
-            from ..services import swarm_service
-            asyncio.create_task(swarm_service.plan_task(
-                user_id=user_id,
-                conversation_id=_run['conversation_id'],
-                user_input=_run['goal'],
-                supervisor_id=_run.get('supervisor_id'),
-                supervisor_run_id=body.run_id,
-            ))
+            from ..services import execution_gateway
+            asyncio.create_task(execution_gateway.run_a2a(body.run_id))
         except Exception as _e:
             print('[supervisor] confirm 派单失败: ' + str(_e))
     return {'run_id': body.run_id, 'status': 'running'}

@@ -93,40 +93,24 @@ async def execute_task(task):
 
     try:
         from .supervisor.runs import create_run
-        from . import swarm_service
+        from . import execution_gateway
 
         run_id = create_run(
             user_id=user_id,
             conversation_id=cid,
             supervisor_id=sid,
             goal=goal,
-            trigger_type='scheduled',
-            trigger_task_id=task_id,
         )
 
-        plan_result = await swarm_service.plan_task(
-            user_id=user_id,
-            conversation_id=cid,
-            user_input=goal,
-            supervisor_id=sid,
-            supervisor_run_id=run_id,
-            enabled_api_ids=(params.get('capsule_snapshot') or {}).get('apis') or None,
-            enabled_tool_ids=(params.get('capsule_snapshot') or {}).get('tools') or None,
-            enabled_skill_ids=(params.get('capsule_snapshot') or {}).get('skills') or None,
+        gw = await execution_gateway.run_schedule(
+            run_id=run_id, user_id=user_id, conversation_id=cid, goal=goal,
+            supervisor_id=sid, options=(params.get('capsule_snapshot') or {}),
         )
-
-        # plan_task 返回 None / no_plan / error 时，标记 run 失败，避免永久卡 running
-        if plan_result is None or (isinstance(plan_result, dict) and plan_result.get('status') in ('no_plan', 'error', 'busy')):
-            from .supervisor.runs import finish_run
-            try:
-                finish_run(run_id, 'plan_failed')
-            except Exception:
-                pass
-            reason = plan_result.get('reason') or plan_result.get('message') if isinstance(plan_result, dict) else 'plan_task returned None'
+        if not gw.get('ok'):
             with db_cursor(commit=True) as cur:
                 cur.execute("UPDATE scheduled_tasks SET failure_count=failure_count+1, updated_at=? WHERE id=?",
                             (datetime.now().isoformat(), task_id))
-            return {'ok': False, 'error': 'plan_failed: ' + str(reason)}
+            return {'ok': False, 'error': 'loop_failed: ' + str(gw.get('error') or gw.get('status'))}
 
         next_run = _compute_next_run(task['cron_expr'])
         now = datetime.now().isoformat()
