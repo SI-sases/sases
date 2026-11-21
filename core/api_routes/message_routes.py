@@ -131,3 +131,102 @@ async def toggle_pin(conversation_id: int, body: PinRequest, user_id: int = Depe
 async def delete_conversation(conversation_id: int, user_id: int = Depends(get_current_user)):
     message_service.delete_conversation(user_id, conversation_id)
     return {"status": "deleted"}
+
+
+# ============ FIX_MENU_V2_DELETE: 单条消息删除 ============
+@router.delete("/message/{message_id}")
+async def delete_single_message(message_id: int, user: dict = Depends(get_current_user)):
+    """删除单条消息（只能删自己会话里的）"""
+    from ..db import db_cursor
+    _uid = user.get("id") or user.get("user_id")
+    with db_cursor(commit=True) as cur:
+        cur.execute("SELECT id FROM messages WHERE id = ?", (message_id,))
+        if not cur.fetchone():
+            raise HTTPException(404, "消息不存在")
+        cur.execute(
+            "SELECT m.id FROM messages m "
+            "JOIN conversations c ON m.conversation_id = c.id "
+            "WHERE m.id = ? AND c.user_id = ?",
+            (message_id, _uid),
+        )
+        if not cur.fetchone():
+            raise HTTPException(403, "无权删除该消息")
+        cur.execute("DELETE FROM messages WHERE id = ?", (message_id,))
+    return {"status": "deleted", "message_id": message_id}
+
+
+# ============ FIX_EXECUTE_V2: 帮我执行 - 生成 #4 指令 ============
+from pydantic import BaseModel as _BM_v2
+from typing import List as _List_v2, Optional as _Opt_v2
+
+class _SuggestExecReq(_BM_v2):
+    messages: _Opt_v2[_List_v2[dict]] = None
+    content: _Opt_v2[str] = None
+
+@router.post("/messages/suggest-execute")
+async def suggest_execute_route(body: _SuggestExecReq, user: dict = Depends(get_current_user)):
+    """根据最近聊天上下文生成 #4 执行指令"""
+    from ..config import MODEL
+    from openai import OpenAI
+    import os as _os_v2
+
+    _msgs = body.messages or []
+    if not _msgs and body.content:
+        _msgs = [{"role": "user", "content": body.content}]
+
+    if not _msgs:
+        raise HTTPException(400, "缺少上下文")
+
+    _ctx = ""
+    for m in _msgs[-8:]:
+        _who = "用户" if m.get("role") == "user" else "AI"
+        _t = str(m.get("content", ""))[:1500]
+        if _t:
+            _ctx += _who + ": " + _t + "\n\n"
+
+    _prompt = (
+        "你是 SASES 的执行指令生成助手。用户刚在聊天中谈论了下面的内容，现在想让系统实际执行。\n\n"
+        "【最近对话】\n" + _ctx + "\n"
+        "【任务】\n"
+        "请生成一条 #4 执行指令，让系统能理解并执行。严格按以下格式：\n"
+        "#4: <一句话目标>。背景是 <必要背景（谁在哪个文件里改什么）>。"
+        "要求：1. <具体步骤（点名文件+函数+动作）>。2. <验证方式（verify_syntax / grep / 跑测试）>。\n\n"
+        "规则：\n"
+        "- 必须有明确目标（不是\"优化逻辑\"这种模糊描述）\n"
+        "- 必须点名文件路径或函数名\n"
+        "- 必须包含验证步骤\n"
+        "- 提炼整合上下文，不要照搬原话\n"
+        "- 只输出 #4 指令本身，不要任何解释、不要 markdown 代码块、不要注释\n"
+        "- 指令长度控制在 200-500 字\n"
+    )
+
+    try:
+        _client = OpenAI(
+            api_key=_os_v2.environ.get("DEEPSEEK_API_KEY", ""),
+            base_url=_os_v2.environ.get("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1"),
+        )
+        _resp = await asyncio.to_thread(
+            _client.chat.completions.create,
+            model=MODEL,
+            messages=[{"role": "user", "content": _prompt}],
+            temperature=0.3,
+            max_tokens=800,
+        )
+        _out = (_resp.choices[0].message.content or "").strip()
+        # 清理可能的代码块包裹
+        if _out.startswith("```"):
+            _lines = _out.split("\n")
+            _lines = _lines[1:]
+            if _lines and _lines[-1].strip() == "```":
+                _lines = _lines[:-1]
+            _out = "\n".join(_lines).strip()
+        # 保证以 #4: 开头
+        if not _out.startswith("#4"):
+            _out = "#4: " + _out
+        print("[suggest-execute] 生成指令长度=" + str(len(_out)))
+        return {"instruction": _out, "task": _out}
+    except Exception as e:
+        print("[suggest-execute] 生成失败: " + str(e))
+        # 兜底：用原消息直接包成 #4
+        _fallback = "#4: 请根据以下内容执行：" + (_msgs[-1].get("content", "")[:400] if _msgs else "")
+        return {"instruction": _fallback, "task": _fallback}

@@ -109,6 +109,12 @@ export const api = {
   // 建议回复
   suggestReply: (query) => request('/agent/chat', { method: 'POST', body: JSON.stringify({ query }) }),
 
+
+  suggestExecute: (messages) => request('/messages/suggest-execute', {
+    method: 'POST',
+    body: JSON.stringify({ messages: messages || [] }),
+  }),
+
   // 工作模式（指令执行）
   workExecute: (conversationId, command, senderAgentId = null) => request('/work/execute', {
     method: 'POST',

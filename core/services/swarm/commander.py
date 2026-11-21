@@ -86,6 +86,13 @@ async def plan_task(
     max_steps: int = None,
     enabled_api_ids: list = None
 ) -> Dict[str, Any]:
+    # [CTX-UPGRADE-v1] 有 doc_paste 时注入完整方案
+    try:
+        from core.services.unified_context import enrich_plan_input as _epi
+        user_input = _epi(user_id, conversation_id, user_input)
+    except Exception as _e_epi:
+        print("[plan_task] enrich failed: " + str(_e_epi))
+
     if conversation_id and _has_active_task_in_conversation(conversation_id):
         err_msg = "[SUMMARY]:当前会话有正在执行的任务，请等待完成或取消后再提交新任务。"
         _insert_message(conversation_id, err_msg, sender_agent_id=None)
