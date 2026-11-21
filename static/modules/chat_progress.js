@@ -25,7 +25,13 @@
       'border-radius:6px;padding:6px;margin:4px 0 2px 20px;font-size:11px;color:#555;max-height:200px;overflow:auto}',
       '#run-progress-card .rp-line.clickable{cursor:pointer}',
       '#run-progress-card .rp-revert{margin-top:6px;border:1px solid #ddd;background:#fff;border-radius:6px;',
-      'padding:4px 10px;font-size:11px;color:#666;cursor:pointer}'
+      'padding:4px 10px;font-size:11px;color:#666;cursor:pointer}',
+      '#run-error-card{margin:10px 14px;background:#fff5f5;border:1px solid #ffb3b3;border-radius:10px;',
+      'padding:10px 12px;font-size:12px;color:#333;font-family:system-ui}',
+      '#run-error-card .er-title{font-weight:600;color:#d93025;margin-bottom:4px}',
+      '#run-error-card .er-desc{color:#666;margin-bottom:8px;word-break:break-all}',
+      '#run-error-card button{border:1px solid #ddd;background:#fff;border-radius:6px;padding:4px 10px;',
+      'margin-right:6px;font-size:11px;cursor:pointer}'
     ].join('');
     document.head.appendChild(s);
   }
@@ -63,6 +69,58 @@
     lines.appendChild(row);
     var msgs = document.getElementById('chat-messages');
     if (msgs) msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function lastUserText() {
+    var rows = document.querySelectorAll('#chat-messages [data-role="user"]');
+    if (!rows.length) return '';
+    var el = rows[rows.length - 1];
+    var b = el.children[0];
+    return b ? (b.textContent || '').trim() : '';
+  }
+
+  function revertRun(runId, btn) {
+    if (!confirm('恢复本次运行修改/创建的文件？')) return;
+    btn.disabled = true;
+    fetch('/supervisor/runs/' + runId + '/revert', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('sases_token') || '') },
+      body: JSON.stringify({ confirm: true })
+    }).then(function (r) { return r.json(); }).then(function (j) {
+      btn.textContent = '已撤销：恢复 ' + ((j.restored || []).length) + '，删除 ' + ((j.deleted || []).length);
+    }).catch(function () { btn.disabled = false; btn.textContent = '撤销失败'; });
+  }
+
+  function showError(runId, tool, preview) {
+    if (document.getElementById('run-error-card')) return;
+    var msgs = document.getElementById('chat-messages');
+    if (!msgs) return;
+    var d = document.createElement('div');
+    d.id = 'run-error-card';
+    d.innerHTML = '<div class="er-title">⚠️ 执行失败</div>' +
+      '<div class="er-desc">' + (tool ? '工具：' + tool + ' · ' : '') + (preview || '步骤未成功') + '</div>' +
+      '<button data-e="retry">重试</button>' +
+      '<button data-e="undo">撤销本次修改</button>' +
+      '<button data-e="detail">查看详情</button>';
+    msgs.appendChild(d);
+    msgs.scrollTop = msgs.scrollHeight;
+    d.querySelector('[data-e="retry"]').onclick = function () {
+      var txt = lastUserText();
+      if (!txt) return;
+      var input = document.getElementById('chat-input');
+      if (!input) return;
+      input.value = txt;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      var btn = document.getElementById('send-btn');
+      if (btn) btn.click();
+    };
+    d.querySelector('[data-e="undo"]').onclick = function (e) {
+      revertRun(runId, e.target);
+    };
+    d.querySelector('[data-e="detail"]').onclick = function () {
+      var chip = document.getElementById('trace-chip');
+      if (chip && chip.style.display !== 'none') chip.click();
+    };
   }
 
   function finish(text) {
@@ -127,8 +185,9 @@
       var preview = (d.output_preview || d.content || '').replace(/\s+/g, ' ').slice(0, 80);
       addLine(ok ? '✓' : '✗', (ok ? '完成' : '失败') + tool + (preview ? ' · ' + preview : ''),
               ok ? 'done' : 'fail', d.output_detail || '');
+      if (!ok) showError(d.run_id, d.tool, preview);
     } else if (et === 'run_end') {
-      finish(d.status === 'interrupted' ? '已中断' : '已完成');
+      finish(d.status === 'interrupted' ? '已中断' : (d.status === 'failed' ? '失败' : '已完成'));
     } else if (et === 'async_done') {
       addLine('⏱', '异步任务完成', 'done');
     }
