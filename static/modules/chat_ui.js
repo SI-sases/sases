@@ -1,3 +1,4 @@
+import { renderMarkdown } from './markdown.js';
 // static/modules/chat_ui.js
 
 // ========== 协议消息过滤（v0.17.0） ==========
@@ -159,7 +160,11 @@ export function createMessageElement(role, content, senderName, messageId, timeI
   }
 
   // 移除发送者名字前缀，保持微信式纯气泡体验
-  bubble.textContent = content;
+  if (role === 'assistant' || role === 'friend') {
+    bubble.innerHTML = renderMarkdown(content);
+  } else {
+    bubble.textContent = content;
+  }
 
   if (role === 'user') {
     wrapper.appendChild(bubble);

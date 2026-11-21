@@ -4,6 +4,7 @@ import { api } from './api.js';
 
 import { closeGroupChat, sendGroupMessage } from './group_chat.js';
 import { appendMessage, createMessageElement, updateMessageStatus } from './chat_ui.js';
+import { renderMarkdown } from './markdown.js';
 import { showWorkWarning, sendWorkCommand, sendCommanderTask, showFreeModeGuide } from './chat_work.js';
 import { updateIdentityButton, openIdentitySwitch } from './chat_identity.js';
 import { createContextMenu, showQuoteBar, hideQuoteBar, openChatInfo, toggleChatPlusPanel, closeChatPlusPanel } from './chat_menu.js';
@@ -307,7 +308,9 @@ async function streamSendMessage(payload, state) {
       }
     }
   }
-  if (bubble) bubble.textContent = text;
+  if (bubble) {
+    try { bubble.innerHTML = renderMarkdown(text); } catch (e) { bubble.textContent = text; }
+  }
   return { data: finalData, streamed: !!bubble, streamedText: text };
 }
 

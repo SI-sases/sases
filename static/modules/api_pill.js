@@ -228,6 +228,7 @@
     var all = [['read', '读取'], ['write', '写入'], ['network', '网络'], ['git', 'Git'], ['external', '外部 API'], ['skill', '技能']];
     var _steps = localStorage.getItem('sases_max_steps') || '8';
     var _mode = localStorage.getItem('sases_agent_mode') || 'auto';
+    var _font = localStorage.getItem('sases_chat_font') || '15';
     var html = '<div class="sm-title">高级</div>';
     html += '<label class="sm-item">轮数<select class="sm-select" id="sm-rounds">' +
       ['5', '8', '15', '-1'].map(function (v) {
@@ -236,6 +237,10 @@
     html += '<label class="sm-item">模式<select class="sm-select" id="sm-mode">' +
       [['auto', '自动'], ['fast', '快速'], ['strict', '严格']].map(function (v) {
         return '<option value="' + v[0] + '" ' + (_mode === v[0] ? 'selected' : '') + '>' + v[1] + '</option>';
+      }).join('') + '</select></label>';
+    html += '<label class="sm-item">字体<select class="sm-select" id="sm-font">' +
+      [['14', '小'], ['15', '中'], ['17', '大']].map(function (v) {
+        return '<option value="' + v[0] + '" ' + (_font === v[0] ? 'selected' : '') + '>' + v[1] + '</option>';
       }).join('') + '</select></label>';
     html += '<div class="sm-title">显示哪些胶囊组</div>';
     all.forEach(function (a) {
@@ -258,6 +263,15 @@
       try {
         if (window.sasesParamBar && window.sasesParamBar.setAgentMode) window.sasesParamBar.setAgentMode(_modeSel.value);
         else localStorage.setItem('sases_agent_mode', _modeSel.value);
+      } catch (e) {}
+    };
+    var _fontSel = document.getElementById('sm-font');
+    if (_fontSel) _fontSel.onchange = function () {
+      try {
+        localStorage.setItem('sases_chat_font', _fontSel.value);
+        document.documentElement.style.setProperty('--chat-font-size', _fontSel.value + 'px');
+        document.documentElement.style.setProperty('--chat-line-height',
+          _fontSel.value === '14' ? '1.6' : (_fontSel.value === '17' ? '1.7' : '1.65'));
       } catch (e) {}
     };
     m.querySelectorAll('input').forEach(function (el) {
@@ -288,6 +302,12 @@
 
   document.addEventListener('DOMContentLoaded', function () {
     css();
+    try {
+      var _f = localStorage.getItem('sases_chat_font') || '15';
+      document.documentElement.style.setProperty('--chat-font-size', _f + 'px');
+      document.documentElement.style.setProperty('--chat-line-height',
+        _f === '14' ? '1.6' : (_f === '17' ? '1.7' : '1.65'));
+    } catch (e) {}
     loadPerms();
     load();
     syncGlobals();

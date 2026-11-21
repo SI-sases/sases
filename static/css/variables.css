@@ -55,6 +55,9 @@
   --font-sm: 12px;
   --font-base: 14px;
   --font-md: 15px;
+  --chat-font-size: 15px;
+  --chat-line-height: 1.65;
+  --chat-code-size: 13px;
   --font-lg: 16px;
   --font-xl: 17px;
   --font-title: 20px;
