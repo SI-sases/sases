@@ -57,6 +57,38 @@ def _classify_task_type(goal):
     return 'unknown'
 
 
+
+def _build_human_summary(plan_result, user_input):
+    """C1: 组装三段式。LLM 有 human_summary 就用，否则从 steps 兜底"""
+    if not plan_result or not isinstance(plan_result, dict):
+        return ''
+    if plan_result.get('human_summary'):
+        return str(plan_result['human_summary'])
+    steps = plan_result.get('steps') or []
+    if not steps:
+        return ''
+    descs = []
+    for s in steps[:8]:
+        d = s.get('description') or s.get('command') or s.get('module_id') or ''
+        if d:
+            descs.append('- ' + str(d)[:120])
+    files = set()
+    for s in steps:
+        p = (s.get('params') or {}).get('file_path') if isinstance(s.get('params'), dict) else None
+        if p:
+            files.add(p)
+    out = '【分析】\n'
+    out += '- 你的指令：' + str(user_input)[:100] + '\n'
+    out += '- 已拆解为 ' + str(len(steps)) + ' 步\n'
+    if files:
+        out += '- 涉及文件：' + ', '.join(list(files)[:5]) + '\n'
+    out += '\n【方案】\n' + '\n'.join(descs) + '\n'
+    out += '\n【建议】\n'
+    out += '- 执行完成后我汇报结果\n'
+    out += '- 中途失败可以说"继续"或"换方案"\n'
+    return out
+
+
 async def send_message(
     user_id: int,
     conversation_id: int,
@@ -637,6 +669,15 @@ async def send_message(
                                 )
                             except Exception as _e_retry:
                                 print('[supervisor] precheck 重试失败: ' + str(_e_retry))
+                        # C1: 派单前推 human_summary
+                        if _plan_result and _plan_result.get('status') == 'planned':
+                            try:
+                                _hs = _build_human_summary(_plan_result, content)
+                                if _hs:
+                                    from .swarm.helpers import _insert_message as _im_hs
+                                    _im_hs(_cid_auto, _hs, sender_agent_id=sender_agent_id or agent_id)
+                            except Exception as _e_hs:
+                                print("[C1] human_summary 推送失败: " + str(_e_hs))
                         # v0.37.0: plan_task 返回 None 或 no_plan/error 时立即结束 run，避免卡死会话锁
                         if _plan_result is None or _plan_result.get('status') in ('no_plan', 'error'):
                             try:
@@ -1220,6 +1261,13 @@ async def send_message(
                     reply = "未找到可用智能体，请先在模型管理中创建。"
                 else:
                     reply = "执行失败，请重试。"
+                # C1: 用 human_summary 覆盖 reply
+                try:
+                    _hs2 = _build_human_summary(plan_result, content)
+                    if _hs2:
+                        reply = _hs2
+                except Exception as _e_hs2:
+                    print("[C1] human_summary 兜底失败: " + str(_e_hs2))
 
                 return {
                     "conversation_id": conversation_id,
