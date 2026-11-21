@@ -1,0 +1,19 @@
+{
+  "id": "fake_async",
+  "name": "异步测试工具",
+  "description": "用于验证异步任务池：提交后立即返回 handle，poll 到时间后完成。参数 seconds 默认 10。",
+  "version": "0.1.0",
+  "entrypoint": "main.py",
+  "task_mode": "async",
+  "capabilities": [
+    "fake_async"
+  ],
+  "permissions": [],
+  "params": {
+    "seconds": {
+      "type": "int",
+      "default": 10,
+      "desc": "模拟耗时（秒）"
+    }
+  }
+}

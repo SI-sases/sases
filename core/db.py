@@ -1303,6 +1303,29 @@ def init_db():
             )
         """)
 
+        # ========== 异步任务池（P2） ==========
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS async_task_pool (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                handle TEXT UNIQUE NOT NULL,
+                tool_id TEXT NOT NULL,
+                params TEXT,
+                status TEXT DEFAULT 'submitted',
+                progress INTEGER DEFAULT 0,
+                result TEXT,
+                error TEXT,
+                run_id INTEGER,
+                conversation_id INTEGER,
+                user_id INTEGER,
+                created_at TEXT,
+                updated_at TEXT,
+                finished_at TEXT,
+                expires_at TEXT
+            )
+        """)
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_async_pool_status ON async_task_pool(status, updated_at)")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_async_pool_run ON async_task_pool(run_id)")
+
 
         # ========== 积分库（v0.20） ==========
         cur.execute("""

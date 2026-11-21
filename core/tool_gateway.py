@@ -54,6 +54,14 @@ def _route(module_id: str, params: Dict[str, Any]) -> ToolInvokeResponse:
     if _guard:
         return _guard
 
+    # 异步工具：提交到任务池，立即返回 handle
+    try:
+        from core.services import async_task_service
+        if async_task_service.is_async_tool(module_id):
+            return async_task_service.submit(module_id, params)
+    except Exception as _e_async:
+        print("[gateway] async 路由失败: " + str(_e_async))
+
     if module_id.startswith("ext_api_"):
         try:
             api_id = int(module_id[len("ext_api_"):])
