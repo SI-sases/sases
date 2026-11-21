@@ -13,7 +13,7 @@ import './me_settings.js';
 import './me_memory.js';
 import './pet.js';
 import './base.js';
-import './chat_trace.js';
+import './chat_trace.js?v=2';
 import './chat_history_rail.js';
 import './onboarding.js';
 import { openSubpage, closeSubpage } from './subpage.js';

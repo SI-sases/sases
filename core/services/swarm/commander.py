@@ -500,6 +500,17 @@ async def plan_task(
             "executor_id": executor_id
         }
 
+    # run_trace: 任务启动（L1 里程碑）
+    try:
+        from .. import trace_service as _trace_svc
+        _trace_svc.emit(
+            task.get("supervisor_run_id"), conversation_id, 1, "task_start",
+            content="任务已拆解为 " + str(len(steps)) + " 步",
+            status="running",
+        )
+    except Exception as _e_tr:
+        print("[trace] task_start 写入失败: " + str(_e_tr))
+
     task_payload = {"task_id": task_id, "steps": steps}
     task_msg = "[TASK]:" + json.dumps(task_payload, ensure_ascii=False)
     _insert_message(conversation_id, task_msg, sender_agent_id=commander_id)

@@ -535,6 +535,18 @@ async def _execute_task(task: Dict[str, Any]):
         desc = step.get("description", "")
         step_type = "command" if str(step.get("command") or "").strip() else ("harness" if step.get("module_id") else step.get("type", "command"))
 
+        # run_trace: 步骤开始（失败不影响执行）
+        try:
+            from . import trace_service as _trace_svc
+            _trace_svc.emit(
+                task.get("supervisor_run_id"), conversation_id, 2, "step_start",
+                content="步骤 " + str(step_id) + "：" + str(desc)[:120],
+                tool=str(step.get("module_id") or step.get("command") or "")[:80],
+                status="running",
+            )
+        except Exception as _e_tr:
+            print("[trace] step_start 写入失败: " + str(_e_tr))
+
         print(f"[executor] task={task_id} step={step_id} type={step_type}")
 
         if step_type == "harness":
@@ -639,6 +651,20 @@ async def _execute_task(task: Dict[str, Any]):
             print(f"[executor] 汇报失败: {e}")
             return
 
+        # run_trace: 步骤结果（先落库，再 WS 推送）
+        _trace_seq = 0
+        try:
+            from . import trace_service as _trace_svc
+            _ev = _trace_svc.emit(
+                task.get("supervisor_run_id"), conversation_id, 2, "step_done",
+                content=str(payload.get("display") or output or "")[:1000],
+                tool=str(step.get("module_id") or step.get("command") or "")[:80],
+                status=status, duration_ms=dur,
+            )
+            _trace_seq = _ev.get("seq", 0)
+        except Exception as _e_tr:
+            print("[trace] step_done 写入失败: " + str(_e_tr))
+
         # P3-C3: 每步推送 trace 到子窗口
         try:
             from ..broadcast.ws_hub import broadcast_to_user as _btu_c3
@@ -647,6 +673,9 @@ async def _execute_task(task: Dict[str, Any]):
                 "run_id": task.get("supervisor_run_id"),
                 "conversation_id": conversation_id,
                 "task_id": task_id,
+                "seq": _trace_seq,
+                "level": 2,
+                "event_type": "step_done",
                 "step": step_id,
                 "total": len(task.get("steps") or []),
                 "tool": str(step.get("module_id") or step.get("command") or "")[:100],

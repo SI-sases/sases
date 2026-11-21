@@ -299,6 +299,12 @@ def cleanup_all() -> dict:
         print('[cleanup] task_state 清理失败: ' + str(e))
 
     try:
+        from . import trace_service as _trace_svc
+        result['run_trace'] = _trace_svc.cleanup()
+    except Exception as e:
+        print('[cleanup] run_trace 清理失败: ' + str(e))
+
+    try:
         _tm = scan_test_marks(dry_run=True)
         result['test_marks_found'] = _tm['count']
         result['test_marks_detail'] = _tm['findings'][:10]
