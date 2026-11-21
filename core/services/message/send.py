@@ -382,7 +382,7 @@ async def send_message(
             'retry_count': 0,
             'is_draft': False,
             'supervisor_id': sender_agent_id or agent_id,
-            'supervisor_run_id': None,
+            'supervisor_run_id': locals().get('_supervisor_run_id'),
         }
         from ..swarm.persistence import _save_pending as _sp0
         _sp0(_task0)
@@ -763,7 +763,10 @@ async def send_message(
             if _force_swarm:
                 is_task = True
             else:
-                is_task = await intent_service.is_task_intent(content)
+                try:
+                    is_task = await intent_service.is_task_intent_with_history(content, conversation_id)
+                except NameError:
+                    is_task = await intent_service.is_task_intent(content)
             print(f"[MSG_DEBUG] is_task={is_task}")
 
             # 图片导入知识库
@@ -1165,6 +1168,28 @@ async def send_message(
                             )
                     except Exception as _e:
                         print(f"[supervisor] 回执失败: {_e}")
+
+                # FIX_RUN_ID_v2: plan_task 前补建 run
+                if not locals().get('_supervisor_run_id'):
+                    try:
+                        from ..supervisor import runs as _runs_v2
+                        from ..supervisor_service import classify_task_type as _ctt_v2  # 若无则走下面兜底
+                    except Exception:
+                        _runs_v2 = None
+                        _ctt_v2 = None
+                    if _runs_v2:
+                        try:
+                            _tt_v2 = _ctt_v2(content) if _ctt_v2 else 'swarm'
+                            _mr_v2 = max_steps if max_steps else None
+                            _sup_v2 = sender_agent_id or agent_id or ""
+                            _supervisor_run_id = _runs_v2.create_run(
+                                user_id, conversation_id, _sup_v2, content,
+                                task_type=_tt_v2, max_rounds=_mr_v2
+                            )
+                            print("[FIX_RUN_ID_v2] 主流程补建 run_id=" + str(_supervisor_run_id) + " conv=" + str(conversation_id))
+                        except Exception as _e_v2:
+                            print("[FIX_RUN_ID_v2] 补建失败: " + str(_e_v2))
+                            _supervisor_run_id = None
 
                 plan_result = await swarm_service.plan_task(
                     user_id=user_id,

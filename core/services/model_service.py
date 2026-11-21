@@ -65,10 +65,16 @@ def update_model_share(user_id: int, model_id: str, is_shared: int, visibility: 
     return True
 
 def delete_model(user_id: int, model_id: str):
-    """删除模型配置"""
+    """删除模型配置（级联清理子表，避免外键约束崩溃）"""
     with db_cursor(commit=True) as cur:
+        cur.execute("SELECT id FROM model_configs WHERE id=? AND user_id=?", (model_id, user_id))
+        row = cur.fetchone()
+        if not row:
+            return {"status": "ok", "deleted": False}
+        cur.execute("DELETE FROM messages WHERE conversation_id IN (SELECT id FROM conversations WHERE model_id=?)", (model_id,))
+        cur.execute("DELETE FROM conversations WHERE model_id=?", (model_id,))
         cur.execute("DELETE FROM model_configs WHERE id=? AND user_id=?", (model_id, user_id))
-    return True
+    return {"status": "ok", "deleted": True}
 
 def parse_capabilities(model_config) -> dict:
     """解析 model_config 的 capabilities 字段，返回 dict"""

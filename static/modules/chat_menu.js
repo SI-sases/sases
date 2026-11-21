@@ -159,6 +159,8 @@ export function showContextMenu(x, y, wrapper, chatState) {
   menu.innerHTML = `
     <div class="context-menu-item" data-action="quote" style="padding:10px 16px; cursor:pointer;">引用</div>
     <div class="context-menu-item" data-action="reply" style="padding:10px 16px; cursor:pointer;">帮我回复</div>
+    <div class="context-menu-item" data-action="execute" style="padding:10px 16px; cursor:pointer;">帮我执行</div>
+    <div class="context-menu-item" data-action="delete" style="padding:10px 16px; cursor:pointer; color:#ff3b30;">删除</div>
   `;
   menu.style.display = 'block';
   menu.style.left = x + 'px';
@@ -167,6 +169,77 @@ export function showContextMenu(x, y, wrapper, chatState) {
   menu.querySelector('[data-action="quote"]').addEventListener('click', () => {
     chatState.pendingQuote = wrapper.dataset.content;
     showQuoteBar(chatState.pendingQuote, chatState);
+    closeContextMenu();
+  });
+
+  // FIX_MENU_V2: 帮我执行 → 填入草稿前缀（用户发送后出黄卡）
+  menu.querySelector('[data-action="execute"]').addEventListener('click', async () => {
+    // FIX_EXECUTE_V2: 收集上下文 → AI 生成 #4 指令 → 填入输入框
+    const input = document.getElementById('chat-input');
+    if (!input) { closeContextMenu(); return; }
+    closeContextMenu();
+
+    // 收集最近 5 条消息
+    const _container = document.getElementById('chat-messages');
+    const _recent = [];
+    if (_container) {
+      const _rows = Array.from(_container.querySelectorAll('.message-row')).slice(-5);
+      for (const r of _rows) {
+        const _isUser = r.classList.contains('user');
+        const _bubble = r.querySelector('.message');
+        const _txt = _bubble ? (_bubble.textContent || '').trim() : '';
+        if (_txt) _recent.push({ role: _isUser ? 'user' : 'assistant', content: _txt });
+      }
+    }
+    if (!_recent.length) {
+      const _fallback = wrapper.dataset.content || '';
+      if (_fallback) _recent.push({ role: 'user', content: _fallback });
+    }
+
+    const _oldPlaceholder = input.placeholder;
+    input.placeholder = '🤔 AI 正在生成执行指令...';
+    input.disabled = true;
+
+    try {
+      const _data = await api.suggestExecute(_recent);
+      const _ins = (_data && (_data.instruction || _data.task)) || '';
+      if (!_ins) throw new Error('空指令');
+      input.value = _ins;
+      if (typeof window.updateSendButtonVisibility === 'function') window.updateSendButtonVisibility();
+    } catch (e) {
+      console.error('[execute] generate failed:', e);
+      const _fb = wrapper.dataset.content || '';
+      input.value = '#4: 请执行以下操作：' + _fb.slice(0, 300);
+      if (typeof window.updateSendButtonVisibility === 'function') window.updateSendButtonVisibility();
+    } finally {
+      input.placeholder = _oldPlaceholder || '输入消息...';
+      input.disabled = false;
+      input.focus();
+      input.setSelectionRange(input.value.length, input.value.length);
+    }
+  });
+
+  // FIX_MENU_V2: 删除单条消息
+  menu.querySelector('[data-action="delete"]').addEventListener('click', async () => {
+    const messageId = wrapper.dataset.messageId;
+    if (!messageId) { alert('未选中消息'); return; }
+    if (!confirm('确定删除这条消息？')) { closeContextMenu(); return; }
+    try {
+      const token = localStorage.getItem('sases_token') || '';
+      const resp = await fetch('/messages/message/' + messageId, {
+        method: 'DELETE',
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      if (resp.ok) {
+        wrapper.remove();
+      } else if (resp.status === 404) {
+        alert('后端未提供删除消息接口');
+      } else {
+        alert('删除失败: HTTP ' + resp.status);
+      }
+    } catch (e) {
+      alert('删除失败：' + (e.message || e));
+    }
     closeContextMenu();
   });
 

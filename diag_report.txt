@@ -1,0 +1,84 @@
+=== [1] model_configs samples ===
+('sases_api_4qlsyero', '调度', 'deepseek', None, 'api', '{"supports_vision": true, "supports_image_edit": false, "supports_video": false}')
+('sases_api_bxcuambm', '指挥', 'deepseek', None, 'api', '{"supports_vision": true, "supports_image_edit": false, "supports_video": false}')
+('sases_api_5wt6eg3m', '执行', 'deepseek', None, 'api', '{"supports_vision": true, "supports_image_edit": false, "supports_video": false}')
+
+=== [2] model_service.py 关键行 ===
+22: def create_api_key_model(user_id: int, name: str, provider: str, api_key: str, priority: int = 1):
+35: def create_local_model(user_id: int, name: str, node_url: str, model_name: str, capabilities: str = None):
+40: INSERT INTO model_configs (id, user_id, model_type, name, node_url, model_name, capabilities)
+42: """, (model_id, user_id, name, node_url, model_name, capabilities))
+49: SELECT id, model_type, name, provider, node_url, model_name, capabilities, is_shared, visibility, price
+
+=== [3] 全局搜 默认模型名 / context_window / max_tokens ===
+core/config.py:25: MODEL_NAME = os.environ.get("MODEL_NAME", "deepseek-v4-flash")
+core/config.py:37: VISION_MODEL_NAME = os.environ.get("VISION_MODEL_NAME", "deepseek-v4-flash-vision-exp")
+core/config.py:40: "deepseek": {"model": "deepseek-v4-flash-vision-exp", "supports_image": True},
+core/config.py:55: "deepseek": "deepseek-v4-flash-vision-exp",
+core/config.py:76: "deepseek-chat": "deepseek",
+core/config_models.py:23: MODEL_NAME = _model_cfg.model_name
+core/config_models.py:24: VISION_MODEL_NAME = _model_cfg.vision_model_name
+
+=== [4] unified_context.py ===
+exists: False
+
+=== [5] commander.plan_task 签名+前20行 ===
+76: async def plan_task(
+77:     user_id: int,
+78:     conversation_id: int,
+79:     user_input: str,
+80:     commander_id: str = None,
+81:     executor_id: str = None,
+82:     timeout: int = 30,
+83:     require_confirmation: bool = False,
+84:     supervisor_id: str = None,
+85:     supervisor_run_id: int = None,
+86:     max_steps: int = None,
+87:     enabled_api_ids: list = None
+88: ) -> Dict[str, Any]:
+89:     if conversation_id and _has_active_task_in_conversation(conversation_id):
+90:         err_msg = "[SUMMARY]:当前会话有正在执行的任务，请等待完成或取消后再提交新任务。"
+91:         _insert_message(conversation_id, err_msg, sender_agent_id=None)
+92:         print(f"[swarm] 会话 {conversation_id} 已有活跃任务，拒绝新任务")
+93:         return {"status": "busy", "message": "会话已有运行中的任务"}
+94: 
+95:     if not commander_id or not executor_id:
+96:         auto_cmd, auto_exec = pick_swarm_agents(user_id)
+
+=== [6] intent_service.is_task_intent 签名 ===
+139: async def is_task_intent(content: str) -> bool:
+140:     """
+141:     判断用户输入是否为可执行任务
+142:     """
+143:     if not content or not content.strip():
+144:         return False
+145: 
+146:     # 上下文疑问句：优先判为对话（避免"刚才你改了什么"被误判为任务）
+147:     _ctx_q_prefixes = ('刚才', '你刚才', '刚刚', '上次', '之前', '你之前', '前面你', '前面那', '刚刚那')
+148:     _ctx_q_kws = ('哪一行', '哪个文件', '哪一处', '哪一个', '是什么', '是什么样', '还记得', '记得吗', '在哪', '哪几行', '哪个位置')
+149:     _text_stripped = content.strip()
+
+=== [7] send.py is_task_intent 调用点 ===
+766:                 is_task = await intent_service.is_task_intent(content)
+
+=== [8] me_models.js provider/model_name 相关 ===
+17: const detail = m.model_type === 'local' ? `${m.model_name} @ ${m.node_url}` : `${m.provider}`;
+84: <span class="menu-label">${t('provider')}</span>
+85: <select id="api-provider-input" class="inline-input">
+94: <input type="text" id="api-provider-custom-input" class="inline-input" placeholder="custom provider" style="display:none;">
+109: const _sel = document.getElementById('api-provider-input');
+110: const _cus = document.getElementById('api-provider-custom-input');
+119: let provider = document.getElementById('api-provider-input').value.trim();
+120: if (provider === 'custom') {
+121: provider = document.getElementById('api-provider-custom-input').value.trim();
+124: if (!name || !provider || !api_key) { alert(t('enter_all')); return; }
+126: await api.addApiKey({ name, provider, api_key, priority: 1 });
+151: <span class="menu-label">${t('model_name')}</span>
+163: const model_name = document.getElementById('local-model-input').value.trim();
+164: if (!name || !node_url || !model_name) { alert(t('enter_all')); return; }
+166: await api.addLocalModel({ name, node_url, model_name });
+
+=== [9] conversations 是否有 active_task_* ===
+active_task_id: True
+active_task_status: True
+active_task_snapshot: True

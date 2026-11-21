@@ -206,3 +206,51 @@ def classify_session_intent(content: str, conversation_id: int = None) -> str:
     if any(w in s for w in _QUERY_WORDS):
         return "query"
     return "new_task"
+
+
+
+async def is_task_intent_with_history(content: str, conversation_id: int = None) -> bool:
+    """FIX_MENU_V2: 有 doc_paste + 短消息时用 LLM 判断元反馈 vs 执行指令"""
+    if conversation_id:
+        try:
+            _s = (content or "").strip()
+            if _s and len(_s) < 50:
+                from core.services.unified_context import _load_history
+                _h = _load_history(conversation_id, 10)
+                _has_doc = any(m.get("is_doc") for m in _h)
+                if _has_doc:
+                    _judge = (
+                        "用户在最近刚粘贴了一大段方案/文档，现在说了这句话：\n"
+                        "「" + _s + "」\n\n"
+                        "请判断意图，只回答 A 或 B：\n"
+                        "A) 元反馈：表示\"好的/收到/别执行/只回复/谢谢/了解\"等，不是让系统执行方案\n"
+                        "B) 执行指令：表示\"按方案执行/开始做/执行某步骤\"等，要让系统执行方案"
+                    )
+                    try:
+                        _resp = await asyncio.to_thread(
+                            client.chat.completions.create,
+                            model=MODEL,
+                            messages=[{"role": "user", "content": _judge}],
+                            temperature=0,
+                            max_tokens=5,
+                        )
+                        _ans = (_resp.choices[0].message.content or "").strip().upper()[:1]
+                        if _ans == "A":
+                            print("[intent] 上下文LLM：元反馈 → 聊天")
+                            return False
+                        elif _ans == "B":
+                            print("[intent] 上下文LLM：执行指令 → 任务")
+                            return True
+                    except Exception as _e_j:
+                        print("[intent] 上下文LLM失败，回落: " + str(_e_j))
+            # 兜底：短执行指令 + 有 doc_paste → 任务
+            _hints = ("执行", "按", "根据", "照", "继续", "做", "开始", "跑")
+            if _s and len(_s) < 50 and any(_s.startswith(h) for h in _hints):
+                from core.services.unified_context import _load_history
+                _h = _load_history(conversation_id, 20)
+                if any(m.get("is_doc") for m in _h):
+                    print("[intent] 短执行指令 + 有doc → 任务")
+                    return True
+        except Exception as e:
+            print("[intent] is_task_intent_with_history failed: " + str(e))
+    return await is_task_intent(content)
