@@ -348,7 +348,7 @@ async def plan_task(
             print(f'[state] inject failed: {_se}')
     try:
         from ... import harness_runtime as _hr
-        _tools = _hr.harness_runtime.list_tools()
+        _tools = sorted(_hr.harness_runtime.list_tools(), key=lambda t: getattr(t, 'module_id', '') or '')
         if enabled_tool_ids:
             _allow_tools = set(str(x) for x in enabled_tool_ids)
             _tools = [t for t in _tools if getattr(t, 'module_id', '') in _allow_tools]
