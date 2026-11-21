@@ -27,6 +27,7 @@ def tool_slim_report(days: int = 30, user_id: int = Depends(get_current_user_id)
     from ..services import tool_usage_service
     from .. import harness_runtime
     usage = {r["tool_id"]: r for r in tool_usage_service.summary(user_id, days)}
+    history = tool_usage_service.historical_counts()
     rows = []
     try:
         tools = harness_runtime.harness_runtime.list_tools()
@@ -37,17 +38,20 @@ def tool_slim_report(days: int = 30, user_id: int = Depends(get_current_user_id)
         if not mid:
             continue
         u = usage.get(mid) or {}
+        calls = int(u.get("calls") or 0)
+        hist = int(history.get(mid) or 0)
         rows.append({
             "tool_id": mid,
             "name": getattr(t, "name", "") or "",
             "core": mid not in harness_runtime.EXTENSION_TOOL_IDS,
-            "calls": int(u.get("calls") or 0),
+            "calls": calls,
+            "historical_calls": hist,
             "success_rate": u.get("success_rate") or 0.0,
-            "suggestion": "keep" if int(u.get("calls") or 0) > 0 else "hide_or_archive",
+            "suggestion": "keep" if (calls > 0 or hist > 0) else "hide_or_archive",
         })
-    rows.sort(key=lambda r: (r["calls"], r["core"]))
+    rows.sort(key=lambda r: (r["calls"], r["historical_calls"], r["core"]))
     return {"days": days, "tools": rows,
-            "zero_use": [r["tool_id"] for r in rows if r["calls"] == 0]}
+            "zero_use": [r["tool_id"] for r in rows if r["calls"] == 0 and r["historical_calls"] == 0]}
 
 ADMIN_TOKEN_FILE = os.path.join("data", "tools_admin_token.txt")
 

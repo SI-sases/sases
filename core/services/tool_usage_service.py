@@ -42,6 +42,30 @@ def summary(user_id=None, days=30):
     return rows
 
 
+def historical_counts(limit=50000):
+    """读取 data/harness_usage.log 的历史调用次数（用于新统计上线前的判断）。"""
+    import json
+    import os
+    counts = {}
+    path = os.path.join(os.getcwd(), "data", "harness_usage.log")
+    if not os.path.exists(path):
+        return counts
+    try:
+        with open(path, "r", encoding="utf-8", errors="ignore") as f:
+            for i, line in enumerate(f):
+                if i > limit:
+                    break
+                try:
+                    mid = json.loads(line).get("module_id")
+                except Exception:
+                    continue
+                if mid:
+                    counts[mid] = counts.get(mid, 0) + 1
+    except Exception as e:
+        print("[tool_usage] 历史日志读取失败: " + str(e))
+    return counts
+
+
 def prune(days=180):
     with db_cursor(commit=True) as cur:
         cur.execute("DELETE FROM tool_usage_daily WHERE day < date('now', ?)", ("-%d days" % int(days),))
