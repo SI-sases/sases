@@ -348,6 +348,7 @@ f) 改 core/ 后在 description 提醒"需重启服务"
   * 读文件 → file_read
   * 搜索 → grep_code
   * 跑脚本 → run_python
+- 外部 API：module_id=ext_api_<id>，只允许使用【本次已勾选的外部 API】里列出的项；params 按该 API 的说明传
 
 
 【plan 输出格式铁律（v3，必读·顺序不能错）】
