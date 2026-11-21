@@ -78,6 +78,18 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
             agent_memory.append(conversation_id, "assistant", content)
             messages.append({"role": "assistant", "content": content})
             if _question:
+                if not run_id:
+                    try:
+                        from core.db import db_cursor
+                        with db_cursor(commit=True) as _c_q:
+                            _c_q.execute(
+                                "INSERT INTO supervisor_runs (user_id, conversation_id, supervisor_id, goal, status, current_round, max_rounds, history, task_type) "
+                                "VALUES (?,?,?,?,'waiting_user',0,10,'[]','unknown')",
+                                (user_id, conversation_id, "sases_assistant", str(goal or "")),
+                            )
+                            run_id = _c_q.lastrowid
+                    except Exception as _e_qr:
+                        print("[ask_user] 创建 run 失败: " + str(_e_qr))
                 qid = _ask_create(conversation_id, _question, run_id)
                 try:
                     from ..api_routes.ws_routes import broadcast_to_user
@@ -90,7 +102,7 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
                 except Exception as e:
                     print("[ask_user] 广播失败: " + str(e))
                 return {"status": "awaiting_user", "content": content,
-                        "question": _question, "question_id": qid,
+                        "question": _question, "question_id": qid, "run_id": run_id,
                         "steps": step, "history": used}
             review = ""
             _need_review = (mode == "strict"

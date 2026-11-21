@@ -109,7 +109,7 @@ async def resume_run(run_id, answer_text):
     try:
         res = await agent_loop.run(
             run["user_id"], run["conversation_id"], answer_text,
-            max_steps=10, run_id=run_id, mode="strict",
+            max_steps=10, run_id=run_id, mode="strict", resume=True,
         )
     except Exception as e:
         _finish(run_id, run["conversation_id"], run["supervisor_id"], "failed",
