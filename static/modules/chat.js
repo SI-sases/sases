@@ -1,4 +1,4 @@
-import { initParamBar, getParamMaxSteps } from './param_bar.js';
+import { initParamBar, getParamMaxSteps, getAgentMode } from './param_bar.js';
 // static/modules/chat.js
 import { api } from './api.js';
 
@@ -319,6 +319,7 @@ async function sendMessage() {
       sender_agent_id: chatState.senderAgentId,
       mode: chatState.mode,
       max_steps: _maxSteps,
+      agent_mode: (typeof getAgentMode === 'function' ? getAgentMode() : 'auto'),
       enabled_api_ids: (window.currentSessionAPIs || []),
       enabled_tool_ids: (window.currentSessionTools || []),
       enabled_skill_ids: (window.currentSessionSkills || [])
