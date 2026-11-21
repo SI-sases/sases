@@ -151,6 +151,19 @@ def _validate_package(pkg_dir: str) -> Dict[str, Any]:
     return {"manifest": manifest, "id": mid, "entrypoint": entry}
 
 
+def _rmtree(path: str) -> None:
+    import stat
+
+    def _onerror(func, p, exc_info):
+        try:
+            os.chmod(p, stat.S_IWRITE)
+            func(p)
+        except Exception:
+            pass
+
+    shutil.rmtree(path, onerror=_onerror)
+
+
 def _install_dir(pkg_dir: str, meta: Dict[str, Any], force: bool = False) -> Dict[str, Any]:
     from core import tool_registry
 
@@ -167,7 +180,8 @@ def _install_dir(pkg_dir: str, meta: Dict[str, Any], force: bool = False) -> Dic
 
     os.makedirs(EXTERNAL_DIR, exist_ok=True)
     try:
-        shutil.copytree(pkg_dir, target)
+        shutil.copytree(pkg_dir, target, ignore=shutil.ignore_patterns(
+            ".git", ".github", "__pycache__", "*.pyc", ".DS_Store"))
     except Exception as e:
         raise InstallError("写入工具目录失败: " + str(e))
 
@@ -279,7 +293,7 @@ def uninstall(module_id: str) -> Dict[str, Any]:
         raise InstallError("只能卸载外部工具: " + module_id)
     target = os.path.join(EXTERNAL_DIR, module_id)
     if os.path.isdir(target):
-        shutil.rmtree(target, ignore_errors=True)
+        _rmtree(target)
     tool_registry.remove(module_id)
     try:
         from core.harness_runtime import harness_runtime
