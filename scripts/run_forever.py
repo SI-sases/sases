@@ -30,6 +30,17 @@ PORT = int(os.environ.get("SASES_PORT", "8001"))
 HOST = os.environ.get("SASES_HOST", "0.0.0.0")
 RESTART_SIGNAL = os.path.join(ROOT, "restart_signal.txt")
 
+# 端口守卫：避免重复启动两个 wrapper/uvicorn 抢 8001
+import socket as _socket
+_guard = _socket.socket(_socket.AF_INET, _socket.SOCK_STREAM)
+try:
+    _guard.bind(("127.0.0.1", PORT))
+except OSError:
+    print("[wrapper] port " + str(PORT) + " already in use, exit to avoid duplicate server", flush=True)
+    sys.exit(1)
+finally:
+    _guard.close()
+
 if __name__ == "__main__":
     restart_count = 0
     while True:

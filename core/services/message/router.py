@@ -18,7 +18,7 @@ def normalize_prefix(content):
 
 
 def should_fast(agent_mode, content, enabled_tool_ids=None):
-    """B2: 决定是否走 fast 单 Agent；保守策略，失败会自动回退 strict。"""
+    """C4: 默认 fast；只有显式 strict / 高风险才走四角色。"""
     mode = (agent_mode or "").strip().lower()
     if mode == "strict":
         return False
@@ -27,9 +27,10 @@ def should_fast(agent_mode, content, enabled_tool_ids=None):
     s = (content or "").strip()
     if not s or s.startswith("#"):
         return False
-    if len(s) > 300:
+    if any(k in s for k in ("严格", "四角色", "strict", "Strict")):
         return False
-    _heavy = ("改", "实现", "修复", "迁移", "重构", "批量", "部署", "发布", "删除", "所有文件")
-    if any(k in s for k in _heavy):
+    if any(k in s for k in ("批量", "所有文件", "部署", "发布", "迁移", "删库")):
+        return False
+    if len(s) > 800:
         return False
     return True
