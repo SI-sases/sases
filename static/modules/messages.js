@@ -71,6 +71,10 @@ async function loadConversations(container) {
       const pinnedVal = conv.is_pinned ? 1 : 0;
       const lastSenderName = escapeHtml(conv.last_sender_name || '');
       const displayLast = lastSenderName ? `${lastSenderName}: ${lastMessage}` : lastMessage;
+      const _modelLine = (!conv.is_friend_chat && (conv.provider || conv.model_name))
+        ? [conv.provider, conv.model_name].filter(Boolean).join(' · ') : '';
+      const _sid = conv.agent_id ? String(conv.agent_id).slice(-6) : '';
+      const _sub = _modelLine ? (_modelLine + (_sid ? ' · #' + _sid : '')) : '';
 
       html += `
         <div class="session-item ${pinned}" data-type="single" data-conversation-id="${conv.id}" data-agent-id="${conv.agent_id || ''}" data-title="${agentName}" data-target-user-id="${conv.target_user_id || ''}" data-is-friend="${conv.is_friend_chat || 0}" data-friend-mode="${conv.friend_mode || 'normal'}">
@@ -80,6 +84,7 @@ async function loadConversations(container) {
           </div>
           <div class="session-info">
             <div class="session-name">${agentName}</div>
+            ${_sub ? `<div class="session-sub" style="font-size:11px;color:#999;margin-top:1px;">${escapeHtml(_sub)}</div>` : ''}
             <div class="session-last">${displayLast}</div>
           </div>
           <button class="session-more-btn" data-type="single" data-id="${conv.id}" data-pinned="${pinnedVal}">⋯</button>
