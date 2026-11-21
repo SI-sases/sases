@@ -46,12 +46,30 @@ async def activate(req: ActivateRequest):
             raise HTTPException(status_code=400, detail="卡密不存在")
         if row["banned_at"]:
             raise HTTPException(status_code=400, detail="卡密已被封禁")
-        if row["status"] not in ("unused", "active"):
+        if row["status"] == "banned":
+            raise HTTPException(status_code=400, detail="卡密已被封禁")
+        if row["status"] not in ("unused", "active", "used"):
             raise HTTPException(status_code=400, detail=f"卡密状态异常: {row['status']}")
 
-        expire_at = (now + timedelta(days=row["duration_days"])).isoformat()
+        # 一次性卡密：先看该卡是否已经绑定过设备
+        cur.execute(
+            "SELECT user_id, device_fingerprint, expire_at FROM device_bindings WHERE license_key=? LIMIT 1",
+            (req.key_code,),
+        )
+        bind = cur.fetchone()
+        if bind:
+            same_device = (int(bind["user_id"]) == int(req.user_id)
+                           and str(bind["device_fingerprint"]) == str(req.device_fingerprint))
+            if not same_device:
+                raise HTTPException(status_code=400, detail="卡密已激活（一次性），不能绑定其他设备或账号")
+            # 同一设备重装客户端：允许补发，沿用原到期时间
+            expire_at = bind["expire_at"] or (now + timedelta(days=row["duration_days"])).isoformat()
+        else:
+            if row["status"] == "used":
+                raise HTTPException(status_code=400, detail="卡密已使用，无法再次激活")
+            expire_at = (now + timedelta(days=row["duration_days"])).isoformat()
 
-        # 覆盖绑定：同一 user+fp 只留一条（支持重装客户端后重新激活）
+        # 覆盖绑定：同一 user+fp 只留一条
         cur.execute(
             "DELETE FROM device_bindings WHERE user_id=? AND device_fingerprint=?",
             (req.user_id, req.device_fingerprint),
@@ -66,8 +84,8 @@ async def activate(req: ActivateRequest):
         )
 
         cur.execute(
-            "UPDATE license_keys SET status='active' WHERE key_code=?",
-            (req.key_code,),
+            "UPDATE license_keys SET status='used', used_at=?, used_by=?, device_fp=? WHERE key_code=?",
+            (now.isoformat(), req.user_id, req.device_fingerprint, req.key_code),
         )
 
     sig = _sign_license(req.user_id, req.device_fingerprint, expire_at)

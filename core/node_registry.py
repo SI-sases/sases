@@ -9,7 +9,6 @@ class NodeRegistry:
     """节点注册与持久化（SQLite）"""
 
     def __init__(self):
-        init_db()
         self._register_self()
 
     def _register_self(self):

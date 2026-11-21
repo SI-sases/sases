@@ -42,7 +42,13 @@ def _ensure_column(cur, table: str, column: str, definition: str):
     if column not in existing:
         cur.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
 
+_INIT_DONE = False
+
+
 def init_db():
+    global _INIT_DONE
+    if _INIT_DONE:
+        return
     with db_cursor(commit=True) as cur:
         # ========== 用户表 ==========
         cur.execute("""
@@ -1385,9 +1391,16 @@ def init_db():
         """)
         _ensure_column(cur, "license_keys", "banned_at", "TEXT")
         _ensure_column(cur, "license_keys", "ban_reason", "TEXT")
+        _ensure_column(cur, "license_keys", "used_at", "TEXT")
+        _ensure_column(cur, "license_keys", "used_by", "INTEGER")
+        _ensure_column(cur, "license_keys", "device_fp", "TEXT")
         _ensure_column(cur, "device_bindings", "license_key", "TEXT")
 
         cur.execute("CREATE INDEX IF NOT EXISTS idx_device_bindings_key ON device_bindings(license_key)")
+        try:
+            cur.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_device_bindings_license_unique ON device_bindings(license_key)")
+        except Exception as _e_uniq:
+            print("[db] device_bindings 卡密唯一索引创建失败（可能已有重复绑定）: " + str(_e_uniq))
 
         cur.execute("""
             CREATE TABLE IF NOT EXISTS exec_audit (
@@ -1411,6 +1424,8 @@ def init_db():
             )
         """)
         print("[db] 商业化卡密 + 执行审计 + 系统配置表就绪")
+
+    _INIT_DONE = True
 
 if __name__ == '__main__':
     init_db()
