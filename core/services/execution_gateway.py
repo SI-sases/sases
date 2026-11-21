@@ -42,6 +42,26 @@ def _finish(run_id, conversation_id, supervisor_id, status, content, source):
     text = str(content or "").strip()
     if not text:
         text = "✅ 已完成" if status == "completed" else "⚠️ 任务未完成：" + str(status)
+    if os.getenv("SASES_MEMORY_WRITE", "0") == "1" and status == "completed":
+        try:
+            from . import memory_service, project_service
+            with db_cursor() as _mc:
+                _mc.execute("SELECT user_id, goal FROM supervisor_runs WHERE id=?", (run_id,))
+                _mr = _mc.fetchone()
+            if _mr:
+                _uid = int(_mr["user_id"])
+                _goal = str(_mr["goal"] or "")
+                try:
+                    memory_service.remember(_uid, "task_result", text[:2000],
+                                            task_id=str(run_id), importance=0.6)
+                except Exception as _e_mem:
+                    print("[memory] 写入失败: " + str(_e_mem))
+                try:
+                    project_service.import_execution_note(str(run_id), _uid, _goal, text[:2000], "", "success")
+                except Exception as _e_pj:
+                    print("[project] 写入失败: " + str(_e_pj))
+        except Exception as _e_m4:
+            print("[memory] M4 写入失败: " + str(_e_m4))
     if source == "group":
         try:
             from . import group_service
