@@ -101,8 +101,13 @@ export async function openGroupChat(groupId, groupName) {
   }
   const _chatInput = document.getElementById('chat-input');
   if (_chatInput) {
+    if (!_chatInput.dataset.origPh) _chatInput.dataset.origPh = _chatInput.placeholder || '';
     _chatInput.oninput = () => {
       if (window.updateSendButtonVisibility) window.updateSendButtonVisibility();
+      const v = (_chatInput.value || '').trim();
+      _chatInput.placeholder = v.startsWith('@')
+        ? '陪聊直接发；要执行请写：执行：你的任务'
+        : (_chatInput.dataset.origPh || '聊天、执行命令或任务：描述');
     };
   }
   let _sendBtn = document.getElementById('send-btn');

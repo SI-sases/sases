@@ -34,7 +34,10 @@ export function showProposedRunCard(runId) {
   rejectBtn.onclick = async () => {
     try {
       await api.rejectRun(runId);
-      wrap.remove();
+      btnGroup.remove();
+      title.textContent = '已拒绝，已通知对方';
+      wrap.style.borderColor = '#ddd';
+      wrap.style.background = '#f5f5f5';
     } catch (e) {
       alert('取消失败：' + (e.message || '未知错误'));
     }
@@ -53,7 +56,8 @@ export function showProposedRunCard(runId) {
     confirmBtn.textContent = '已提交';
     try {
       await api.confirmRun(runId);
-      wrap.remove();
+      btnGroup.remove();
+      title.textContent = '✅ 已确认，对方智能体执行中…';
     } catch (e) {
       confirmBtn.disabled = false;
       confirmBtn.textContent = '▶ 执行';

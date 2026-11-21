@@ -1,10 +1,26 @@
 # core/services/execution_gateway.py
 # -*- coding: utf-8 -*-
 """Step 2: 统一执行入口（A2A / 定时）→ agent_loop。"""
+import asyncio
 from datetime import datetime
 
 from ..db import db_cursor
 from . import agent_loop
+
+
+async def _a2a_heartbeat(target_user_id, stop_event):
+    while not stop_event.is_set():
+        try:
+            await asyncio.sleep(10)
+            if stop_event.is_set():
+                break
+            from ..api_routes.ws_routes import broadcast_to_user
+            await broadcast_to_user(target_user_id, {
+                "type": "sases_a2a_progress",
+                "content": "对方智能体正在执行…",
+            })
+        except Exception:
+            pass
 
 
 def _get_run(run_id):
@@ -47,7 +63,15 @@ async def run_a2a(run_id):
     run = _get_run(run_id)
     if not run:
         return {"ok": False, "error": "run not found"}
+    stop_event = asyncio.Event()
+    hb_task = None
     try:
+        with db_cursor() as cur:
+            cur.execute("SELECT target_user_id FROM conversations WHERE id=?", (run["conversation_id"],))
+            row = cur.fetchone()
+        target_uid = row["target_user_id"] if row else None
+        if target_uid:
+            hb_task = asyncio.create_task(_a2a_heartbeat(target_uid, stop_event))
         res = await agent_loop.run(
             run["user_id"], run["conversation_id"], run["goal"],
             max_steps=10, run_id=run_id, mode="strict",
@@ -55,6 +79,10 @@ async def run_a2a(run_id):
     except Exception as e:
         _finish(run_id, run["conversation_id"], run["supervisor_id"], "failed", "执行失败：" + str(e), "a2a")
         return {"ok": False, "error": str(e)}
+    finally:
+        stop_event.set()
+        if hb_task:
+            hb_task.cancel()
     status = "completed" if res.get("status") == "ok" else (
         "waiting_user" if res.get("status") == "awaiting_approval" else "failed")
     _finish(run_id, run["conversation_id"], run["supervisor_id"], status,

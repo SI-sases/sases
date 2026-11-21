@@ -50,6 +50,9 @@ function _openWs(uid) {
         if (d && d.type === 'sases_schedule_created') {
           window.dispatchEvent(new CustomEvent('sases_schedule_created', { detail: d }));
         }
+        if (d && d.type === 'sases_a2a_progress') {
+          window.dispatchEvent(new CustomEvent('sases_a2a_progress', { detail: d }));
+        }
       } catch (err) {}
     };
     _ws.onclose = () => {
