@@ -145,6 +145,15 @@ async def send_message(
                 _friend_res = await handle_friend_message(user_id, conversation_id, content, sender_agent_id, msg_type, attachments, _att_str, agent_id, mode)
                 if _friend_res is not None:
                     return _friend_res
+                # 好友会话只做投递：任务由对方确认后执行，本机不再重复跑一遍
+                return {
+                    "conversation_id": conversation_id,
+                    "user_message": content,
+                    "assistant_reply": "",
+                    "agent_id": agent_id,
+                    "sender_agent_id": sender_agent_id,
+                    "mode": mode,
+                }
         except Exception as _e_fc:
             print('[message] 好友投递失败: ' + str(_e_fc))
 
