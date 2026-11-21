@@ -13,6 +13,28 @@ EXTENSION_TOOL_IDS = {
 }
 
 # 默认允许的权限集合（安全权限）
+def _enrich_response(resp: ToolInvokeResponse) -> ToolInvokeResponse:
+    """P1-2: 兼容旧工具，把结果归一化成 data/display/artifacts。"""
+    if not getattr(resp, "success", False):
+        return resp
+    r = getattr(resp, "result", None)
+    if isinstance(r, dict):
+        if not getattr(resp, "data", None):
+            resp.data = r.get("data") if isinstance(r.get("data"), dict) else r
+        if not getattr(resp, "display", None):
+            resp.display = str(r.get("display") or r.get("text") or r.get("stdout")
+                               or r.get("content") or r.get("message") or "")[:500]
+        if not getattr(resp, "artifacts", None):
+            resp.artifacts = r.get("artifacts") or []
+    else:
+        text = "" if r is None else str(r)
+        if not getattr(resp, "display", None):
+            resp.display = text[:500]
+        if not getattr(resp, "data", None):
+            resp.data = {"text": text[:4000]}
+    return resp
+
+
 DEFAULT_ALLOWED_PERMISSIONS = {
     "calculation",
     "text_processing",
@@ -289,8 +311,8 @@ class HarnessRuntime:
                 if _ok:
                     self._circuit_record(module_id, True)
                     self._log_tool_usage(module_id, params, True, _dur)
-                    return ToolInvokeResponse(
-                        success=True, module_id=module_id, result=_res, duration_ms=_dur)
+                    return _enrich_response(ToolInvokeResponse(
+                        success=True, module_id=module_id, result=_res, duration_ms=_dur))
                 self._circuit_record(module_id, False)
                 self._log_tool_usage(module_id, params, False, _dur, _err)
                 return ToolInvokeResponse(
@@ -332,12 +354,12 @@ class HarnessRuntime:
                 )
             self._circuit_record(module_id, True)
             self._log_tool_usage(module_id, params, True, duration_ms)
-            return ToolInvokeResponse(
+            return _enrich_response(ToolInvokeResponse(
                 success=True,
                 module_id=module_id,
                 result=result,
                 duration_ms=duration_ms,
-            )
+            ))
         except Exception as e:
             duration_ms = int((_time.time() - start) * 1000)
             self._circuit_record(module_id, False)

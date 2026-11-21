@@ -44,4 +44,8 @@ class ToolInvokeResponse(BaseModel):
     success: bool
     result: Any = None
     error: Optional[str] = None
-    error: Optional[str] = None
+    data: Any = None
+    display: Optional[str] = None
+    artifacts: List[Dict[str, Any]] = []
+    truncated: bool = False
+    duration_ms: int = 0
