@@ -122,6 +122,14 @@ def cleanup_old_execution_notes(days: int = 180) -> int:
         return cur.rowcount
 
 
+def cleanup_stale_task_results(days: int = 180) -> int:
+    """删除 N 天前、低重要度的 task_result 记忆（M4 写入的默认值 0.6）。"""
+    cutoff = (datetime.now() - timedelta(days=days)).isoformat()
+    with db_cursor(commit=True) as cur:
+        cur.execute("DELETE FROM safety_memory WHERE memory_type='task_result' AND importance < 0.9 AND created_at < ?", (cutoff,))
+        return cur.rowcount
+
+
 def cleanup_low_value_patterns() -> dict:
     """清理低价值 pattern：tentative 超 30 天删，active 低命中超 90 天归档"""
     now = datetime.now()
@@ -241,6 +249,7 @@ def cleanup_all() -> dict:
         "low_value_memory": 0,
         "protocol_messages": 0,
         "old_execution_notes": 0,
+        "stale_task_results": 0,
         "patterns_deleted": 0,
         "patterns_archived": 0,
         "test_marks_found": 0,
@@ -285,6 +294,11 @@ def cleanup_all() -> dict:
         result['old_execution_notes'] = cleanup_old_execution_notes(days=180)
     except Exception as e:
         print('[cleanup] 执行笔记清理失败: ' + str(e))
+
+    try:
+        result['stale_task_results'] = cleanup_stale_task_results(days=180)
+    except Exception as e:
+        print('[cleanup] 旧任务记忆清理失败: ' + str(e))
 
     try:
         _p = cleanup_low_value_patterns()
