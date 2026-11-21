@@ -67,6 +67,18 @@ DANGEROUS_CHARS = ['&', '`', '\n', '\r']
 
 MAX_OUTPUT_LENGTH = 20000
 DEFAULT_TIMEOUT = 30
+STEP_TIMEOUT = 180
+_SIDE_EFFECT = {"file_write", "smart_edit", "file_replace_range", "delete_block", "split_block", "git_ops", "http_async"}
+
+
+def _idem_put(module_id: str, key, output):
+    if not key or module_id not in _SIDE_EFFECT:
+        return
+    try:
+        from . import run_journal as _rj_i
+        _rj_i.effect_put(str(key), module_id, str(output)[:20000])
+    except Exception as _e_i:
+        print("[idempotent] 写入失败: " + str(_e_i))
 POLL_INTERVAL = 3
 MAX_CONCURRENT_TASKS = 3
 
@@ -366,9 +378,21 @@ async def _run_command(cmd: str, timeout: int = DEFAULT_TIMEOUT) -> tuple:
 
 # ========== Harness 调用 ==========
 
-async def _run_harness(module_id: str, params: Dict[str, Any], user_id=None, task_id=None) -> tuple:
+async def _run_harness(module_id: str, params: Dict[str, Any], user_id=None, task_id=None, idem_key=None) -> tuple:
     start = datetime.datetime.now()
     try:
+        # P0-3: 副作用幂等（重试/重复派发复用上次结果）
+        if idem_key and module_id in _SIDE_EFFECT:
+            try:
+                from . import run_journal as _rj_fx
+                _hit = _rj_fx.effect_get(idem_key)
+                if _hit is not None:
+                    dur = int((datetime.datetime.now() - start).total_seconds() * 1000)
+                    print("[idempotent] 命中 " + str(idem_key) + " tool=" + module_id)
+                    return "[idempotent] " + str(_hit)[:MAX_OUTPUT_LENGTH], "success", dur
+            except Exception as _e_fx:
+                print("[idempotent] 查询失败: " + str(_e_fx))
+
         # v0.46: 跨轮熔断继承（先于实际调用）
         _blocked = _db_circuit_check(module_id, user_id)
         if _blocked:
@@ -382,7 +406,15 @@ async def _run_harness(module_id: str, params: Dict[str, Any], user_id=None, tas
             _db_circuit_record(module_id, user_id, task_id, _pollution["error"])
             return f"Harness 失败: {_pollution['error']}", "failed", dur
 
-        response = await tool_gateway.invoke_tool_async(module_id, params)
+        try:
+            response = await asyncio.wait_for(
+                tool_gateway.invoke_tool_async(module_id, params),
+                timeout=STEP_TIMEOUT,
+            )
+        except asyncio.TimeoutError:
+            dur = int((datetime.datetime.now() - start).total_seconds() * 1000)
+            _db_circuit_record(module_id, user_id, task_id, "timeout")
+            return "工具执行超时(" + str(STEP_TIMEOUT) + "s)", "timeout", dur
         dur = int((datetime.datetime.now() - start).total_seconds() * 1000)
 
         if not getattr(response, "success", False):
@@ -404,8 +436,10 @@ async def _run_harness(module_id: str, params: Dict[str, Any], user_id=None, tas
                 return f"Harness 失败: {_err_r}", "failed", dur
             output = result.get("text") or result.get("stdout") or json.dumps(result, ensure_ascii=False)
             _task_fail_counts.pop((str(task_id), module_id), None)
+            _idem_put(module_id, idem_key, output)
             return output[:MAX_OUTPUT_LENGTH], "success", dur
         _task_fail_counts.pop((str(task_id), module_id), None)
+        _idem_put(module_id, idem_key, result)
         return str(result)[:MAX_OUTPUT_LENGTH], "success", dur
     except Exception as e:
         dur = int((datetime.datetime.now() - start).total_seconds() * 1000)
@@ -592,7 +626,8 @@ async def _execute_task(task: Dict[str, Any]):
             # 对 params 里所有字符串值做占位符替换
             params = _substitute_params(params_raw, previous_outputs)
             print(f"[executor]   harness params: {json.dumps(params, ensure_ascii=False)[:300]}")
-            output, status, dur = await _run_harness(module_id, params, task.get("user_id"), task_id)
+            output, status, dur = await _run_harness(module_id, params, task.get("user_id"), task_id,
+                                                     idem_key=(str(_run_id) + ":" + str(step_id)) if _run_id else None)
             print(f"[executor]   harness 结果: {status} ({dur}ms) | {output[:200]}")
         else:
             cmd_raw = step.get("command", "")
@@ -602,7 +637,8 @@ async def _execute_task(task: Dict[str, Any]):
                 module_id = cmd_raw.get('module_id')
                 params = _substitute_params(cmd_raw.get('params', {}), previous_outputs)
                 print(f"[executor]   harness params (from dict): {json.dumps(params, ensure_ascii=False)[:300]}")
-                output, status, dur = await _run_harness(module_id, params, task.get("user_id"), task_id)
+                output, status, dur = await _run_harness(module_id, params, task.get("user_id"), task_id,
+                                                     idem_key=(str(_run_id) + ":" + str(step_id)) if _run_id else None)
                 print(f"[executor]   harness 结果: {status} ({dur}ms) | {output[:200]}")
 
             # 兼容 2：command 字符串含 "harness" 前缀 → 自动转成 harness 调用
@@ -626,7 +662,8 @@ async def _execute_task(task: Dict[str, Any]):
                             _params2[_kv.group(1)] = _kv.group(2)
                 _params2 = _substitute_params(_params2, previous_outputs)
                 print(f"[executor]   harness params (auto): {json.dumps(_params2, ensure_ascii=False)[:300]}")
-                output, status, dur = await _run_harness(_mid, _params2, task.get("user_id"), task_id)
+                output, status, dur = await _run_harness(_mid, _params2, task.get("user_id"), task_id,
+                                                         idem_key=(str(_run_id) + ":" + str(step_id)) if _run_id else None)
                 print(f"[executor]   harness 结果 (auto): {status} ({dur}ms) | {output[:200]}")
 
             else:
@@ -768,6 +805,14 @@ async def _execute_task_with_semaphore(task: Dict[str, Any]):
             traceback.print_exc()
         finally:
             _running_task_ids.discard(task_id)
+            # P0-4: 任务结束释放租约
+            try:
+                from . import run_journal as _rj_rel
+                _rid_rel = task.get("supervisor_run_id")
+                if _rid_rel:
+                    _rj_rel.release(_rid_rel, "exec:%s:%s" % (os.getpid(), task_id))
+            except Exception as _e_rel:
+                print("[journal] 释放租约失败: " + str(_e_rel))
 
 
 # ========== 主循环 ==========
