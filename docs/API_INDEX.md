@@ -1,8 +1,18 @@
 # SASES API 接口清单
-共 39 个路由文件
-共 222 个接口
+共 48 个路由文件
+共 281 个接口
 
-## agent_routes.py (9 个接口)
+## admin_routes.py (1 个接口)
+| 方法 | 路径 | 函数 | 说明 |
+|------|------|------|------|
+| POST | `/admin/generate_keys` | generate_keys |  |
+
+## agent_question_routes.py (1 个接口)
+| 方法 | 路径 | 函数 | 说明 |
+|------|------|------|------|
+| POST | `/agent/questions/{question_id}/answer` | answer_question |  |
+
+## agent_routes.py (11 个接口)
 | 方法 | 路径 | 函数 | 说明 |
 |------|------|------|------|
 | GET | `/agents/list` | list_my_agents |  |
@@ -14,6 +24,8 @@
 | POST | `/agents/friend-requests/reject` | reject_friend_request |  |
 | POST | `/agents/call` | call_agent |  |
 | POST | `/agents/chat` | api_suggest_reply | 根据智能体生成建议回复（不入库） |
+| POST | `/agents/friend-mode` | set_friend_mode |  |
+| POST | `/agents/bind-session-agent` | bind_session_agent |  |
 
 ## agi_routes.py (1 个接口)
 | 方法 | 路径 | 函数 | 说明 |
@@ -26,12 +38,18 @@
 | GET | `/ai-circle/posts` | get_posts |  |
 | POST | `/ai-circle/posts` | create_post |  |
 
-## auth_routes.py (4 个接口)
+## auth_check_routes.py (1 个接口)
+| 方法 | 路径 | 函数 | 说明 |
+|------|------|------|------|
+| POST | `/auth/check_exec` | check_exec |  |
+
+## auth_routes.py (5 个接口)
 | 方法 | 路径 | 函数 | 说明 |
 |------|------|------|------|
 | POST | `/token` | login_for_access_token |  |
 | POST | `/auth/login` | login_json |  |
 | POST | `/auth/register` | register |  |
+| POST | `/auth/reset-password` | reset_password |  |
 | GET | `/auth/me` | get_me |  |
 
 ## backup_routes.py (3 个接口)
@@ -87,6 +105,14 @@
 | 方法 | 路径 | 函数 | 说明 |
 |------|------|------|------|
 | GET | `/export/data` | export_data |  |
+
+## feedback_routes.py (4 个接口)
+| 方法 | 路径 | 函数 | 说明 |
+|------|------|------|------|
+| POST | `/feedback/submit` | submit |  |
+| GET | `/feedback/my` | my_feedback |  |
+| GET | `/feedback/by_task` | by_task |  |
+| GET | `/feedback/stats` | stats |  |
 
 ## group_routes.py (63 个接口)
 | 方法 | 路径 | 函数 | 说明 |
@@ -161,7 +187,7 @@
 | GET | `/harness/modules` | get_modules |  |
 | POST | `/harness/execute` | execute |  |
 
-## hive_routes.py (6 个接口)
+## hive_routes.py (16 个接口)
 | 方法 | 路径 | 函数 | 说明 |
 |------|------|------|------|
 | GET | `/hive/info` | hive_info |  |
@@ -170,6 +196,16 @@
 | POST | `/hive/sync/member` | sync_member | 接收 peer 的成员邀请通知，写本地影子群成员 |
 | POST | `/hive/sync/member-remove` | sync_member_remove | 接收 peer 的成员移除通知 |
 | POST | `/hive/sync/group` | sync_group | 接收 peer 的群创建通知，写本地影子群 + 写群主为成员 |
+| POST | `/hive/relay` | hive_relay |  |
+| POST | `/hive/sync/friend_message` | sync_friend_message |  |
+| POST | `/hive/sync/friend_request` | sync_friend_request |  |
+| GET | `/hive/sync/pull_messages` | pull_messages |  |
+| GET | `/hive/sync/pull_group_messages` | pull_group_messages |  |
+| POST | `/hive/sync/register` | sync_register | 接收来自本地客户端的跨节点注册信息 |
+| GET | `/hive/sync/pull_friend_requests` | pull_friend_requests | 供本地客户端轮询拉取发给自己的好友请求 |
+| POST | `/hive/sync/accept_friend` | sync_accept_friend |  |
+| GET | `/hive/sync/pull_friend_status` | pull_friend_status | 供本地客户端轮询，拉取最新的好友关系状态 |
+| POST | `/hive/sync/transfer` | sync_transfer | 接收 peer 转账。idempotency_key 去重。自动创建影子用户。 |
 
 ## hive_task_routes.py (3 个接口)
 | 方法 | 路径 | 函数 | 说明 |
@@ -186,6 +222,12 @@
 | DELETE | `/knowledge/my-docs/{source_file:path}` | delete_my_doc |  |
 | GET | `/knowledge/list` | list_knowledge |  |
 
+## license_routes.py (2 个接口)
+| 方法 | 路径 | 函数 | 说明 |
+|------|------|------|------|
+| POST | `/auth/license/activate` | activate |  |
+| GET | `/auth/license/heartbeat` | heartbeat |  |
+
 ## market_routes.py (3 个接口)
 | 方法 | 路径 | 函数 | 说明 |
 |------|------|------|------|
@@ -201,24 +243,29 @@
 | GET | `/memory/type/{memory_type}` | recall_by_type |  |
 | DELETE | `/memory/{memory_id}` | forget |  |
 
-## message_routes.py (7 个接口)
+## message_routes.py (10 个接口)
 | 方法 | 路径 | 函数 | 说明 |
 |------|------|------|------|
 | GET | `/messages/conversations` | list_conversations |  |
 | POST | `/messages/conversations` | create_conversation |  |
 | GET | `/messages/conversations/{conversation_id}/messages` | get_messages |  |
+| POST | `/messages/stream` | stream_message |  |
 | POST | `/messages/send` | send_message |  |
 | POST | `/messages/{conversation_id}/read` | mark_read |  |
 | POST | `/messages/{conversation_id}/pin` | toggle_pin |  |
 | DELETE | `/messages/{conversation_id}` | delete_conversation |  |
+| DELETE | `/messages/message/{message_id}` | delete_single_message | 删除单条消息（只能删自己会话里的） |
+| POST | `/messages/messages/suggest-execute` | suggest_execute_route | 根据最近聊天上下文生成 #4 执行指令 |
 
-## model_routes.py (5 个接口)
+## model_routes.py (7 个接口)
 | 方法 | 路径 | 函数 | 说明 |
 |------|------|------|------|
 | POST | `/models/api-key` | add_api_key |  |
 | POST | `/models/local` | add_local_model |  |
 | GET | `/models/list` | list_models |  |
 | PATCH | `/models/{model_id}/share` | update_share_settings |  |
+| PATCH | `/models/{model_id}` | update_model |  |
+| GET | `/models/{model_id}/refs` | model_refs |  |
 | DELETE | `/models/{model_id}` | delete_model |  |
 
 ## onboarding_routes.py (3 个接口)
@@ -273,6 +320,15 @@
 | GET | `/rescue/my-tasks` | my_tasks | 获取我已完成/进行中的解救任务 |
 | GET | `/rescue/statistics` | statistics | 解救任务统计 |
 
+## scheduled_routes.py (5 个接口)
+| 方法 | 路径 | 函数 | 说明 |
+|------|------|------|------|
+| POST | `/scheduled/create` | create_task |  |
+| GET | `/scheduled/list` | list_tasks |  |
+| GET | `/scheduled/{task_id}` | get_task |  |
+| PATCH | `/scheduled/{task_id}/toggle` | toggle_task |  |
+| DELETE | `/scheduled/{task_id}` | delete_task |  |
+
 ## search_routes.py (1 个接口)
 | 方法 | 路径 | 函数 | 说明 |
 |------|------|------|------|
@@ -296,20 +352,30 @@
 | POST | `/space/sync_from_peer` | sync_from_peer |  |
 | POST | `/space/register_to_peer` | register_to_peer |  |
 
-## stats_routes.py (2 个接口)
+## stats_routes.py (4 个接口)
 | 方法 | 路径 | 函数 | 说明 |
 |------|------|------|------|
 | GET | `/stats/leaderboard` | get_leaderboard |  |
 | GET | `/stats/harness-modules` | get_harness_modules |  |
+| GET | `/stats/llm-usage` | get_llm_usage |  |
+| GET | `/stats/agent-runs` | get_agent_runs |  |
 
-## supervisor_routes.py (5 个接口)
+## supervisor_routes.py (13 个接口)
 | 方法 | 路径 | 函数 | 说明 |
 |------|------|------|------|
+| POST | `/supervisor/runs/{run_id}/revert` | revert_run |  |
+| GET | `/supervisor/runs/{run_id}/artifacts` | list_run_artifacts |  |
+| POST | `/supervisor/runs/{run_id}/approve` | approve_run |  |
 | POST | `/supervisor/propose` | propose |  |
 | POST | `/supervisor/confirm` | confirm |  |
 | POST | `/supervisor/reject` | reject |  |
 | POST | `/supervisor/cancel` | cancel |  |
 | GET | `/supervisor/proposed` | get_proposed |  |
+| GET | `/trace/{task_id}/state` | get_trace_state |  |
+| GET | `/trace/{task_id}/messages` | get_trace_messages |  |
+| GET | `/trace/runs/active` | list_active_runs |  |
+| GET | `/trace/runs/recent` | list_recent_runs |  |
+| GET | `/trace/{task_id}/events` | get_trace_events |  |
 
 ## swarm_routes.py (6 个接口)
 | 方法 | 路径 | 函数 | 说明 |
@@ -321,11 +387,25 @@
 | GET | `/swarm/reviews` | list_reviews | 查询审核日志：只返回当前用户所属会话的记录 |
 | GET | `/swarm/reviews/stats` | review_stats | 审核统计：按 exec_status 和 review_result 聚合 |
 
-## transfer_routes.py (7 个接口)
+## tools_routes.py (9 个接口)
+| 方法 | 路径 | 函数 | 说明 |
+|------|------|------|------|
+| GET | `/tools/usage` | tool_usage |  |
+| GET | `/tools/slim-report` | tool_slim_report | 按真实调用给出工具去留建议；不删除任何工具。 |
+| GET | `/tools/catalog` | get_catalog |  |
+| GET | `/tools/capsules` | get_capsules |  |
+| POST | `/tools/install/git` | install_git |  |
+| POST | `/tools/install/zip` | install_zip |  |
+| POST | `/tools/{module_id}/enable` | enable_tool |  |
+| POST | `/tools/{module_id}/disable` | disable_tool |  |
+| DELETE | `/tools/{module_id}` | delete_tool |  |
+
+## transfer_routes.py (8 个接口)
 | 方法 | 路径 | 函数 | 说明 |
 |------|------|------|------|
 | POST | `/transfer/transfer` | create_transfer |  |
 | POST | `/transfer/red-packet` | create_red_packet |  |
+| GET | `/transfer/detail/{tx_id}` | get_red_packet_detail |  |
 | GET | `/transfer/pending` | get_pending_red_packets |  |
 | POST | `/transfer/claim` | claim_red_packet |  |
 | GET | `/transfer/history` | get_history |  |
@@ -338,11 +418,26 @@
 | POST | `/upload/image` | upload_image |  |
 | POST | `/upload/file` | upload_file |  |
 
-## user_routes.py (2 个接口)
+## user_api_routes.py (4 个接口)
 | 方法 | 路径 | 函数 | 说明 |
 |------|------|------|------|
-| GET | `/user/profile` | get_profile |  |
-| PUT | `/user/profile` | update_profile |  |
+| GET | `/api/user-api/list` | list_apis |  |
+| POST | `/api/user-api/add` | add_api | cur.execute( |
+| DELETE | `/api/user-api/{api_id}` | delete_api |  |
+| POST | `/api/user-api/test` | test_api |  |
+
+## user_routes.py (3 个接口)
+| 方法 | 路径 | 函数 | 说明 |
+|------|------|------|------|
+| GET | `/u/{sases_id}` | get_user_card | 公开名片页：根据 sases_id 返回用户名、handle、display_name。 |
+| GET | `/user/profile` | get_user_profile |  |
+| PUT | `/user/profile` | update_user_profile |  |
+
+## version_routes.py (2 个接口)
+| 方法 | 路径 | 函数 | 说明 |
+|------|------|------|------|
+| GET | `/version` | get_version |  |
+| POST | `/version/check-update` | check_update |  |
 
 ## wisdom_space_routes.py (1 个接口)
 | 方法 | 路径 | 函数 | 说明 |
