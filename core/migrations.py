@@ -1,7 +1,7 @@
 """数据库迁移框架：按版本号顺序应用 schema 变更。"""
 import datetime
 
-SCHEMA_VERSION = 7
+SCHEMA_VERSION = 8
 
 
 def _now_iso():
@@ -67,9 +67,41 @@ def _migrate_v7_api_registry(cur):
         cur.execute("UPDATE api_registry SET tool_id='api_' || api_id WHERE tool_id IS NULL OR tool_id=''")
 
 
+def _migrate_v8_legacy_columns(cur):
+    """补齐旧库缺列；空表直接重建给 init_db 用新结构。"""
+    def _exists(table):
+        cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table,))
+        return cur.fetchone() is not None
+
+    def _drop_empty(table):
+        if not _exists(table):
+            return
+        cur.execute("SELECT COUNT(*) FROM " + table)
+        if int(cur.fetchone()[0]) == 0:
+            cur.execute("DROP TABLE " + table)
+
+    _drop_empty("api_registry")
+    _drop_empty("sync_received")
+
+    _cols = {
+        "conversations": [("active_task_id", "TEXT"), ("active_task_status", "TEXT"),
+                          ("active_task_snapshot", "TEXT")],
+        "license_keys": [("used_at", "TEXT"), ("used_by", "TEXT"), ("device_fp", "TEXT")],
+        "supervisor_runs": [("task_fingerprint", "TEXT"), ("lease_owner", "TEXT"),
+                            ("lease_until", "TEXT"), ("heartbeat_at", "TEXT"),
+                            ("deadline_at", "TEXT")],
+    }
+    for table, cols in _cols.items():
+        if not _exists(table):
+            continue
+        for name, typ in cols:
+            _ensure_col(cur, table, name, typ)
+
+
 MIGRATIONS = {1: _migrate_v1_outbox, 2: _migrate_v2_hmac, 3: _migrate_v3_reconcile,
               4: _migrate_v4_transfer_fields, 5: _migrate_v5_credit_type,
-              6: _migrate_v6_group_columns, 7: _migrate_v7_api_registry}
+              6: _migrate_v6_group_columns, 7: _migrate_v7_api_registry,
+              8: _migrate_v8_legacy_columns}
 
 
 def ensure_schema():
