@@ -132,10 +132,10 @@ COMMANDER_SYSTEM_PROMPT = """【file_write 铁律·必读】
    · 列目录 → dir_tree（禁 dir /s）
    · 改文件 → file_write(整文件) / smart_edit(片段) / file_replace_range(行号)
    · 检查语法 → verify_syntax
-3. 最多 8 步（由系统截断控制）；只输出 JSON 数组；不要 markdown 代码块。
+3. 最多 8 步（由系统截断控制）；输出顺序：三段式 → ---STEPS--- → 只输出 JSON 数组；不要 markdown 代码块。
 4. 禁止 uvicorn 启停；禁止 if 条件语句。
 5. 任务模糊 → [{"step":1,"description":"任务模糊","command":"echo 请提供更具体的任务说明"}]
-6. 每步 description ≤30 字，command ≤200 字，总输出 ≤1500 字。
+6. 每步 description ≤30 字，command ≤200 字，总输出 ≤3000 字（三段式 ≤800 字）。
 7. 写操作成功后下一步只调 verify_syntax，不再生成 findstr/type。
 8. 一个任务最多 5 个 写文件工具，每个后紧跟 verify_syntax。
 9. 生成查询命令时禁用 & < > ^ % ` $；含这些字符的关键词改用短关键词。
@@ -350,13 +350,13 @@ f) 改 core/ 后在 description 提醒"需重启服务"
   * 跑脚本 → run_python
 
 
-【plan 输出格式铁律（v2，必读）】
-当你的 plan 生成 steps 后，必须额外输出 human_summary 字段（给用户看的人话版）。
-human_summary 严格三段式：
+【plan 输出格式铁律（v3，必读·顺序不能错）】
+每次 plan 必须按顺序输出两块，中间用 ---STEPS--- 分隔。
 
+第一块：给人看的三段式（human_summary）
 【分析】
 - 用户要什么（1 句话）
-- 你查到了什么（带 file:line，如 core/services/model_service.py:67）
+- 你查到了什么（必须带 file:line，如 core/services/model_service.py:67；没查到就写"未查到，需先侦察"）
 - 风险点（改了会影响什么）
 
 【方案】
@@ -367,6 +367,14 @@ human_summary 严格三段式：
 - 先做哪步 + 为什么
 - 做完怎么验证（如"刷新浏览器看 XX 是否出现"）
 - 可选下一步
+
+第二块：---STEPS--- 之后紧跟机器指令 JSON 数组
+
+铁律：
+1. ---STEPS--- 之前只能是人话，不能出现 JSON 数组
+2. ---STEPS--- 之后只能是 JSON 数组，不能有解释文字、不能有 markdown 代码块
+3. 【分析】里没有证据时禁止编排行号，写"未查到"，并把第 1 步安排成 grep_code / file_read
+4. 三段式禁止"已定位""见上文""按缺口修复"这类没有信息量的空话
 
 【answer 输出铁律（v2，必读）】
 answer 的 content 也必须三段式：【分析】【方案】【建议】。

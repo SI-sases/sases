@@ -13,6 +13,48 @@ from .helpers import _insert_message, _get_conversation_history, pick_swarm_agen
 from .llm_parser import _call_llm, _parse_plan, _normalize_steps, _validate_steps_format, _precheck_steps
 from .task_state import _load_task_state
 
+_READONLY_TOOLS = ("grep_code", "file_read", "dir_tree", "verify_claim", "answer")
+
+
+def _count_readonly_rounds(user_id, conversation_id, limit=3):
+    """统计最近连续多少轮只有侦察、没有写入（数据源：safety_memory.task_summary）。"""
+    if not user_id or not conversation_id:
+        return 0
+    try:
+        with db_cursor() as _cur_ro:
+            _cur_ro.execute(
+                "SELECT content FROM safety_memory "
+                "WHERE user_id=? AND memory_type='task_summary' "
+                "ORDER BY id DESC LIMIT 12",
+                (user_id,),
+            )
+            _rows_ro = _cur_ro.fetchall()
+    except Exception as _e_ro:
+        print("[C2] 读取历史轮次失败: " + str(_e_ro))
+        return 0
+    _seq = []
+    for _row_ro in _rows_ro:
+        _txt_ro = (_row_ro["content"] if isinstance(_row_ro, dict) else _row_ro[0]) or ""
+        try:
+            _aud_ro = json.loads(_txt_ro)
+        except Exception:
+            continue
+        if str(_aud_ro.get("conversation_id")) != str(conversation_id):
+            continue
+        _tools_ro = [str(t.get("tool") or "").lower() for t in (_aud_ro.get("tools_used") or []) if t.get("tool")]
+        if _tools_ro:
+            _seq.append(_tools_ro)
+        if len(_seq) >= limit:
+            break
+    _n_ro = 0
+    for _tools_ro in _seq:
+        if all(t in _READONLY_TOOLS for t in _tools_ro):
+            _n_ro += 1
+        else:
+            break
+    return _n_ro
+
+
 async def generate_script_for_task(user_id, conversation_id, user_input, failed_results):
     """常规拆解失败时，让 LLM 直接生成 Python 脚本。返回脚本代码或 None。"""
     try:
@@ -283,11 +325,46 @@ async def plan_task(
         print('[swarm] 注入工具清单失败: ' + str(_te))
 
 
+    # [C2] 连续两轮只侦察不写入 -> 本轮强制写入
+    try:
+        _ro_rounds = _count_readonly_rounds(user_id, conversation_id)
+        if _ro_rounds >= 2:
+            print("[C2] 连续 " + str(_ro_rounds) + " 轮只读，注入强制写入铁律")
+            prompt_parts.append(
+                "【强制写入铁律（本轮必须遵守）】\n"
+                "前 " + str(_ro_rounds) + " 轮只有侦察、没有写入。本轮 plan 必须至少包含 1 个写操作：\n"
+                "- smart_edit / file_write / file_replace_range / run_python（含写入）\n"
+                "禁止本轮全是 grep_code / file_read / dir_tree。\n"
+                "如果确实不能写，在【分析】里说明卡在哪一条 file:line，并让用户确认。"
+            )
+    except Exception as _e_c2:
+        print("[C2] 注入失败: " + str(_e_c2))
+
+    # [AUDIT-2] 注入上一轮任务总结（跨轮学习）
+    try:
+        _last_audits = memory_service.recall_by_type(user_id, "task_summary", top_k=1)
+        if _last_audits:
+            _aud = json.loads(_last_audits[0].get("content") or "{}")
+            if _aud:
+                _aud_lines = ["【上一轮任务总结】"]
+                _tu = _aud.get("tools_used") or []
+                if _tu:
+                    _aud_lines.append("- 用过的工具：" + ", ".join(
+                        str(t.get("tool")) + "x" + str(t.get("count")) for t in _tu[:6]))
+                if _aud.get("successful_strategies"):
+                    _aud_lines.append("- 成功策略：" + ", ".join(map(str, _aud["successful_strategies"][:5])))
+                if _aud.get("failed_strategies"):
+                    _aud_lines.append("- 失败策略（避免重复）：" + " | ".join(
+                        str(x)[:80] for x in _aud["failed_strategies"][:3]))
+                prompt_parts.append(chr(10).join(_aud_lines))
+    except Exception as _e_aud2:
+        print("[AUDIT] 注入上一轮总结失败: " + str(_e_aud2))
+
     prompt_parts.append(f"【用户当前任务】\n{user_input}")
     prompt_parts.append(
-        "请拆解为命令序列。\n"
-        "必须只输出 JSON 数组，格式：[{\"step\":1,\"description\":\"...\",\"command\":\"...\"}]\n"
-        "不要输出任何其他文字，不要用 markdown 代码块。"
+        "请先输出三段式（【分析】【方案】【建议】），再输出一行 ---STEPS---，最后输出 JSON 数组。\n"
+        "格式：三段式\n---STEPS---\n[{\"step\":1,\"description\":\"...\",\"command\":\"...\"}]\n"
+        "---STEPS--- 之后不要有任何解释文字，不要用 markdown 代码块。"
     )
     full_prompt = "\n\n".join(prompt_parts)
 
@@ -309,7 +386,16 @@ async def plan_task(
         _insert_message(conversation_id, err_msg, sender_agent_id=commander_id)
         return {"status": "error", "message": "LLM empty response"}
 
-    steps = _parse_plan(raw)
+    _human_summary, _steps_raw = "", raw
+    try:
+        from .llm_parser import _split_plan_output as _spo
+        _human_summary, _steps_raw = _spo(raw)
+        if _human_summary:
+            print("[C1] plan human_summary len=" + str(len(_human_summary)))
+    except Exception as _e_sp:
+        print("[C1] split plan output failed: " + str(_e_sp))
+    steps = _parse_plan(_steps_raw)
+
     if steps:
         steps = _normalize_steps(steps)
         steps, _fmt_errors = _validate_steps_format(steps)
@@ -349,7 +435,7 @@ async def plan_task(
         }
         _pending[task_id] = task
         _save_pending(task)
-        return {"status": "no_plan", "message": "无法拆解任务", "task_id": task_id}
+        return {"status": "no_plan", "message": "无法拆解任务", "task_id": task_id, "human_summary": _human_summary}
 
     print("[DIAG] 即将构建 task")
     task_id = f"t_{int(time.time() * 1000)}"
@@ -360,6 +446,7 @@ async def plan_task(
         "conversation_id": conversation_id,
         "user_id": user_id,
         "user_text": user_input,
+        "human_summary": _human_summary,
         "steps": steps,
         "results": [],
         "done": set(),
@@ -387,6 +474,7 @@ async def plan_task(
             "status": "draft",
             "task_id": task_id,
             "steps": steps,
+            "human_summary": _human_summary,
             "conversation_id": conversation_id,
             "commander_id": commander_id,
             "executor_id": executor_id
@@ -400,6 +488,7 @@ async def plan_task(
         "status": "planned",
         "task_id": task_id,
         "steps": steps,
+        "human_summary": _human_summary,
         "conversation_id": conversation_id,
         "commander_id": commander_id,
         "executor_id": executor_id
@@ -549,6 +638,46 @@ async def replan_failed_steps(task: Dict[str, Any], max_steps: int = None) -> Op
         print(f"[swarm] 所有失败均为不可恢复错误，跳过重拆")
         return None
 
+    _failure_lines = []
+    for _f in failed_info:
+        _why = str(_f.get("failure_reason") or "")[:150]
+        if _why:
+            _failure_lines.append("- " + _why)
+    try:
+        with db_cursor() as _cur_c3:
+            _cur_c3.execute(
+                "SELECT content FROM safety_memory "
+                "WHERE task_id=? AND memory_type='failure_pattern' "
+                "ORDER BY id DESC LIMIT 3",
+                (task.get("task_id"),),
+            )
+            for _mrow in _cur_c3.fetchall():
+                _mtxt = (_mrow["content"] if isinstance(_mrow, dict) else _mrow[0]) or ""
+                if _mtxt and _mtxt[:60] not in "\n".join(_failure_lines):
+                    _failure_lines.append("- " + _mtxt[:150])
+    except Exception as _e_c3:
+        print("[C3] 读取失败记忆异常: " + str(_e_c3))
+    failure_context = ""
+    if _failure_lines:
+        failure_context = "\n【已失败的方案（禁止重复）】\n" + "\n".join(_failure_lines[:6]) + "\n"
+
+    strategy_context = ""
+    _retry = int(task.get("retry_count") or 0)
+    if _retry >= 2:
+        _hints = []
+        _all_fail = "\n".join(_failure_lines)
+        if any(k in _all_fail for k in ("path 不合法", "路径", "文件不存在", "找不到文件")):
+            _hints.append("禁止用绝对路径，改用相对路径（如 static/modules/xxx.js）；不确定就先 dir_tree")
+        if any(k in _all_fail for k in ("grep", "熔断", "搜索失败")):
+            _hints.append("禁止再用 grep_code，改用 run_python 手动扫描")
+        if any(k in _all_fail for k in ("锚点", "old_snippet", "未找到原文", "anchor")):
+            _hints.append("禁止再用 smart_edit，改用 file_replace_range（行号替换）或 file_write（整文件覆写）")
+        if any(k in _all_fail for k in ("命令不在白名单", "禁止字符")):
+            _hints.append("禁止用 shell 命令，改用 harness 工具")
+        if _hints:
+            strategy_context = ("\n【换策略铁律（第 " + str(_retry) + " 次重拆，必须换）】\n"
+                                + "\n".join("- " + _h for _h in _hints) + "\n")
+
     prompt = f"""原任务：{task['user_text']}
 
 已完成的步骤及结果：
@@ -556,6 +685,7 @@ async def replan_failed_steps(task: Dict[str, Any], max_steps: int = None) -> Op
 
 失败的步骤（需要你重新拆解）：
 {json.dumps(failed_info, ensure_ascii=False, indent=2)}
+{failure_context}{strategy_context}
 
 请针对上述失败步骤重新拆解。要求：
 1. 必须输出 JSON 数组，不要任何解释文字，不要 markdown 代码块

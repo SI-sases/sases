@@ -114,6 +114,32 @@ def _normalize_steps(steps):
             out.append(s)
     return out
 
+_PLAN_STEP_MARKERS = ("---STEPS---", "--- steps ---", "===STEPS===", "【STEPS】")
+
+
+def _split_plan_output(raw: str):
+    """把 LLM 输出拆成 (human_summary, steps_text)。
+
+    v3 协议：三段式 + ---STEPS--- + JSON 数组。
+    没有标记时退回旧行为（steps_text = raw），human_summary 为空。
+    """
+    if not raw:
+        return "", ""
+    text = raw.strip()
+    for mk in _PLAN_STEP_MARKERS:
+        idx = text.find(mk)
+        if idx != -1:
+            human = text[:idx].strip()
+            steps = text[idx + len(mk):].strip()
+            return human, steps or text
+    # 无标记：首个 JSON 数组前若已有三段式，则切开，避免 JSON 里的 "[" 干扰
+    import re as _re_split
+    m = _re_split.search(r"\n\s*\[\s*\{", text)
+    if m and ("【分析】" in text[:m.start()] or "【方案】" in text[:m.start()]):
+        return text[:m.start()].strip(), text[m.start():].strip()
+    return "", text
+
+
 def _parse_plan(raw: str, max_steps: int = None) -> Optional[List[Dict[str, Any]]]:
     if not raw:
         return None

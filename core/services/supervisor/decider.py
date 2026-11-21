@@ -73,19 +73,43 @@ async def task_summarizer(task):
 
         if not _has_success_patch and not _has_success_python:
             print("[防假成功] 任务涉及修改，但没有任何成功的 patch 或脚本记录，强行打回！")
-            _r3_ok = True
-        try:
-            from ...services.memory_service import remember as _r3_rm
-            _r3_rm(
-                user_id=task.get('user_id'),
-                memory_type='task_context',
-                content='上一轮被打回：no_write | 原因：没有产生真实的文件修改 | 引导：请用 smart_edit/file_replace_range/file_write/run_python',
-                task_id='run_' + str(task.get('supervisor_run_id')),
-                importance=0.8,
-            )
-        except Exception as _r3_e:
-            print('[R3] 写打回原因失败: ' + str(_r3_e))
-        return {'goal_achieved': False, 'reason_type': 'no_write', 'goal_reason': '没有产生真实的文件修改', 'missing': ['实际修改'], 'next_hint': '请执行真实的 smart_edit / file_replace_range / file_write 或 run_python 修改'}
+            _scanned = []
+            for _r in _res:
+                _t = str(_r.get('module_id') or _r.get('command') or '').strip().lower()
+                _t = _t.split()[0] if _t else ''
+                if _t in ('grep_code', 'file_read', 'dir_tree') and _r.get('status') == 'success':
+                    _scanned.append(_t + '#step' + str(_r.get('step')))
+            if _scanned:
+                _reason_type = 'scout_done_no_write'
+                _goal_reason = '只完成侦察，没有执行写入'
+                _hint = ('已侦察 ' + str(len(_scanned)) + ' 步（' + ', '.join(_scanned[-3:]) + '），但还没有写入。'
+                         '下一步必须用 smart_edit / file_replace_range / file_write 改具体文件：'
+                         '先用 file_read 确认要改的行，再写。')
+                _ctx_content = ('上一轮被打回：scout_done_no_write | 证据：' + '; '.join(_scanned[-5:])
+                                + ' | 引导：' + _hint)
+            else:
+                _reason_type = 'no_write'
+                _goal_reason = '没有产生真实的文件修改'
+                _hint = '请执行真实的 smart_edit / file_replace_range / file_write 或 run_python 修改'
+                _ctx_content = '上一轮被打回：no_write | 原因：没有产生真实的文件修改 | 引导：' + _hint
+            try:
+                from ...services.memory_service import remember as _r3_rm
+                _r3_rm(
+                    user_id=task.get('user_id'),
+                    memory_type='task_context',
+                    content=_ctx_content,
+                    task_id='run_' + str(task.get('supervisor_run_id')),
+                    importance=0.8,
+                )
+            except Exception as _r3_e:
+                print('[R3] 写打回原因失败: ' + str(_r3_e))
+            return {
+                'goal_achieved': False,
+                'reason_type': _reason_type,
+                'goal_reason': _goal_reason,
+                'missing': ['实际修改'],
+                'next_hint': _hint,
+            }
     if any(r.get('answer') or r.get('output') for r in _res) and task.get('round', 1) > 1:
         return {'goal_achieved': True, 'goal_reason': '产出已确认', 'missing': [], 'next_hint': ''}
     print('[supervisor] task_summarizer 被调用, task_id=' + str(task.get('task_id')))
