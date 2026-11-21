@@ -40,6 +40,16 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
             hist = agent_memory.history(conversation_id)
 
     messages = [{"role": "system", "content": BASE_SYSTEM}] + hist
+    try:
+        from .agent_context import build_runtime_context
+        _runtime = build_runtime_context(user_id, conversation_id, goal, mode)
+        if _runtime:
+            if messages and messages[-1].get("role") == "user":
+                messages = messages[:-1] + [{"role": "user", "content": _runtime}, messages[-1]]
+            else:
+                messages.append({"role": "user", "content": _runtime})
+    except Exception as _e_rc:
+        print("[context] runtime 注入失败: " + str(_e_rc))
     schemas = _tool_schemas(allowed_tool_ids)
     used = []
 
