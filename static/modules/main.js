@@ -19,7 +19,7 @@ import './onboarding.js';
 import { openSubpage, closeSubpage } from './subpage.js';
 import { openGroupChat, closeGroupChat } from './group_chat.js';
 import { openGlobalSearch } from './search.js';
-import { initSideDrawer } from './sidebar.js';
+import { initSideDrawer } from './sidebar.js?v=2';
 import { showPlusMenu } from './plus_menu.js';
 import { t, setLang, getLang } from './i18n.js';
 

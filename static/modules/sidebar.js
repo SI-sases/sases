@@ -1,7 +1,7 @@
-// static/modules/sidebar.js
-import { api } from './api.js';
+﻿// static/modules/sidebar.js
 import { t } from './i18n.js';
 import { openMarketPage } from './market.js';
+import { openToolMarket } from './tool_market.js';
 
 export function initSideDrawer() {
   const hamburgerBtn = document.getElementById('hamburger-btn');
@@ -28,8 +28,7 @@ export function initSideDrawer() {
   if (menuHarness) {
     menuHarness.addEventListener('click', () => {
       closeSideDrawer();
-      window.openSubpage(t('harness_tools'), `<div class="subpage-placeholder">${t('loading')}...</div>`);
-      loadHarnessTools();
+      openToolMarket();
     });
   }
   if (menuMarket) {
@@ -85,30 +84,3 @@ function closeSideDrawer() {
   }
 }
 
-async function loadHarnessTools() {
-  try {
-    const data = await api.getHarnessModules();
-    const modules = data.modules || [];
-    let html = '';
-    if (modules.length === 0) {
-      html = `<div class="subpage-placeholder">${t('no_modules')}</div>`;
-    } else {
-      html = '<div class="me-menu">';
-      modules.forEach(mod => {
-        html += `
-          <div class="me-menu-item">
-            <span class="menu-icon">🔧</span>
-            <div class="menu-text">
-              <div class="menu-title">${mod.name}</div>
-              <div class="menu-desc">${mod.description || mod.id}</div>
-            </div>
-          </div>
-        `;
-      });
-      html += '</div>';
-    }
-    document.getElementById('subpage-content').innerHTML = html;
-  } catch (e) {
-    document.getElementById('subpage-content').innerHTML = `<div class="subpage-placeholder">${t('load_failed')}</div>`;
-  }
-}
