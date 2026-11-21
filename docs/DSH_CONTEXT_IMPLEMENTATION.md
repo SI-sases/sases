@@ -42,12 +42,22 @@
 ### M3 runtime context
 
 - `agent_context.py`
-- 任务类才检索：
-  - memory top 3
-  - project chunks top 3
-  - 当前任务状态
+- 默认只注入“当前任务状态”
+- 记忆/项目检索需 `SASES_RUNTIME_RECALL=1`
+- 关键词兜底：`keyword_search.py`（中文 bigram + 英文词）
 - 只拼在请求尾部，不写 `agent_messages`
 - 开关：`SASES_RUNTIME_CONTEXT=1`，默认关
+
+A/B（10 个问题）：
+
+| 项 | 关闭 | 开启 |
+|---|---|---|
+| 成功 | 8/10 | 8/10 |
+| prompt tokens | 9,017 | 9,402 |
+| cached | 6,912 | 7,424 |
+
+开启 +4.3% tokens，质量无量化提升；本地缺 `bge-small-zh-onnx`，语义记忆不可用，关键词记忆噪声大。  
+结论：默认关闭；需要时只开任务状态，记忆/项目再单独开 `SASES_RUNTIME_RECALL=1`。
 
 ### M4 memory/project 写回
 
