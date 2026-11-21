@@ -255,7 +255,6 @@ async def periodic_git_push():
         await asyncio.sleep(3600)
 
 
-
 async def periodic_feedback_weekly():
     """每 7 天生成一次反馈周报（v0.40.0）"""
     import subprocess
@@ -360,7 +359,6 @@ async def periodic_pattern_finalize():
         await asyncio.sleep(3600)
 
 
-
 async def periodic_syntax_check():
     """每 10 分钟检查 core/ 下 .py 语法，发现错误就告警"""
     import ast as _ast
@@ -388,7 +386,6 @@ async def periodic_syntax_check():
         except Exception as _e:
             print('[syntax-check] 异常: ' + str(_e))
         await asyncio.sleep(600)
-
 
 
 async def periodic_rescue_maintenance():
@@ -530,13 +527,36 @@ async def periodic_memory_backfill():
             print("[memory-backfill] 失败: {}".format(e))
         await asyncio.sleep(1800)
 
+
+async def periodic_task_state_audit(interval_seconds=300):
+    """P2-B2: 定期扫僵尸快照（run 已终止但 snapshot 仍 running），写回 failed"""
+    await asyncio.sleep(60)
+    while True:
+        try:
+            from .db import db_cursor as _dbc_za
+            from .services.task_state_service import get_snapshot_fresh as _gsf_za
+            with _dbc_za() as _c_za:
+                _c_za.execute(
+                    "SELECT id FROM conversations WHERE active_task_status='running' AND active_task_id IS NOT NULL"
+                )
+                _rows_za = _c_za.fetchall()
+            _n_za = 0
+            for _r_za in _rows_za:
+                _cid_za = _r_za["id"] if isinstance(_r_za, dict) else _r_za[0]
+                try:
+                    _snap_za = _gsf_za(_cid_za)
+                    if _snap_za and _snap_za.get("status") == "failed":
+                        _n_za += 1
+                except Exception:
+                    pass
+            if _n_za:
+                print("[zombie-audit] 修复 " + str(_n_za) + " 个僵尸快照")
+        except Exception as _e_za:
+            print("[zombie-audit] failed: " + str(_e_za))
+        await asyncio.sleep(interval_seconds)
+
+
 @asynccontextmanager
-
-
-
-
-
-
 async def lifespan(app: FastAPI):
     from .services.scheduled_scheduler import scheduled_task_scheduler
     asyncio.create_task(supervisor_service.resume_restart_pending_runs())
@@ -608,10 +628,10 @@ async def lifespan(app: FastAPI):
     _background_tasks.append(asyncio.create_task(periodic_hlc_health()))
     _background_tasks.append(asyncio.create_task(periodic_memory_backfill()))
     _background_tasks.append(asyncio.create_task(scheduled_task_scheduler()))
+    _background_tasks.append(asyncio.create_task(periodic_task_state_audit()))
 
 
     # 【预热】启动后预热一次（不参与周期）
-
 
 
     # 【hive 蜂巢任务】
@@ -828,6 +848,8 @@ def create_app() -> FastAPI:
     app.include_router(version_routes.router)
     app.include_router(auth_check_routes.router, tags=["auth-check"])
     app.include_router(license_routes.router)
+    from .api_routes.trace_routes import router as _trace_router
+    app.include_router(_trace_router)
 
     @app.get("/static/index.html", response_class=HTMLResponse)
     async def serve_index():

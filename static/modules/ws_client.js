@@ -41,6 +41,9 @@ function _openWs(uid) {
         if (d && (d.type === 'new_message' || d.type === 'sases_new_message')) {
           window.dispatchEvent(new CustomEvent('sases_new_message', { detail: d }));
         }
+        if (d && d.type === 'task_trace') {
+          window.dispatchEvent(new CustomEvent('sases_task_trace', { detail: d }));
+        }
       } catch (err) {}
     };
     _ws.onclose = () => {
