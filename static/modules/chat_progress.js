@@ -20,7 +20,10 @@
       '#run-progress-card .rp-line .rp-ico{width:14px}',
       '#run-progress-card .rp-line.done .rp-ico{color:#1a9c4a}',
       '#run-progress-card .rp-line.fail .rp-ico{color:#d93025}',
-      '#run-progress-card .rp-meta{color:#999;font-size:10px;margin-top:2px}'
+      '#run-progress-card .rp-meta{color:#999;font-size:10px;margin-top:2px}',
+      '#run-progress-card .rp-detail{white-space:pre-wrap;background:#fff;border:1px solid #eee;',
+      'border-radius:6px;padding:6px;margin:4px 0 2px 20px;font-size:11px;color:#555;max-height:200px;overflow:auto}',
+      '#run-progress-card .rp-line.clickable{cursor:pointer}'
     ].join('');
     document.head.appendChild(s);
   }
@@ -37,13 +40,24 @@
     return card;
   }
 
-  function addLine(icon, text, cls) {
+  function addLine(icon, text, cls, detail) {
     var c = box();
     if (!c) return;
     var lines = c.querySelector('.rp-lines');
     var row = document.createElement('div');
-    row.className = 'rp-line ' + (cls || '');
+    row.className = 'rp-line ' + (cls || '') + (detail ? ' clickable' : '');
     row.innerHTML = '<span class="rp-ico">' + icon + '</span><span>' + text + '</span>';
+    if (detail) {
+      var det = document.createElement('div');
+      det.className = 'rp-detail';
+      det.style.display = 'none';
+      det.textContent = detail;
+      row.appendChild(det);
+      row.onclick = function (e) {
+        e.stopPropagation();
+        det.style.display = det.style.display === 'none' ? 'block' : 'none';
+      };
+    }
     lines.appendChild(row);
     var msgs = document.getElementById('chat-messages');
     if (msgs) msgs.scrollTop = msgs.scrollHeight;
@@ -86,7 +100,8 @@
     } else if (et === 'step_done' || et === 'tool_result') {
       var ok = (d.status || '') === 'success';
       var preview = (d.output_preview || d.content || '').replace(/\s+/g, ' ').slice(0, 80);
-      addLine(ok ? '✓' : '✗', (ok ? '完成' : '失败') + tool + (preview ? ' · ' + preview : ''), ok ? 'done' : 'fail');
+      addLine(ok ? '✓' : '✗', (ok ? '完成' : '失败') + tool + (preview ? ' · ' + preview : ''),
+              ok ? 'done' : 'fail', d.output_detail || '');
     } else if (et === 'run_end') {
       finish(d.status === 'interrupted' ? '已中断' : '已完成');
     } else if (et === 'async_done') {

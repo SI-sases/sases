@@ -928,6 +928,7 @@ async def _execute_task(task: Dict[str, Any]):
                 "status": status,
                 "duration_ms": dur,
                 "output_preview": str(payload.get("display") or output or "")[:200],
+                "output_detail": str(output or "")[:2000],
             })
         except Exception as _e_c3:
             print("[P3-C3] trace WS 推送失败: " + str(_e_c3))
