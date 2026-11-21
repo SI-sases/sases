@@ -121,6 +121,17 @@ async def handle_step_done(
                                 "status": _tr.get("status", "failed"),
                                 "output": (_tr.get("output") or "")[:500],
                             })
+                        # 测试快照回传（verify_ui 截图等）
+                        try:
+                            from .. import artifact_service as _art_svc
+                            for _tr in _test_results:
+                                _art_svc.maybe_record_from_text(
+                                    task.get("supervisor_run_id"), conversation_id,
+                                    task.get("user_id"), _tr.get("output") or "",
+                                    meta={"stage": "L2"},
+                                )
+                        except Exception as _e_art:
+                            print("[artifact] L2 回传失败: " + str(_e_art))
                         _pass = sum(1 for r in _test_results if r.get("status") == "success")
                         print(f"[L2] 测试完成 {_pass}/{len(_test_results)} 通过")
                     else:

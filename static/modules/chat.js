@@ -859,7 +859,7 @@ window.addEventListener('sases_new_message', (e) => {
     }
   }
   if (typeof appendMessage === 'function') {
-    appendMessage(d.sender || 'assistant', _display, d.sender_agent_id || 'AI', d.message_id, d.created_at, false, chatState);
+    appendMessage(d.sender || 'assistant', _display, d.sender_agent_id || 'AI', d.message_id, d.created_at, false, chatState, d.msg_type || 'standard', d.attachments || null);
   }
 });
 

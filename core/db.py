@@ -1181,6 +1181,122 @@ def init_db():
         cur.execute("CREATE INDEX IF NOT EXISTS idx_run_trace_run ON run_trace(run_id, id)")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_run_trace_time ON run_trace(created_at)")
 
+        # ========== 测试快照 / 产物（run_artifacts） ==========
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS run_artifacts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                run_id INTEGER,
+                conversation_id INTEGER,
+                kind TEXT,
+                path TEXT,
+                name TEXT,
+                meta TEXT,
+                created_at TEXT
+            )
+        """)
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_run_artifacts_run ON run_artifacts(run_id, id)")
+
+        # ========== P2 协议层：能力登记 / 异步调用 / 规则包 / 空投 / 同步回执 ==========
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS api_registry (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tool_id TEXT NOT NULL,
+                name TEXT,
+                description TEXT,
+                provider_node TEXT DEFAULT 'node-A',
+                endpoint TEXT NOT NULL,
+                method TEXT DEFAULT 'POST',
+                task_mode TEXT DEFAULT 'sync',
+                params_schema TEXT,
+                unit_price REAL DEFAULT 0,
+                price_unit TEXT DEFAULT 'seed_credits',
+                provider_pubkey TEXT,
+                provider_signature TEXT,
+                total_calls INTEGER DEFAULT 0,
+                success_calls INTEGER DEFAULT 0,
+                avg_latency_ms INTEGER DEFAULT 0,
+                status TEXT DEFAULT 'active',
+                origin_node TEXT,
+                hlc_ts TEXT,
+                created_at TEXT,
+                updated_at TEXT
+            )
+        """)
+        cur.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_api_registry_tool ON api_registry(tool_id)")
+
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS api_call_outbox (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                request_id TEXT UNIQUE NOT NULL,
+                tool_id TEXT NOT NULL,
+                provider_node TEXT,
+                params TEXT,
+                context_hash TEXT,
+                tool_version_snapshot TEXT,
+                status TEXT DEFAULT 'pending',
+                retries INTEGER DEFAULT 0,
+                next_retry_at TEXT,
+                last_error TEXT,
+                result TEXT,
+                created_at TEXT,
+                updated_at TEXT
+            )
+        """)
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_api_outbox_status ON api_call_outbox(status, next_retry_at)")
+
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS rule_packs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                version TEXT,
+                author TEXT,
+                rules_json TEXT,
+                signature TEXT,
+                status TEXT DEFAULT 'draft',
+                origin_node TEXT,
+                hlc_ts TEXT,
+                created_at TEXT
+            )
+        """)
+
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS airdrop_batches (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                batch_no TEXT UNIQUE,
+                total_amount REAL DEFAULT 0,
+                per_user REAL DEFAULT 0,
+                status TEXT DEFAULT 'pending',
+                created_at TEXT,
+                executed_at TEXT
+            )
+        """)
+
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS sync_received (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                source_node TEXT NOT NULL,
+                table_name TEXT NOT NULL,
+                record_id TEXT NOT NULL,
+                hlc_ts TEXT,
+                payload TEXT,
+                applied INTEGER DEFAULT 0,
+                created_at TEXT
+            )
+        """)
+        cur.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_sync_received_key ON sync_received(source_node, table_name, record_id, hlc_ts)")
+
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS user_daily_quotas (
+                user_id INTEGER NOT NULL,
+                date TEXT NOT NULL,
+                llm_calls INTEGER DEFAULT 0,
+                api_cost_usd REAL DEFAULT 0,
+                scheduled_runs INTEGER DEFAULT 0,
+                comfyui_calls INTEGER DEFAULT 0,
+                PRIMARY KEY (user_id, date)
+            )
+        """)
+
 
         # ========== 积分库（v0.20） ==========
         cur.execute("""

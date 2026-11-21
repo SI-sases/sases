@@ -375,6 +375,7 @@ f) 改 core/ 后在 description 提醒"需重启服务"
 2. ---STEPS--- 之后只能是 JSON 数组，不能有解释文字、不能有 markdown 代码块
 3. 【分析】里没有证据时禁止编排行号，写"未查到"，并把第 1 步安排成 grep_code / file_read
 4. 三段式禁止"已定位""见上文""按缺口修复"这类没有信息量的空话
+5. 凡是改动 static/ 页面或前端交互，最后必须加一步 verify_ui（action=screenshot），把截图回传给用户；后端改动最后加 verify_syntax
 
 【answer 输出铁律（v2，必读）】
 answer 的 content 也必须三段式：【分析】【方案】【建议】。
