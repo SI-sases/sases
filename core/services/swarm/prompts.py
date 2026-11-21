@@ -548,3 +548,29 @@ CTX_UNDERSTANDING_RULES = """
   禁止去检索项目库猜
 - 优先级：会话历史 / 粘贴方案 > task_context > 项目库 > 记忆库
 """
+
+
+# ===== A4: 项目指令 SASES.md（静态前缀，压缩不影响） =====
+import os as _os_a4
+
+
+def _load_sases_md():
+    _root = _os_a4.path.dirname(_os_a4.path.dirname(_os_a4.path.dirname(_os_a4.path.abspath(__file__))))
+    for _name in ("SASES.local.md", "SASES.md"):
+        _p = _os_a4.path.join(_root, _name)
+        if not _os_a4.path.exists(_p):
+            continue
+        try:
+            with open(_p, "r", encoding="utf-8") as _f:
+                return _f.read(32768).strip()
+        except Exception as _e:
+            print("[prompt] 读取 " + _name + " 失败: " + str(_e))
+    return ""
+
+
+_SASES_MD = _load_sases_md()
+if _SASES_MD:
+    COMMANDER_SYSTEM_PROMPT = (COMMANDER_SYSTEM_PROMPT
+                               + "\n\n【项目指令 SASES.md（只读约束，优先级高于一般偏好）】\n"
+                               + _SASES_MD)
+    print("[prompt] 已注入 SASES.md，长度=" + str(len(_SASES_MD)))
