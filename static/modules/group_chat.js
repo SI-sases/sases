@@ -138,6 +138,7 @@ export async function openGroupChat(groupId, groupName) {
         try {
           const d = JSON.parse(e.data);
           if (d && d.type === 'message') {
+            _hideGroupThinking();
             // 自己发的消息已乐观渲染，跳过
             if (d.sender_id && String(d.sender_id) === String(currentUserId) && !d.sender_agent_id) {
               return;
@@ -554,8 +555,28 @@ function appendGroupMessage(senderName, content, isSelf = false, skipScroll = fa
 // 【模块 12. 发送群消息（乐观渲染）】
 // ======================================================================
 
-export async function sendGroupMessage() {
-  const input = document.getElementById('chat-input');
+let _groupThinkingTimer = null;
+
+function _showGroupThinking() {
+  _hideGroupThinking();
+  const box = document.getElementById('chat-messages');
+  if (!box) return;
+  const el = document.createElement('div');
+  el.id = 'group-thinking';
+  el.style.cssText = 'margin:8px 14px;color:#888;font-size:12px;font-family:system-ui';
+  el.textContent = '🤖 智能体思考中…';
+  box.appendChild(el);
+  box.scrollTop = box.scrollHeight;
+  _groupThinkingTimer = setTimeout(_hideGroupThinking, 30000);
+}
+
+function _hideGroupThinking() {
+  const el = document.getElementById('group-thinking');
+  if (el) el.remove();
+  if (_groupThinkingTimer) { clearTimeout(_groupThinkingTimer); _groupThinkingTimer = null; }
+}
+
+export async function sendGroupMessage() {  const input = document.getElementById('chat-input');
   const text = input.value.trim();
   const atts = (window.chatState && Array.isArray(window.chatState.pendingAttachments)) ? [...window.chatState.pendingAttachments] : [];
   if (!text && atts.length === 0) return;
@@ -585,9 +606,11 @@ export async function sendGroupMessage() {
       }
     }
     if (text) {
+      if (/@\S/.test(text)) _showGroupThinking();
       await api.sendGroupMessage(currentGroupId, text, currentAgentId);
     }
   } catch (e) {
+    _hideGroupThinking();
     const _lastMsg = document.querySelector('#chat-messages .message-row.user:last-child .message');
     if (_lastMsg) {
       _lastMsg.style.background = '#ffebee';
