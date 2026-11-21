@@ -79,7 +79,11 @@ async def _token_compact(conversation_id, user_id):
         return False
 
     msgs = [{"role": r["role"], "content": r["content"] or ""} for r in rows]
-    before = token_meter.measure(msgs)["total"]
+    from core.harness_runtime import harness_runtime
+    from .fast_agent import tool_schema
+    from .swarm.prompts import BASE_SYSTEM
+    tools = [tool_schema(t) for t in sorted(harness_runtime.list_tools(), key=lambda t: getattr(t, "module_id", "") or "")]
+    before = token_meter.measure(msgs, tools=tools, system_prompt=BASE_SYSTEM)["total"]
     budget = token_meter.pressure_budget(
         model_window=int(os.getenv("SASES_CTX_WINDOW", "131072")),
         output_cap=int(os.getenv("SASES_CTX_OUTPUT", "4096")),
@@ -98,15 +102,26 @@ async def _token_compact(conversation_id, user_id):
             break
     keep.reverse()
     old = rows[:len(rows) - len(keep)]
+    # 不把 assistant tool_calls / tool result 对切断
+    while keep and keep[0].get("role") == "tool":
+        old.append(keep.pop(0))
+    if old and old[-1].get("role") == "assistant" and old[-1].get("tool_calls"):
+        keep.insert(0, old.pop())
     if len(old) < 5:
         return False
 
-    old_msgs = [{"role": r["role"], "content": r["content"] or ""} for r in old]
+    old_msgs = []
+    for r in old:
+        role = r["role"]
+        text = r["content"] or ""
+        if role == "tool":
+            old_msgs.append({"role": "user", "content": "[工具结果] " + text})
+        elif role == "assistant" and r.get("tool_calls"):
+            old_msgs.append({"role": "assistant", "content": text or "[调用工具]"})
+        else:
+            old_msgs.append({"role": role, "content": text})
     from .swarm.llm_parser import client, MODEL
-    from .swarm.prompts import BASE_SYSTEM, BASE_PREFIX_HASH
-    from core.harness_runtime import harness_runtime
-    from .fast_agent import tool_schema
-    tools = [tool_schema(t) for t in sorted(harness_runtime.list_tools(), key=lambda t: getattr(t, "module_id", "") or "")]
+    from .swarm.prompts import BASE_PREFIX_HASH
     messages = [{"role": "system", "content": BASE_SYSTEM}] + old_msgs + [
         {"role": "user", "content": "请总结以上历史，保留用户目标、已改文件、失败原因、未决问题；不要调用工具。"}
     ]
