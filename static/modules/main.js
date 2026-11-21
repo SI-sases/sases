@@ -14,6 +14,7 @@ import './me_memory.js';
 import './pet.js';
 import './base.js';
 import './chat_trace.js';
+import './chat_history_rail.js';
 import './onboarding.js';
 import { openSubpage, closeSubpage } from './subpage.js';
 import { openGroupChat, closeGroupChat } from './group_chat.js';
