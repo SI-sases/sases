@@ -65,57 +65,16 @@ ALLOWED_COMMANDS = {
 # 移除 % $ ^ < > 因为这些在合法路径/URL/输出中很常见
 DANGEROUS_CHARS = ['&', '`', '\n', '\r']
 
-MAX_OUTPUT_LENGTH = 20000
 DEFAULT_TIMEOUT = 30
 STEP_TIMEOUT = 180
-_SIDE_EFFECT = {"file_write", "smart_edit", "file_replace_range", "delete_block", "split_block", "git_ops", "http_async"}
-_UNTRUSTED_TOOLS = {"web_fetch", "api_call", "http_async", "read_user_doc"}
+from .swarm.tool_output import (
+    MAX_OUTPUT_LENGTH,
+    SIDE_EFFECT as _SIDE_EFFECT,
+    wrap_untrusted as _wrap_untrusted,
+    spill_large as _spill_large,
+    idem_put as _idem_put,
+)
 
-
-def _wrap_untrusted(tool_id: str, text) -> str:
-    if tool_id not in _UNTRUSTED_TOOLS:
-        return text
-    return ('<untrusted_tool_output tool="' + str(tool_id) + '">\n'
-            + str(text) + '\n</untrusted_tool_output>')
-
-
-def _idem_put(module_id: str, key, output):
-    if not key or module_id not in _SIDE_EFFECT:
-        return
-    try:
-        from . import run_journal as _rj_i
-        _rj_i.effect_put(str(key), module_id, str(output)[:20000])
-    except Exception as _e_i:
-        print("[idempotent] 写入失败: " + str(_e_i))
-
-
-def _spill_large(output, run_id=None, conversation_id=None, user_id=None, module_id="tool"):
-    """P1-3: 超过 MAX_OUTPUT_LENGTH 的输出落 artifact，返回截断文本 + 指针。"""
-    text = str(output or "")
-    if len(text) <= MAX_OUTPUT_LENGTH:
-        return text
-    try:
-        import time as _time_sp
-        _root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        _dir = os.path.join(_root, "static", "generated")
-        os.makedirs(_dir, exist_ok=True)
-        _name = "tool_output_" + str(run_id or 0) + "_" + str(int(_time_sp.time() * 1000)) + ".txt"
-        _path = os.path.join(_dir, _name)
-        with open(_path, "w", encoding="utf-8") as f:
-            f.write(text)
-        _url = "/static/generated/" + _name
-        try:
-            from . import artifact_service
-            artifact_service.record(run_id, conversation_id, user_id, _url,
-                                    kind="file", name=_name,
-                                    meta={"tool": module_id, "kind": "tool_output"}, silent=True)
-        except Exception as _e_ar:
-            print("[artifact] 记录大输出失败: " + str(_e_ar))
-        print("[artifact] 大输出已落盘 " + _url + " (" + str(len(text)) + " chars)")
-        return text[:MAX_OUTPUT_LENGTH] + "\n...[已截断，完整输出: " + _url + "]"
-    except Exception as e:
-        print("[artifact] 大输出落盘失败: " + str(e))
-        return text[:MAX_OUTPUT_LENGTH]
 POLL_INTERVAL = 3
 MAX_CONCURRENT_TASKS = 3
 
