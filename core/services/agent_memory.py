@@ -34,14 +34,22 @@ def append(conversation_id, role, content, run_id=None, tool_calls=None, tool_ca
 
 def history(conversation_id, limit=400):
     with db_cursor() as cur:
+        cur.execute("SELECT covered_until_id, summary FROM agent_summary WHERE conversation_id=?",
+                    (int(conversation_id),))
+        srow = cur.fetchone()
+        covered = int(srow["covered_until_id"] or 0) if srow else 0
         cur.execute(
             "SELECT role, content, tool_calls, tool_call_id FROM agent_messages "
-            "WHERE conversation_id=? ORDER BY seq DESC LIMIT ?",
-            (int(conversation_id), int(limit)),
+            "WHERE conversation_id=? AND id>? ORDER BY seq DESC LIMIT ?",
+            (int(conversation_id), covered, int(limit)),
         )
         rows = [dict(r) for r in cur.fetchall()]
     rows.reverse()
     out = []
+    if srow:
+        _sum = srow["summary"]
+        if _sum:
+            out.append({"role": "user", "content": "【历史摘要】\n" + str(_sum)})
     for r in rows:
         m = {"role": r["role"], "content": r["content"] or ""}
         if r.get("tool_calls"):

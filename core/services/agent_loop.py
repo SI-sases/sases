@@ -25,6 +25,11 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
     if not conversation_id:
         return {"status": "error", "content": "缺少会话", "steps": 0, "history": []}
 
+    try:
+        from .agent_compact import maybe_compact
+        await maybe_compact(conversation_id, user_id)
+    except Exception as _e_cp:
+        print("[compact] 跳过: " + str(_e_cp))
     agent_memory.backfill(conversation_id)
     hist = agent_memory.history(conversation_id)
     if not hist or str(hist[-1].get("content") or "") != str(goal):
