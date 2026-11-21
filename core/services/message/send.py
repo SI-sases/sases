@@ -15,6 +15,26 @@ from .conversations import create_conversation, get_messages, mark_conversation_
 from .model_call import call_model_with_config
 from .attachments import _enrich_attachment
 
+def _notify_schedule_created(user_id, task_id, task, cron):
+    async def _go():
+        try:
+            from ...api_routes.ws_routes import broadcast_to_user
+            await broadcast_to_user(user_id, {
+                "type": "sases_schedule_created",
+                "task_id": task_id,
+                "name": (task or {}).get("name") or "",
+                "cron": cron,
+                "next_run_at": (task or {}).get("next_run_at") or "",
+                "text": (task or {}).get("task_template") or (task or {}).get("name") or "",
+            })
+        except Exception as e:
+            print("[schedule] ws 通知失败: " + str(e))
+    try:
+        asyncio.create_task(_go())
+    except Exception:
+        pass
+
+
 def _sases_fallback_cid():
     from .ingest import fallback_conversation_id
     return fallback_conversation_id()
@@ -142,6 +162,10 @@ async def send_message(
                     task_template=_wk["task"], conversation_id=conversation_id,
                     supervisor_id=sender_agent_id or agent_id or "", capsule_snapshot=_snap)
                 _t = scheduled_task_service.get_task(_tid)
+                try:
+                    _notify_schedule_created(user_id, _tid, _t, _cron)
+                except Exception:
+                    pass
                 return {
                     "conversation_id": conversation_id, "user_message": content,
                     "assistant_reply": "✅ 每周任务已创建：%s\n下次执行：%s" % (
@@ -195,6 +219,10 @@ async def send_message(
                     },
                 )
                 _task = scheduled_task_service.get_task(_tid)
+                try:
+                    _notify_schedule_created(user_id, _tid, _task, cron)
+                except Exception:
+                    pass
                 _reply = f"✅ 定时任务已创建！\n任务内容：{template}\n执行时间：每天 {hour:02d}:{minute:02d}\n下次执行：{_task['next_run_at'][:16]}"
             except Exception as _e:
                 _reply = f"❌ 定时任务创建失败：{_e}"

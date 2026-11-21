@@ -47,6 +47,9 @@ function _openWs(uid) {
         if (d && d.type === 'approval_request') {
           window.dispatchEvent(new CustomEvent('sases_approval_request', { detail: d }));
         }
+        if (d && d.type === 'sases_schedule_created') {
+          window.dispatchEvent(new CustomEvent('sases_schedule_created', { detail: d }));
+        }
       } catch (err) {}
     };
     _ws.onclose = () => {
