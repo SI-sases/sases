@@ -30,3 +30,12 @@ async def get_leaderboard(user_id: int = Depends(get_current_user)):
 async def get_harness_modules(user_id: int = Depends(get_current_user)):
     modules = stats_service.get_harness_modules()
     return {"modules": modules}
+
+
+@router.get("/llm-usage")
+async def get_llm_usage(days: int = 7, user_id: int = Depends(get_current_user)):
+    from ..services import llm_usage_service
+    return {
+        "summary": llm_usage_service.summary(user_id, days),
+        "recent": llm_usage_service.recent(user_id, 20),
+    }

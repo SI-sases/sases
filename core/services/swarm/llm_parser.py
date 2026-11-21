@@ -13,7 +13,8 @@ client = openai.OpenAI(
 
 MODEL = config.MODEL_NAME
 
-async def _call_llm(prompt: str, system_prompt: str = "", max_tokens: int = None) -> str:
+async def _call_llm(prompt: str, system_prompt: str = "", max_tokens: int = None,
+                    purpose: str = "generic", user_id=None, conversation_id=None) -> str:
     if max_tokens is None:
         max_tokens = config.COMMANDER_MAX_TOKENS
     messages = []
@@ -29,6 +30,13 @@ async def _call_llm(prompt: str, system_prompt: str = "", max_tokens: int = None
         max_tokens=max_tokens,
         extra_body={"thinking": {"type": "disabled"}}
     )
+
+    # A1: 记录真实 token 与缓存命中（失败不影响主流程）
+    try:
+        from ..llm_usage_service import record_from_response
+        record_from_response(resp, user_id=user_id, conversation_id=conversation_id, purpose=purpose)
+    except Exception as _e_usage:
+        print("[usage] 记录失败: " + str(_e_usage))
 
     choice = resp.choices[0]
     content = choice.message.content
