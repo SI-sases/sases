@@ -110,7 +110,11 @@ async def deliver_to_linked_accounts(user_id, conversation_id, content, sender_a
         # 只有本地用户才有 _msg_id，才需要走后续的 WS 广播和 A2A
         if _target_uid and _target_conv_id and _msg_id:
             is_task = False
-            if _sender_mode == 'free' and _target_mode == 'free':
+            _is_protocol_msg = str(content).startswith((
+                "[SUMMARY]:", "[STEP_DONE]:", "[TASK]:", "[RETRY_TASK]:",
+                "[TASK_DRAFT]:", "[SUPERVISOR_PROGRESS]:", "[TRACE]",
+            ))
+            if _sender_mode == 'free' and _target_mode == 'free' and not _is_protocol_msg:
                 if sender_agent_id or _target_agent:
                     if content.startswith('#') or ' #' in content:
                         is_task = True
@@ -138,7 +142,7 @@ async def deliver_to_linked_accounts(user_id, conversation_id, content, sender_a
                     except Exception as e:
                         print(f"[A2A] 生成黄卡失败: {e}")
             else:
-                if sender_agent_id or _target_agent or content.startswith("#"):
+                if not _is_protocol_msg and (sender_agent_id or _target_agent or content.startswith("#")):
                     print(f"[A2A] 非双自由模式，拦截执行。A:{_sender_mode}, B:{_target_mode}")
                     with db_cursor(commit=True) as cur_warn:
                         _warn_msg = "[系统提示] 必须双方都在自由模式，才能执行智能体指令。"

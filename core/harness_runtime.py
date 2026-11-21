@@ -246,6 +246,32 @@ class HarnessRuntime:
                     duration_ms=duration_ms,
                 )
 
+        # v0.47: 外部工具一律进沙箱子进程，绝不进程内执行
+        if info.get("external"):
+            try:
+                from core.tool_sandbox import run_external_tool
+                _ok, _res, _err, _dur = run_external_tool(
+                    info.get("dir") or "",
+                    getattr(manifest, "entrypoint", "main.py") if manifest else "main.py",
+                    params,
+                )
+                if _ok:
+                    self._circuit_record(module_id, True)
+                    self._log_tool_usage(module_id, params, True, _dur)
+                    return ToolInvokeResponse(
+                        success=True, module_id=module_id, result=_res, duration_ms=_dur)
+                self._circuit_record(module_id, False)
+                self._log_tool_usage(module_id, params, False, _dur, _err)
+                return ToolInvokeResponse(
+                    success=False, module_id=module_id, error=_err, duration_ms=_dur)
+            except Exception as e:
+                duration_ms = int((_time.time() - start) * 1000)
+                self._circuit_record(module_id, False)
+                self._log_tool_usage(module_id, params, False, duration_ms, e)
+                return ToolInvokeResponse(
+                    success=False, module_id=module_id, error="沙箱调用失败: " + str(e),
+                    duration_ms=duration_ms)
+
         if not handler:
             err = f"模块 '{module_id}' 没有可调用的 handler"
             self._circuit_record(module_id, False)
