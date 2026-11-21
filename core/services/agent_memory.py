@@ -34,22 +34,40 @@ def append(conversation_id, role, content, run_id=None, tool_calls=None, tool_ca
 
 def history(conversation_id, limit=400):
     with db_cursor() as cur:
-        cur.execute("SELECT covered_until_id, summary FROM agent_summary WHERE conversation_id=?",
-                    (int(conversation_id),))
+        cur.execute("SELECT * FROM agent_summary WHERE conversation_id=?", (int(conversation_id),))
         srow = cur.fetchone()
-        covered = int(srow["covered_until_id"] or 0) if srow else 0
-        cur.execute(
-            "SELECT role, content, tool_calls, tool_call_id FROM agent_messages "
-            "WHERE conversation_id=? AND id>? ORDER BY seq DESC LIMIT ?",
-            (int(conversation_id), covered, int(limit)),
-        )
+        summary_msg_id = None
+        covered = 0
+        _sum = ""
+        if srow:
+            d = dict(srow)
+            summary_msg_id = d.get("summary_message_id")
+            covered = int(d.get("covered_until_id") or 0)
+            _sum = d.get("summary") or ""
+
+        if summary_msg_id:
+            cur.execute("SELECT content FROM agent_messages WHERE id=?", (int(summary_msg_id),))
+            sr = cur.fetchone()
+            if sr:
+                _sum = sr["content"] or _sum
+            cur.execute(
+                "SELECT role, content, tool_calls, tool_call_id FROM agent_messages "
+                "WHERE conversation_id=? AND COALESCE(compacted,0)=0 AND id<>? "
+                "ORDER BY seq DESC LIMIT ?",
+                (int(conversation_id), int(summary_msg_id), int(limit)),
+            )
+        else:
+            cur.execute(
+                "SELECT role, content, tool_calls, tool_call_id FROM agent_messages "
+                "WHERE conversation_id=? AND id>? ORDER BY seq DESC LIMIT ?",
+                (int(conversation_id), covered, int(limit)),
+            )
         rows = [dict(r) for r in cur.fetchall()]
     rows.reverse()
     out = []
-    if srow:
-        _sum = srow["summary"]
-        if _sum:
-            out.append({"role": "user", "content": "【历史摘要】\n" + str(_sum)})
+    if srow and _sum:
+        out.append({"role": "assistant" if summary_msg_id else "user",
+                    "content": _sum if summary_msg_id else "【历史摘要】\n" + str(_sum)})
     for r in rows:
         m = {"role": r["role"], "content": r["content"] or ""}
         if r.get("tool_calls"):

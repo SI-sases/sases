@@ -1,12 +1,24 @@
 # core/services/agent_compact.py
 # -*- coding: utf-8 -*-
-"""A6: agent_messages 压缩（摘要 + 保留近期）。"""
+"""M2: agent_messages 压缩。
+
+- 默认保留旧的条数压缩；
+- SASES_TOKEN_COMPACT=1 时使用 DSH 风格 token 压力压缩。
+"""
+import os
 from datetime import datetime
 
 from ..db import db_cursor
+from . import token_meter
 
 
 async def maybe_compact(conversation_id, user_id, keep=20, threshold=40):
+    if os.getenv("SASES_TOKEN_COMPACT", "0") == "1":
+        return await _token_compact(conversation_id, user_id)
+    return await _count_compact(conversation_id, user_id, keep, threshold)
+
+
+async def _count_compact(conversation_id, user_id, keep=20, threshold=40):
     if not conversation_id:
         return False
     with db_cursor() as cur:
@@ -41,6 +53,9 @@ async def maybe_compact(conversation_id, user_id, keep=20, threshold=40):
         return False
     if not summary:
         return False
+    summary = summary.replace("[ASK_USER]:", "").strip()
+    if not summary:
+        return False
 
     covered_id = old[-1]["id"]
     now = datetime.utcnow().replace(microsecond=0).isoformat()
@@ -49,4 +64,94 @@ async def maybe_compact(conversation_id, user_id, keep=20, threshold=40):
         cur.execute("INSERT INTO agent_summary (conversation_id, covered_until_id, summary, created_at) "
                     "VALUES (?,?,?,?)", (int(conversation_id), covered_id, summary, now))
     print("[compact] conv=" + str(conversation_id) + " covered_until=" + str(covered_id))
+    return True
+
+
+async def _token_compact(conversation_id, user_id):
+    if not conversation_id:
+        return False
+    with db_cursor() as cur:
+        cur.execute("SELECT id, role, content, tool_calls, tool_call_id FROM agent_messages "
+                    "WHERE conversation_id=? AND COALESCE(compacted,0)=0 ORDER BY seq",
+                    (int(conversation_id),))
+        rows = [dict(r) for r in cur.fetchall()]
+    if len(rows) < 10:
+        return False
+
+    msgs = [{"role": r["role"], "content": r["content"] or ""} for r in rows]
+    before = token_meter.measure(msgs)["total"]
+    budget = token_meter.pressure_budget(
+        model_window=int(os.getenv("SASES_CTX_WINDOW", "131072")),
+        output_cap=int(os.getenv("SASES_CTX_OUTPUT", "4096")),
+        headroom=int(os.getenv("SASES_CTX_HEADROOM", "32768")),
+    )
+    if before < budget["threshold"]:
+        return False
+
+    retain = budget["retain_tokens"]
+    keep = []
+    acc = 0
+    for r in reversed(rows):
+        acc += token_meter.estimate_text(r.get("content"))
+        keep.append(r)
+        if acc >= retain:
+            break
+    keep.reverse()
+    old = rows[:len(rows) - len(keep)]
+    if len(old) < 5:
+        return False
+
+    old_msgs = [{"role": r["role"], "content": r["content"] or ""} for r in old]
+    from .swarm.llm_parser import client, MODEL
+    from .swarm.prompts import BASE_SYSTEM, BASE_PREFIX_HASH
+    from core.harness_runtime import harness_runtime
+    from .fast_agent import tool_schema
+    tools = [tool_schema(t) for t in sorted(harness_runtime.list_tools(), key=lambda t: getattr(t, "module_id", "") or "")]
+    messages = [{"role": "system", "content": BASE_SYSTEM}] + old_msgs + [
+        {"role": "user", "content": "请总结以上历史，保留用户目标、已改文件、失败原因、未决问题；不要调用工具。"}
+    ]
+    try:
+        resp = await __import__("asyncio").to_thread(
+            client.chat.completions.create,
+            model=MODEL, messages=messages, tools=tools or None, tool_choice="none",
+            temperature=0.2, max_tokens=800,
+            extra_body={"thinking": {"type": "disabled"}},
+        )
+        summary = (resp.choices[0].message.content or "").strip()
+        try:
+            from .llm_usage_service import record_from_response
+            record_from_response(resp, user_id=user_id, conversation_id=conversation_id,
+                                 purpose="compaction", prefix_hash=BASE_PREFIX_HASH)
+        except Exception:
+            pass
+    except Exception as e:
+        print("[compact] token 摘要失败: " + str(e))
+        return False
+    if not summary:
+        return False
+    summary = summary.replace("[ASK_USER]:", "").strip()
+    if not summary:
+        return False
+
+    now = datetime.utcnow().replace(microsecond=0).isoformat()
+    old_ids = [r["id"] for r in old]
+    with db_cursor(commit=True) as cur:
+        cur.execute("SELECT COALESCE(MAX(seq),0)+1 FROM agent_messages WHERE conversation_id=?",
+                    (int(conversation_id),))
+        seq = int(cur.fetchone()[0])
+        cur.execute("INSERT INTO agent_messages (conversation_id, seq, role, content, created_at, compacted) "
+                    "VALUES (?,?,?,?,?,0)",
+                    (int(conversation_id), seq, "assistant", "【历史摘要】" + summary, now))
+        summary_id = cur.lastrowid
+        q = ",".join("?" * len(old_ids))
+        cur.execute("UPDATE agent_messages SET compacted=1 WHERE id IN (" + q + ")", old_ids)
+        cur.execute("DELETE FROM agent_summary WHERE conversation_id=?", (int(conversation_id),))
+        cur.execute(
+            "INSERT INTO agent_summary (conversation_id, covered_until_id, summary, created_at, "
+            "summary_message_id, tokens_before, tokens_after, reason) VALUES (?,?,?,?,?,?,?,?)",
+            (int(conversation_id), old_ids[-1], summary, now, summary_id, before,
+             token_meter.measure([{"role": "assistant", "content": summary}])["total"], "token_pressure"),
+        )
+    print("[compact] conv=" + str(conversation_id) + " token " + str(before) +
+          " -> covered " + str(len(old_ids)) + " msgs")
     return True

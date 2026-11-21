@@ -1257,6 +1257,7 @@ def init_db():
                 tool_calls TEXT,
                 tool_call_id TEXT,
                 created_at TEXT,
+                compacted INTEGER DEFAULT 0,
                 UNIQUE (conversation_id, seq)
             )
         """)
@@ -1306,6 +1307,10 @@ def init_db():
                 covered_until_id INTEGER,
                 summary TEXT,
                 created_at TEXT,
+                summary_message_id INTEGER,
+                tokens_before INTEGER,
+                tokens_after INTEGER,
+                reason TEXT,
                 UNIQUE (conversation_id)
             )
         """)
