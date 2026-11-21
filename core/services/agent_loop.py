@@ -15,7 +15,7 @@ def _tool_schemas(allowed_tool_ids=None):
     from core.harness_runtime import harness_runtime
     from .fast_agent import tool_schema
     tools = sorted(harness_runtime.list_tools(), key=lambda t: getattr(t, "module_id", "") or "")
-    if allowed_tool_ids:
+    if allowed_tool_ids is not None:
         allow = set(str(x) for x in allowed_tool_ids)
         tools = [t for t in tools if getattr(t, "module_id", "") in allow]
     return [tool_schema(t) for t in tools if getattr(t, "module_id", "")]

@@ -140,7 +140,14 @@ async def _handle_at_agent(group_id, user_id, content):
             return
     if not question:
         question = '你好'
-    ok, reply = await group_resource_service.call_agent_with_group_resource(group_id, user_id, agent_id, question)
+    _execute = False
+    for _p in ("执行：", "执行:"):
+        if question.startswith(_p):
+            _execute = True
+            question = question[len(_p):].strip()
+            break
+    from ..services import group_agent_service
+    ok, reply = await group_agent_service.reply(group_id, user_id, agent_id, question, execute=_execute)
     if not ok:
         reply = f'⚠️ ' + str(reply)
     group_service.insert_agent_message(group_id, agent_id, reply, trigger_user_id=user_id)
