@@ -101,6 +101,22 @@ history 14 条，摘要 + 近期
 无 tool_call_id 400/422
 ```
 
+### 单任务长链路（10 个 5000 行文件）
+
+```text
+status ok, steps 6
+mid-run compact: 13,280 -> 260 tokens
+covered 13 msgs
+prompt 57,731
+cached 39,551
+命中 68.5%
+```
+
+修复：
+
+- 原来只在 run 开始检查压缩，单任务执行中不会压缩
+- 现在每一步 LLM 调用前都会检查，超阈值即压缩并重建 messages
+
 ### 工具裁剪
 
 ```text
