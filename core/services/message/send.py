@@ -8,6 +8,24 @@ from ...db import db_cursor
 from fastapi import HTTPException
 
 
+def _should_fast(agent_mode, content, enabled_tool_ids=None):
+    """B2: 决定是否走 fast 单 Agent；保守策略，失败会自动回退 strict。"""
+    mode = (agent_mode or "").strip().lower()
+    if mode == "strict":
+        return False
+    if mode == "fast":
+        return True
+    s = (content or "").strip()
+    if not s or s.startswith("#"):
+        return False
+    if len(s) > 300:
+        return False
+    _heavy = ("改", "实现", "修复", "迁移", "重构", "批量", "部署", "发布", "删除", "所有文件")
+    if any(k in s for k in _heavy):
+        return False
+    return True
+
+
 def _normalize_prefix(content):
     """把 #N xxx / #N：xxx / #N:xxx 统一成 #N:xxx；*0/*1 同理"""
     import re
@@ -99,7 +117,7 @@ async def send_message(
     msg_type: str = "standard",
     max_steps: int = None,
     attachments: list = None
-, enabled_api_ids=None, enabled_tool_ids=None, enabled_skill_ids=None):
+, enabled_api_ids=None, enabled_tool_ids=None, enabled_skill_ids=None, agent_mode=None):
     print(f"[MSG_DEBUG] content={content!r} | mode={mode!r} | agent_id={agent_id!r} | msg_type={msg_type}")
 
     # ===== P0-D: 付费墙预检（#1~#4 执行类消息必须通过 license 检查）=====
@@ -1147,7 +1165,7 @@ async def send_message(
                 # 直达通道：单工具任务不走 swarm（v0.32.0）
                 try:
                     from . import direct_channel as _dc
-                    if not _numbered_prefix_matched:
+                    if not _numbered_prefix_matched and (agent_mode or '').strip().lower() != 'fast':
                         _dc_ok, _dc_reply = await _dc.try_direct(content, user_id=user_id, conversation_id=conversation_id)
                     else:
                         _dc_ok, _dc_reply = False, ""
@@ -1172,6 +1190,39 @@ async def send_message(
                         }
                 except Exception as _e_dc:
                     print(f'[direct] 失败，回退 swarm: {_e_dc}')
+
+                # B2: fast 单 Agent（失败自动回退 strict）
+                if _should_fast(agent_mode, content, enabled_tool_ids):
+                    try:
+                        from .. import fast_agent as _fa
+                        _fr = await _fa.run_fast(
+                            user_id, conversation_id, content,
+                            allowed_tool_ids=enabled_tool_ids,
+                            max_steps=(max_steps if (max_steps and max_steps > 0) else 8),
+                        )
+                        _freply = (_fr.get("content") or "").strip()
+                        if _freply:
+                            with db_cursor(commit=True) as _cur_f:
+                                _cur_f.execute(
+                                    "INSERT INTO messages (conversation_id, sender, content, sender_agent_id, msg_type, attachments) VALUES (?, 'assistant', ?, ?, ?, ?)",
+                                    (conversation_id, _freply, sender_agent_id or 'sases_assistant_2', msg_type, _att_str))
+                                _cur_f.execute(
+                                    "UPDATE conversations SET updated_at=? WHERE id=?",
+                                    (datetime.now().isoformat(), conversation_id))
+                            print("[fast] ok steps=" + str(_fr.get("steps")))
+                            return {
+                                'conversation_id': conversation_id,
+                                'user_message': content,
+                                'assistant_reply': _freply,
+                                'agent_id': agent_id,
+                                'sender_agent_id': sender_agent_id,
+                                'mode': mode,
+                                'fast_mode': True,
+                                'steps': _fr.get("steps"),
+                            }
+                        print("[fast] 空结果，回退 strict")
+                    except Exception as _e_f:
+                        print("[fast] 失败，回退 strict: " + str(_e_f))
 
                 # 调度员提议执行（对话模式）
                 _skip_propose = False

@@ -3,6 +3,13 @@
 
 const STORAGE_KEY = 'sases_max_steps';
 const DEFAULT_STEPS = 8;
+const MODE_KEY = 'sases_agent_mode';
+const MODE_PRESETS = [
+  { value: 'auto', label: '⚡ 自动' },
+  { value: 'fast', label: '⚡ 快速' },
+  { value: 'strict', label: '🎯 严格' },
+];
+let _mode = null;
 
 const PRESETS = [
   { value: 5, label: '5步', desc: '快速任务' },
@@ -87,9 +94,23 @@ function _hideMenu() {
 
 export function initParamBar() {
   _currentValue = _read();
+  _mode = _readMode();
   const pill = document.getElementById('param-rounds');
   if (!pill) return;
   _updatePill();
+  _updateModePill();
+  const modePill = document.getElementById('mode-pill');
+  if (modePill && !modePill._sasesModeBound) {
+    modePill._sasesModeBound = true;
+    modePill.onclick = (e) => {
+      e.stopPropagation();
+      const idx = MODE_PRESETS.findIndex(p => p.value === getAgentMode());
+      const next = MODE_PRESETS[(idx + 1) % MODE_PRESETS.length];
+      localStorage.setItem(MODE_KEY, next.value);
+      _mode = next.value;
+      _updateModePill();
+    };
+  }
   if (!pill._sasesParamBound) {
     pill._sasesParamBound = true;
     pill.onclick = (e) => {
@@ -111,6 +132,26 @@ export function initParamBar() {
 export function getParamMaxSteps() {
   if (_currentValue === null) _currentValue = _read();
   return _currentValue;
+}
+
+function _readMode() {
+  const raw = localStorage.getItem(MODE_KEY);
+  if (raw === 'fast' || raw === 'strict' || raw === 'auto') return raw;
+  return 'auto';
+}
+
+function _updateModePill() {
+  const el = document.getElementById('mode-pill');
+  if (!el) return;
+  const v = getAgentMode();
+  const p = MODE_PRESETS.find(x => x.value === v) || MODE_PRESETS[0];
+  el.textContent = p.label;
+  el.classList.toggle('param-modified', v !== 'auto');
+}
+
+export function getAgentMode() {
+  if (_mode === null) _mode = _readMode();
+  return _mode;
 }
 
 export function setParamMaxSteps(v) {
