@@ -46,10 +46,13 @@ async def _call_llm(prompt: str, system_prompt: str = "", max_tokens: int = None
                 print("[swarm] 溢出压缩失败: " + str(_e_c))
         raise
 
-    # A1: 记录真实 token 与缓存命中（失败不影响主流程）
+    # A1/C3: 记录真实 token、缓存命中与前缀 hash（失败不影响主流程）
     try:
+        import hashlib as _hashlib
         from ..llm_usage_service import record_from_response
-        record_from_response(resp, user_id=user_id, conversation_id=conversation_id, purpose=purpose)
+        _ph = _hashlib.sha256((system_prompt or "").encode("utf-8")).hexdigest()[:12]
+        record_from_response(resp, user_id=user_id, conversation_id=conversation_id,
+                             purpose=purpose, prefix_hash=_ph)
     except Exception as _e_usage:
         print("[usage] 记录失败: " + str(_e_usage))
 

@@ -1418,9 +1418,11 @@ def init_db():
                 completion_tokens INTEGER DEFAULT 0,
                 total_tokens INTEGER DEFAULT 0,
                 cached_tokens INTEGER DEFAULT 0,
+                prefix_hash TEXT,
                 created_at TEXT
             )
         """)
+        _ensure_column(cur, "llm_usage", "prefix_hash", "TEXT")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_llm_usage_user ON llm_usage(user_id, created_at)")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_llm_usage_time ON llm_usage(created_at)")
 

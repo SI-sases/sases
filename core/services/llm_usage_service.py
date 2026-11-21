@@ -16,7 +16,7 @@ def _num(v) -> int:
         return 0
 
 
-def record_from_response(resp, user_id=None, conversation_id=None, purpose="generic") -> Optional[int]:
+def record_from_response(resp, user_id=None, conversation_id=None, purpose="generic", prefix_hash=None) -> Optional[int]:
     """从 OpenAI 兼容响应里提取 usage 并落库；失败静默。"""
     try:
         usage = getattr(resp, "usage", None)
@@ -29,23 +29,23 @@ def record_from_response(resp, user_id=None, conversation_id=None, purpose="gene
         cached = _num(getattr(usage, "prompt_cache_hit_tokens", 0))
         model = getattr(resp, "model", None) or ""
         return record(user_id, conversation_id, model, purpose,
-                      prompt_tokens, completion_tokens, total_tokens, cached)
+                      prompt_tokens, completion_tokens, total_tokens, cached, prefix_hash)
     except Exception as e:
         print("[usage] record_from_response failed: " + str(e))
         return None
 
 
 def record(user_id, conversation_id, model, purpose, prompt_tokens, completion_tokens,
-           total_tokens, cached_tokens=0) -> int:
+           total_tokens, cached_tokens=0, prefix_hash=None) -> int:
     request_id = "llm_" + uuid.uuid4().hex[:16]
     with db_cursor(commit=True) as cur:
         cur.execute(
             "INSERT INTO llm_usage (request_id, user_id, conversation_id, model, purpose, "
-            "prompt_tokens, completion_tokens, total_tokens, cached_tokens, created_at) "
-            "VALUES (?,?,?,?,?,?,?,?,?,?)",
+            "prompt_tokens, completion_tokens, total_tokens, cached_tokens, prefix_hash, created_at) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?)",
             (request_id, user_id, conversation_id, model, purpose,
              int(prompt_tokens or 0), int(completion_tokens or 0), int(total_tokens or 0),
-             int(cached_tokens or 0), datetime.utcnow().replace(microsecond=0).isoformat()),
+             int(cached_tokens or 0), prefix_hash, datetime.utcnow().replace(microsecond=0).isoformat()),
         )
         return cur.lastrowid
 
@@ -72,11 +72,25 @@ def summary(user_id=None, days: int = 7) -> Dict[str, Any]:
             tuple(args),
         )
         by_purpose = [dict(r) for r in cur.fetchall()]
+        cur.execute(
+            "SELECT COALESCE(prefix_hash,'') AS prefix_hash, COUNT(*) AS calls, "
+            "COALESCE(SUM(prompt_tokens),0) AS prompt_tokens, "
+            "COALESCE(SUM(cached_tokens),0) AS cached_tokens "
+            "FROM llm_usage WHERE " + where + " GROUP BY prefix_hash ORDER BY calls DESC LIMIT 10",
+            tuple(args),
+        )
+        by_prefix = []
+        for r in cur.fetchall():
+            d = dict(r)
+            p = int(d.get("prompt_tokens") or 0)
+            d["hit_rate"] = round(int(d.get("cached_tokens") or 0) / p, 4) if p else 0.0
+            by_prefix.append(d)
     prompt = int(row.get("prompt_tokens") or 0)
     cached = int(row.get("cached_tokens") or 0)
     row["cache_hit_rate"] = round(cached / prompt, 4) if prompt else 0.0
     row["days"] = days
     row["by_purpose"] = by_purpose
+    row["by_prefix"] = by_prefix
     return row
 
 
