@@ -115,6 +115,45 @@ async def generate_script_for_task(user_id, conversation_id, user_input, failed_
 
 
 
+def _format_enabled_apis(user_id, enabled_api_ids):
+    """把用户勾选的外部 API 格式化成 planner 可见的清单（不暴露 auth）。"""
+    try:
+        if not enabled_api_ids:
+            return ""
+        ids = []
+        for x in enabled_api_ids:
+            s = str(x).strip()
+            if s.startswith("ext_api_"):
+                s = s[len("ext_api_"):]
+            if s.isdigit():
+                ids.append(int(s))
+        if not ids:
+            return ""
+        marks = ",".join("?" for _ in ids)
+        with db_cursor() as cur:
+            cur.execute(
+                "SELECT id, api_name, api_desc, endpoint, method FROM user_api_configs "
+                "WHERE user_id=? AND id IN (" + marks + ") ORDER BY id",
+                (user_id,) + tuple(ids),
+            )
+            rows = [dict(r) for r in cur.fetchall()]
+        if not rows:
+            return ""
+        lines = ["【本次已勾选的外部 API（只允许调用这些）】"]
+        for r in rows:
+            desc = str(r.get("api_desc") or "")[:80]
+            lines.append(
+                "- ext_api_" + str(r["id"]) + "：" + str(r.get("api_name") or "")
+                + "（" + str(r.get("method") or "GET") + " " + str(r.get("endpoint") or "") + "）"
+                + (("｜" + desc) if desc else "")
+                + "；调用格式 {\"type\":\"harness\",\"module_id\":\"ext_api_" + str(r["id"]) + "\",\"params\":{...}}"
+            )
+        return chr(10).join(lines)
+    except Exception as e:
+        print("[swarm] 格式化外部 API 失败: " + str(e))
+        return ""
+
+
 async def plan_task(
     user_id: int,
     conversation_id: int,
@@ -323,6 +362,12 @@ async def plan_task(
                 prompt_parts.append(chr(10).join(_tl))
     except Exception as _te:
         print('[swarm] 注入工具清单失败: ' + str(_te))
+
+    # 用户勾选的外部 API 注入（仅列已勾选项）
+    _api_text = _format_enabled_apis(user_id, enabled_api_ids)
+    if _api_text:
+        prompt_parts.append(_api_text)
+        print("[swarm] 注入外部 API 清单，数量=" + str(_api_text.count("ext_api_")))
 
 
     # [C2] 连续两轮只侦察不写入 -> 本轮强制写入

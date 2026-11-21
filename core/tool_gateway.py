@@ -106,9 +106,13 @@ def _handle_ext_api(api_id: int, params: Dict[str, Any]) -> ToolInvokeResponse:
     
     try:
         if m == "GET":
-            resp = httpx.get(endpoint, headers=headers, params=params, timeout=15)
+            resp = httpx.get(endpoint, headers=headers, params=params, timeout=15, trust_env=False)
         else:
-            resp = httpx.post(endpoint, headers=headers, json=params, timeout=15)
+            resp = httpx.post(endpoint, headers=headers, json=params, timeout=15, trust_env=False)
+        if resp.status_code >= 400:
+            return ToolInvokeResponse(
+                module_id=f"ext_api_{api_id}", success=False,
+                error="HTTP " + str(resp.status_code) + ": " + (resp.text or "")[:200])
         return ToolInvokeResponse(module_id=f"ext_api_{api_id}", success=True, result=resp.text)
     except Exception as e:
         return ToolInvokeResponse(module_id=f"ext_api_{api_id}", success=False, error=str(e))
