@@ -154,6 +154,13 @@ export function getAgentMode() {
   return _mode;
 }
 
+export function setAgentMode(v) {
+  if (['auto', 'fast', 'strict'].indexOf(v) === -1) return;
+  localStorage.setItem(MODE_KEY, v);
+  _mode = v;
+  _updateModePill();
+}
+
 export function setParamMaxSteps(v) {
   _write(v);
   _updatePill();
@@ -161,5 +168,5 @@ export function setParamMaxSteps(v) {
 
 // 挂到 window 供 chat.js 非模块化调用
 if (typeof window !== 'undefined') {
-  window.sasesParamBar = { initParamBar, getParamMaxSteps, setParamMaxSteps };
+  window.sasesParamBar = { initParamBar, getParamMaxSteps, setParamMaxSteps, getAgentMode, setAgentMode };
 }
