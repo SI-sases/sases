@@ -372,10 +372,11 @@ async function sendMessage() {
       agent_mode: (typeof getAgentMode === 'function' ? getAgentMode() : 'auto'),
       enabled_api_ids: (window.currentSessionAPIs || []),
       enabled_tool_ids: (window.currentSessionTools || []),
-      enabled_skill_ids: (window.currentSessionSkills || [])
+      enabled_skill_ids: (window.currentSessionSkills || []),
+      quote_content: chatState.pendingQuote || null
     };
     let data = null, _streamed = false;
-    if (localStorage.getItem('sases_stream') === '1') {
+    if (localStorage.getItem('sases_stream') !== '0') {
       try {
         const _sr = await streamSendMessage(_payload, chatState);
         data = _sr.data;
@@ -387,6 +388,11 @@ async function sendMessage() {
       }
     } else {
       data = await api.sendMessage(_payload);
+    }
+
+    if (chatState.pendingQuote) {
+      chatState.pendingQuote = null;
+      try { hideQuoteBar(); } catch (e) {}
     }
 
     if (!chatState.conversationId) {

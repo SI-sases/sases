@@ -117,8 +117,12 @@ async def send_message(
     msg_type: str = "standard",
     max_steps: int = None,
     attachments: list = None
-, enabled_api_ids=None, enabled_tool_ids=None, enabled_skill_ids=None, agent_mode=None):
+, enabled_api_ids=None, enabled_tool_ids=None, enabled_skill_ids=None, agent_mode=None,
+      quote_content=None):
     print(f"[MSG_DEBUG] content={content!r} | mode={mode!r} | agent_id={agent_id!r} | msg_type={msg_type}")
+    _ai_content = content
+    if quote_content:
+        _ai_content = "【引用消息】\n" + str(quote_content)[:1000] + "\n\n【用户消息】\n" + str(content)
 
     # ===== P0-D: 付费墙预检（#1~#4 执行类消息必须通过 license 检查）=====
     import os as _os_p0d
@@ -731,7 +735,7 @@ async def send_message(
                         _plan_result = await swarm_service.plan_task(
                             user_id=user_id,
                             conversation_id=_cid_auto,
-                            user_input=content,
+                            user_input=_ai_content,
                             supervisor_id=sender_agent_id or agent_id,
                             supervisor_run_id=_run_id,
                             enabled_api_ids=enabled_api_ids,
@@ -1225,7 +1229,7 @@ async def send_message(
                     try:
                         from .. import fast_agent as _fa
                         _fr = await _fa.run_fast(
-                            user_id, conversation_id, content,
+                            user_id, conversation_id, _ai_content,
                             allowed_tool_ids=enabled_tool_ids,
                             max_steps=(max_steps if (max_steps and max_steps > 0) else 8),
                         )
