@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from ..db import db_cursor
 from .auth_routes import get_current_user_id
 from .. import tool_install_service as svc
+from ..services import capsule_service
 
 router = APIRouter(prefix="/tools", tags=["tools"])
 
@@ -50,6 +51,11 @@ def require_admin(request: Request, user_id: int = Depends(get_current_user_id))
 @router.get("/catalog")
 async def get_catalog(user_id: int = Depends(get_current_user_id)):
     return svc.catalog()
+
+
+@router.get("/capsules")
+async def get_capsules(user_id: int = Depends(get_current_user_id)):
+    return capsule_service.list_capsules(user_id)
 
 
 class GitInstallBody(BaseModel):

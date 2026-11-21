@@ -165,7 +165,9 @@ async def plan_task(
     supervisor_id: str = None,
     supervisor_run_id: int = None,
     max_steps: int = None,
-    enabled_api_ids: list = None
+    enabled_api_ids: list = None,
+    enabled_tool_ids: list = None,
+    enabled_skill_ids: list = None
 ) -> Dict[str, Any]:
     # [CTX-UPGRADE-v1] 有 doc_paste 时注入完整方案
     try:
@@ -340,8 +342,9 @@ async def plan_task(
     try:
         from ... import harness_runtime as _hr
         _tools = _hr.harness_runtime.list_tools()
-        if enabled_api_ids:
-            _tools = [t for t in _tools if t.get('id') in enabled_api_ids or f"ext_api_{t.get('id')}" in enabled_api_ids]
+        if enabled_tool_ids:
+            _allow_tools = set(str(x) for x in enabled_tool_ids)
+            _tools = [t for t in _tools if getattr(t, 'module_id', '') in _allow_tools]
         if _tools:
             _tl = ['【当前可用 Harness 工具】']
             for _t in _tools:

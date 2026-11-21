@@ -319,7 +319,9 @@ async function sendMessage() {
       sender_agent_id: chatState.senderAgentId,
       mode: chatState.mode,
       max_steps: _maxSteps,
-      enabled_api_ids: (window.currentSessionAPIs || [])
+      enabled_api_ids: (window.currentSessionAPIs || []),
+      enabled_tool_ids: (window.currentSessionTools || []),
+      enabled_skill_ids: (window.currentSessionSkills || [])
     });
 
     if (!chatState.conversationId) {
