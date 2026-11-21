@@ -66,7 +66,7 @@ A/B（10 个问题）：
 - run 完成后写：
   - `memory_service.remember(task_result)`
   - `project_service.import_execution_note`
-- 开关：`SASES_MEMORY_WRITE=1`，默认关
+- 开关：`SASES_MEMORY_WRITE=1`，默认开（仅网关完成的任务）
 
 ## 实测
 
@@ -116,7 +116,7 @@ head 4096 + marker + tail 1024
 | `SASES_TOKEN_COMPACT` | 1 | token 压缩 |
 | `SASES_RUNTIME_CONTEXT` | 1 | 任务状态注入 |
 | `SASES_RUNTIME_RECALL` | 1 | 记忆/项目注入 |
-| `SASES_MEMORY_WRITE` | 0 | 结果写回记忆 |
+| `SASES_MEMORY_WRITE` | 1 | 结果写回记忆 |
 | `SASES_CTX_WINDOW` | 131072 | 窗口 |
 | `SASES_CTX_OUTPUT` | 4096 | 输出预留 |
 | `SASES_CTX_HEADROOM` | 32768 | 压力余量 |
