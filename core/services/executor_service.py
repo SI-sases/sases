@@ -35,7 +35,7 @@ from typing import Optional, Dict, Any, List
 
 from ..db import db_cursor
 from . import swarm_service
-from ..harness_runtime import harness_runtime
+from .. import tool_gateway
 
 
 # ========== 安全配置 ==========
@@ -223,7 +223,7 @@ async def _try_equivalent_tool(module_id: str, params: Dict[str, Any]):
     if not code:
         return None
     try:
-        resp = await asyncio.to_thread(harness_runtime.invoke_tool, "run_python", {"code": code})
+        resp = await tool_gateway.invoke_tool_async("run_python", {"code": code})
         if not getattr(resp, "success", False):
             return None
         r = getattr(resp, "result", None)
@@ -382,7 +382,7 @@ async def _run_harness(module_id: str, params: Dict[str, Any], user_id=None, tas
             _db_circuit_record(module_id, user_id, task_id, _pollution["error"])
             return f"Harness 失败: {_pollution['error']}", "failed", dur
 
-        response = await asyncio.to_thread(harness_runtime.invoke_tool, module_id, params)
+        response = await tool_gateway.invoke_tool_async(module_id, params)
         dur = int((datetime.datetime.now() - start).total_seconds() * 1000)
 
         if not getattr(response, "success", False):

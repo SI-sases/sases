@@ -63,4 +63,35 @@ def load_harness_modules(modules_dir: str = HARNESS_MODULES_DIR) -> Dict[str, di
         for _alias in _aliases:
             if isinstance(_alias, str) and _alias and _alias not in modules:
                 modules[_alias] = entry
+
+    # v0.47: 外部工具（harness_modules/_external/<id>），必须在 tool_registry 中启用
+    _external_dir = os.path.join(modules_dir, "_external")
+    if os.path.isdir(_external_dir):
+        try:
+            from core import tool_registry
+        except Exception:
+            tool_registry = None
+        for _ext_id in os.listdir(_external_dir):
+            _ext_dir = os.path.join(_external_dir, _ext_id)
+            if not os.path.isdir(_ext_dir):
+                continue
+            _ext_manifest = _load_manifest(_ext_dir)
+            if _ext_manifest is None:
+                continue
+            if _ext_manifest.id in modules:
+                print(f"[harness] 外部工具 id 冲突，跳过: {_ext_manifest.id}")
+                continue
+            if tool_registry is None or not tool_registry.is_enabled(_ext_manifest.id, default=False):
+                continue
+            try:
+                _ext_run = _load_module_function(_ext_dir, _ext_manifest.entrypoint, f"harness_ext_{_ext_manifest.id}")
+            except Exception as e:
+                print(f"Failed to load external module {_ext_id}: {e}")
+                continue
+            _ext_entry = {"manifest": _ext_manifest, "dir": _ext_dir, "run_fn": _ext_run, "external": True}
+            modules[_ext_manifest.id] = _ext_entry
+            for _alias in (getattr(_ext_manifest, "aliases", None) or []):
+                if isinstance(_alias, str) and _alias and _alias not in modules:
+                    modules[_alias] = _ext_entry
+
     return modules
