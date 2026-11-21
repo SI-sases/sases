@@ -1,11 +1,23 @@
 # TODO: L5 模块级 import 导致手动 import runs 循环（运行路径无影响）
 import json
+import sys
 from datetime import datetime
 from ...db import db_cursor
 from .. import credit_service
 from ..swarm.helpers import _insert_message as _im_fin
 from .context import _dict
 from .constants import MAX_ROUNDS, CREDITS_PER_ROUND
+
+
+def _safe_print(text):
+    try:
+        print(text)
+    except UnicodeEncodeError:
+        enc = getattr(sys.stdout, "encoding", None) or "utf-8"
+        try:
+            print(str(text).encode(enc, errors="replace").decode(enc, errors="replace"))
+        except Exception:
+            pass
 
 def get_run(run_id):
     with db_cursor() as cur:
@@ -318,7 +330,7 @@ def finish_run(run_id, status='completed'):
             except Exception as _e_a2a:
                 print(f"[A2A 失败] 结果回传异常: {_e_a2a}")
 
-            print('[supervisor] finish_run 推送: ' + _msg_fin)
+            _safe_print('[supervisor] finish_run 推送: ' + _msg_fin)
     except Exception as _e_fin:
         print('[supervisor] finish_run 推送失败: ' + str(_e_fin))
     try:
