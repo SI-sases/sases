@@ -7,7 +7,7 @@ import threading
 from ..db import db_cursor
 
 
-async def stream_chat(user_id: int, conversation_id: int, content: str, max_tokens: int = 1200):
+async def stream_chat(user_id: int, conversation_id: int, content: str, quote_content=None, max_tokens: int = 1200):
     from .unified_context import build_context
     from .swarm.llm_parser import client, MODEL
 
@@ -19,6 +19,8 @@ async def stream_chat(user_id: int, conversation_id: int, content: str, max_toke
         ctx, _ = build_context(user_id, conversation_id, content, mode="chat")
     except Exception:
         ctx = content
+    if quote_content:
+        ctx = "【引用消息】\n" + str(quote_content)[:1000] + "\n\n【用户消息】\n" + ctx
 
     messages = [
         {"role": "system", "content": _CHAT_SYSTEM},

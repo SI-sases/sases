@@ -19,6 +19,7 @@ class SendMessageRequest(BaseModel):
     enabled_tool_ids: list = None
     enabled_skill_ids: list = None
     agent_mode: Optional[str] = None
+    quote_content: Optional[str] = None
     msg_type: Optional[str] = "standard"
     attachments: Optional[list] = None
     conversation_id: Optional[int] = None
@@ -40,6 +41,7 @@ class StreamMessageRequest(BaseModel):
     sender_agent_id: Optional[str] = None
     msg_type: Optional[str] = "standard"
     attachments: Optional[list] = None
+    quote_content: Optional[str] = None
 
 
 class PinRequest(BaseModel):
@@ -107,12 +109,13 @@ async def stream_message(body: StreamMessageRequest, user_id: int = Depends(get_
                 from ..services.message.send import send_message
                 res = await send_message(
                     user_id=user_id, conversation_id=body.conversation_id,
-                    content=body.content, sender_agent_id=body.sender_agent_id)
+                    content=body.content, sender_agent_id=body.sender_agent_id,
+                    quote_content=body.quote_content)
                 yield _sse({"type": "final", "data": res})
                 return
 
             from ..services.chat_stream import stream_chat
-            async for ev in stream_chat(user_id, body.conversation_id, body.content):
+            async for ev in stream_chat(user_id, body.conversation_id, body.content, body.quote_content):
                 yield _sse(ev)
         except Exception as e:
             yield _sse({"type": "error", "error": str(e)})
@@ -134,6 +137,7 @@ async def send_message(body: SendMessageRequest, user_id: int = Depends(get_curr
         enabled_tool_ids=body.enabled_tool_ids,
         enabled_skill_ids=body.enabled_skill_ids,
         agent_mode=body.agent_mode,
+        quote_content=body.quote_content,
         max_steps=body.max_steps,
         msg_type=body.msg_type,
         attachments=body.attachments
