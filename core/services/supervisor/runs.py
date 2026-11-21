@@ -208,6 +208,12 @@ def finish_run(run_id, status='completed'):
     with db_cursor(commit=True) as cur:
         cur.execute('UPDATE supervisor_runs SET status=?, finished_at=? WHERE id=?', (status, datetime.now().isoformat(), run_id))
     try:
+        from .. import trace_service as _trace_svc
+        _trace_svc.emit(run_id, _conv_id, 1, "run_end",
+                        content="任务结束：" + str(status), status=str(status))
+    except Exception as _e_tr:
+        print('[trace] run_end 写入失败: ' + str(_e_tr))
+    try:
         if _conv_id:
             from ..swarm.helpers import _insert_message as _im_fin
             # P0-4: 失败时给用户明确消息

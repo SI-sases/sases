@@ -75,6 +75,18 @@ async def handle_step_done(
     output = payload.get("output", "")
     review_result, review_reason = review_step(original_step, status, output)
 
+    # run_trace: 审核结论
+    try:
+        from .. import trace_service as _trace_svc
+        _trace_svc.emit(
+            task.get("supervisor_run_id"), conversation_id, 2, "review",
+            content="步骤 " + str(step_id) + " 审核：" + str(review_result) + "｜" + str(review_reason or "")[:200],
+            tool=str(original_step.get("module_id") or original_step.get("command") or "")[:80],
+            status=str(review_result),
+        )
+    except Exception as _e_tr:
+        print("[trace] review 写入失败: " + str(_e_tr))
+
     task["done"].add(step_id)
 
     # [P1-0c] L2 深度审核接入：所有步骤 done 后触发，只触发一次

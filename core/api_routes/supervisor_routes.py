@@ -7,6 +7,7 @@ from jose import jwt, JWTError
 
 from ..auth_service import SECRET_KEY
 from ..services import supervisor_service
+from ..services import trace_service as _trace_service
 
 router = APIRouter(prefix="/supervisor", tags=["supervisor"])
 security = HTTPBearer()
@@ -136,3 +137,24 @@ async def get_trace_messages(task_id: int, level: int = 1, user_id: int = Depend
         )
         rows = [dict(r) for r in _cur_m.fetchall()]
     return {"task_id": task_id, "count": len(rows), "messages": rows}
+
+# ===== run_trace: 活跃任务 / 最近任务 / 事件续传 =====
+@router.get("/runs/active")
+async def list_active_runs(conversation_id: int, user_id: int = Depends(get_current_user)):
+    return {"runs": _trace_service.active_runs(conversation_id, user_id)}
+
+
+@router.get("/runs/recent")
+async def list_recent_runs(conversation_id: int, limit: int = 10, user_id: int = Depends(get_current_user)):
+    return {"runs": _trace_service.recent_runs(conversation_id, user_id, limit)}
+
+
+@trace_router.get("/{task_id}/events")
+async def get_trace_events(task_id: int, after_seq: int = 0, limit: int = 500,
+                           user_id: int = Depends(get_current_user)):
+    cid = _trace_conv(task_id, user_id)
+    if cid is None:
+        raise HTTPException(404, "任务不存在")
+    events = _trace_service.list_events(task_id, after_seq, limit)
+    return {"run_id": task_id, "conversation_id": cid, "after_seq": after_seq,
+            "count": len(events), "events": events}

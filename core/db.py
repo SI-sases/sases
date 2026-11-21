@@ -1160,6 +1160,27 @@ def init_db():
         cur.execute("CREATE INDEX IF NOT EXISTS idx_suprun_user ON supervisor_runs(user_id)")
         _ensure_column(cur, "supervisor_runs", "task_type", "TEXT")
 
+        # ========== 任务执行轨迹（run_trace，P3-C1） ==========
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS run_trace (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                run_id INTEGER NOT NULL,
+                conversation_id INTEGER,
+                seq INTEGER NOT NULL,
+                level INTEGER DEFAULT 1,
+                event_type TEXT,
+                tool TEXT,
+                status TEXT,
+                content TEXT,
+                duration_ms INTEGER DEFAULT 0,
+                extra TEXT,
+                created_at TEXT
+            )
+        """)
+        cur.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_run_trace_seq ON run_trace(run_id, seq)")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_run_trace_run ON run_trace(run_id, id)")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_run_trace_time ON run_trace(created_at)")
+
 
         # ========== 积分库（v0.20） ==========
         cur.execute("""
