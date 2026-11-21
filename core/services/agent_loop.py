@@ -65,13 +65,32 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
             "id": c.id, "type": "function",
             "function": {"name": c.function.name, "arguments": c.function.arguments},
         } for c in calls]
-        agent_memory.append(conversation_id, "assistant", msg.content or "",
-                            tool_calls=assistant_tool_calls or None)
-        messages.append({"role": "assistant", "content": msg.content or "",
-                         **({"tool_calls": assistant_tool_calls} if assistant_tool_calls else {})})
 
         if not calls:
-            content = (msg.content or "").strip()
+            raw = (msg.content or "").strip()
+            try:
+                from .agent_question_service import parse as _ask_parse, create as _ask_create
+                content, _question = _ask_parse(raw)
+            except Exception:
+                content, _question = raw, None
+            content = content or raw
+            agent_memory.append(conversation_id, "assistant", content)
+            messages.append({"role": "assistant", "content": content})
+            if _question:
+                qid = _ask_create(conversation_id, _question, run_id)
+                try:
+                    from ..api_routes.ws_routes import broadcast_to_user
+                    await broadcast_to_user(user_id, {
+                        "type": "sases_ask_user",
+                        "question_id": qid,
+                        "conversation_id": conversation_id,
+                        "question": _question,
+                    })
+                except Exception as e:
+                    print("[ask_user] 广播失败: " + str(e))
+                return {"status": "awaiting_user", "content": content,
+                        "question": _question, "question_id": qid,
+                        "steps": step, "history": used}
             review = ""
             _need_review = (mode == "strict"
                             and any(h.get("tool") in WRITE_TOOLS for h in used))
@@ -90,6 +109,11 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
                     print("[strict] 审核失败: " + str(e))
             return {"status": "ok", "content": content, "steps": step,
                     "history": used, "review": review}
+
+        agent_memory.append(conversation_id, "assistant", msg.content or "",
+                            tool_calls=assistant_tool_calls or None)
+        messages.append({"role": "assistant", "content": msg.content or "",
+                         "tool_calls": assistant_tool_calls})
 
         for c in calls:
             name = c.function.name

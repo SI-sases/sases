@@ -84,7 +84,7 @@ async def run_a2a(run_id):
         if hb_task:
             hb_task.cancel()
     status = "completed" if res.get("status") == "ok" else (
-        "waiting_user" if res.get("status") == "awaiting_approval" else "failed")
+        "waiting_user" if res.get("status") in ("awaiting_approval", "awaiting_user") else "failed")
     _finish(run_id, run["conversation_id"], run["supervisor_id"], status,
             res.get("content") or "", "a2a")
     return {"ok": status == "completed", "status": status, "content": res.get("content")}
@@ -101,7 +101,7 @@ async def run_schedule(run_id, user_id, conversation_id, goal, supervisor_id, op
         _finish(run_id, conversation_id, supervisor_id, "failed", "执行失败：" + str(e), "schedule")
         return {"ok": False, "error": str(e)}
     status = "completed" if res.get("status") == "ok" else (
-        "waiting_user" if res.get("status") == "awaiting_approval" else "failed")
+        "waiting_user" if res.get("status") in ("awaiting_approval", "awaiting_user") else "failed")
     _finish(run_id, conversation_id, supervisor_id, status,
             res.get("content") or "", "schedule")
     return {"ok": status == "completed", "status": status, "content": res.get("content")}

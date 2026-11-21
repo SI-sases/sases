@@ -1275,6 +1275,18 @@ def init_db():
         """)
         cur.execute("CREATE INDEX IF NOT EXISTS idx_tool_usage_day ON tool_usage_daily(day, tool_id)")
         cur.execute("""
+            CREATE TABLE IF NOT EXISTS agent_questions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                conversation_id INTEGER NOT NULL,
+                run_id INTEGER,
+                question TEXT NOT NULL,
+                status TEXT DEFAULT 'pending',
+                answer TEXT,
+                created_at TEXT,
+                answered_at TEXT
+            )
+        """)
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS agent_summary (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 conversation_id INTEGER NOT NULL,
