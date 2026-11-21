@@ -29,6 +29,7 @@ class CreateTaskRequest(BaseModel):
     conversation_id: int
     supervisor_id: str
     timezone: Optional[str] = "Asia/Shanghai"
+    capsule_snapshot: Optional[dict] = None
 
 
 class ToggleTaskRequest(BaseModel):
@@ -46,6 +47,7 @@ async def create_task(body: CreateTaskRequest, user_id: int = Depends(get_curren
             conversation_id=body.conversation_id,
             supervisor_id=body.supervisor_id,
             timezone=body.timezone or "Asia/Shanghai",
+            capsule_snapshot=body.capsule_snapshot,
         )
         return {"ok": True, "task_id": task_id}
     except Exception as e:

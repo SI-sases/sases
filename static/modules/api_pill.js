@@ -163,12 +163,7 @@
       .then(function (data) {
         groups = data.groups || [];
         if (!groups.some(function (g) { return g.id === 'external'; })) _tab = 'tool';
-        if (!load()) {
-          groups.forEach(function (g) {
-            if (g.default_on) g.items.forEach(function (it) { inState(it.type).push(it.id); });
-          });
-          save();
-        }
+        load();
         render();
       })
       .catch(function (e) {

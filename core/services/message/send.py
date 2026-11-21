@@ -182,7 +182,12 @@ async def send_message(
                     cron_expr=cron,
                     task_template=template,
                     conversation_id=_cid,
-                    supervisor_id=_sid
+                    supervisor_id=_sid,
+                    capsule_snapshot={
+                        "apis": enabled_api_ids or [],
+                        "tools": enabled_tool_ids or [],
+                        "skills": enabled_skill_ids or [],
+                    },
                 )
                 _task = scheduled_task_service.get_task(_tid)
                 _reply = f"✅ 定时任务已创建！\n任务内容：{template}\n执行时间：每天 {hour:02d}:{minute:02d}\n下次执行：{_task['next_run_at'][:16]}"
