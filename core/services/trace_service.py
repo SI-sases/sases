@@ -32,6 +32,11 @@ def sanitize(text: Any, limit: int = 4000) -> str:
     s = str(text or "")
     for pat, rep in _SENSITIVE:
         s = pat.sub(lambda m, _r=rep: _r, s)
+    try:
+        from ..redact import redact as _redact
+        s = _redact(s)
+    except Exception:
+        pass
     if len(s) > limit:
         s = s[:limit] + " ...[truncated]"
     return s

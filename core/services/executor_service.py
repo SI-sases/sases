@@ -501,11 +501,21 @@ async def _run_harness(module_id: str, params: Dict[str, Any], user_id=None, tas
             output = result.get("text") or result.get("stdout") or json.dumps(result, ensure_ascii=False)
             _task_fail_counts.pop((str(task_id), module_id), None)
             _idem_put(module_id, idem_key, output)
+            try:
+                from ..redact import redact as _redact_out
+                output = _redact_out(output)
+            except Exception:
+                pass
             output = _spill_large(output, run_id, conversation_id, user_id, module_id)
             output = _wrap_untrusted(module_id, output)
             return output[:MAX_OUTPUT_LENGTH], "success", dur
         _task_fail_counts.pop((str(task_id), module_id), None)
         _idem_put(module_id, idem_key, result)
+        try:
+            from ..redact import redact as _redact_out2
+            result = _redact_out2(result)
+        except Exception:
+            pass
         _out_str = _spill_large(str(result), run_id, conversation_id, user_id, module_id)
         _out_str = _wrap_untrusted(module_id, _out_str)
         return _out_str[:MAX_OUTPUT_LENGTH], "success", dur

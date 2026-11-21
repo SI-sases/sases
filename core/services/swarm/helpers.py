@@ -90,6 +90,11 @@ def _get_conversation_history(conversation_id: int, limit: int = 10) -> str:
 
 
 def _insert_message(conversation_id: int, content: str, sender_agent_id: Optional[str] = None):
+    try:
+        from ...redact import redact as _redact
+        content = _redact(content)
+    except Exception:
+        pass
     with db_cursor(commit=True) as cur:
         if sender_agent_id:
             cur.execute(

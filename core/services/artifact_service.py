@@ -49,6 +49,11 @@ def record(run_id: Optional[int], conversation_id: Optional[int], user_id: Optio
            meta: Optional[Dict[str, Any]] = None, silent: bool = False) -> Optional[Dict[str, Any]]:
     """记录一个产物；图片会同时插入一条 image 消息并在聊天窗展示。"""
     try:
+        try:
+            from ..redact import redact as _redact
+            name = _redact(name) if name else name
+        except Exception:
+            pass
         if not url or not url.startswith("/static/"):
             return None
         abs_p = _abs_path(url)
