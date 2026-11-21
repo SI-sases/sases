@@ -63,6 +63,19 @@ def history(conversation_id, limit=400):
     return out
 
 
+def replace_tool_result(conversation_id, tool_call_id, content):
+    if not tool_call_id:
+        return 0
+    with db_cursor(commit=True) as cur:
+        cur.execute(
+            "UPDATE agent_messages SET content=? WHERE id=("
+            "SELECT id FROM agent_messages WHERE conversation_id=? AND role='tool' AND tool_call_id=? "
+            "ORDER BY id DESC LIMIT 1)",
+            (str(content or ""), int(conversation_id), tool_call_id),
+        )
+        return cur.rowcount
+
+
 def count(conversation_id):
     with db_cursor() as cur:
         cur.execute("SELECT COUNT(*) FROM agent_messages WHERE conversation_id=?", (int(conversation_id),))

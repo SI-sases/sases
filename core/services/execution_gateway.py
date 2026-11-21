@@ -122,6 +122,53 @@ async def resume_run(run_id, answer_text):
     return {"ok": status == "completed", "status": status, "content": res.get("content")}
 
 
+async def resume_after_approval(run_id):
+    """审批通过后：执行被拦的工具，再把结果喂回同一 loop。"""
+    run = _get_run(run_id)
+    if not run:
+        return {"ok": False, "error": "run not found"}
+    from . import approval_service, agent_memory
+    pending = approval_service.get_pending(run_id)
+    source = "a2a"
+    try:
+        with db_cursor() as cur:
+            cur.execute("SELECT is_friend_chat FROM conversations WHERE id=?", (run["conversation_id"],))
+            r = cur.fetchone()
+        if not r or not r["is_friend_chat"]:
+            source = "schedule"
+    except Exception:
+        pass
+    if pending:
+        try:
+            from .. import tool_gateway
+            r = await tool_gateway.invoke_tool_async(pending["tool_id"], pending.get("args") or {})
+            ok = bool(getattr(r, "success", False))
+            text = str(getattr(r, "result", "") or getattr(r, "error", ""))[:4000]
+        except Exception as e:
+            ok, text = False, "工具执行失败：" + str(e)
+        try:
+            if agent_memory.replace_tool_result(run["conversation_id"], pending.get("tool_call_id"), text) == 0:
+                agent_memory.append(run["conversation_id"], "tool", text, tool_call_id=pending.get("tool_call_id"))
+        except Exception:
+            pass
+        approval_service.clear_pending(pending["id"])
+    try:
+        res = await agent_loop.run(
+            run["user_id"], run["conversation_id"], run["goal"],
+            max_steps=10, run_id=run_id, mode="strict", resume=True,
+        )
+    except Exception as e:
+        _finish(run_id, run["conversation_id"], run["supervisor_id"], "failed",
+                "审批后继续执行失败：" + str(e), source)
+        return {"ok": False, "error": str(e)}
+    status = "completed" if res.get("status") == "ok" else (
+        "waiting_user" if res.get("status") in ("awaiting_approval", "awaiting_user") else "failed")
+    _finish(run_id, run["conversation_id"], run["supervisor_id"], status,
+            res.get("content") or "", source)
+    return {"ok": status == "completed", "status": status,
+            "content": res.get("content") or "", "steps": res.get("steps")}
+
+
 async def run_schedule(run_id, user_id, conversation_id, goal, supervisor_id, options=None):
     try:
         res = await agent_loop.run(

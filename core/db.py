@@ -1287,6 +1287,19 @@ def init_db():
             )
         """)
         cur.execute("""
+            CREATE TABLE IF NOT EXISTS agent_pending_tools (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                run_id INTEGER NOT NULL,
+                step_id TEXT,
+                tool_call_id TEXT,
+                tool_id TEXT,
+                args TEXT,
+                status TEXT DEFAULT 'pending',
+                created_at TEXT,
+                UNIQUE (run_id, step_id)
+            )
+        """)
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS agent_summary (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 conversation_id INTEGER NOT NULL,

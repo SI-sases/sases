@@ -79,6 +79,41 @@ async def request_approval(run_id, step_id, step, conversation_id=None, user_id=
         print("[approval] WS 推送失败: " + str(e))
 
 
+def save_pending(run_id, step_id, tool_call_id, tool_id, args):
+    import json
+    with db_cursor(commit=True) as cur:
+        cur.execute(
+            "INSERT INTO agent_pending_tools (run_id, step_id, tool_call_id, tool_id, args, created_at) "
+            "VALUES (?,?,?,?,?,?) ON CONFLICT(run_id, step_id) DO UPDATE SET "
+            "tool_call_id=excluded.tool_call_id, tool_id=excluded.tool_id, args=excluded.args, status='pending'",
+            (int(run_id), str(step_id), tool_call_id, str(tool_id),
+             json.dumps(args or {}, ensure_ascii=False), datetime.utcnow().replace(microsecond=0).isoformat()),
+        )
+
+
+def get_pending(run_id):
+    import json
+    with db_cursor() as cur:
+        cur.execute(
+            "SELECT * FROM agent_pending_tools WHERE run_id=? AND status='pending' ORDER BY id DESC LIMIT 1",
+            (int(run_id),),
+        )
+        row = cur.fetchone()
+        if not row:
+            return None
+        d = dict(row)
+        try:
+            d["args"] = json.loads(d.get("args") or "{}")
+        except Exception:
+            d["args"] = {}
+        return d
+
+
+def clear_pending(pending_id):
+    with db_cursor(commit=True) as cur:
+        cur.execute("UPDATE agent_pending_tools SET status='done' WHERE id=?", (int(pending_id),))
+
+
 def decide(run_id, step_id, decision, scope="once"):
     decision = "allow" if decision in ("allow", "once", "session", "approve") else "deny"
     scope = "session" if scope == "session" else "once"

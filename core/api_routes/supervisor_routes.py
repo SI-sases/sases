@@ -78,6 +78,12 @@ async def approve_run(run_id: int, body: ApproveBody, user_id: int = Depends(get
     if not row or int(row["user_id"] if isinstance(row, dict) else row[0]) != int(user_id):
         raise HTTPException(status_code=404, detail="run not found")
     approval_service.decide(run_id, body.step_id, body.decision, body.scope)
+    if str(body.decision).lower() in ("allow", "once", "session", "approve"):
+        try:
+            from ..services import execution_gateway
+            asyncio.create_task(execution_gateway.resume_after_approval(run_id))
+        except Exception as _e_ap:
+            print('[approval] 审批后继续失败: ' + str(_e_ap))
     return {"status": "ok", "decision": body.decision, "scope": body.scope}
 
 

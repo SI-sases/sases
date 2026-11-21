@@ -21,7 +21,7 @@ def _tool_schemas(allowed_tool_ids=None):
     return [tool_schema(t) for t in tools if getattr(t, "module_id", "")]
 
 
-async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8, run_id=None, mode="fast"):
+async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8, run_id=None, mode="fast", resume=False):
     if not conversation_id:
         return {"status": "error", "content": "缺少会话", "steps": 0, "history": []}
 
@@ -32,9 +32,10 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
         print("[compact] 跳过: " + str(_e_cp))
     agent_memory.backfill(conversation_id)
     hist = agent_memory.history(conversation_id)
-    if not hist or str(hist[-1].get("content") or "") != str(goal):
-        agent_memory.append(conversation_id, "user", goal)
-        hist = agent_memory.history(conversation_id)
+    if not resume:
+        if not hist or str(hist[-1].get("content") or "") != str(goal):
+            agent_memory.append(conversation_id, "user", goal)
+            hist = agent_memory.history(conversation_id)
 
     messages = [{"role": "system", "content": BASE_SYSTEM}] + hist
     schemas = _tool_schemas(allowed_tool_ids)
@@ -131,6 +132,12 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
                             _c_ap.execute("UPDATE supervisor_runs SET status='awaiting_approval' WHERE id=?", (run_id,))
                     except Exception:
                         pass
+                    try:
+                        from . import approval_service
+                        approval_service.save_pending(run_id, _ar.step, c.id, name, args)
+                        agent_memory.append(conversation_id, "tool", "等待审批", tool_call_id=c.id)
+                    except Exception as _e_pend:
+                        print("[approval] 保存待审批失败: " + str(_e_pend))
                 return {"status": "awaiting_approval", "content": "等待审批：" + str(_ar.tool),
                         "step": _ar.step, "tool": _ar.tool, "steps": step, "history": used}
             try:
