@@ -137,6 +137,10 @@ export async function openGroupChat(groupId, groupName) {
       ws.onmessage = (e) => {
         try {
           const d = JSON.parse(e.data);
+          if (d && d.type === 'agent_progress') {
+            _showGroupThinking(d.tool ? '🤖 正在执行 ' + d.tool + '…' : '🤖 智能体思考中…');
+            return;
+          }
           if (d && d.type === 'message') {
             _hideGroupThinking();
             // 自己发的消息已乐观渲染，跳过
@@ -557,14 +561,14 @@ function appendGroupMessage(senderName, content, isSelf = false, skipScroll = fa
 
 let _groupThinkingTimer = null;
 
-function _showGroupThinking() {
+function _showGroupThinking(text) {
   _hideGroupThinking();
   const box = document.getElementById('chat-messages');
   if (!box) return;
   const el = document.createElement('div');
   el.id = 'group-thinking';
   el.style.cssText = 'margin:8px 14px;color:#888;font-size:12px;font-family:system-ui';
-  el.textContent = '🤖 智能体思考中…';
+  el.textContent = text || '🤖 智能体思考中…';
   box.appendChild(el);
   box.scrollTop = box.scrollHeight;
   _groupThinkingTimer = setTimeout(_hideGroupThinking, 30000);

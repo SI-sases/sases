@@ -5,6 +5,7 @@
 群会话用负数 conversation_id（-group_id）作为 agent_messages 的 session key，
 不影响真实 conversations。
 """
+from ..db import db_cursor
 from . import agent_loop, agent_memory
 from . import group_resource_service
 
@@ -37,17 +38,42 @@ async def reply(group_id, user_id, agent_id, question, execute=False):
     ok, quota = group_resource_service.check_quota(group_id, user_id, agent_id)
     if not ok:
         return False, quota
+    with db_cursor() as _gc:
+        _gc.execute("SELECT mode FROM groups WHERE id=?", (group_id,))
+        _gr = _gc.fetchone()
+    group_mode = str((_gr["mode"] if _gr else "normal") or "normal")
+    swarm = (group_mode == "swarm") or group_resource_service.is_swarm_enabled(group_id)
     ensure_session(group_id)
     key = session_key(group_id)
     mode = "strict" if execute else "fast"
     allowed = None if execute else []
+    max_steps = 8 if (execute and swarm) else (6 if execute else 2)
+
+    async def _progress(ev):
+        try:
+            from ..db import db_cursor as _dc
+            with _dc() as _c:
+                _c.execute("SELECT global_group_id FROM groups WHERE id=?", (group_id,))
+                _r = _c.fetchone()
+            if _r and _r["global_group_id"]:
+                from ..api_routes.ws_routes import broadcast_to_group
+                await broadcast_to_group(_r["global_group_id"], {
+                    "type": "agent_progress",
+                    "agent_id": agent_id,
+                    "tool": (ev or {}).get("tool") or "",
+                    "step": (ev or {}).get("step") or 0,
+                })
+        except Exception:
+            pass
+
     try:
         res = await agent_loop.run(
             user_id, key, question,
             allowed_tool_ids=allowed,
-            max_steps=6 if execute else 2,
+            max_steps=max_steps,
             mode=mode,
             supervisor_id=agent_id,
+            on_event=_progress,
         )
     except Exception as e:
         return False, "群智能体执行失败：" + str(e)

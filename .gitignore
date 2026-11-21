@@ -70,3 +70,5 @@ keys/*.pem
 core/keys/*.pem 
 scripts/orphans_report.json
 _archive/
+
+backup/

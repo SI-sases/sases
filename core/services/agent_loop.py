@@ -23,7 +23,7 @@ def _tool_schemas(allowed_tool_ids=None):
     return [tool_schema(t) for t in tools if getattr(t, "module_id", "")]
 
 
-async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8, run_id=None, mode="fast", resume=False, supervisor_id=None):
+async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8, run_id=None, mode="fast", resume=False, supervisor_id=None, on_event=None):
     if not conversation_id:
         return {"status": "error", "content": "缺少会话", "steps": 0, "history": []}
 
@@ -205,6 +205,11 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
             agent_memory.append(conversation_id, "tool", text, tool_call_id=c.id)
             messages.append({"role": "tool", "tool_call_id": c.id, "content": text})
             await after_tool(user_id, conversation_id, run_id, step, name, args, ok, text)
+            if on_event:
+                try:
+                    await on_event({"tool": name, "ok": ok, "step": step})
+                except Exception:
+                    pass
 
             # A3: strict 写后确定性校验（不另起 prompt）
             if mode == "strict" and name in WRITE_TOOLS and isinstance(args, dict):
