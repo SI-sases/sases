@@ -78,7 +78,16 @@ async def _token_compact(conversation_id, user_id, force=False):
     if len(rows) < 10:
         return False
 
-    msgs = [{"role": r["role"], "content": r["content"] or ""} for r in rows]
+    msgs = []
+    for r in rows:
+        m = {"role": r["role"], "content": r["content"] or ""}
+        if r.get("tool_calls"):
+            import json
+            try:
+                m["tool_calls"] = json.loads(r["tool_calls"])
+            except Exception:
+                pass
+        msgs.append(m)
     from core.harness_runtime import harness_runtime
     from .fast_agent import tool_schema
     from .swarm.prompts import BASE_SYSTEM
