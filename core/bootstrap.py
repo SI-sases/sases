@@ -154,6 +154,7 @@ from .services import rescue_service
 from .services import swarm_service
 from .services import supervisor_service
 from .services import executor_service
+from .services import async_task_service
 from .services import cleanup_service
 from .services import pattern_service
 from .services import pattern_service
@@ -611,6 +612,7 @@ async def lifespan(app: FastAPI):
 
     # 【秒级】
     _background_tasks.append(asyncio.create_task(executor_service.start_background_executor()))
+    _background_tasks.append(asyncio.create_task(async_task_service.poller_loop()))
 
     _background_tasks.append(asyncio.create_task(outbox_worker()))
 

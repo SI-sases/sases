@@ -635,6 +635,17 @@ async def _execute_task(task: Dict[str, Any]):
         if status == "success":
             previous_outputs[step_id] = output
 
+        # 异步工具：把 handle 绑定回本次 run/会话，poller 完成后回传
+        try:
+            import json as _json_as
+            _ad = _json_as.loads(output) if isinstance(output, str) and output.strip().startswith("{") else None
+            if isinstance(_ad, dict) and _ad.get("status") == "submitted" and _ad.get("handle"):
+                from . import async_task_service as _ats
+                _ats.attach(_ad["handle"], task.get("supervisor_run_id"), conversation_id,
+                            task.get("user_id"), _ad.get("tool_id"))
+        except Exception as _e_as:
+            print("[async] attach 失败: " + str(_e_as))
+
         payload = {
             "task_id": task_id,
             "step": step_id,
