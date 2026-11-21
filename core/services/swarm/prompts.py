@@ -555,7 +555,7 @@ import os as _os_a4
 
 
 def _load_sases_md():
-    _root = _os_a4.path.dirname(_os_a4.path.dirname(_os_a4.path.dirname(_os_a4.path.abspath(__file__))))
+    _root = _os_a4.path.dirname(_os_a4.path.dirname(_os_a4.path.dirname(_os_a4.path.dirname(_os_a4.path.abspath(__file__)))))
     for _name in ("SASES.local.md", "SASES.md"):
         _p = _os_a4.path.join(_root, _name)
         if not _os_a4.path.exists(_p):
