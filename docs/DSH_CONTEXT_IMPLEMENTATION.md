@@ -59,7 +59,20 @@
 
 ## 实测
 
-token 压缩：
+### 30 轮（窗口 8000，未到压力）
+
+```text
+30/30 成功
+60 次 LLM 调用
+prompt 395,502
+cached 383,488
+命中 96.96%
+messages 120，compacted 0
+```
+
+说明：30 轮短会话没有到 60k 默认阈值，不压缩是正确的。
+
+### 强制 token 压缩（窗口 1500）
 
 ```text
 60 条历史 / 1440 tokens
@@ -68,7 +81,16 @@ token 压缩：
 → tokens_before=1440, tokens_after=185
 ```
 
-工具裁剪：
+### 工具对边界
+
+```text
+15 组 assistant tool_calls + tool result
+4619 tokens → covered 47 条
+history 14 条，摘要 + 近期
+无 tool_call_id 400/422
+```
+
+### 工具裁剪
 
 ```text
 12000 字符 → 5143 字符
