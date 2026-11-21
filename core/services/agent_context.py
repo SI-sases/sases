@@ -22,30 +22,32 @@ def build_runtime_context(user_id, conversation_id, goal, mode="fast"):
     if not _is_task(goal, mode):
         return ""
     parts = []
-    try:
-        mems = memory_service.recall(user_id=user_id, query=goal, top_k=3)
-        if mems:
-            lines = []
-            for m in mems[:3]:
-                text = str(m.get("content") or "").strip()
-                if text:
-                    lines.append("- " + text[:600])
-            if lines:
-                parts.append("【相关记忆】\n" + "\n".join(lines))
-    except Exception as e:
-        print("[context] memory recall 失败: " + str(e))
-    try:
-        chunks = project_service.retrieve_project_chunks(goal, top_k=3, user_id=user_id)
-        if chunks:
-            lines = []
-            for c in chunks[:3]:
-                text = str(c.get("content") or c.get("text") or "").strip()
-                if text:
-                    lines.append("- " + text[:600])
-            if lines:
-                parts.append("【项目片段】\n" + "\n".join(lines))
-    except Exception as e:
-        print("[context] project retrieve 失败: " + str(e))
+    _recall = os.getenv("SASES_RUNTIME_RECALL", "0") == "1"
+    if _recall:
+        try:
+            mems = memory_service.recall(user_id=user_id, query=goal, top_k=3)
+            if mems:
+                lines = []
+                for m in mems[:3]:
+                    text = str(m.get("content") or "").strip()
+                    if text:
+                        lines.append("- " + text[:300])
+                if lines:
+                    parts.append("【相关记忆】\n" + "\n".join(lines))
+        except Exception as e:
+            print("[context] memory recall 失败: " + str(e))
+        try:
+            chunks = project_service.retrieve_project_chunks(goal, top_k=3, user_id=user_id)
+            if chunks:
+                lines = []
+                for c in chunks[:3]:
+                    text = str(c.get("content") or c.get("text") or "").strip()
+                    if text:
+                        lines.append("- " + text[:300])
+                if lines:
+                    parts.append("【项目片段】\n" + "\n".join(lines))
+        except Exception as e:
+            print("[context] project retrieve 失败: " + str(e))
     try:
         from . import task_state_service
         snap = task_state_service.get_snapshot_fresh(conversation_id) if conversation_id else {}
@@ -58,4 +60,5 @@ def build_runtime_context(user_id, conversation_id, goal, mode="fast"):
         pass
     if not parts:
         return ""
-    return "【运行时上下文】\n" + "\n\n".join(parts)
+    text = "【运行时上下文】\n" + "\n\n".join(parts)
+    return text[:2400]

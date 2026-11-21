@@ -209,7 +209,28 @@ def retrieve_project_chunks(query, top_k=MAX_CHUNKS_PER_QUERY, threshold=None, u
         query_emb = np.asarray(_get_embedder().get_embedding(query), dtype=np.float32).flatten()
     except Exception as e:
         print(f"[project] 查询 embedding 失败: {e}")
-        return []
+        try:
+            from . import keyword_search
+            ranked = keyword_search.rank(
+                rows,
+                lambda r: (str(r.get("content") or "") + " " + str(r.get("source_file") or "") + " " + str(r.get("section_path") or "")),
+                query, top_k=top_k)
+            out = []
+            for sc, row in ranked:
+                freshness = row.get("freshness_score") or 1.0
+                out.append({
+                    "source_file": row.get("source_file") or "execution_notes",
+                    "section_path": row.get("section_path") or row.get("section_title") or "",
+                    "content": row["content"],
+                    "similarity": round(sc, 4),
+                    "freshness": freshness,
+                    "score": round(sc * 0.7 + freshness * 0.3, 4),
+                })
+            out.sort(key=lambda x: x["score"], reverse=True)
+            return out[:top_k]
+        except Exception as _ke:
+            print("[project] 关键词检索失败: " + str(_ke))
+            return []
 
     scored = []
     for row in rows:

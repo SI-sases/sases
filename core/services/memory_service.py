@@ -162,15 +162,21 @@ def recall(
         query_emb = np.asarray(_get_embedder().get_embedding(query), dtype=np.float32).flatten()
     except Exception as e:
         print(f"[memory] 查询 embedding 失败，降级关键词: {e}")
-        query_lower = query.lower()
-        results = []
-        for row in rows:
-            if query_lower in row["content"].lower() or (row["tags"] and query_lower in row["tags"].lower()):
+        try:
+            from . import keyword_search
+            ranked = keyword_search.rank(
+                rows,
+                lambda r: (str(r.get("content") or "") + " " + str(r.get("tags") or "")),
+                query, top_k=top_k)
+            results = []
+            for sc, row in ranked:
                 row.pop("embedding", None)
+                row["_similarity"] = round(sc, 4)
                 results.append(row)
-                if len(results) >= top_k:
-                    break
-        return results
+            return results
+        except Exception as _ke:
+            print("[memory] 关键词检索失败: " + str(_ke))
+            return []
 
     # 相似度计算
     scored = []
