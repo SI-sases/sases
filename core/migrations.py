@@ -59,7 +59,12 @@ def _migrate_v7_api_registry(cur):
     if not cur.fetchone():
         return
     _ensure_col(cur, "api_registry", "tool_id", "TEXT")
-    cur.execute("UPDATE api_registry SET tool_id='api_' || id WHERE tool_id IS NULL OR tool_id=''")
+    cur.execute("PRAGMA table_info(api_registry)")
+    cols = [r[1] for r in cur.fetchall()]
+    if "id" in cols:
+        cur.execute("UPDATE api_registry SET tool_id='api_' || id WHERE tool_id IS NULL OR tool_id=''")
+    elif "api_id" in cols:
+        cur.execute("UPDATE api_registry SET tool_id='api_' || api_id WHERE tool_id IS NULL OR tool_id=''")
 
 
 MIGRATIONS = {1: _migrate_v1_outbox, 2: _migrate_v2_hmac, 3: _migrate_v3_reconcile,
