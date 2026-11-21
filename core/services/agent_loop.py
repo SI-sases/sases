@@ -6,7 +6,7 @@ import json
 
 from core import tool_gateway
 from core.services import agent_memory
-from core.services.agent_policy import before_tool, after_tool
+from core.services.agent_policy import before_tool, after_tool, WRITE_TOOLS
 from core.services.swarm.llm_parser import client, MODEL
 from core.services.swarm.prompts import BASE_SYSTEM, BASE_PREFIX_HASH
 
@@ -21,7 +21,7 @@ def _tool_schemas(allowed_tool_ids=None):
     return [tool_schema(t) for t in tools if getattr(t, "module_id", "")]
 
 
-async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8, run_id=None):
+async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8, run_id=None, mode="fast"):
     if not conversation_id:
         return {"status": "error", "content": "缺少会话", "steps": 0, "history": []}
 
@@ -66,8 +66,23 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
                          **({"tool_calls": assistant_tool_calls} if assistant_tool_calls else {})})
 
         if not calls:
-            return {"status": "ok", "content": (msg.content or "").strip(),
-                    "steps": step, "history": used}
+            content = (msg.content or "").strip()
+            review = ""
+            if mode == "strict":
+                try:
+                    messages.append({"role": "user", "content":
+                                     "请审核上面的执行结果。只回答 PASS，或列出具体问题（不超过 5 条）。"})
+                    rr = await asyncio.to_thread(
+                        client.chat.completions.create,
+                        model=MODEL, messages=messages, temperature=0.2, max_tokens=800,
+                        extra_body={"thinking": {"type": "disabled"}},
+                    )
+                    review = (rr.choices[0].message.content or "").strip()
+                    agent_memory.append(conversation_id, "assistant", review)
+                except Exception as e:
+                    print("[strict] 审核失败: " + str(e))
+            return {"status": "ok", "content": content, "steps": step,
+                    "history": used, "review": review}
 
         for c in calls:
             name = c.function.name
@@ -86,5 +101,15 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
             agent_memory.append(conversation_id, "tool", text, tool_call_id=c.id)
             messages.append({"role": "tool", "tool_call_id": c.id, "content": text})
             await after_tool(user_id, conversation_id, run_id, step, name, args, ok, text)
+
+            # A3: strict 写后确定性校验（不另起 prompt）
+            if mode == "strict" and name in WRITE_TOOLS and isinstance(args, dict):
+                _fp = str(args.get("file_path") or "")
+                if _fp.endswith(".py"):
+                    try:
+                        _vr = await tool_gateway.invoke_tool_async("verify_syntax", {"file_path": _fp})
+                        used.append({"step": step, "tool": "verify_syntax", "ok": bool(getattr(_vr, "success", False))})
+                    except Exception as e:
+                        print("[strict] verify_syntax 失败: " + str(e))
 
     return {"status": "max_steps", "content": "达到步数上限，未完成任务。", "steps": max_steps, "history": used}
