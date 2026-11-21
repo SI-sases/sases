@@ -221,23 +221,30 @@ async def periodic_summary_task():
 
         await asyncio.sleep(6 * 3600)
 async def periodic_git_push():
-    """每小时把本地提交推送到 GitHub"""
+    """每小时把本地提交推送到 GitHub（服务器上建议设 SASES_DISABLE_GIT_PUSH=1）"""
     import subprocess
     import os as _os
     await asyncio.sleep(300)
     repo = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
     import shutil as _shutil
     _debug = (_os.environ.get("DEBUG", "").lower() == "true")
+    if _os.environ.get("SASES_DISABLE_GIT_PUSH", "").lower() in ("1", "true", "yes"):
+        print("[git-push] SASES_DISABLE_GIT_PUSH 已设置，跳过自动推送")
+        return
     if _shutil.which("git") is None:
         if _debug:
             print("[git-push] 未检测到 git，静默跳过")
         return
     while True:
         try:
+            _env = dict(_os.environ)
+            # 禁止 git 交互式要密码，否则服务器后台进程会被挂起
+            _env["GIT_TERMINAL_PROMPT"] = "0"
+            _env["GCM_INTERACTIVE"] = "never"
             r = subprocess.run(
                 "git push origin main",
                 shell=True, cwd=repo, capture_output=True,
-                encoding="utf-8", errors="replace", timeout=120
+                encoding="utf-8", errors="replace", timeout=120, env=_env
             )
             out = (r.stdout or "") + (r.stderr or "")
             if r.returncode == 0:
