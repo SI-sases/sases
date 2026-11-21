@@ -68,6 +68,11 @@ async def run_fast(user_id: int, conversation_id: int, goal: str,
             return {"status": "error", "content": "LLM 调用失败: " + str(e), "steps": step, "history": history}
 
         msg = resp.choices[0].message
+        try:
+            from .llm_usage_service import record_from_response
+            record_from_response(resp, user_id=user_id, conversation_id=conversation_id, purpose="fast")
+        except Exception as _e_u:
+            print("[usage] fast 记录失败: " + str(_e_u))
         calls = getattr(msg, "tool_calls", None) or []
         if not calls:
             return {"status": "ok", "content": (msg.content or "").strip(), "steps": step, "history": history}
