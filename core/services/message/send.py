@@ -1531,10 +1531,8 @@ async def send_message(
     else:
         assistant_reply = "请先在“我的→模型管理”中配置模型，或从智能体页面发起对话"
 
-    with db_cursor(commit=True) as cur:
-        cur.execute("INSERT INTO messages (conversation_id, sender, content, msg_type, attachments) VALUES (?, 'assistant', ?, ?, ?)",
-                    (conversation_id, assistant_reply, msg_type, _att_str))
-        cur.execute("UPDATE conversations SET updated_at=? WHERE id=?", (datetime.now().isoformat(), conversation_id))
+    from .reply import insert_message as _insert_reply
+    _insert_reply(conversation_id, assistant_reply, msg_type=msg_type, attachments=_att_str)
 
     try:
         from ...api_routes.ws_routes import broadcast_to_user as _bc_user
