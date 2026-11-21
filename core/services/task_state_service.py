@@ -2,9 +2,13 @@
 """任务状态快照服务——active_task_snapshot 唯一写入口"""
 import json
 import hashlib
+import os
 import re
 from datetime import datetime
 from core.db import db_cursor
+
+
+DUP_WINDOW_MIN = max(1, int(os.getenv("SASES_DUP_TASK_WINDOW_MIN", "5")))
 
 
 def _now():
@@ -28,7 +32,7 @@ def open_task(conv_id, task_id, goal, user_id=None):
     fp = _fp(goal)
     with db_cursor() as cur:
         cur.execute(
-            "SELECT id FROM supervisor_runs WHERE task_fingerprint=? AND (status='running' OR (status='completed' AND finished_at > datetime('now','-5 minutes')))",
+            "SELECT id FROM supervisor_runs WHERE task_fingerprint=? AND (status='running' OR (status='completed' AND finished_at > datetime('now','-" + str(DUP_WINDOW_MIN) + " minutes')))",
             (fp,)
         )
         dup = cur.fetchone()
@@ -129,7 +133,11 @@ def set_user_intent(conv_id, intent, message):
     _update(conv_id, snap["task_id"], snap["status"], snap)
 
 
-_TERMINAL_RUN = ("completed", "failed", "cancelled", "canceled", "loop_detected", "no_progress", "stopped", "aborted", "error")
+_TERMINAL_RUN = (
+    "completed", "failed", "cancelled", "canceled", "loop_detected", "no_progress",
+    "stopped", "aborted", "error", "interrupted", "timeout", "plan_failed",
+    "rejected", "insufficient_credits", "waiting_user", "done",
+)
 
 
 def _judge_snapshot(snap, run_status, now, max_age_hours=24):

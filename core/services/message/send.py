@@ -499,7 +499,11 @@ async def send_message(
                 from core.services import task_state_service as _ts_p2
                 _sess = _is_p2.classify_session_intent(content, conversation_id)
                 if _sess in ("resume", "query", "pause", "cancel"):
-                    _snap = _ts_p2.get_snapshot(conversation_id)
+                    try:
+                        _snap = _ts_p2.get_snapshot_fresh(conversation_id) or _ts_p2.get_snapshot(conversation_id)
+                    except Exception as _e_fresh:
+                        print("[P2-2] get_snapshot_fresh 失败，回退: " + str(_e_fresh))
+                        _snap = _ts_p2.get_snapshot(conversation_id)
                     _st = _snap.get("status", "idle")
                     _prog = _snap.get("progress", {})
                     _reply = None
@@ -528,7 +532,11 @@ async def send_message(
                     elif _sess == "pause":
                         if _st == "running":
                             try:
-                                _ts_p2.finish_task(conversation_id, "paused")
+                                from core.services.supervisor import runs as _runs_pause
+                                _rid_pause = _snap.get("task_id")
+                                _paused_ok = _runs_pause.pause_run(_rid_pause, user_id) if _rid_pause else False
+                                if not _paused_ok:
+                                    _ts_p2.finish_task(conversation_id, "paused")
                                 _reply = "任务已暂停，说'继续'恢复"
                             except Exception as _e_p2:
                                 _reply = "暂停失败：" + str(_e_p2)[:80]
@@ -537,18 +545,31 @@ async def send_message(
 
                     elif _sess == "resume":
                         if _st == "running":
-                            _reply = "任务正在执行中（" + str(_prog.get("completed", 0)) + "/" + str(_prog.get("total", 0)) + "），请稍等"
+                            _run_alive = False
+                            try:
+                                with db_cursor() as _c_chk:
+                                    _c_chk.execute("SELECT status FROM supervisor_runs WHERE id=?", (_snap.get("task_id"),))
+                                    _r_chk = _c_chk.fetchone()
+                                _st_chk = ((_r_chk["status"] if isinstance(_r_chk, dict) else _r_chk[0]) if _r_chk else None)
+                                _run_alive = _st_chk in ("running", "running_resumed", "restart_pending")
+                            except Exception as _e_chk:
+                                print("[P2-2] resume 校验 run 失败: " + str(_e_chk))
+                            if _run_alive:
+                                _reply = "任务正在执行中（" + str(_prog.get("completed", 0)) + "/" + str(_prog.get("total", 0)) + "），请稍等"
+                            else:
+                                try:
+                                    _ts_p2.finish_task(conversation_id, "failed")
+                                except Exception:
+                                    pass
+                                _st = "failed"
+                                _reply = "任务已终止（run 状态异常），说'重试'重新执行"
                         elif _st == "paused":
                             try:
-                                import json as _json_p2
-                                from core.db import db_cursor as _dbc_p2b
-                                _snap2 = dict(_snap)
-                                _snap2["status"] = "running"
-                                with _dbc_p2b(commit=True) as _c_p2b:
-                                    _c_p2b.execute(
-                                        "UPDATE conversations SET active_task_status='running', active_task_snapshot=? WHERE id=?",
-                                        (_json_p2.dumps(_snap2, ensure_ascii=False), conversation_id)
-                                    )
+                                from core.services.supervisor import runs as _runs_resume
+                                _rid_resume = _snap.get("task_id")
+                                _resumed_ok = _runs_resume.resume_run(_rid_resume, user_id) if _rid_resume else False
+                                if not _resumed_ok:
+                                    raise RuntimeError("run 不存在或不是 paused")
                                 _reply = "已恢复，从第 " + str(_prog.get("current_step", 1)) + " 步继续"
                             except Exception as _e_p2:
                                 _reply = "恢复失败：" + str(_e_p2)[:80]

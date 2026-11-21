@@ -122,6 +122,63 @@ def cancel_run(run_id, user_id):
     return _ok
 
 
+def pause_run(run_id, user_id):
+    """P1-A2: 暂停任务；executor 在下一条 step 前检查 status='paused'"""
+    if not run_id:
+        return False
+    with db_cursor(commit=True) as cur:
+        cur.execute(
+            "UPDATE supervisor_runs SET status='paused' WHERE id=? AND user_id=? "
+            "AND status IN ('running','running_resumed','restart_pending')",
+            (run_id, user_id),
+        )
+        _ok = cur.rowcount > 0
+    if _ok:
+        try:
+            from core.services.task_state_service import get_snapshot, _update
+            with db_cursor() as _c:
+                _c.execute("SELECT conversation_id FROM supervisor_runs WHERE id=?", (run_id,))
+                _r = _c.fetchone()
+            _cid = (_r["conversation_id"] if isinstance(_r, dict) else _r[0]) if _r else None
+            if _cid:
+                _snap = get_snapshot(_cid)
+                if _snap:
+                    _snap["status"] = "paused"
+                    _update(_cid, _snap.get("task_id"), "paused", _snap)
+        except Exception as _e:
+            print('[supervisor] pause_run 快照更新失败: ' + str(_e))
+    print('[supervisor] pause_run ' + str(run_id) + ' -> ' + str(_ok))
+    return _ok
+
+
+def resume_run(run_id, user_id):
+    """P1-A3: 恢复任务；executor 下一轮扫描会从 current_step 续跑"""
+    if not run_id:
+        return False
+    with db_cursor(commit=True) as cur:
+        cur.execute(
+            "UPDATE supervisor_runs SET status='running' WHERE id=? AND user_id=? AND status='paused'",
+            (run_id, user_id),
+        )
+        _ok = cur.rowcount > 0
+    if _ok:
+        try:
+            from core.services.task_state_service import get_snapshot, _update
+            with db_cursor() as _c:
+                _c.execute("SELECT conversation_id FROM supervisor_runs WHERE id=?", (run_id,))
+                _r = _c.fetchone()
+            _cid = (_r["conversation_id"] if isinstance(_r, dict) else _r[0]) if _r else None
+            if _cid:
+                _snap = get_snapshot(_cid)
+                if _snap:
+                    _snap["status"] = "running"
+                    _update(_cid, _snap.get("task_id"), "running", _snap)
+        except Exception as _e:
+            print('[supervisor] resume_run 快照更新失败: ' + str(_e))
+    print('[supervisor] resume_run ' + str(run_id) + ' -> ' + str(_ok))
+    return _ok
+
+
 def finish_run(run_id, status='completed'):
     _TERMINAL = ('completed', 'failed', 'cancelled', 'rejected', 'plan_failed',
                  'no_progress', 'timeout', 'interrupted', 'error', 'waiting_user',
@@ -158,15 +215,27 @@ def finish_run(run_id, status='completed'):
             if status in _FAILED_P04:
                 _title_p04 = {'failed': '❌ 任务失败', 'no_progress': '⚠️ 任务卡住（无进展）', 'timeout': '⏱ 任务超时', 'error': '❌ 任务出错', 'plan_failed': '⚠️ 任务拆解失败', 'insufficient_credits': '💰 积分不足', 'interrupted': '⚠️ 任务被中断'}.get(status, '❌ 任务失败')
                 _reason_p04 = ''
+                _detail_p04 = ''
                 try:
                     from core.services import task_state_service as _tss_p04
                     _snap_p04 = _tss_p04.get_snapshot(_conv_id)
                     _fs_p04 = _snap_p04.get('failed_summary') or []
                     if _fs_p04:
-                        _reason_p04 = str(_fs_p04[-1].get('reason', ''))[:100]
-                except Exception:
-                    pass
-                _msg_fin = _title_p04 + (chr(10) + '原因：' + _reason_p04 if _reason_p04 else '')
+                        _reason_p04 = str(_fs_p04[-1].get('reason', ''))[:120]
+                    _goal_p04 = str(_snap_p04.get('goal', ''))[:60]
+                    _prog_p04 = _snap_p04.get('progress') or {}
+                    _step_p04 = _prog_p04.get('current_step')
+                    _desc_p04 = str(_snap_p04.get('current_step_desc', ''))[:50]
+                    if _goal_p04:
+                        _detail_p04 += chr(10) + '目标：' + _goal_p04
+                    if _step_p04:
+                        _detail_p04 += chr(10) + '卡在第 ' + str(_step_p04) + ' 步'
+                        if _desc_p04:
+                            _detail_p04 += '：' + _desc_p04
+                except Exception as _e_p04s:
+                    print('[P0-4] 快照读取失败: ' + str(_e_p04s))
+                _msg_fin = _title_p04 + _detail_p04 + (chr(10) + '原因：' + _reason_p04 if _reason_p04 else '')
+                _msg_fin += chr(10) + chr(10) + "可以说：'重试' / '取消' / '怎么样了'"
                 try:
                     _im_fin(_conv_id, '[SUMMARY]:' + _msg_fin, sender_agent_id=_sup_id)
                 except Exception as _e_msg_p04:

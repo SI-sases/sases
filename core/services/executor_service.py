@@ -73,6 +73,7 @@ MAX_CONCURRENT_TASKS = 3
 # ========== 内存状态 ==========
 
 _running_task_ids: set = set()
+_paused_logged: set = set()
 _global_semaphore: Optional[asyncio.Semaphore] = None
 
 
@@ -338,6 +339,22 @@ async def _execute_task(task: Dict[str, Any]):
             previous_outputs[r["step"]] = r.get("output", "")
 
     for step in pending_steps:
+        # P1-A2: 暂停/取消检查（每步开始前）
+        _run_state = None
+        try:
+            with db_cursor() as _cur_pause:
+                _cur_pause.execute("SELECT status FROM supervisor_runs WHERE id=?", (task.get("supervisor_run_id"),))
+                _row_pause = _cur_pause.fetchone()
+            if _row_pause:
+                _run_state = _row_pause["status"] if isinstance(_row_pause, dict) else _row_pause[0]
+        except Exception as _e_pause:
+            print("[executor] pause check failed: " + str(_e_pause))
+        if _run_state in ("paused", "cancelled", "interrupted"):
+            if task_id not in _paused_logged:
+                _paused_logged.add(task_id)
+                print("[executor] run " + str(task.get("supervisor_run_id")) + " 状态=" + str(_run_state) + "，任务暂停，step " + str(step.get("step")) + " 未执行")
+            return
+        _paused_logged.discard(task_id)
         output, status, dur = "", "error", 0
         # 每步执行前检查任务是否还在
         with db_cursor() as cur:
@@ -454,6 +471,24 @@ async def _execute_task(task: Dict[str, Any]):
         except Exception as e:
             print(f"[executor] 汇报失败: {e}")
             return
+
+        # P3-C3: 每步推送 trace 到子窗口
+        try:
+            from ..broadcast.ws_hub import broadcast_to_user as _btu_c3
+            await _btu_c3(task.get("user_id"), {
+                "type": "task_trace",
+                "run_id": task.get("supervisor_run_id"),
+                "conversation_id": conversation_id,
+                "task_id": task_id,
+                "step": step_id,
+                "total": len(task.get("steps") or []),
+                "tool": str(step.get("module_id") or step.get("command") or "")[:100],
+                "status": status,
+                "duration_ms": dur,
+                "output_preview": str(output or "")[:200],
+            })
+        except Exception as _e_c3:
+            print("[P3-C3] trace WS 推送失败: " + str(_e_c3))
 
 
 async def _execute_task_with_semaphore(task: Dict[str, Any]):

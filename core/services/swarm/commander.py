@@ -340,6 +340,26 @@ async def plan_task(
     except Exception as _e_c2:
         print("[C2] 注入失败: " + str(_e_c2))
 
+    # [C2-snapshot] 注入上一轮失败切片（来自 active_task_snapshot）
+    try:
+        from .. import task_state_service as _tss_snap
+        _snap_inj = _tss_snap.get_snapshot(conversation_id)
+        if _snap_inj:
+            _fs_inj = _snap_inj.get("failed_summary") or []
+            _ts_inj = _snap_inj.get("tried_strategies") or []
+            if _fs_inj or _ts_inj:
+                _snap_lines = ["【上次执行失败信息（禁止重复）】"]
+                for _f_inj in _fs_inj[-3:]:
+                    _snap_lines.append(
+                        "- 步骤 " + str(_f_inj.get("step", "")) + " 用 " + str(_f_inj.get("tool", ""))
+                        + " 失败：" + str(_f_inj.get("reason", ""))[:100]
+                    )
+                if _ts_inj:
+                    _snap_lines.append("- 已试过方案：" + "、".join(str(x) for x in _ts_inj[:5]))
+                prompt_parts.append(chr(10).join(_snap_lines))
+    except Exception as _e_snap_inj:
+        print("[C2-snapshot] 注入失败: " + str(_e_snap_inj))
+
     # [AUDIT-2] 注入上一轮任务总结（跨轮学习）
     try:
         _last_audits = memory_service.recall_by_type(user_id, "task_summary", top_k=1)
