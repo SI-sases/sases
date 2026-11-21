@@ -1230,6 +1230,21 @@ def init_db():
         """)
         cur.execute("CREATE INDEX IF NOT EXISTS idx_approvals_run ON approvals(run_id, id)")
 
+        # ========== 文件检查点（P2-2） ==========
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS file_checkpoints (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                run_id INTEGER NOT NULL,
+                step_id TEXT,
+                path TEXT NOT NULL,
+                backup_path TEXT,
+                sha_before TEXT,
+                created_at TEXT,
+                UNIQUE (run_id, step_id, path)
+            )
+        """)
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_checkpoints_run ON file_checkpoints(run_id, id)")
+
         # ========== 任务执行轨迹（run_trace，P3-C1） ==========
         cur.execute("""
             CREATE TABLE IF NOT EXISTS run_trace (

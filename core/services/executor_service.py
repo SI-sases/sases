@@ -439,6 +439,17 @@ async def _run_harness(module_id: str, params: Dict[str, Any], user_id=None, tas
             except Exception as _e_fx:
                 print("[idempotent] 查询失败: " + str(_e_fx))
 
+        # P2-2: 写文件前做检查点
+        if run_id and module_id in _SIDE_EFFECT:
+            _fp = params.get("file_path") if isinstance(params, dict) else None
+            if _fp:
+                try:
+                    from . import checkpoint_service as _ck
+                    _sid_ck = str(idem_key).split(":")[1] if (idem_key and ":" in str(idem_key)) else ""
+                    _ck.snapshot(run_id, _sid_ck, _fp)
+                except Exception as _e_ck:
+                    print("[checkpoint] 记录失败: " + str(_e_ck))
+
         # v0.46: 跨轮熔断继承（先于实际调用）
         _blocked = _db_circuit_check(module_id, user_id)
         if _blocked:

@@ -23,7 +23,9 @@
       '#run-progress-card .rp-meta{color:#999;font-size:10px;margin-top:2px}',
       '#run-progress-card .rp-detail{white-space:pre-wrap;background:#fff;border:1px solid #eee;',
       'border-radius:6px;padding:6px;margin:4px 0 2px 20px;font-size:11px;color:#555;max-height:200px;overflow:auto}',
-      '#run-progress-card .rp-line.clickable{cursor:pointer}'
+      '#run-progress-card .rp-line.clickable{cursor:pointer}',
+      '#run-progress-card .rp-revert{margin-top:6px;border:1px solid #ddd;background:#fff;border-radius:6px;',
+      'padding:4px 10px;font-size:11px;color:#666;cursor:pointer}'
     ].join('');
     document.head.appendChild(s);
   }
@@ -75,6 +77,29 @@
       meta.className = 'rp-meta';
       meta.textContent = '过程详情可在右侧 trace 抽屉查看';
       c.appendChild(meta);
+    }
+    if (runId) {
+      var btn = document.createElement('button');
+      btn.className = 'rp-revert';
+      btn.textContent = '撤销本次修改';
+      btn.onclick = function () {
+        if (!confirm('恢复本次运行修改/创建的文件？')) return;
+        btn.disabled = true;
+        fetch('/supervisor/runs/' + runId + '/revert', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + (localStorage.getItem('sases_token') || '')
+          },
+          body: JSON.stringify({ confirm: true })
+        }).then(function (r) { return r.json(); }).then(function (j) {
+          btn.textContent = '已撤销：恢复 ' + ((j.restored || []).length) + '，删除 ' + ((j.deleted || []).length);
+        }).catch(function (e) {
+          btn.disabled = false;
+          btn.textContent = '撤销失败';
+        });
+      };
+      c.appendChild(btn);
     }
   }
 

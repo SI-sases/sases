@@ -9,6 +9,7 @@ from ..auth_service import SECRET_KEY
 from ..db import db_cursor
 from ..services import supervisor_service
 from ..services import approval_service
+from ..services import checkpoint_service
 from ..services import trace_service as _trace_service
 
 router = APIRouter(prefix="/supervisor", tags=["supervisor"])
@@ -31,6 +32,10 @@ class ApproveBody(BaseModel):
     scope: str = "once"
 
 
+class RevertBody(BaseModel):
+    confirm: bool = False
+
+
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     token = credentials.credentials
     try:
@@ -39,6 +44,19 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
     except (JWTError, ValueError):
         raise HTTPException(status_code=401, detail="Invalid token")
     return user_id
+
+
+@router.post("/runs/{run_id}/revert")
+async def revert_run(run_id: int, body: RevertBody, user_id: int = Depends(get_current_user)):
+    if not body.confirm:
+        raise HTTPException(status_code=400, detail="confirm required")
+    with db_cursor() as cur:
+        cur.execute("SELECT user_id FROM supervisor_runs WHERE id=?", (run_id,))
+        row = cur.fetchone()
+    if not row or int(row["user_id"] if isinstance(row, dict) else row[0]) != int(user_id):
+        raise HTTPException(status_code=404, detail="run not found")
+    result = checkpoint_service.revert(run_id)
+    return {"status": "ok", **result}
 
 
 @router.post("/runs/{run_id}/approve")
