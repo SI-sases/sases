@@ -39,8 +39,10 @@ UI 改动必须用无头 Chrome 截图验证；后端改动必须跑一次真实
 
 ## 当前阶段
 
-- A1 token 计量、A2 会话压缩已完成。
-- 下一步：A3 prompt 顺序/缓存、A4 本文件接入、B1 fast 模式。
+- 执行默认走 **agent loop**（A0–A5）：`agent_messages` append-only、统一 `BASE_SYSTEM`、fast/strict 同一 loop。
+- 缓存实测：10 轮会话 94–97%，单一前缀。
+- 回退开关：`SASES_AGENT_LOOP=0`（回到旧 fast/四角色路径）。
+- 已知限制：审批暂停后 loop 不会自动续跑，需要重新发一次。
 - 服务器 Node-A/B 仍落后本地，部署时先 `git stash` 现场再同步。
 
 ## 任务边界
