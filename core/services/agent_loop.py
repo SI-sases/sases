@@ -68,7 +68,9 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
         if not calls:
             content = (msg.content or "").strip()
             review = ""
-            if mode == "strict":
+            _need_review = (mode == "strict"
+                            and any(h.get("tool") in WRITE_TOOLS for h in used))
+            if _need_review:
                 try:
                     messages.append({"role": "user", "content":
                                      "请审核上面的执行结果。只回答 PASS，或列出具体问题（不超过 5 条）。"})
