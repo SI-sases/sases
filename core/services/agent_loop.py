@@ -3,9 +3,11 @@
 """A1: append-only agent loop（flag 控制，默认仍走 fast_agent 旧路径）。"""
 import asyncio
 import json
+import os
 
 from core import tool_gateway
 from core.services import agent_memory
+from core.services import token_meter, tool_pruner
 from core.services.agent_policy import before_tool, after_tool, WRITE_TOOLS, ApprovalRequired
 from core.services.swarm.llm_parser import client, MODEL
 from core.services.swarm.prompts import BASE_SYSTEM, BASE_PREFIX_HASH
@@ -42,10 +44,26 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
     used = []
 
     for step in range(1, max_steps + 1):
+        req_messages = messages
+        pruned_count = 0
+        if os.getenv("SASES_TOOL_PRUNER", "1") != "0":
+            try:
+                req_messages, pruned_count, freed = tool_pruner.prune_messages(messages)
+                if pruned_count:
+                    print("[ctx] pruned " + str(pruned_count) + " tool results, ~" + str(freed) + " tokens")
+            except Exception as e:
+                print("[ctx] pruner 失败: " + str(e))
+        try:
+            est = token_meter.measure(req_messages, tools=schemas)
+            if est["total"] > 60000 or pruned_count:
+                print("[ctx] estimated tokens=" + str(est["total"]) +
+                      " messages=" + str(est["messages"]) + " tools=" + str(est["tools"]))
+        except Exception:
+            pass
         try:
             resp = await asyncio.to_thread(
                 client.chat.completions.create,
-                model=MODEL, messages=messages, tools=schemas or None,
+                model=MODEL, messages=req_messages, tools=schemas or None,
                 tool_choice="auto" if schemas else None,
                 temperature=0.3, max_tokens=2000,
                 extra_body={"thinking": {"type": "disabled"}},
