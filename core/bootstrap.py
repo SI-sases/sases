@@ -639,6 +639,11 @@ async def lifespan(app: FastAPI):
     _background_tasks.append(asyncio.create_task(periodic_memory_backfill()))
     _background_tasks.append(asyncio.create_task(scheduled_task_scheduler()))
     _background_tasks.append(asyncio.create_task(periodic_task_state_audit()))
+    try:
+        from .services import proposed_run_service as _prs
+        _background_tasks.append(asyncio.create_task(_prs.periodic()))
+    except Exception as _e_prs:
+        print('[a2a] proposed run watchdog 启动失败: ' + str(_e_prs))
 
 
     # 【预热】启动后预热一次（不参与周期）

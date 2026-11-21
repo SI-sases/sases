@@ -113,6 +113,11 @@ async def reject(body: ConfirmBody, user_id: int = Depends(get_current_user)):
     ok = supervisor_service.reject_run(body.run_id, user_id)
     if not ok:
         raise HTTPException(status_code=404, detail='run not found or not proposed')
+    try:
+        from ..services.cross_account_delivery import notify_a2a_rejected
+        asyncio.create_task(notify_a2a_rejected(body.run_id))
+    except Exception as _e_rej:
+        print('[a2a] 拒绝回执派发失败: ' + str(_e_rej))
     return {'run_id': body.run_id, 'status': 'rejected'}
 
 

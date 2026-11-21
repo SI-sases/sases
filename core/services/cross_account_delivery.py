@@ -7,6 +7,11 @@ from ..db import db_cursor
 
 async def deliver_to_linked_accounts(user_id, conversation_id, content, sender_agent_id, msg_type='standard', attachments=None):
     try:
+        try:
+            from ..redact import redact_for_a2a
+            content = redact_for_a2a(content)
+        except Exception as _e_red:
+            print("[A2A] 脱敏失败: " + str(_e_red))
         _att_str = json.dumps(attachments) if attachments else None
         _target_uid = None
         _target_conv_id = None
@@ -113,6 +118,7 @@ async def deliver_to_linked_accounts(user_id, conversation_id, content, sender_a
             _is_protocol_msg = str(content).startswith((
                 "[SUMMARY]:", "[STEP_DONE]:", "[TASK]:", "[RETRY_TASK]:",
                 "[TASK_DRAFT]:", "[SUPERVISOR_PROGRESS]:", "[TRACE]",
+                "[系统提示]",
             ))
             if _sender_mode == 'free' and _target_mode == 'free' and not _is_protocol_msg:
                 if sender_agent_id or _target_agent:
@@ -122,9 +128,8 @@ async def deliver_to_linked_accounts(user_id, conversation_id, content, sender_a
                     else:
                         try:
                             from . import intent_service
-                            _is_greeting = intent_service._is_obvious_chat(content)
-                            if not _is_greeting and not content.startswith("[IMAGE]:") and not content.startswith("[FILE]:"):
-                                is_task = await intent_service.is_task_intent(content)
+                            _ir = intent_service.route_intent(content)
+                            is_task = _ir.get("intent") in ("task", "schedule")
                         except Exception as e:
                             print(f"[A2A] 意图识别失败: {e}")
 
@@ -171,6 +176,24 @@ async def deliver_to_linked_accounts(user_id, conversation_id, content, sender_a
                 
     except Exception as e:
         print(f"[message] 跨账号投递失败: {e}")
+
+
+async def notify_a2a_rejected(run_id):
+    """把“对方拒绝”回执投递给发起方。"""
+    try:
+        with db_cursor() as cur:
+            cur.execute("SELECT user_id, conversation_id, supervisor_id FROM supervisor_runs WHERE id=?", (run_id,))
+            row = cur.fetchone()
+        if not row:
+            return
+        await deliver_to_linked_accounts(
+            user_id=row["user_id"],
+            conversation_id=row["conversation_id"],
+            content="[系统提示] 对方拒绝了你的执行请求。",
+            sender_agent_id=row["supervisor_id"],
+        )
+    except Exception as e:
+        print("[A2A] 拒绝回执失败: " + str(e))
 
 
 async def deliver_via_relay(sender_sases_id, target_sases_id, content, sender_agent_id=None, msg_type='standard', attachments=None):

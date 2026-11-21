@@ -23,3 +23,18 @@ def redact(text, limit: int = None):
     if limit:
         s = s[:limit]
     return s
+
+
+_PATH_PATTERNS = [
+    re.compile(r"[A-Za-z]:\\Users\\[^\\\s]+\\[^\s)\]\}]*"),
+    re.compile(r"/(?:home|Users)/[^/\s]+/[^\s)\]\}]*"),
+]
+
+
+def redact_for_a2a(text):
+    """跨账号投递前：密钥 + 本机绝对路径。"""
+    s = redact(text)
+    for rx in _PATH_PATTERNS:
+        s = rx.sub("<local-path>", s)
+    return s
+
