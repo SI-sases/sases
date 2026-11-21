@@ -69,6 +69,14 @@ MAX_OUTPUT_LENGTH = 20000
 DEFAULT_TIMEOUT = 30
 STEP_TIMEOUT = 180
 _SIDE_EFFECT = {"file_write", "smart_edit", "file_replace_range", "delete_block", "split_block", "git_ops", "http_async"}
+_UNTRUSTED_TOOLS = {"web_fetch", "api_call", "http_async", "read_user_doc"}
+
+
+def _wrap_untrusted(tool_id: str, text) -> str:
+    if tool_id not in _UNTRUSTED_TOOLS:
+        return text
+    return ('<untrusted_tool_output tool="' + str(tool_id) + '">\n'
+            + str(text) + '\n</untrusted_tool_output>')
 
 
 def _idem_put(module_id: str, key, output):
@@ -483,10 +491,12 @@ async def _run_harness(module_id: str, params: Dict[str, Any], user_id=None, tas
             _task_fail_counts.pop((str(task_id), module_id), None)
             _idem_put(module_id, idem_key, output)
             output = _spill_large(output, run_id, conversation_id, user_id, module_id)
+            output = _wrap_untrusted(module_id, output)
             return output[:MAX_OUTPUT_LENGTH], "success", dur
         _task_fail_counts.pop((str(task_id), module_id), None)
         _idem_put(module_id, idem_key, result)
         _out_str = _spill_large(str(result), run_id, conversation_id, user_id, module_id)
+        _out_str = _wrap_untrusted(module_id, _out_str)
         return _out_str[:MAX_OUTPUT_LENGTH], "success", dur
     except Exception as e:
         dur = int((datetime.datetime.now() - start).total_seconds() * 1000)

@@ -10,6 +10,7 @@ from core.services.swarm.prompts import COMMANDER_SYSTEM_PROMPT
 
 _READ_TOOLS = {"file_read", "grep_code", "dir_tree", "web_fetch", "api_call",
                "read_user_doc", "verify_claim", "verify_patch"}
+_UNTRUSTED_TOOLS = {"web_fetch", "api_call", "http_async", "read_user_doc"}
 
 
 async def _execute_calls(calls, step):
@@ -23,6 +24,9 @@ async def _execute_calls(calls, step):
         try:
             r = await tool_gateway.invoke_tool_async(name, args)
             text = str(r.result)[:4000] if getattr(r, "success", False) else ("ERROR: " + str(getattr(r, "error", "")))
+            if name in _UNTRUSTED_TOOLS:
+                text = ('<untrusted_tool_output tool="' + name + '">\n' + text
+                        + '\n</untrusted_tool_output>')
         except Exception as e:
             text = "ERROR: " + str(e)
         return {"id": c.id, "tool": name, "args": args,
