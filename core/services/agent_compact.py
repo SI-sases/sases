@@ -13,7 +13,7 @@ from . import token_meter
 
 
 async def maybe_compact(conversation_id, user_id, keep=20, threshold=40):
-    if os.getenv("SASES_TOKEN_COMPACT", "0") == "1":
+    if os.getenv("SASES_TOKEN_COMPACT", "1") == "1":
         return await _token_compact(conversation_id, user_id)
     return await _count_compact(conversation_id, user_id, keep, threshold)
 
