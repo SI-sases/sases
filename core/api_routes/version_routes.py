@@ -4,20 +4,25 @@ import subprocess, os, sqlite3
 router = APIRouter()
 
 
+def _git(args):
+    last = None
+    for exe in (r"C:\Program Files\Git\bin\git.exe", "git", "/usr/bin/git"):
+        try:
+            return subprocess.check_output([exe] + args, cwd=os.getcwd(), text=True,
+                                           stderr=subprocess.DEVNULL).strip()
+        except Exception as e:
+            last = e
+    raise last or RuntimeError("git unavailable")
+
+
 @router.get("/version")
 def get_version():
     try:
-        commit = subprocess.check_output(
-            [r"C:\Program Files\Git\bin\git.exe", "rev-parse", "--short", "HEAD"],
-            cwd=os.getcwd(), text=True
-        ).strip()
+        commit = _git(["rev-parse", "--short", "HEAD"])
     except Exception:
         commit = "unknown"
     try:
-        branch = subprocess.check_output(
-            [r"C:\Program Files\Git\bin\git.exe", "rev-parse", "--abbrev-ref", "HEAD"],
-            cwd=os.getcwd(), text=True
-        ).strip()
+        branch = _git(["rev-parse", "--abbrev-ref", "HEAD"])
     except Exception:
         branch = "unknown"
     db_path = os.environ.get("SASES_DB_PATH", "users.db")
