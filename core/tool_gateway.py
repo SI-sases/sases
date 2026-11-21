@@ -31,7 +31,29 @@ def _invoke_http_sync(module_id: str, params: Dict[str, Any]) -> ToolInvokeRespo
 
 
 
+def _external_guard(module_id: str):
+    """外部工具必须已安装且已启用；未启用直接给出可读错误。"""
+    try:
+        from core import tool_registry
+    except Exception:
+        return None
+    entry = tool_registry.get(module_id)
+    if not entry or not entry.get("external"):
+        return None
+    if not entry.get("enabled"):
+        return ToolInvokeResponse(
+            module_id=module_id,
+            success=False,
+            error="工具 '" + module_id + "' 已安装但未启用，请先在工具管理中启用",
+        )
+    return None
+
+
 def _route(module_id: str, params: Dict[str, Any]) -> ToolInvokeResponse:
+    _guard = _external_guard(module_id)
+    if _guard:
+        return _guard
+
     if module_id.startswith("ext_api_"):
         try:
             api_id = int(module_id[len("ext_api_"):])
