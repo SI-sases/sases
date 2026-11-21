@@ -550,6 +550,19 @@ async def _scan_and_execute():
             print(f"[executor] 任务解析失败 {task_id}: {e}")
             continue
 
+        # P1-A2: paused run 不派发，避免每 3 秒空转
+        try:
+            _rid_scan = row.get("supervisor_run_id")
+            if _rid_scan:
+                with db_cursor() as _c_scan:
+                    _c_scan.execute("SELECT status FROM supervisor_runs WHERE id=?", (_rid_scan,))
+                    _r_scan = _c_scan.fetchone()
+                _st_scan = (_r_scan["status"] if isinstance(_r_scan, dict) else _r_scan[0]) if _r_scan else None
+                if _st_scan == "paused":
+                    continue
+        except Exception as _e_scan:
+            print("[executor] scan pause check failed: " + str(_e_scan))
+
         asyncio.create_task(_execute_task_with_semaphore(task))
 
 
