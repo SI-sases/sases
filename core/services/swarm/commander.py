@@ -444,6 +444,19 @@ async def plan_task(
         "格式：三段式\n---STEPS---\n[{\"step\":1,\"description\":\"...\",\"command\":\"...\"}]\n"
         "---STEPS--- 之后不要有任何解释文字，不要用 markdown 代码块。"
     )
+    # C2: 固定前缀顺序（静态 → 工具 → 历史 → 动态 → 用户），提高缓存命中
+    def _bucket(p):
+        s = str(p or "")
+        if s.startswith("【用户当前任务】") or s.startswith("请先输出三段式"):
+            return 4
+        if s.startswith(("【上一轮任务状态", "【强制写入铁律", "【上次执行失败信息", "【上一轮任务总结")):
+            return 3
+        if s.startswith("【最近的会话历史】"):
+            return 2
+        if s.startswith(("【当前可用 Harness 工具】", "【扩展工具】", "【本次已勾选的外部 API")):
+            return 1
+        return 0
+    prompt_parts = [p for _i, p in sorted(enumerate(prompt_parts), key=lambda x: (_bucket(x[1]), x[0]))]
     full_prompt = "\n\n".join(prompt_parts)
 
     raw = ""
