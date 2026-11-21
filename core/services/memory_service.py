@@ -161,7 +161,14 @@ def recall(
     try:
         query_emb = np.asarray(_get_embedder().get_embedding(query), dtype=np.float32).flatten()
     except Exception as e:
-        print(f"[memory] 查询 embedding 失败，降级关键词: {e}")
+        print(f"[memory] 查询 embedding 失败，降级检索: {e}")
+        try:
+            from . import fts_service
+            hits = fts_service.search_memory(user_id, query, top_k=top_k, memory_type=memory_type)
+            if hits:
+                return hits
+        except Exception as _fe:
+            print("[memory] FTS 失败: " + str(_fe))
         try:
             from . import keyword_search
             ranked = keyword_search.rank(

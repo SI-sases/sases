@@ -210,6 +210,13 @@ def retrieve_project_chunks(query, top_k=MAX_CHUNKS_PER_QUERY, threshold=None, u
     except Exception as e:
         print(f"[project] 查询 embedding 失败: {e}")
         try:
+            from . import fts_service
+            hits = fts_service.search_project(query, user_id=user_id, top_k=top_k)
+            if hits:
+                return hits
+        except Exception as _fe:
+            print("[project] FTS 失败: " + str(_fe))
+        try:
             from . import keyword_search
             ranked = keyword_search.rank(
                 rows,
