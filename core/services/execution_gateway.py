@@ -42,6 +42,32 @@ def _finish(run_id, conversation_id, supervisor_id, status, content, source):
     text = str(content or "").strip()
     if not text:
         text = "✅ 已完成" if status == "completed" else "⚠️ 任务未完成：" + str(status)
+    if source == "group":
+        try:
+            from . import group_service
+            gid = -int(conversation_id)
+            with db_cursor() as _uc:
+                _uc.execute("SELECT user_id FROM supervisor_runs WHERE id=?", (run_id,))
+                _urow = _uc.fetchone()
+            _uid = int(_urow["user_id"]) if _urow else 0
+            group_service.insert_agent_message(gid, supervisor_id or "sases_assistant", text, trigger_user_id=_uid)
+            try:
+                import asyncio
+                from ..db import db_cursor as _dc
+                with _dc() as _c:
+                    _c.execute("SELECT global_group_id FROM groups WHERE id=?", (gid,))
+                    _g = _c.fetchone()
+                if _g and _g["global_group_id"]:
+                    from ..api_routes.ws_routes import broadcast_to_group
+                    asyncio.create_task(broadcast_to_group(_g["global_group_id"], {
+                        "type": "message", "content": text,
+                        "sender_id": None, "sender_agent_id": supervisor_id,
+                    }))
+            except Exception:
+                pass
+        except Exception as e:
+            print("[gateway] 群结果落库失败: " + str(e))
+        return
     try:
         from .swarm.helpers import _insert_message
         _insert_message(int(conversation_id), "[SUMMARY]:" + text, sender_agent_id=supervisor_id)
@@ -97,11 +123,14 @@ async def resume_run(run_id, answer_text):
         return {"ok": False, "error": "run not found"}
     source = "a2a"
     try:
-        with db_cursor() as cur:
-            cur.execute("SELECT is_friend_chat FROM conversations WHERE id=?", (run["conversation_id"],))
-            r = cur.fetchone()
-        if not r or not r["is_friend_chat"]:
-            source = "schedule"
+        if int(run["conversation_id"]) < 0:
+            source = "group"
+        else:
+            with db_cursor() as cur:
+                cur.execute("SELECT is_friend_chat FROM conversations WHERE id=?", (run["conversation_id"],))
+                r = cur.fetchone()
+            if not r or not r["is_friend_chat"]:
+                source = "schedule"
     except Exception:
         pass
     with db_cursor(commit=True) as cur:
@@ -131,11 +160,14 @@ async def resume_after_approval(run_id):
     pending = approval_service.get_pending(run_id)
     source = "a2a"
     try:
-        with db_cursor() as cur:
-            cur.execute("SELECT is_friend_chat FROM conversations WHERE id=?", (run["conversation_id"],))
-            r = cur.fetchone()
-        if not r or not r["is_friend_chat"]:
-            source = "schedule"
+        if int(run["conversation_id"]) < 0:
+            source = "group"
+        else:
+            with db_cursor() as cur:
+                cur.execute("SELECT is_friend_chat FROM conversations WHERE id=?", (run["conversation_id"],))
+                r = cur.fetchone()
+            if not r or not r["is_friend_chat"]:
+                source = "schedule"
     except Exception:
         pass
     if pending:

@@ -47,6 +47,7 @@ async def reply(group_id, user_id, agent_id, question, execute=False):
             allowed_tool_ids=allowed,
             max_steps=6 if execute else 2,
             mode=mode,
+            supervisor_id=agent_id,
         )
     except Exception as e:
         return False, "群智能体执行失败：" + str(e)

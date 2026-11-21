@@ -44,6 +44,15 @@ async def answer_question(question_id: int, body: AnswerBody, user_id: int = Dep
             raise HTTPException(status_code=404, detail="conversation not found")
 
     agent_question_service.answer(question_id, body.answer)
+    if cid < 0:
+        try:
+            gid = -cid
+            with db_cursor(commit=True) as cur:
+                cur.execute("INSERT INTO group_messages (group_id, sender_id, content) VALUES (?, ?, ?)",
+                            (gid, user_id, body.answer))
+            agent_memory.append(cid, "user", body.answer)
+        except Exception as e:
+            print("[ask_user] 群回答落库失败: " + str(e))
     if q.get("run_id"):
         if cid > 0:
             with db_cursor(commit=True) as cur:

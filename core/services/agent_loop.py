@@ -21,7 +21,7 @@ def _tool_schemas(allowed_tool_ids=None):
     return [tool_schema(t) for t in tools if getattr(t, "module_id", "")]
 
 
-async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8, run_id=None, mode="fast", resume=False):
+async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8, run_id=None, mode="fast", resume=False, supervisor_id=None):
     if not conversation_id:
         return {"status": "error", "content": "缺少会话", "steps": 0, "history": []}
 
@@ -85,7 +85,7 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
                             _c_q.execute(
                                 "INSERT INTO supervisor_runs (user_id, conversation_id, supervisor_id, goal, status, current_round, max_rounds, history, task_type) "
                                 "VALUES (?,?,?,?,'waiting_user',0,10,'[]','unknown')",
-                                (user_id, conversation_id, "sases_assistant", str(goal or "")),
+                                (user_id, conversation_id, supervisor_id or "sases_assistant", str(goal or "")),
                             )
                             run_id = _c_q.lastrowid
                     except Exception as _e_qr:
