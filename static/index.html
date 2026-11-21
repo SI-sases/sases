@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
@@ -17,87 +17,87 @@
   <link rel="manifest" href="/static/manifest.json">
   <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
   <meta name="theme-color" content="#007aff">
-  <!-- 鎷奸煶搴?鐢ㄤ簬鏅鸿兘浣撳垪琛ㄥ垎缁?-->
+  <!-- 拼音库,用于智能体列表分组 -->
   <script src="/static/modules/pinyin-pro.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
 </head>
 <body>
-<a href="/static/downloads/sases.zip" id="download-client-btn" style="position:fixed;top:12px;right:16px;z-index:9999;background:#2563eb;color:#fff;padding:8px 14px;border-radius:8px;text-decoration:none;font-size:14px;box-shadow:0 2px 8px rgba(0,0,0,.2);">馃摜 涓嬭浇妗岄潰鐗?/a>
+<a href="/static/downloads/sases.zip" id="download-client-btn" style="position:fixed;top:12px;right:16px;z-index:9999;background:#2563eb;color:#fff;padding:8px 14px;border-radius:8px;text-decoration:none;font-size:14px;box-shadow:0 2px 8px rgba(0,0,0,.2);">📥 下载桌面版</a>
 
   <div id="app">
 
-    <!-- 鐧诲綍瑙嗗浘 -->
+    <!-- 登录视图 -->
     <section id="view-login" class="login-view" style="display:none;">
       <div class="login-container">
         <div class="login-box">
           <div class="lang-switch">
-            <button class="lang-btn active" data-lang="zh">涓枃</button>
+            <button class="lang-btn active" data-lang="zh">中文</button>
             <span class="lang-divider">|</span>
             <button class="lang-btn" data-lang="en">English</button>
           </div>
 <div id="form-login" class="login-form active">
             <h2 class="login-title" id="login-title">SASES</h2>
-            <p class="login-subtitle" id="login-subtitle">鐧诲綍浣犵殑璐﹀彿 / Sign in to your account</p>
-            <input type="text" id="login-username" class="login-input" placeholder="鐢ㄦ埛鍚?/ Username" autocomplete="username">
-            <input type="password" id="login-password" class="login-input" placeholder="瀵嗙爜 / Password" autocomplete="current-password">
-            <button id="login-btn" class="login-btn">鐧诲綍 / Login</button>
+            <p class="login-subtitle" id="login-subtitle">登录你的账号 / Sign in to your account</p>
+            <input type="text" id="login-username" class="login-input" placeholder="用户名 / Username" autocomplete="username">
+            <input type="password" id="login-password" class="login-input" placeholder="密码 / Password" autocomplete="current-password">
+            <button id="login-btn" class="login-btn">登录 / Login</button>
             <div class="agreement-row">
               <input type="checkbox" id="agree-checkbox">
-              <label for="agree-checkbox" class="agreement-text" id="agreement-text">鎴戝凡闃呰骞跺悓鎰?<a href="#" id="user-agreement-link">鐢ㄦ埛鍗忚</a> 鍜?<a href="#" id="privacy-policy-link">闅愮鏀跨瓥</a></label>
+              <label for="agree-checkbox" class="agreement-text" id="agreement-text">我已阅读并同意 <a href="#" id="user-agreement-link">用户协议</a> 和 <a href="#" id="privacy-policy-link">隐私政策</a></label>
             </div>
             <div class="login-links">
-              <a href="#" id="go-register">娉ㄥ唽鏂拌处鍙?/ Sign Up</a>
-              <span class="link-divider">路</span>
-              <a href="#" id="forgot-password">鎵惧洖瀵嗙爜 / Forgot Password</a>
+              <a href="#" id="go-register">注册新账号 / Sign Up</a>
+              <span class="link-divider">·</span>
+              <a href="#" id="forgot-password">找回密码 / Forgot Password</a>
             </div>
           </div>
           <div id="form-register" class="login-form">
             <h2 class="login-title">SASES</h2>
-            <p class="login-subtitle">鍒涘缓鏂拌处鍙?/ Create Account</p>
-            <input type="text" id="reg-username" class="login-input" placeholder="鐢ㄦ埛鍚?/ Username锛?-20浣嶏紝瀛楁瘝/鏁板瓧/涓嬪垝绾?/ 3-20 chars, letters/digits/underscore锛?>
-            <input type="password" id="reg-password" class="login-input" placeholder="瀵嗙爜 / Password锛?-32浣嶏紝蹇呴』鍚瓧姣嶅拰鏁板瓧 / 8-32 chars, must contain letters and digits锛?>
-            <input type="password" id="reg-password2" class="login-input" placeholder="纭瀵嗙爜 / Confirm Password">
-            <input type="email" id="reg-email" class="login-input" placeholder="閭锛堥€夊～锛?/ Email (optional)">
-            <button id="reg-submit" class="login-btn">娉ㄥ唽 / Sign Up</button>
+            <p class="login-subtitle">创建新账号 / Create Account</p>
+            <input type="text" id="reg-username" class="login-input" placeholder="用户名 / Username（3-20位，字母/数字/下划线 / 3-20 chars, letters/digits/underscore）">
+            <input type="password" id="reg-password" class="login-input" placeholder="密码 / Password（8-32位，必须含字母和数字 / 8-32 chars, must contain letters and digits）">
+            <input type="password" id="reg-password2" class="login-input" placeholder="确认密码 / Confirm Password">
+            <input type="email" id="reg-email" class="login-input" placeholder="邮箱（选填） / Email (optional)">
+            <button id="reg-submit" class="login-btn">注册 / Sign Up</button>
             <div class="login-links">
-              <a href="#" id="reg-back">鈫?杩斿洖鐧诲綍 / Back to Login</a>
+              <a href="#" id="reg-back">← 返回登录 / Back to Login</a>
             </div>
           </div>
           <div id="form-reset" class="login-form">
             <h2 class="login-title">SASES</h2>
-            <p class="login-subtitle">閲嶇疆瀵嗙爜 / Reset Password</p>
-            <input type="text" id="reset-username" class="login-input" placeholder="鐢ㄦ埛鍚?/ Username">
-            <input type="email" id="reset-email" class="login-input" placeholder="娉ㄥ唽閭 / Registered Email">
-            <input type="password" id="reset-password" class="login-input" placeholder="鏂板瘑鐮侊紙8-32浣嶏級 / New Password (8-32 chars)">
-            <button id="reset-submit" class="login-btn">閲嶇疆瀵嗙爜 / Reset Password</button>
+            <p class="login-subtitle">重置密码 / Reset Password</p>
+            <input type="text" id="reset-username" class="login-input" placeholder="用户名 / Username">
+            <input type="email" id="reset-email" class="login-input" placeholder="注册邮箱 / Registered Email">
+            <input type="password" id="reset-password" class="login-input" placeholder="新密码（8-32位） / New Password (8-32 chars)">
+            <button id="reset-submit" class="login-btn">重置密码 / Reset Password</button>
             <div class="login-links">
-              <a href="#" id="reset-back">鈫?杩斿洖鐧诲綍 / Back to Login</a>
+              <a href="#" id="reset-back">← 返回登录 / Back to Login</a>
             </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- 涓荤晫闈?-->
+    <!-- 主界面 -->
     <div id="main-app" class="main-app" style="display:none;">
       <header class="top-bar">
         <div class="top-left" id="top-left" style="display:none;">
-          <button id="hamburger-btn" class="hamburger-btn" aria-label="鑿滃崟">
+          <button id="hamburger-btn" class="hamburger-btn" aria-label="菜单">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="1.5" stroke-linecap="round">
               <path d="M3 6h18M3 12h18M3 18h18" />
             </svg>
           </button>
         </div>
-        <div class="top-title" id="top-title">娑堟伅</div>
+        <div class="top-title" id="top-title">消息</div>
         <div class="top-actions" id="top-actions">
-          <button id="top-search-btn" class="top-action-btn" aria-label="鎼滅储">
+          <button id="top-search-btn" class="top-action-btn" aria-label="搜索">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="1.5" stroke-linecap="round">
               <circle cx="11" cy="11" r="7" />
               <path d="M21 21l-4.35-4.35" />
             </svg>
           </button>
-          <button id="top-plus-btn" class="top-action-btn" aria-label="娣诲姞">
+          <button id="top-plus-btn" class="top-action-btn" aria-label="添加">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="1.5" stroke-linecap="round">
               <path d="M12 5v14M5 12h14" />
             </svg>
@@ -122,55 +122,53 @@
           <div id="me-content" class="list-container"></div>
         </section>
 
-        <!-- 鑱婂ぉ绐楀彛 -->
+        <!-- 聊天窗口 -->
         <section id="view-chat-window" class="chat-window" style="display:none;">
           <div class="chat-window-header">
-            <button id="chat-back-btn" class="back-btn" aria-label="杩斿洖">
+            <button id="chat-back-btn" class="back-btn" aria-label="返回">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M19 12H5M12 19l-7-7 7-7" />
               </svg>
             </button>
             <div class="chat-title-area" id="chat-title-area">
-              <div class="chat-window-title" id="chat-window-title">浼氳瘽鍚嶇О</div>
+              <div class="chat-window-title" id="chat-window-title">会话名称</div>
               <button id="chat-mode-btn" class="chat-mode-btn">
-                <span id="chat-mode-text">鑷敱妯″紡</span>
-                <span class="mode-arrow">鈻?/span>
+                <span id="chat-mode-text">自由模式</span>
+                <span class="mode-arrow">▾</span>
               </button>
             </div>
-            <button id="chat-info-btn" class="chat-info-btn" style="display:none;" aria-label="鑱婂ぉ淇℃伅">鈰?/button>
-            <button id="group-settings-btn" class="group-settings-btn" style="display:none;" aria-label="缇よ缃?>鈰?/button>
+            <button id="chat-info-btn" class="chat-info-btn" style="display:none;" aria-label="聊天信息">⋯</button>
+            <button id="group-settings-btn" class="group-settings-btn" style="display:none;" aria-label="群设置">⋯</button>
           </div>
 
           <div id="group-task-bar" class="group-task-bar" style="display:none;">
-            <span class="group-task-bar-text" id="group-task-bar-text">杩涜涓换鍔?/span>
-            <span class="group-task-bar-arrow">鈻?/span>
+            <span class="group-task-bar-text" id="group-task-bar-text">进行中任务</span>
+            <span class="group-task-bar-arrow">▾</span>
           </div>
           <div id="group-red-packet-bar" class="group-task-bar" style="display:none;background:linear-gradient(135deg,#f59e0b,#ef4444);">
-            <span class="group-task-bar-text" id="group-red-packet-bar-text">寰呮姠绾㈠寘</span>
-            <span class="group-task-bar-arrow">鈻?/span>
+            <span class="group-task-bar-text" id="group-red-packet-bar-text">待抢红包</span>
+            <span class="group-task-bar-arrow">▾</span>
           </div>
 
 
           <div id="chat-messages" class="chat-messages"></div>
 
           <div id="param-bar" class="param-bar">
-            <span id="param-rounds" class="param-pill" title="鐐瑰嚮璁剧疆鏈疆鏈€澶ф鏁?>鈿欙笍 8姝?/span>
-            <span id="mode-pill" class="param-pill" title="鑷姩/蹇€?涓ユ牸" style="cursor:pointer; margin-left: 8px;">鈿?鑷姩</span>
-            <div id="api-pill" class="param-pill" title="閫夋嫨鑳藉姏鑳跺泭" style="cursor:pointer; margin-left: 8px;">馃З 鑳藉姏</div>
-            <span id="capsule-settings-btn" class="param-pill" title="璁剧疆鑳跺泭鏍? style="cursor:pointer; margin-left: 8px;">鈰?/span>
+            <div id="api-pill" class="param-pill" title="选择能力" style="cursor:pointer;">🧩 能力</div>
+            <span id="capsule-settings-btn" class="param-pill" title="设置" style="cursor:pointer; margin-left: 8px;">⋯</span>
           </div>
           <div class="chat-input-area">
-            <button id="toggle-voice-btn" class="voice-toggle-btn" aria-label="璇煶鍒囨崲">馃帳</button>
+            <button id="toggle-voice-btn" class="voice-toggle-btn" aria-label="语音切换">🎤</button>
             <div class="chat-input-wrapper">
-              <textarea id="chat-input" placeholder="杈撳叆娑堟伅..." rows="1"></textarea>
+              <textarea id="chat-input" placeholder="输入消息..." rows="1"></textarea>
             </div>
-            <button id="identity-btn" class="identity-btn" aria-label="鍒囨崲韬唤">馃</button>
-            <button id="input-plus-btn" class="input-plus-btn" aria-label="鏇村">锛?/button>
-            <button id="send-btn" class="send-btn" style="display:none;">鍙戦€?/button>
-            <button id="stop-btn" class="send-btn" style="display:none;background:#ff3b30;">鈴?/button>
+            <button id="identity-btn" class="identity-btn" aria-label="切换身份">🤖</button>
+            <button id="input-plus-btn" class="input-plus-btn" aria-label="更多">＋</button>
+            <button id="send-btn" class="send-btn" style="display:none;">发送</button>
+            <button id="stop-btn" class="send-btn" style="display:none;background:#ff3b30;">⏹</button>
           </div>
 
-          <!-- 鑱婂ぉ鍔犲彿闈㈡澘 -->
+          <!-- 聊天加号面板 -->
           <div id="chat-plus-panel" class="chat-plus-panel" style="display:none;">
             <div class="chat-plus-overlay" id="chat-plus-overlay"></div>
             <div class="chat-plus-content" id="chat-plus-content"></div>
@@ -179,14 +177,14 @@
 
         <section id="view-subpage" class="subpage" style="display:none;">
           <div class="subpage-header">
-            <button id="subpage-back-btn" class="back-btn" aria-label="杩斿洖">
+            <button id="subpage-back-btn" class="back-btn" aria-label="返回">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M19 12H5M12 19l-7-7 7-7" />
               </svg>
             </button>
             <div id="subpage-avatar" class="subpage-avatar" style="display:none;"></div>
-            <div class="subpage-title" id="subpage-title">椤甸潰</div>
-            <button id="subpage-more-btn" class="subpage-more-btn" style="display:none;" aria-label="鏇村">鈰?/button>
+            <div class="subpage-title" id="subpage-title">页面</div>
+            <button id="subpage-more-btn" class="subpage-more-btn" style="display:none;" aria-label="更多">⋯</button>
             <button id="subpage-right-btn" class="subpage-right-btn" style="display:none;background:none;border:none;color:#007aff;font-size:15px;padding:4px 12px;cursor:pointer;"></button>
           </div>
           <div id="subpage-content" class="subpage-content"></div>
@@ -194,58 +192,58 @@
       </main>
 
       <nav class="bottom-nav">
-        <button class="nav-btn active" data-view="messages">娑堟伅</button>
-        <button class="nav-btn" data-view="contacts">鏅鸿兘浣?/button>
-        <button class="nav-btn" data-view="discover">鍙戠幇</button>
-        <button class="nav-btn" data-view="me">鎴戠殑</button>
+        <button class="nav-btn active" data-view="messages">消息</button>
+        <button class="nav-btn" data-view="contacts">智能体</button>
+        <button class="nav-btn" data-view="discover">发现</button>
+        <button class="nav-btn" data-view="me">我的</button>
       </nav>
     </div>
 
-    <!-- 渚ц竟鏍忔娊灞?-->
+    <!-- 侧边栏抽屉 -->
     <div id="side-drawer" class="side-drawer" style="display:none;">
       <div class="side-drawer-overlay" id="side-drawer-overlay"></div>
       <div class="side-drawer-content">
         <div class="side-drawer-header">
-          <span>鑿滃崟</span>
+          <span>菜单</span>
         </div>
         <div class="side-menu">
           <div class="side-menu-item" id="menu-harness">
-            <span class="menu-icon">馃敡</span>
-            <span>Harness 宸ュ叿</span>
-            <span class="menu-arrow">鈥?/span>
+            <span class="menu-icon">🔧</span>
+            <span>Harness 工具</span>
+            <span class="menu-arrow">›</span>
           </div>
           <div class="side-menu-item" id="menu-market">
-            <span class="menu-icon">馃彧</span>
-            <span>浜ゆ槗甯傚満</span>
-            <span class="menu-arrow">鈥?/span>
+            <span class="menu-icon">🏪</span>
+            <span>交易市场</span>
+            <span class="menu-arrow">›</span>
           </div>
           <div class="side-menu-item" id="menu-mini-apps">
-            <span class="menu-icon">馃З</span>
-            <span>灏忕▼搴?/span>
-            <span class="menu-arrow">鈥?/span>
+            <span class="menu-icon">🧩</span>
+            <span>小程序</span>
+            <span class="menu-arrow">›</span>
           </div>
           <div class="side-menu-item" id="menu-external-api">
-            <span class="menu-icon">馃攲</span>
-            <span>澶栭儴 API</span>
-            <span class="menu-arrow">鈥?/span>
+            <span class="menu-icon">🔌</span>
+            <span>外部 API</span>
+            <span class="menu-arrow">›</span>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 鍙充笂瑙掑姞鍙峰脊鍑鸿彍鍗?-->
+    <!-- 右上角加号弹出菜单 -->
     <div id="plus-menu" class="plus-menu" style="display:none;">
       <div class="plus-menu-overlay" id="plus-menu-overlay"></div>
       <div class="plus-menu-content">
-        <!-- 鑿滃崟椤圭敱 JS 鍔ㄦ€佺敓鎴?-->
+        <!-- 菜单项由 JS 动态生成 -->
       </div>
     </div>
 
-    <!-- 妯″紡鍒囨崲寮瑰嚭鑿滃崟 -->
+    <!-- 模式切换弹出菜单 -->
     <div id="mode-menu" class="plus-menu" style="display:none;">
       <div class="plus-menu-overlay" id="mode-menu-overlay"></div>
       <div class="plus-menu-content" id="mode-menu-content">
-        <!-- 妯″紡閫夐」鐢?JS 鍔ㄦ€佺敓鎴?-->
+        <!-- 模式选项由 JS 动态生成 -->
       </div>
     </div>
 
@@ -267,10 +265,10 @@
     }
   </script>
 
-  <!-- 鐗堟湰鍙峰凡鎻愬崌鑷?20261031锛屽己鍒舵竻闄?Edge 娴忚鍣ㄧ紦瀛?-->
-  <script type="module" src="/static/modules/main.js?v=20261127"></script>
+  <!-- 版本号已提升至 20261031，强制清除 Edge 浏览器缓存 -->
+  <script type="module" src="/static/modules/main.js?v=20261128"></script>
 
   <script src="/static/modules/me_external_api.js"></script>
-  <script src="/static/modules/api_pill.js?v=3"></script>
+  <script src="/static/modules/api_pill.js?v=4"></script>
 </body>
 </html>
