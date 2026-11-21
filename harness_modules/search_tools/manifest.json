@@ -1,0 +1,13 @@
+{
+  "id": "search_tools",
+  "name": "搜索扩展工具",
+  "description": "当核心工具不够用时，用关键词搜索扩展工具池，返回可调用的工具 id 与说明。",
+  "version": "1.0.0",
+  "entrypoint": "main.py",
+  "node_type": "harness",
+  "tier": "core",
+  "category": "meta",
+  "params": {
+    "query": {"type": "string", "required": true, "desc": "关键词，例如 计算/文本/图片/ssh"}
+  }
+}

@@ -370,6 +370,9 @@ async def plan_task(
                     _tl.append('    必填：' + ', '.join(_required))
             if len(_tl) > 1:
                 prompt_parts.append(chr(10).join(_tl))
+                prompt_parts.append(
+                    "【扩展工具】核心工具不够用时，先调用 search_tools(query) 搜索扩展池，"
+                    "再用返回的 module_id 调用；不要假设未列出的工具可用。")
     except Exception as _te:
         print('[swarm] 注入工具清单失败: ' + str(_te))
 

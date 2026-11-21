@@ -4,6 +4,14 @@ from typing import Dict, Any, List, Optional
 from core.harness_loader import load_harness_modules, HARNESS_MODULES_DIR
 from core.harness_models import ModuleManifest, ToolDefinition, ToolInvokeResponse
 
+# P1.5: 扩展池工具（不进入主提示词，按需 search_tools 注入）
+EXTENSION_TOOL_IDS = {
+    "calculator", "is_prime", "count_chinese_chars", "text_stats", "unit_converter",
+    "json_formatter", "base64_codec", "compare_texts", "string_utils",
+    "extract_keypoints", "structure_check", "answer", "file_copy",
+    "delete_block", "split_block", "ssh_exec", "harness_reload",
+}
+
 # 默认允许的权限集合（安全权限）
 DEFAULT_ALLOWED_PERMISSIONS = {
     "calculation",
@@ -92,7 +100,7 @@ class HarnessRuntime:
             "conflicts": _conflicts
         }
 
-    def list_tools(self) -> List[ToolDefinition]:
+    def list_tools(self, include_extension: bool = False) -> List[ToolDefinition]:
         tools = []
         _seen = set()
         for module_id, info in self._modules.items():
@@ -100,6 +108,11 @@ class HarnessRuntime:
             if manifest.id in _seen:
                 continue
             if manifest.id == 'file_patch':
+                continue
+            tier = getattr(manifest, 'tier', 'core') or 'core'
+            if tier == 'core' and manifest.id in EXTENSION_TOOL_IDS:
+                tier = 'extension'
+            if tier == 'extension' and not include_extension:
                 continue
             _seen.add(manifest.id)
             tools.append(ToolDefinition(
@@ -113,11 +126,16 @@ class HarnessRuntime:
                 aliases=list(getattr(manifest, 'aliases', []) or []),
                 params=dict(getattr(manifest, 'params', {}) or {}),
                 cost=dict(getattr(manifest, 'cost', {}) or {}),
+                tier=tier,
+                category=getattr(manifest, 'category', 'general') or 'general',
             ))
         return tools
 
+    def list_all_tools(self) -> List[ToolDefinition]:
+        return self.list_tools(include_extension=True)
+
     def get_tool(self, module_id: str) -> Optional[ToolDefinition]:
-        for tool in self.list_tools():
+        for tool in self.list_all_tools():
             if tool.module_id == module_id:
                 return tool
         return None
