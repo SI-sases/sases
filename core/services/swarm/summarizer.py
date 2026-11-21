@@ -47,7 +47,50 @@ def _prepend_changes(summary, results):
 
 
 
-async def _summarize(user_text: str, results: List[Dict[str, Any]], user_id: int = None, task_id: str = None) -> str:
+async def _summarize(user_text: str, results: List[Dict[str, Any]], user_id: int = None, task_id: str = None, conversation_id: int = None) -> str:
+    # [AUDIT-1] 结构化任务总结：供 C2 统计、下一轮 plan 读取（v0.45.0）
+    try:
+        if user_id and task_id and results:
+            import json as _json_audit
+            _tool_stats = {}
+            _files_changed = []
+            for _r in results:
+                _tool = str(_r.get("module_id") or _r.get("command") or "").strip()
+                _tool = _tool.split()[0].lower() if _tool else ""
+                if _tool:
+                    _st = _tool_stats.setdefault(_tool, {"count": 0, "failed": 0})
+                    _st["count"] += 1
+                    if _r.get("status") != "success":
+                        _st["failed"] += 1
+                if _tool in ("smart_edit", "file_write", "file_replace_range"):
+                    _params = _r.get("params")
+                    _fp = _params.get("file_path") if isinstance(_params, dict) else None
+                    if _fp and _fp not in _files_changed:
+                        _files_changed.append(_fp)
+            _failed_strategies = [str(_r.get("reason") or "")[:120] for _r in results if _r.get("review") == "retry"]
+            _audit = {
+                "task_id": str(task_id),
+                "conversation_id": conversation_id,
+                "goal": str(user_text or "")[:300],
+                "outcome": "success" if not _failed_strategies else "partial_success",
+                "files_changed": _files_changed,
+                "tools_used": [{"tool": k, "count": v["count"], "failed": v["failed"]} for k, v in _tool_stats.items()],
+                "failed_strategies": _failed_strategies[:5],
+                "successful_strategies": [k for k, v in _tool_stats.items() if v["failed"] == 0],
+            }
+            from .. import memory_service as _ms_audit
+            _ms_audit.remember(
+                user_id=user_id,
+                memory_type="task_summary",
+                content=_json_audit.dumps(_audit, ensure_ascii=False),
+                task_id=str(task_id),
+                importance=0.7,
+                enable_dedup=False,
+            )
+            print("[AUDIT] task_summary written: " + str(task_id))
+    except Exception as _e_audit:
+        print("[AUDIT] task_summary 写入失败: " + str(_e_audit))
+
     # P0：记录经验 pattern（静默失败，不阻塞主流程）
     try:
         if user_id and task_id and results:
