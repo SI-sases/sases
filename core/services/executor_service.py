@@ -79,6 +79,35 @@ def _idem_put(module_id: str, key, output):
         _rj_i.effect_put(str(key), module_id, str(output)[:20000])
     except Exception as _e_i:
         print("[idempotent] 写入失败: " + str(_e_i))
+
+
+def _spill_large(output, run_id=None, conversation_id=None, user_id=None, module_id="tool"):
+    """P1-3: 超过 MAX_OUTPUT_LENGTH 的输出落 artifact，返回截断文本 + 指针。"""
+    text = str(output or "")
+    if len(text) <= MAX_OUTPUT_LENGTH:
+        return text
+    try:
+        import time as _time_sp
+        _root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        _dir = os.path.join(_root, "static", "generated")
+        os.makedirs(_dir, exist_ok=True)
+        _name = "tool_output_" + str(run_id or 0) + "_" + str(int(_time_sp.time() * 1000)) + ".txt"
+        _path = os.path.join(_dir, _name)
+        with open(_path, "w", encoding="utf-8") as f:
+            f.write(text)
+        _url = "/static/generated/" + _name
+        try:
+            from . import artifact_service
+            artifact_service.record(run_id, conversation_id, user_id, _url,
+                                    kind="file", name=_name,
+                                    meta={"tool": module_id, "kind": "tool_output"}, silent=True)
+        except Exception as _e_ar:
+            print("[artifact] 记录大输出失败: " + str(_e_ar))
+        print("[artifact] 大输出已落盘 " + _url + " (" + str(len(text)) + " chars)")
+        return text[:MAX_OUTPUT_LENGTH] + "\n...[已截断，完整输出: " + _url + "]"
+    except Exception as e:
+        print("[artifact] 大输出落盘失败: " + str(e))
+        return text[:MAX_OUTPUT_LENGTH]
 POLL_INTERVAL = 3
 MAX_CONCURRENT_TASKS = 3
 
@@ -378,7 +407,8 @@ async def _run_command(cmd: str, timeout: int = DEFAULT_TIMEOUT) -> tuple:
 
 # ========== Harness 调用 ==========
 
-async def _run_harness(module_id: str, params: Dict[str, Any], user_id=None, task_id=None, idem_key=None) -> tuple:
+async def _run_harness(module_id: str, params: Dict[str, Any], user_id=None, task_id=None, idem_key=None,
+                       conversation_id=None, run_id=None) -> tuple:
     start = datetime.datetime.now()
     try:
         # P0-3: 副作用幂等（重试/重复派发复用上次结果）
@@ -444,10 +474,12 @@ async def _run_harness(module_id: str, params: Dict[str, Any], user_id=None, tas
             output = result.get("text") or result.get("stdout") or json.dumps(result, ensure_ascii=False)
             _task_fail_counts.pop((str(task_id), module_id), None)
             _idem_put(module_id, idem_key, output)
+            output = _spill_large(output, run_id, conversation_id, user_id, module_id)
             return output[:MAX_OUTPUT_LENGTH], "success", dur
         _task_fail_counts.pop((str(task_id), module_id), None)
         _idem_put(module_id, idem_key, result)
-        return str(result)[:MAX_OUTPUT_LENGTH], "success", dur
+        _out_str = _spill_large(str(result), run_id, conversation_id, user_id, module_id)
+        return _out_str[:MAX_OUTPUT_LENGTH], "success", dur
     except Exception as e:
         dur = int((datetime.datetime.now() - start).total_seconds() * 1000)
         return f"Harness 调用异常: {e}", "error", dur
@@ -634,7 +666,8 @@ async def _execute_task(task: Dict[str, Any]):
             params = _substitute_params(params_raw, previous_outputs)
             print(f"[executor]   harness params: {json.dumps(params, ensure_ascii=False)[:300]}")
             output, status, dur = await _run_harness(module_id, params, task.get("user_id"), task_id,
-                                                     idem_key=(str(_run_id) + ":" + str(step_id)) if _run_id else None)
+                                                     idem_key=(str(_run_id) + ":" + str(step_id)) if _run_id else None,
+                                                     conversation_id=conversation_id, run_id=_run_id)
             print(f"[executor]   harness 结果: {status} ({dur}ms) | {output[:200]}")
         else:
             cmd_raw = step.get("command", "")
@@ -645,7 +678,8 @@ async def _execute_task(task: Dict[str, Any]):
                 params = _substitute_params(cmd_raw.get('params', {}), previous_outputs)
                 print(f"[executor]   harness params (from dict): {json.dumps(params, ensure_ascii=False)[:300]}")
                 output, status, dur = await _run_harness(module_id, params, task.get("user_id"), task_id,
-                                                     idem_key=(str(_run_id) + ":" + str(step_id)) if _run_id else None)
+                                                     idem_key=(str(_run_id) + ":" + str(step_id)) if _run_id else None,
+                                                     conversation_id=conversation_id, run_id=_run_id)
                 print(f"[executor]   harness 结果: {status} ({dur}ms) | {output[:200]}")
 
             # 兼容 2：command 字符串含 "harness" 前缀 → 自动转成 harness 调用
@@ -670,7 +704,8 @@ async def _execute_task(task: Dict[str, Any]):
                 _params2 = _substitute_params(_params2, previous_outputs)
                 print(f"[executor]   harness params (auto): {json.dumps(_params2, ensure_ascii=False)[:300]}")
                 output, status, dur = await _run_harness(_mid, _params2, task.get("user_id"), task_id,
-                                                         idem_key=(str(_run_id) + ":" + str(step_id)) if _run_id else None)
+                                                         idem_key=(str(_run_id) + ":" + str(step_id)) if _run_id else None,
+                                                         conversation_id=conversation_id, run_id=_run_id)
                 print(f"[executor]   harness 结果 (auto): {status} ({dur}ms) | {output[:200]}")
 
             else:
