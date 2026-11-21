@@ -99,6 +99,154 @@ def _check_old_code_pollution(module_id, params):
     return None
 
 
+# ========== 跨轮熔断 + 等价工具降级（v0.46） ==========
+
+_CIRCUIT_DB_WINDOW_MIN = 30
+_CIRCUIT_TASK_THRESHOLD = 3
+_task_fail_counts: Dict[tuple, int] = {}
+
+
+def _db_circuit_check(module_id: str, user_id=None) -> Optional[str]:
+    """跨轮熔断继承：读 safety_memory 里 30 分钟内的熔断记录。
+
+    注意：safety_memory.created_at 存在 UTC/local 混用，不能用来排序或算时效，
+    因此按 id 倒序取最近记录，并用 content 里的 [ts=epoch] 判断新鲜度。
+    """
+    if not user_id:
+        return None
+    try:
+        import re as _re_c
+        import time as _time_c
+        with db_cursor() as _cur_c:
+            _cur_c.execute(
+                "SELECT content FROM safety_memory WHERE user_id=? AND memory_type='failure_pattern' "
+                "ORDER BY id DESC LIMIT 20",
+                (user_id,),
+            )
+            _rows_c = _cur_c.fetchall()
+        for _row_c in _rows_c:
+            txt = str((_row_c["content"] if isinstance(_row_c, dict) else _row_c[0]) or "")
+            if module_id not in txt or "熔断" not in txt:
+                continue
+            _m = _re_c.search(r"\[ts=(\d+)\]", txt)
+            if not _m:
+                continue
+            if _time_c.time() - int(_m.group(1)) > _CIRCUIT_DB_WINDOW_MIN * 60:
+                continue
+            print("[executor] 跨轮熔断继承命中: " + module_id)
+            return ("Error: " + module_id + " 近期熔断（" + txt[:100]
+                    + "），本轮改用等价工具")
+    except Exception as e:
+        print("[executor] 跨轮熔断检查失败: " + str(e))
+    return None
+
+
+def _db_circuit_record(module_id: str, user_id, task_id, error) -> None:
+    """同一任务内同一工具连续失败 N 次 -> 写一条跨轮熔断记录。"""
+    key = (str(task_id), module_id)
+    n = _task_fail_counts.get(key, 0) + 1
+    _task_fail_counts[key] = n
+    if n < _CIRCUIT_TASK_THRESHOLD or not user_id:
+        return
+    try:
+        import time as _time_w
+        from . import memory_service
+        memory_service.remember(
+            user_id=user_id,
+            memory_type="failure_pattern",
+            content=(module_id + " 熔断（连续 " + str(n) + " 次失败）：" + str(error or "")[:150]
+                     + " [ts=" + str(int(_time_w.time())) + "]"),
+            task_id=str(task_id),
+            importance=0.6,
+            tags="failure,circuit",
+            enable_dedup=False,
+        )
+        print("[executor] 熔断记录已写入: " + module_id + " x" + str(n))
+    except Exception as e:
+        print("[executor] 熔断记录写入失败: " + str(e))
+
+
+def _grep_fallback_code(params: Dict[str, Any]) -> Optional[str]:
+    """把 grep_code 参数翻译成 run_python 扫描脚本（等价降级）。"""
+    try:
+        pattern = str(params.get("pattern") or "").strip()
+        if not pattern:
+            return None
+        path = str(params.get("path") or ".").strip() or "."
+        ext = str(params.get("file_ext") or "").strip()
+        max_results = int(params.get("max_results") or 30)
+        max_results = max(1, min(max_results, 100))
+        template = """import os,re,json
+pat=%r
+root=%r
+ext=%r
+cap=%d
+out=[]
+for dp,dn,fn in os.walk(root):
+    dn[:]=[d for d in dn if d not in ('.git','__pycache__','venv','venv312','node_modules','.backups','archive')]
+    for f in fn:
+        if ext and not f.endswith(ext):
+            continue
+        if f.endswith(('.bak','.pyc','.log','.tmp')):
+            continue
+        p=os.path.normpath(os.path.join(dp,f)).replace(chr(92),'/')
+        try:
+            lines=open(p,encoding='utf-8',errors='replace').read().splitlines()
+        except Exception:
+            continue
+        for i,l in enumerate(lines,1):
+            try:
+                hit=(re.search(pat,l) is not None)
+            except re.error:
+                hit=(pat in l)
+            if hit:
+                out.append({'file':p,'line':i,'text':l.rstrip()[:200]})
+                if len(out)>=cap:
+                    break
+        if len(out)>=cap:
+            break
+    if len(out)>=cap:
+        break
+print(json.dumps({'success':True,'pattern':pat,'count':len(out),'matches':out},ensure_ascii=False))
+"""
+        return template % (pattern, path, ext, max_results)
+    except Exception as e:
+        print("[executor] grep 降级脚本生成失败: " + str(e))
+        return None
+
+
+async def _try_equivalent_tool(module_id: str, params: Dict[str, Any]):
+    """工具失败后尝试等价工具；成功返回 (output, status, dur)。"""
+    if module_id != "grep_code":
+        return None
+    code = _grep_fallback_code(params)
+    if not code:
+        return None
+    try:
+        resp = await asyncio.to_thread(harness_runtime.invoke_tool, "run_python", {"code": code})
+        if not getattr(resp, "success", False):
+            return None
+        r = getattr(resp, "result", None)
+        if not isinstance(r, dict) or r.get("success") is False:
+            return None
+        out = r.get("stdout") or r.get("text") or ""
+        if not str(out).strip():
+            return None
+        print("[executor] grep_code 失败，已降级 run_python 扫描成功")
+        return "[fallback:run_python] " + str(out)[:MAX_OUTPUT_LENGTH], "success", 0
+    except Exception as e:
+        print("[executor] 等价工具降级异常: " + str(e))
+        return None
+
+
+def _render_step_display(step: Dict[str, Any], output: str) -> str:
+    try:
+        from .swarm.tool_render import render_tool_text
+        return render_tool_text(str(step.get("module_id") or ""), output or "")
+    except Exception:
+        return str(output or "")[:300]
+
+
 def _get_semaphore() -> asyncio.Semaphore:
     global _global_semaphore
     if _global_semaphore is None:
@@ -218,28 +366,46 @@ async def _run_command(cmd: str, timeout: int = DEFAULT_TIMEOUT) -> tuple:
 
 # ========== Harness 调用 ==========
 
-async def _run_harness(module_id: str, params: Dict[str, Any]) -> tuple:
+async def _run_harness(module_id: str, params: Dict[str, Any], user_id=None, task_id=None) -> tuple:
     start = datetime.datetime.now()
     try:
+        # v0.46: 跨轮熔断继承（先于实际调用）
+        _blocked = _db_circuit_check(module_id, user_id)
+        if _blocked:
+            dur = int((datetime.datetime.now() - start).total_seconds() * 1000)
+            return _blocked, "failed", dur
+
         # P2A2: 拦截 old_code 被 file_read JSON 污染
         _pollution = _check_old_code_pollution(module_id, params)
         if _pollution:
             dur = int((datetime.datetime.now() - start).total_seconds() * 1000)
+            _db_circuit_record(module_id, user_id, task_id, _pollution["error"])
             return f"Harness 失败: {_pollution['error']}", "failed", dur
-        
+
         response = await asyncio.to_thread(harness_runtime.invoke_tool, module_id, params)
         dur = int((datetime.datetime.now() - start).total_seconds() * 1000)
 
         if not getattr(response, "success", False):
             error = getattr(response, "error", "未知错误")
+            _db_circuit_record(module_id, user_id, task_id, error)
+            _fb = await _try_equivalent_tool(module_id, params)
+            if _fb:
+                return _fb
             return f"Harness 失败: {error}", "failed", dur
 
         result = getattr(response, "result", None)
         if isinstance(result, dict):
             if result.get("success") is False:
-                return f"Harness 失败: {result.get('error', '')}", "failed", dur
-            output = result.get("text") or json.dumps(result, ensure_ascii=False)
+                _err_r = result.get("error", "")
+                _db_circuit_record(module_id, user_id, task_id, _err_r)
+                _fb = await _try_equivalent_tool(module_id, params)
+                if _fb:
+                    return _fb
+                return f"Harness 失败: {_err_r}", "failed", dur
+            output = result.get("text") or result.get("stdout") or json.dumps(result, ensure_ascii=False)
+            _task_fail_counts.pop((str(task_id), module_id), None)
             return output[:MAX_OUTPUT_LENGTH], "success", dur
+        _task_fail_counts.pop((str(task_id), module_id), None)
         return str(result)[:MAX_OUTPUT_LENGTH], "success", dur
     except Exception as e:
         dur = int((datetime.datetime.now() - start).total_seconds() * 1000)
@@ -377,7 +543,7 @@ async def _execute_task(task: Dict[str, Any]):
             # 对 params 里所有字符串值做占位符替换
             params = _substitute_params(params_raw, previous_outputs)
             print(f"[executor]   harness params: {json.dumps(params, ensure_ascii=False)[:300]}")
-            output, status, dur = await _run_harness(module_id, params)
+            output, status, dur = await _run_harness(module_id, params, task.get("user_id"), task_id)
             print(f"[executor]   harness 结果: {status} ({dur}ms) | {output[:200]}")
         else:
             cmd_raw = step.get("command", "")
@@ -387,7 +553,7 @@ async def _execute_task(task: Dict[str, Any]):
                 module_id = cmd_raw.get('module_id')
                 params = _substitute_params(cmd_raw.get('params', {}), previous_outputs)
                 print(f"[executor]   harness params (from dict): {json.dumps(params, ensure_ascii=False)[:300]}")
-                output, status, dur = await _run_harness(module_id, params)
+                output, status, dur = await _run_harness(module_id, params, task.get("user_id"), task_id)
                 print(f"[executor]   harness 结果: {status} ({dur}ms) | {output[:200]}")
 
             # 兼容 2：command 字符串含 "harness" 前缀 → 自动转成 harness 调用
@@ -411,7 +577,7 @@ async def _execute_task(task: Dict[str, Any]):
                             _params2[_kv.group(1)] = _kv.group(2)
                 _params2 = _substitute_params(_params2, previous_outputs)
                 print(f"[executor]   harness params (auto): {json.dumps(_params2, ensure_ascii=False)[:300]}")
-                output, status, dur = await _run_harness(_mid, _params2)
+                output, status, dur = await _run_harness(_mid, _params2, task.get("user_id"), task_id)
                 print(f"[executor]   harness 结果 (auto): {status} ({dur}ms) | {output[:200]}")
 
             else:
@@ -463,6 +629,7 @@ async def _execute_task(task: Dict[str, Any]):
             "description": desc,
             "status": status,
             "output": output[:5000],
+            "display": _render_step_display(step, output),
             "duration_ms": dur,
         }
 
@@ -485,7 +652,7 @@ async def _execute_task(task: Dict[str, Any]):
                 "tool": str(step.get("module_id") or step.get("command") or "")[:100],
                 "status": status,
                 "duration_ms": dur,
-                "output_preview": str(output or "")[:200],
+                "output_preview": str(payload.get("display") or output or "")[:200],
             })
         except Exception as _e_c3:
             print("[P3-C3] trace WS 推送失败: " + str(_e_c3))

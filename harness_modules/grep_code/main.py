@@ -113,7 +113,7 @@ def run(params):
             _size = os.path.getsize(full)
             if context_lines > 0 and _size <= MAX_FILE_BYTES:
                 # 有上下文：一次性读入内存
-                with open(full, 'r', encoding='utf-8', errors='ignore') as f:
+                with open(full, 'r', encoding='utf-8', errors='replace') as f:
                     _lines = f.readlines()
                 for i, line in enumerate(_lines):
                     _matched = (_regex.search(line) is not None) if _regex else (pattern in line)
@@ -134,7 +134,7 @@ def run(params):
                             break
             else:
                 # 无上下文或文件过大：逐行迭代
-                with open(full, 'r', encoding='utf-8', errors='ignore') as f:
+                with open(full, 'r', encoding='utf-8', errors='replace') as f:
                     for ln, line in enumerate(f, 1):
                         _matched = (_regex.search(line) is not None) if _regex else (pattern in line)
                         if _matched:
