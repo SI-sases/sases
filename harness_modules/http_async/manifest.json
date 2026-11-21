@@ -1,0 +1,27 @@
+{
+  "id": "http_async",
+  "name": "通用异步 HTTP",
+  "description": "提交一个 HTTP 任务并轮询状态：submit_url 提交，status_url 轮询（含 {handle} 占位符）。适合 ComfyUI / 训练 / 长任务 API。",
+  "version": "0.1.0",
+  "entrypoint": "main.py",
+  "task_mode": "async",
+  "capabilities": [
+    "http_async"
+  ],
+  "permissions": [
+    "network"
+  ],
+  "params": {
+    "submit_url": {"type": "string", "desc": "必填，提交地址"},
+    "submit_method": {"type": "string", "default": "POST", "desc": "GET/POST"},
+    "submit_body": {"type": "string", "desc": "可选，JSON 字符串；不传则用 params 字段"},
+    "headers": {"type": "object", "desc": "可选，请求头"},
+    "handle_path": {"type": "string", "default": "task_id", "desc": "从提交响应提取 handle 的点路径"},
+    "status_url": {"type": "string", "desc": "必填，轮询地址模板，例如 https://x/status/{handle}"},
+    "state_path": {"type": "string", "default": "status", "desc": "状态字段点路径"},
+    "progress_path": {"type": "string", "default": "progress", "desc": "进度字段点路径（0-100）"},
+    "result_path": {"type": "string", "default": "result", "desc": "结果字段点路径"},
+    "done_values": {"type": "array", "desc": "完成状态值，默认 done/succeeded/completed/success"},
+    "fail_values": {"type": "array", "desc": "失败状态值，默认 failed/error"}
+  }
+}
