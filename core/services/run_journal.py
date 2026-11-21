@@ -134,3 +134,25 @@ def is_stalled(run_id: int, seconds: int = 180) -> bool:
     if not hb:
         return False
     return hb < (datetime.utcnow() - timedelta(seconds=int(seconds))).replace(microsecond=0).isoformat()
+
+
+# ========== P0-3 副作用幂等 ==========
+def effect_get(key: str):
+    if not key:
+        return None
+    with db_cursor() as cur:
+        cur.execute("SELECT result_json FROM tool_effects WHERE idempotency_key=?", (key,))
+        r = cur.fetchone()
+    if not r:
+        return None
+    return r["result_json"] if isinstance(r, dict) else r[0]
+
+
+def effect_put(key: str, tool_id: str, result_json: str):
+    if not key:
+        return
+    with db_cursor(commit=True) as cur:
+        cur.execute(
+            "INSERT OR IGNORE INTO tool_effects (idempotency_key, tool_id, result_json, created_at) VALUES (?,?,?,?)",
+            (key, tool_id, result_json, _now()),
+        )
