@@ -1262,6 +1262,19 @@ def init_db():
         """)
         cur.execute("CREATE INDEX IF NOT EXISTS idx_agent_messages_conv ON agent_messages(conversation_id, seq)")
         cur.execute("""
+            CREATE TABLE IF NOT EXISTS tool_usage_daily (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                tool_id TEXT NOT NULL,
+                day TEXT NOT NULL,
+                calls INTEGER DEFAULT 0,
+                success INTEGER DEFAULT 0,
+                last_at TEXT,
+                UNIQUE (user_id, tool_id, day)
+            )
+        """)
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_tool_usage_day ON tool_usage_daily(day, tool_id)")
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS agent_summary (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 conversation_id INTEGER NOT NULL,

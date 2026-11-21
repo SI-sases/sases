@@ -14,6 +14,12 @@ from ..services import capsule_service
 
 router = APIRouter(prefix="/tools", tags=["tools"])
 
+
+@router.get("/usage")
+def tool_usage(days: int = 30, user_id: int = Depends(get_current_user_id)):
+    from ..services import tool_usage_service
+    return {"days": days, "usage": tool_usage_service.summary(user_id, days)}
+
 ADMIN_TOKEN_FILE = os.path.join("data", "tools_admin_token.txt")
 
 

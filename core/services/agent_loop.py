@@ -116,6 +116,11 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
             except Exception as e:
                 ok, text = False, "ERROR: " + str(e)
             used.append({"step": step, "tool": name, "args": args, "ok": ok})
+            try:
+                from . import tool_usage_service
+                tool_usage_service.record(user_id, name, ok)
+            except Exception:
+                pass
             agent_memory.append(conversation_id, "tool", text, tool_call_id=c.id)
             messages.append({"role": "tool", "tool_call_id": c.id, "content": text})
             await after_tool(user_id, conversation_id, run_id, step, name, args, ok, text)
