@@ -23,7 +23,8 @@ from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QPushButton, QPlainTextEdit,
     QVBoxLayout, QHBoxLayout, QMessageBox, QLabel,
     QSystemTrayIcon, QMenu, QStyle, QListWidget, QStackedWidget,
-    QFrame, QLineEdit, QFileDialog, QCheckBox, QScrollArea, QDialog
+    QFrame, QLineEdit, QFileDialog, QCheckBox, QScrollArea, QDialog,
+    QTabWidget, QTableWidget, QTableWidgetItem, QApplication
 )
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -148,15 +149,60 @@ class MainWindow(QMainWindow):
         self.stacked_widget = QStackedWidget()
         self.stacked_widget.setStyleSheet("background-color: #1e1e1e;")
 
-        # 页面 0：运行日志
+        # 页面 0：运行日志 + 执行轨迹
         page_log = QWidget()
         log_layout = QVBoxLayout(page_log)
         log_layout.setContentsMargins(0, 0, 0, 0)
+
+        log_bar = QHBoxLayout()
+        log_bar.setContentsMargins(10, 8, 10, 0)
+        btn_copy_diag = QPushButton("复制诊断")
+        btn_copy_diag.setStyleSheet("background:#4a90e2;color:#fff;padding:5px 10px;border-radius:4px;font-size:12px;")
+        btn_copy_diag.clicked.connect(self._copy_diagnostics)
+        btn_open_dir = QPushButton("打开日志目录")
+        btn_open_dir.setStyleSheet("background:#2b2b2b;color:#ddd;padding:5px 10px;border-radius:4px;font-size:12px;")
+        btn_open_dir.clicked.connect(lambda: os.startfile(ROOT))
+        btn_clear = QPushButton("清空显示")
+        btn_clear.setStyleSheet("background:#2b2b2b;color:#ddd;padding:5px 10px;border-radius:4px;font-size:12px;")
+        btn_clear.clicked.connect(lambda: self.log.clear())
+        log_bar.addWidget(btn_copy_diag)
+        log_bar.addWidget(btn_open_dir)
+        log_bar.addWidget(btn_clear)
+        log_bar.addStretch(1)
+        log_layout.addLayout(log_bar)
+
+        self.log_tabs = QTabWidget()
+        self.log_tabs.setStyleSheet("QTabWidget::pane{border:none;} QTabBar::tab{background:#2b2b2b;color:#ccc;padding:5px 12px;} QTabBar::tab:selected{background:#1e1e1e;color:#fff;}")
         self.log = QPlainTextEdit()
         self.log.setReadOnly(True)
         self.log.setMaximumBlockCount(50000)
         self.log.setStyleSheet("background-color: #1e1e1e; color: #00ff00; border: none; font-family: Consolas, monospace; padding: 10px;")
-        log_layout.addWidget(self.log)
+        self.log_tabs.addTab(self.log, "运行日志")
+
+        trace_page = QWidget()
+        trace_layout = QVBoxLayout(trace_page)
+        trace_layout.setContentsMargins(0, 0, 0, 0)
+        trace_bar = QHBoxLayout()
+        btn_trace_refresh = QPushButton("刷新轨迹")
+        btn_trace_refresh.setStyleSheet("background:#2b2b2b;color:#ddd;padding:4px 10px;border-radius:4px;font-size:12px;")
+        btn_trace_refresh.clicked.connect(self._load_trace_table)
+        btn_trace_export = QPushButton("导出 JSONL")
+        btn_trace_export.setStyleSheet("background:#2b2b2b;color:#ddd;padding:4px 10px;border-radius:4px;font-size:12px;")
+        btn_trace_export.clicked.connect(self._export_trace_jsonl)
+        trace_bar.addWidget(btn_trace_export)
+        trace_bar.addWidget(btn_trace_refresh)
+        trace_bar.addStretch(1)
+        trace_layout.addLayout(trace_bar)
+        self.trace_table = QTableWidget(0, 5)
+        self.trace_table.setHorizontalHeaderLabels(["run", "事件", "工具", "状态", "内容"])
+        self.trace_table.setStyleSheet("background:#1e1e1e;color:#ddd;gridline-color:#333;font-size:12px;")
+        self.trace_table.horizontalHeader().setStretchLastSection(True)
+        self.trace_table.verticalHeader().setVisible(False)
+        trace_layout.addWidget(self.trace_table)
+        self.log_tabs.addTab(trace_page, "执行轨迹")
+        self.log_tabs.currentChanged.connect(lambda i: self._load_trace_table() if i == 1 else None)
+        log_layout.addWidget(self.log_tabs)
+        self._load_trace_table()
 
         # 页面 1：统一设置页
         page_settings = QWidget()
@@ -423,6 +469,69 @@ class MainWindow(QMainWindow):
             self.lbl_license_status.setStyleSheet("color: #ff3b30; margin-top: 10px;")
             
         self.btn_activate.setEnabled(True)
+
+    def _copy_diagnostics(self):
+        try:
+            tail = self.log.toPlainText()[-20000:]
+            text = ("SASES diagnostics\n"
+                    + "time: " + datetime.datetime.now().isoformat() + "\n"
+                    + "root: " + ROOT + "\n"
+                    + "launcher: " + CURRENT_LAUNCHER_VERSION + "\n"
+                    + "python: " + sys.version.replace("\n", " ") + "\n"
+                    + "---- log tail ----\n" + tail)
+            QApplication.clipboard().setText(text)
+            self.log.appendPlainText("[diag] 诊断信息已复制到剪贴板")
+        except Exception as e:
+            self.log.appendPlainText("[diag] 复制失败: " + str(e))
+
+    def _load_trace_table(self):
+        if not hasattr(self, "trace_table"):
+            return
+        try:
+            import sqlite3
+            path = os.path.join(ROOT, "users.db")
+            if not os.path.exists(path):
+                return
+            conn = sqlite3.connect(path)
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute(
+                "SELECT run_id, event_type, tool, status, content, created_at FROM run_trace ORDER BY id DESC LIMIT 200"
+            ).fetchall()
+            conn.close()
+            self.trace_table.setRowCount(len(rows))
+            for i, r in enumerate(rows):
+                vals = [str(r["run_id"] or ""), str(r["event_type"] or ""), str(r["tool"] or ""),
+                        str(r["status"] or ""), str(r["content"] or "")[:120]]
+                for j, v in enumerate(vals):
+                    self.trace_table.setItem(i, j, QTableWidgetItem(v))
+            self.trace_table.resizeColumnsToContents()
+        except Exception as e:
+            self.log.appendPlainText("[trace] 加载失败: " + str(e))
+
+    def _export_trace_jsonl(self):
+        try:
+            import sqlite3
+            path = os.path.join(ROOT, "users.db")
+            if not os.path.exists(path):
+                return
+            out, _ = QFileDialog.getSaveFileName(
+                self, "导出执行轨迹", os.path.join(ROOT, "trace_export.jsonl"),
+                "JSON Lines (*.jsonl)")
+            if not out:
+                return
+            conn = sqlite3.connect(path)
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute(
+                "SELECT run_id, conversation_id, level, event_type, tool, status, content, duration_ms, created_at "
+                "FROM run_trace ORDER BY id ASC LIMIT 5000"
+            ).fetchall()
+            conn.close()
+            with open(out, "w", encoding="utf-8") as f:
+                for r in rows:
+                    f.write(json.dumps(dict(r), ensure_ascii=False) + "\n")
+            self.log.appendPlainText("[trace] 已导出 " + str(len(rows)) + " 条到 " + out)
+        except Exception as e:
+            self.log.appendPlainText("[trace] 导出失败: " + str(e))
 
     def _on_sidebar_changed(self, index):
         self.stacked_widget.setCurrentIndex(index)
