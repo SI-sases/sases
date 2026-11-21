@@ -80,3 +80,59 @@ async def cancel(body: ConfirmBody, user_id: int = Depends(get_current_user)):
 async def get_proposed(conversation_id: int = None, user_id: int = Depends(get_current_user)):
     run = supervisor_service.get_proposed_run(user_id, conversation_id)
     return {'run': run}
+# ===== P3-C1: trace API（并入 supervisor 路由，避免新增顶层路由文件）=====
+from ..db import db_cursor as _db_cursor
+from ..services.task_state_service import get_snapshot_fresh as _get_snapshot_fresh
+
+trace_router = APIRouter(prefix="/trace", tags=["trace"])
+
+_TRACE_SLICES = {
+    "supervisor": ["task_id", "goal", "status", "progress", "current_step_desc",
+                   "last_user_intent", "last_user_message", "finished_at"],
+    "commander": ["task_id", "goal", "status", "failed_summary", "tried_strategies",
+                  "progress", "current_step_desc"],
+    "executor": ["task_id", "status", "progress", "current_step_desc", "evidence"],
+    "reviewer": ["task_id", "goal", "status", "failed_summary", "evidence", "finished_at"],
+}
+
+
+def _trace_conv(task_id: int, user_id: int):
+    with _db_cursor() as _cur_t:
+        _cur_t.execute("SELECT conversation_id FROM supervisor_runs WHERE id=? AND user_id=?", (task_id, user_id))
+        _row_t = _cur_t.fetchone()
+    if not _row_t:
+        return None
+    return _row_t["conversation_id"] if isinstance(_row_t, dict) else _row_t[0]
+
+
+@trace_router.get("/{task_id}/state")
+async def get_trace_state(task_id: int, role: str, user_id: int = Depends(get_current_user)):
+    if role not in _TRACE_SLICES:
+        raise HTTPException(400, "role 必须是 " + "/".join(_TRACE_SLICES.keys()))
+    cid = _trace_conv(task_id, user_id)
+    if cid is None:
+        raise HTTPException(404, "任务不存在")
+    snap = _get_snapshot_fresh(cid) or {}
+    if not snap:
+        return {"task_id": task_id, "status": "no_snapshot"}
+    out = {"task_id": task_id, "role": role}
+    for key in _TRACE_SLICES[role]:
+        if key in snap:
+            out[key] = snap[key]
+    return out
+
+
+@trace_router.get("/{task_id}/messages")
+async def get_trace_messages(task_id: int, level: int = 1, user_id: int = Depends(get_current_user)):
+    cid = _trace_conv(task_id, user_id)
+    if cid is None:
+        raise HTTPException(404, "任务不存在")
+    limit = 30 if level <= 1 else 100
+    with _db_cursor() as _cur_m:
+        _cur_m.execute(
+            "SELECT id, sender, content, msg_type, created_at FROM messages "
+            "WHERE conversation_id=? AND content LIKE '[TRACE]%' ORDER BY id DESC LIMIT ?",
+            (cid, limit),
+        )
+        rows = [dict(r) for r in _cur_m.fetchall()]
+    return {"task_id": task_id, "count": len(rows), "messages": rows}

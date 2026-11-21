@@ -848,6 +848,7 @@ def create_app() -> FastAPI:
     app.include_router(swarm_routes.router)
     app.include_router(upload_routes.router)
     app.include_router(supervisor_routes.router)
+    app.include_router(supervisor_routes.trace_router)
     app.include_router(hive_routes.router)
     app.include_router(ws_routes.router)
     app.include_router(hive_task_routes.router)
@@ -855,8 +856,6 @@ def create_app() -> FastAPI:
     app.include_router(version_routes.router)
     app.include_router(auth_check_routes.router, tags=["auth-check"])
     app.include_router(license_routes.router)
-    from .api_routes.trace_routes import router as _trace_router
-    app.include_router(_trace_router)
 
     @app.get("/static/index.html", response_class=HTMLResponse)
     async def serve_index():
