@@ -15,6 +15,8 @@ class ModuleManifest(BaseModel):
     aliases: List[str] = []
     params: Dict[str, Any] = {}
     cost: Dict[str, Any] = {}
+    tier: str = "core"
+    category: str = "general"
 
 class ToolDefinition(BaseModel):
     """工具定义，用于返回给调用方"""
@@ -28,6 +30,8 @@ class ToolDefinition(BaseModel):
     aliases: List[str] = []
     params: Dict[str, Any] = {}
     cost: Dict[str, Any] = {}
+    tier: str = "core"
+    category: str = "general"
 
 class ToolInvokeRequest(BaseModel):
     """调用工具请求体"""
