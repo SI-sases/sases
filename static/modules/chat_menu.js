@@ -156,10 +156,14 @@ export function createContextMenu() {
 export function showContextMenu(x, y, wrapper, chatState) {
   const menu = document.getElementById('message-context-menu');
   if (!menu) return;
+  const _isUserMsg = wrapper.dataset.role === 'user';
   menu.innerHTML = `
     <div class="context-menu-item" data-action="quote" style="padding:10px 16px; cursor:pointer;">引用</div>
     <div class="context-menu-item" data-action="reply" style="padding:10px 16px; cursor:pointer;">帮我回复</div>
     <div class="context-menu-item" data-action="execute" style="padding:10px 16px; cursor:pointer;">帮我执行</div>
+    <div class="context-menu-item" data-action="copy" style="padding:10px 16px; cursor:pointer;">复制</div>
+    <div class="context-menu-item" data-action="retry" style="padding:10px 16px; cursor:pointer;">重试</div>
+    ${_isUserMsg ? '<div class="context-menu-item" data-action="edit" style="padding:10px 16px; cursor:pointer;">编辑</div>' : ''}
     <div class="context-menu-item" data-action="delete" style="padding:10px 16px; cursor:pointer; color:#ff3b30;">删除</div>
   `;
   menu.style.display = 'block';
@@ -218,6 +222,51 @@ export function showContextMenu(x, y, wrapper, chatState) {
       input.setSelectionRange(input.value.length, input.value.length);
     }
   });
+
+  menu.querySelector('[data-action="copy"]').addEventListener('click', async () => {
+    const text = wrapper.dataset.content || '';
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+      }
+    } catch (e) {
+      console.warn('[menu] copy failed', e);
+    }
+    closeContextMenu();
+  });
+
+  menu.querySelector('[data-action="retry"]').addEventListener('click', () => {
+    const text = wrapper.dataset.content || '';
+    const input = document.getElementById('chat-input');
+    closeContextMenu();
+    if (!input || !text) return;
+    input.value = text;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.focus();
+    const btn = document.getElementById('send-btn');
+    if (btn) btn.click();
+  });
+
+  const _editBtn = menu.querySelector('[data-action="edit"]');
+  if (_editBtn) {
+    _editBtn.addEventListener('click', () => {
+      const text = wrapper.dataset.content || '';
+      const input = document.getElementById('chat-input');
+      closeContextMenu();
+      if (!input) return;
+      input.value = text;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.focus();
+      input.setSelectionRange(text.length, text.length);
+    });
+  }
 
   // FIX_MENU_V2: 删除单条消息
   menu.querySelector('[data-action="delete"]').addEventListener('click', async () => {
