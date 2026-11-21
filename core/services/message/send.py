@@ -920,8 +920,7 @@ async def send_message(
                     _chunks = project_service.retrieve_project_chunks(content, top_k=3, user_id=user_id)
                     if _chunks and _chunks[0].get('score', 0) > 0.55:
                         _ctx = project_service.format_chunks_for_prompt(_chunks)
-                        from .. import context_service
-                        _ans_prompt = context_service.build_enriched_prompt(user_id, conversation_id, content, _ctx)
+                        _ans_prompt = (_ctx + "\n\n" + content) if _ctx else content
                         if agent_id:
                             with db_cursor() as _cur:
                                 _cur.execute('SELECT * FROM model_configs WHERE id=? AND user_id=?', (agent_id, user_id))
@@ -1585,24 +1584,20 @@ async def send_message(
                         _top = chunks[0].get("score", 0)
                         if _top > 0.55:
                             project_text = project_service.format_chunks_for_prompt(chunks)
-                            from .. import context_service as _ctx_hi
-                            enriched_query = _ctx_hi.build_enriched_prompt(user_id, conversation_id, content, project_text)
+                            enriched_query = (project_text + "\n\n" + content) if project_text else content
                             print(f"[message] 项目库高分命中 {_top:.3f}(含 task_context)")
                         else:
-                            from .. import context_service
                             _ctx_lo = project_service.format_chunks_for_prompt(chunks)
-                            enriched_query = context_service.build_enriched_prompt(user_id, conversation_id, content, _ctx_lo)
+                            enriched_query = (_ctx_lo + "\n\n" + content) if _ctx_lo else content
                             print(f"[message] 项目库低分兜底 {_top:.3f}")
                     else:
-                        from .. import context_service
-                        enriched_query = context_service.build_enriched_prompt(user_id, conversation_id, content, "")
+                        enriched_query = content
                         print(f"[message] 项目库无匹配，仅注入历史")
                 except Exception as e:
                     print(f"[message] 项目库检索失败: {e}")
             else:
                 try:
-                    from .. import context_service
-                    enriched_query = context_service.build_enriched_prompt(user_id, conversation_id, content, "")
+                    enriched_query = content
                     print(f"[message] 非 SASES 助手，仅注入历史")
                 except Exception as e:
                     print(f"[message] 上下文注入失败: {e}")
