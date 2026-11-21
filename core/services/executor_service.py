@@ -635,7 +635,7 @@ async def _execute_task(task: Dict[str, Any]):
     _rj = None
     if _run_id:
         try:
-            from . import run_journal as _rj
+            from .swarm import recovery as _rj
             if not _rj.acquire_lease(_run_id, _owner):
                 print("[journal] run " + str(_run_id) + " 已被其他执行器持有，跳过")
                 return
@@ -944,7 +944,7 @@ async def _execute_task_with_semaphore(task: Dict[str, Any]):
             _running_task_ids.discard(task_id)
             # P0-4: 任务结束释放租约
             try:
-                from . import run_journal as _rj_rel
+                from .swarm import recovery as _rj_rel
                 _rid_rel = task.get("supervisor_run_id")
                 if _rid_rel:
                     _rj_rel.release(_rid_rel, "exec:%s:%s" % (os.getpid(), task_id))
@@ -1016,7 +1016,7 @@ async def start_background_executor():
     print("[executor] 后台执行器启动")
     # P0: 回收过期步骤
     try:
-        from . import run_journal as _rj_boot
+        from .swarm import recovery as _rj_boot
         _rj_boot.recover_stale()
     except Exception as _e_rj:
         print("[journal] 启动回收失败: " + str(_e_rj))
