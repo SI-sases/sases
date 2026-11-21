@@ -22,12 +22,18 @@ def get_version():
         branch = "unknown"
     db_path = os.environ.get("SASES_DB_PATH", "users.db")
     schema = "unknown"
+    schema_version = 0
     try:
         conn = sqlite3.connect(db_path)
         cur = conn.cursor()
         cur.execute("SELECT name FROM sqlite_master WHERE type='table'")
         tables = [r[0] for r in cur.fetchall()]
         schema = f"tables:{len(tables)}"
+        try:
+            from ..migrations import current_version
+            schema_version = current_version(conn)
+        except Exception:
+            pass
         conn.close()
     except Exception:
         pass
@@ -35,6 +41,7 @@ def get_version():
         "commit": commit,
         "branch": branch,
         "schema": schema,
+        "schema_version": schema_version,
         "node_id": os.environ.get("SASES_NODE_ID", "unknown"),
         "port": os.environ.get("SASES_PORT", "8001"),
     }

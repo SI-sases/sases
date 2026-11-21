@@ -58,3 +58,14 @@ def ensure_schema():
             cur.execute("INSERT INTO schema_version (version, applied_at) VALUES (?, ?)", (v, _now_iso()))
         print(f"[migrate] v{v} ok")
     print(f"[migrate] schema at v{SCHEMA_VERSION}")
+
+
+def current_version(conn):
+    """返回当前 schema 版本（供 /version 展示）。"""
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT MAX(version) FROM schema_version")
+        row = cur.fetchone()
+        return int(row[0]) if row and row[0] is not None else 0
+    except Exception:
+        return 0
