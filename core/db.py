@@ -1326,6 +1326,25 @@ def init_db():
         cur.execute("CREATE INDEX IF NOT EXISTS idx_async_pool_status ON async_task_pool(status, updated_at)")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_async_pool_run ON async_task_pool(run_id)")
 
+        # ========== LLM 用量 / 缓存命中（A1） ==========
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS llm_usage (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                request_id TEXT,
+                user_id INTEGER,
+                conversation_id INTEGER,
+                model TEXT,
+                purpose TEXT,
+                prompt_tokens INTEGER DEFAULT 0,
+                completion_tokens INTEGER DEFAULT 0,
+                total_tokens INTEGER DEFAULT 0,
+                cached_tokens INTEGER DEFAULT 0,
+                created_at TEXT
+            )
+        """)
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_llm_usage_user ON llm_usage(user_id, created_at)")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_llm_usage_time ON llm_usage(created_at)")
+
 
         # ========== 积分库（v0.20） ==========
         cur.execute("""

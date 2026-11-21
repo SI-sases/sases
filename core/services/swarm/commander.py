@@ -440,7 +440,8 @@ async def plan_task(
     last_err = None
     for attempt in range(2):
         try:
-            raw = await _call_llm(full_prompt, COMMANDER_SYSTEM_PROMPT)
+            raw = await _call_llm(full_prompt, COMMANDER_SYSTEM_PROMPT,
+                                  purpose="plan", user_id=user_id, conversation_id=conversation_id)
             if raw and raw.strip():
                 print(f"[swarm-debug] 第 {attempt+1} 次成功，raw 长度={len(raw)}")
                 break
@@ -804,7 +805,9 @@ async def replan_failed_steps(task: Dict[str, Any], max_steps: int = None) -> Op
 只输出 JSON 数组，现在开始："""
 
     try:
-        raw = await _call_llm(prompt, REPLAN_SYSTEM_PROMPT, max_tokens=config.REPLAN_MAX_TOKENS)
+        raw = await _call_llm(prompt, REPLAN_SYSTEM_PROMPT, max_tokens=config.REPLAN_MAX_TOKENS,
+                              purpose="replan", user_id=task.get("user_id"),
+                              conversation_id=task.get("conversation_id"))
         print(f"[swarm] 重拆 LLM 返回长度: {len(raw)}, 前 300 字: {raw[:300]!r}")
     except Exception as e:
         print(f"[swarm] 重拆 LLM 异常: {e}")
