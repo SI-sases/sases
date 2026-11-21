@@ -211,6 +211,37 @@ async def send_message(
         }
     # =======================
 
+    # A2: fast loop 默认入口（任务/普通消息都走，失败回退下面的旧路径）
+    if conversation_id and _should_fast(agent_mode, content, enabled_tool_ids):
+        try:
+            from .. import fast_agent as _fa_early
+            _fr_early = await _fa_early.run_fast(
+                user_id, conversation_id, content,
+                allowed_tool_ids=enabled_tool_ids,
+                max_steps=(max_steps if (max_steps and max_steps > 0) else 8),
+            )
+            _reply_early = (_fr_early.get("content") or "").strip()
+            if _reply_early:
+                try:
+                    from .reply import insert_message as _ins_early
+                    _ins_early(conversation_id, _reply_early, msg_type=msg_type,
+                               attachments=_att_str, sync_agent=False)
+                except Exception as _e_ins:
+                    print("[fast] 落库失败: " + str(_e_ins))
+                return {
+                    'conversation_id': conversation_id,
+                    'user_message': content,
+                    'assistant_reply': _reply_early,
+                    'agent_id': agent_id,
+                    'sender_agent_id': sender_agent_id,
+                    'mode': mode,
+                    'fast_mode': True,
+                    'steps': _fr_early.get("steps"),
+                }
+            print("[fast] 空结果，回退旧路径")
+        except Exception as _e_fast:
+            print("[fast] 失败，回退旧路径: " + str(_e_fast))
+
     # #0 清锁（最先拦截，绕过所有锁检查）
     if isinstance(content, str) and content.strip().startswith('#0'):
         import os

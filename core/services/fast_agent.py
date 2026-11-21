@@ -3,6 +3,7 @@
 """B1 fast 模式：单 Agent 原生 tool calling，最多 N 步。"""
 import asyncio
 import json
+import os
 
 from core import tool_gateway
 from core.services.swarm.llm_parser import client, MODEL
@@ -68,7 +69,7 @@ def tool_schema(t) -> dict:
 
 async def run_fast(user_id: int, conversation_id: int, goal: str,
                    allowed_tool_ids=None, max_steps: int = 8) -> dict:
-    if __import__("os").getenv("SASES_AGENT_LOOP") == "1":
+    if os.getenv("SASES_AGENT_LOOP", "1") != "0":
         from .agent_loop import run as _run_loop
         return await _run_loop(user_id, conversation_id, goal, allowed_tool_ids, max_steps)
     from core.harness_runtime import harness_runtime

@@ -7,7 +7,7 @@ from ...db import db_cursor
 
 
 def insert_message(conversation_id, content, sender_agent_id=None,
-                   msg_type="standard", attachments="[]", sender="assistant"):
+                   msg_type="standard", attachments="[]", sender="assistant", sync_agent=True):
     with db_cursor(commit=True) as cur:
         if sender_agent_id:
             cur.execute(
@@ -23,9 +23,10 @@ def insert_message(conversation_id, content, sender_agent_id=None,
         mid = cur.lastrowid
         cur.execute("UPDATE conversations SET updated_at=? WHERE id=?",
                     (datetime.now().isoformat(), conversation_id))
-    try:
-        from .. import agent_memory as _am
-        _am.append(conversation_id, sender, content)
-    except Exception as e:
-        print("[agent_memory] reply 双写失败: " + str(e))
+    if sync_agent:
+        try:
+            from .. import agent_memory as _am
+            _am.append(conversation_id, sender, content)
+        except Exception as e:
+            print("[agent_memory] reply 双写失败: " + str(e))
     return mid
