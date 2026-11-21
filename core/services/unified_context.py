@@ -190,6 +190,31 @@ def enrich_plan_input(user_id, conversation_id, user_input):
             return user_input
         budget = _resolve_budget(user_id)
 
+        # S1: 优先注入上一轮 answer（用户说"继续"接上文，不是重读方案）
+        try:
+            from core.db import db_cursor as _dbc_s1
+            with _dbc_s1() as _c_s1:
+                _c_s1.execute(
+                    "SELECT task_id, content FROM safety_memory "
+                    "WHERE user_id=? AND memory_type='task_result' "
+                    "ORDER BY id DESC LIMIT 3",
+                    (user_id,)
+                )
+                _r_s1 = _c_s1.fetchall()
+            if _r_s1:
+                _sums = []
+                for _row in _r_s1:
+                    _txt = (_row['content'] if isinstance(_row, dict) else _row[1]) or ''
+                    if _txt.strip():
+                        _sums.append(_txt[:600])
+                if _sums:
+                    _prev = '\n\n'.join(_sums)
+                    print("[CTX] enrich_plan_input injected previous_answer len=" + str(len(_prev)))
+                    return ("【上一轮执行摘要（接上文用）】\n" + _prev +
+                            "\n\n【用户当前指令】\n" + user_input)
+        except Exception as _e_s1:
+            print("[CTX] S1 查上一轮失败: " + str(_e_s1))
+
         # 优先 doc_paste / 长消息 / 有编号的方案
         _doc_cands = []
         for m in history:

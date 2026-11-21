@@ -73,7 +73,19 @@ async def task_summarizer(task):
 
         if not _has_success_patch and not _has_success_python:
             print("[防假成功] 任务涉及修改，但没有任何成功的 patch 或脚本记录，强行打回！")
-            return {'goal_achieved': False, 'goal_reason': '没有产生真实的文件修改', 'next_hint': '请执行真实的 smart_edit / file_replace_range / file_write 或 run_python 修改'}
+            _r3_ok = True
+        try:
+            from ...services.memory_service import remember as _r3_rm
+            _r3_rm(
+                user_id=task.get('user_id'),
+                memory_type='task_context',
+                content='上一轮被打回：no_write | 原因：没有产生真实的文件修改 | 引导：请用 smart_edit/file_replace_range/file_write/run_python',
+                task_id='run_' + str(task.get('supervisor_run_id')),
+                importance=0.8,
+            )
+        except Exception as _r3_e:
+            print('[R3] 写打回原因失败: ' + str(_r3_e))
+        return {'goal_achieved': False, 'reason_type': 'no_write', 'goal_reason': '没有产生真实的文件修改', 'missing': ['实际修改'], 'next_hint': '请执行真实的 smart_edit / file_replace_range / file_write 或 run_python 修改'}
     if any(r.get('answer') or r.get('output') for r in _res) and task.get('round', 1) > 1:
         return {'goal_achieved': True, 'goal_reason': '产出已确认', 'missing': [], 'next_hint': ''}
     print('[supervisor] task_summarizer 被调用, task_id=' + str(task.get('task_id')))
@@ -314,7 +326,18 @@ async def task_summarizer(task):
             )
             if not _any_not_found:
                 print('[supervisor] task_summarizer 假完成拦截: 任务含修改动词但无 file_patch 成功')
-                return {'goal_achieved': False, 'goal_reason': '任务要求修改但无 file_write/smart_edit/file_replace_range/run_python 任何写操作成功凭证', 'missing': ['实际修改'], 'next_hint': '用 file_write/smart_edit/file_replace_range 实际执行修改，禁止只报告不修改'}
+                try:
+                    from ...services.memory_service import remember as _r3_rm2
+                    _r3_rm2(
+                        user_id=task.get('user_id'),
+                        memory_type='task_context',
+                        content='上一轮被打回：fake_success | 原因：无写操作凭证',
+                        task_id='run_' + str(task.get('supervisor_run_id')),
+                        importance=0.8,
+                    )
+                except Exception as _r3_e2:
+                    print('[R3] 写打回原因失败2: ' + str(_r3_e2))
+                return {'goal_achieved': False, 'reason_type': 'fake_success', 'goal_reason': '任务要求修改但无 file_write/smart_edit/file_replace_range/run_python 任何写操作成功凭证', 'missing': ['实际修改'], 'next_hint': '用 file_write/smart_edit/file_replace_range 实际执行修改，禁止只报告不修改'}
     except Exception as _e_fake:
         print('[supervisor] 假完成判定异常: ' + str(_e_fake))
     
