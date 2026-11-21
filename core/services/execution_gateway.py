@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """Step 2: 统一执行入口（A2A / 定时）→ agent_loop。"""
 import asyncio
+import os
 from datetime import datetime
 
 from ..db import db_cursor
