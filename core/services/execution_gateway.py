@@ -44,6 +44,9 @@ def _finish(run_id, conversation_id, supervisor_id, status, content, source):
     if not text:
         text = "✅ 已完成" if status == "completed" else "⚠️ 任务未完成：" + str(status)
     if os.getenv("SASES_MEMORY_WRITE", "1") == "1" and status == "completed":
+        _min_chars = int(os.getenv("SASES_MEMORY_MIN_CHARS", "20"))
+        if len(text) < _min_chars:
+            return
         try:
             from . import memory_service, project_service
             with db_cursor() as _mc:
