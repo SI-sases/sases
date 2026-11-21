@@ -103,7 +103,8 @@ head 4096 + marker + tail 1024
 |---|---|---|
 | `SASES_TOOL_PRUNER` | 1 | 工具裁剪 |
 | `SASES_TOKEN_COMPACT` | 1 | token 压缩 |
-| `SASES_RUNTIME_CONTEXT` | 0 | 记忆/项目注入 |
+| `SASES_RUNTIME_CONTEXT` | 0 | 任务状态注入 |
+| `SASES_RUNTIME_RECALL` | 0 | 记忆/项目注入 |
 | `SASES_MEMORY_WRITE` | 0 | 结果写回记忆 |
 | `SASES_CTX_WINDOW` | 131072 | 窗口 |
 | `SASES_CTX_OUTPUT` | 4096 | 输出预留 |
