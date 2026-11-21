@@ -1165,6 +1165,43 @@ def init_db():
         """)
         cur.execute("CREATE INDEX IF NOT EXISTS idx_suprun_user ON supervisor_runs(user_id)")
         _ensure_column(cur, "supervisor_runs", "task_type", "TEXT")
+        _ensure_column(cur, "supervisor_runs", "lease_owner", "TEXT")
+        _ensure_column(cur, "supervisor_runs", "lease_until", "TEXT")
+        _ensure_column(cur, "supervisor_runs", "heartbeat_at", "TEXT")
+        _ensure_column(cur, "supervisor_runs", "deadline_at", "TEXT")
+
+        # ========== 执行步骤日志（P0-1）与副作用幂等（P0-3） ==========
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS run_steps (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                run_id INTEGER NOT NULL,
+                step_id TEXT NOT NULL,
+                tool_id TEXT,
+                status TEXT DEFAULT 'pending',
+                attempt INTEGER DEFAULT 0,
+                input_hash TEXT,
+                idempotency_key TEXT,
+                lease_owner TEXT,
+                lease_until TEXT,
+                output_ref TEXT,
+                error TEXT,
+                started_at TEXT,
+                finished_at TEXT,
+                UNIQUE (run_id, step_id)
+            )
+        """)
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_run_steps_run ON run_steps(run_id, id)")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_run_steps_status ON run_steps(status, lease_until)")
+
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS tool_effects (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                idempotency_key TEXT UNIQUE NOT NULL,
+                tool_id TEXT,
+                result_json TEXT,
+                created_at TEXT
+            )
+        """)
 
         # ========== 任务执行轨迹（run_trace，P3-C1） ==========
         cur.execute("""

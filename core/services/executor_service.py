@@ -487,6 +487,29 @@ async def _execute_task(task: Dict[str, Any]):
     done_set = set(task.get("done", set()))
     results = task.get("results", [])
 
+    # P0: 租约 + 断点恢复
+    _run_id = task.get("supervisor_run_id")
+    _owner = "exec:%s:%s" % (os.getpid(), task_id)
+    _rj = None
+    if _run_id:
+        try:
+            from . import run_journal as _rj
+            if not _rj.acquire_lease(_run_id, _owner):
+                print("[journal] run " + str(_run_id) + " 已被其他执行器持有，跳过")
+                return
+            _rj.set_deadline(_run_id, 1800)
+            _done_j = _rj.done_step_ids(_run_id)
+            if _done_j:
+                for _x in _done_j:
+                    try:
+                        done_set.add(int(_x))
+                    except Exception:
+                        done_set.add(_x)
+                print("[journal] run " + str(_run_id) + " 断点恢复，已完成 " + str(len(_done_j)) + " 步")
+        except Exception as _e_j:
+            print("[journal] 租约/恢复失败: " + str(_e_j))
+            _rj = None
+
     # 找未完成的步骤
     pending_steps = [s for s in steps if isinstance(s, dict) and s.get("step") not in done_set]
     if not pending_steps:
@@ -534,6 +557,20 @@ async def _execute_task(task: Dict[str, Any]):
         step_id = step.get("step")
         desc = step.get("description", "")
         step_type = "command" if str(step.get("command") or "").strip() else ("harness" if step.get("module_id") else step.get("type", "command"))
+
+        # P0: 截止时间 + 心跳 + 步骤日志
+        if _run_id and _rj:
+            try:
+                if _rj.deadline_expired(_run_id):
+                    print("[journal] run " + str(_run_id) + " 超过 deadline，终止")
+                    with db_cursor(commit=True) as _c_dl:
+                        _c_dl.execute("UPDATE supervisor_runs SET status='timeout', finished_at=datetime('now') WHERE id=?", (_run_id,))
+                    return
+                _rj.heartbeat(_run_id, _owner)
+                _rj.step_begin(_run_id, str(step_id), str(step.get("module_id") or step.get("command") or ""),
+                               _owner, key=str(_run_id) + ":" + str(step_id))
+            except Exception as _e_j2:
+                print("[journal] step_begin 失败: " + str(_e_j2))
 
         # run_trace: 步骤开始（失败不影响执行）
         try:
@@ -656,6 +693,14 @@ async def _execute_task(task: Dict[str, Any]):
             "duration_ms": dur,
         }
 
+        # P0: 步骤结果落日志
+        if _run_id and _rj:
+            try:
+                _rj.step_end(_run_id, str(step_id), status,
+                             error=None if status == "success" else str(output)[:300])
+            except Exception as _e_j3:
+                print("[journal] step_end 失败: " + str(_e_j3))
+
         try:
             await _report_step_done(conversation_id, payload, executor_id)
         except Exception as e:
@@ -757,6 +802,7 @@ async def _scan_and_execute():
                 "user_id": row["user_id"],
                 "commander_id": row["commander_id"],
                 "executor_id": row["executor_id"],
+                "supervisor_run_id": row.get("supervisor_run_id"),
                 "user_text": row["user_text"] or "",
                 "steps": json.loads(row["steps"] or "[]"),
                 "results": json.loads(row["results"] or "[]"),
@@ -786,6 +832,12 @@ async def _scan_and_execute():
 async def start_background_executor():
     """在 lifespan 中启动的后台任务"""
     print("[executor] 后台执行器启动")
+    # P0: 回收过期步骤
+    try:
+        from . import run_journal as _rj_boot
+        _rj_boot.recover_stale()
+    except Exception as _e_rj:
+        print("[journal] 启动回收失败: " + str(_e_rj))
     # 恢复未完成的任务
     try:
         swarm_service.restore_pending_tasks()
