@@ -169,6 +169,13 @@ async def plan_task(
     enabled_tool_ids: list = None,
     enabled_skill_ids: list = None
 ) -> Dict[str, Any]:
+    # A2: 接近上下文预算时先压缩旧历史（失败不影响主流程）
+    try:
+        from core.services.unified_context import maybe_compact as _maybe_compact
+        await _maybe_compact(conversation_id, user_id)
+    except Exception as _e_compact:
+        print("[plan_task] compact failed: " + str(_e_compact))
+
     # [CTX-UPGRADE-v1] 有 doc_paste 时注入完整方案
     try:
         from core.services.unified_context import enrich_plan_input as _epi

@@ -14,7 +14,8 @@ client = openai.OpenAI(
 MODEL = config.MODEL_NAME
 
 async def _call_llm(prompt: str, system_prompt: str = "", max_tokens: int = None,
-                    purpose: str = "generic", user_id=None, conversation_id=None) -> str:
+                    purpose: str = "generic", user_id=None, conversation_id=None,
+                    _retry: bool = False) -> str:
     if max_tokens is None:
         max_tokens = config.COMMANDER_MAX_TOKENS
     messages = []
@@ -22,14 +23,28 @@ async def _call_llm(prompt: str, system_prompt: str = "", max_tokens: int = None
         messages.append({"role": "system", "content": system_prompt})
     messages.append({"role": "user", "content": prompt})
 
-    resp = await asyncio.to_thread(
-        client.chat.completions.create,
-        model=MODEL,
-        messages=messages,
-        temperature=0.3,
-        max_tokens=max_tokens,
-        extra_body={"thinking": {"type": "disabled"}}
-    )
+    try:
+        resp = await asyncio.to_thread(
+            client.chat.completions.create,
+            model=MODEL,
+            messages=messages,
+            temperature=0.3,
+            max_tokens=max_tokens,
+            extra_body={"thinking": {"type": "disabled"}}
+        )
+    except Exception as _e_llm:
+        _msg = str(_e_llm).lower()
+        _is_ctx = any(k in _msg for k in ("context", "maximum", "too long", "length", "token limit"))
+        if (not _retry) and _is_ctx and conversation_id:
+            try:
+                from ..unified_context import maybe_compact
+                if await maybe_compact(conversation_id, user_id, force=True):
+                    print("[swarm] 上下文超限，已压缩并重试")
+                    return await _call_llm(prompt, system_prompt, max_tokens, purpose,
+                                           user_id, conversation_id, _retry=True)
+            except Exception as _e_c:
+                print("[swarm] 溢出压缩失败: " + str(_e_c))
+        raise
 
     # A1: 记录真实 token 与缓存命中（失败不影响主流程）
     try:
