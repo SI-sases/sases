@@ -261,6 +261,56 @@ window._showStopBtn = _showStopBtn;
 window._hideStopBtn = _hideStopBtn;
 window._stopCurrentTask = _stopCurrentTask;
 
+async function streamSendMessage(payload, state) {
+  const token = localStorage.getItem('sases_token') || '';
+  const resp = await fetch('/messages/stream', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+    body: JSON.stringify(payload)
+  });
+  if (!resp.ok) {
+    const t = await resp.text();
+    throw new Error('HTTP ' + resp.status + ' ' + t.slice(0, 200));
+  }
+  const ct = resp.headers.get('content-type') || '';
+  if (!ct.includes('text/event-stream')) {
+    return { data: await resp.json(), streamed: false };
+  }
+  const reader = resp.body.getReader();
+  const dec = new TextDecoder();
+  let buf = '', text = '', bubble = null, wrapper = null, finalData = null;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, { stream: true });
+    let idx;
+    while ((idx = buf.indexOf('\n\n')) >= 0) {
+      const raw = buf.slice(0, idx);
+      buf = buf.slice(idx + 2);
+      const line = raw.split('\n').find(l => l.startsWith('data:'));
+      if (!line) continue;
+      let ev;
+      try { ev = JSON.parse(line.slice(5)); } catch (e) { continue; }
+      if (ev.type === 'token') {
+        if (!bubble) {
+          appendMessage('assistant', ' ', 'AI', null, new Date().toISOString(), true, state);
+          const msgs = document.getElementById('chat-messages');
+          wrapper = msgs ? msgs.lastElementChild : null;
+          bubble = wrapper ? wrapper.children[1] : null;
+        }
+        text += ev.text;
+        if (bubble) bubble.textContent = text;
+      } else if (ev.type === 'final') {
+        finalData = ev.data || ev;
+      } else if (ev.type === 'error') {
+        throw new Error(ev.error || 'stream error');
+      }
+    }
+  }
+  if (bubble) bubble.textContent = text;
+  return { data: finalData, streamed: !!bubble, streamedText: text };
+}
+
 async function sendMessage() {
   const input = document.getElementById('chat-input');
 
@@ -312,7 +362,7 @@ async function sendMessage() {
 
     let _maxSteps = null;
     try { _maxSteps = getParamMaxSteps(); } catch (e) {}
-    const data = await api.sendMessage({
+    const _payload = {
       conversation_id: chatState.conversationId,
       agent_id: chatState.agentId,
       content: text,
@@ -323,7 +373,21 @@ async function sendMessage() {
       enabled_api_ids: (window.currentSessionAPIs || []),
       enabled_tool_ids: (window.currentSessionTools || []),
       enabled_skill_ids: (window.currentSessionSkills || [])
-    });
+    };
+    let data = null, _streamed = false;
+    if (localStorage.getItem('sases_stream') === '1') {
+      try {
+        const _sr = await streamSendMessage(_payload, chatState);
+        data = _sr.data;
+        _streamed = _sr.streamed;
+        if (!data) throw new Error('empty stream');
+      } catch (e) {
+        console.warn('[chat] stream failed, fallback to send', e);
+        data = await api.sendMessage(_payload);
+      }
+    } else {
+      data = await api.sendMessage(_payload);
+    }
 
     if (!chatState.conversationId) {
       chatState.conversationId = data.conversation_id;
@@ -338,7 +402,7 @@ async function sendMessage() {
 
     updateMessageStatus(tempId, 'sent');
     const _is_swarm_task = !!(data.swarm && data.task_id);
-    if (!_is_swarm_task && data.assistant_reply && String(data.assistant_reply).trim() !== String(text).trim()) {
+    if (!_is_swarm_task && !_streamed && data.assistant_reply && String(data.assistant_reply).trim() !== String(text).trim()) {
       appendMessage('assistant', data.assistant_reply, 'AI', null, new Date().toISOString(), false, chatState);
     }
 
