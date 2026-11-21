@@ -89,6 +89,15 @@ def search_memory(user_id, query, top_k=3, memory_type=None):
         with db_cursor() as cur:
             cur.execute(sql, tuple(args))
             rows = [dict(r) for r in cur.fetchall()]
+        try:
+            from . import keyword_search
+            ts = keyword_search.terms(query)
+            need = min(2, len(ts)) if ts else 0
+            if need:
+                rows = [r for r in rows
+                        if sum(1 for t in ts if t in (str(r.get("content") or "") + " " + str(r.get("tags") or "")).lower()) >= need]
+        except Exception:
+            pass
         for r in rows:
             r["_similarity"] = round(min(1.0, 1.0 / (1.0 + abs(float(r.get("score") or 0)))), 4)
         return rows
@@ -114,6 +123,15 @@ def search_project(query, user_id=0, top_k=3):
                 (q, int(user_id or 0), int(top_k)),
             )
             rows = [dict(r) for r in cur.fetchall()]
+        try:
+            from . import keyword_search
+            ts = keyword_search.terms(query)
+            need = min(2, len(ts)) if ts else 0
+            if need:
+                rows = [r for r in rows
+                        if sum(1 for t in ts if t in (str(r.get("content") or "") + " " + str(r.get("section_path") or "") + " " + str(r.get("source_file") or "")).lower()) >= need]
+        except Exception:
+            pass
         for r in rows:
             r["similarity"] = round(min(1.0, 1.0 / (1.0 + abs(float(r.get("score") or 0)))), 4)
             r["score"] = r["similarity"]
