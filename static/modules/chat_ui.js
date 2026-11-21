@@ -183,7 +183,7 @@ export function createMessageElement(role, content, senderName, messageId, timeI
 }
 
 // ========== 消息插入与时间标签 ==========
-export function appendMessage(role, content, senderName = null, messageId = null, timeIso = null, isPending = false, chatState = null) {
+export function appendMessage(role, content, senderName = null, messageId = null, timeIso = null, isPending = false, chatState = null, msg_type = 'standard', attachments = null) {
   if (typeof role !== 'string' || !role) return null;
   if (typeof content !== 'string' || !content) return null;
   if (isProtocolMessage(content)) return null;
@@ -196,7 +196,7 @@ export function appendMessage(role, content, senderName = null, messageId = null
     insertTimeTag(timeIso, chatState);
   }
 
-  const wrapper = createMessageElement(role, content, senderName, messageId, timeIso, isPending, false, chatState);
+  const wrapper = createMessageElement(role, content, senderName, messageId, timeIso, isPending, false, chatState, msg_type, attachments);
   messages.appendChild(wrapper);
   if (!chatState || !chatState._bulkLoading) messages.scrollTop = messages.scrollHeight;
 

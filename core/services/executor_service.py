@@ -665,6 +665,16 @@ async def _execute_task(task: Dict[str, Any]):
         except Exception as _e_tr:
             print("[trace] step_done 写入失败: " + str(_e_tr))
 
+        # 测试快照：工具输出里的 /static/... 产物回传聊天窗口
+        try:
+            from . import artifact_service as _art_svc
+            _art_svc.maybe_record_from_text(
+                task.get("supervisor_run_id"), conversation_id, task.get("user_id"),
+                output, meta={"step": step_id, "tool": str(step.get("module_id") or "")[:60]},
+            )
+        except Exception as _e_art:
+            print("[artifact] 回传失败: " + str(_e_art))
+
         # P3-C3: 每步推送 trace 到子窗口
         try:
             from ..broadcast.ws_hub import broadcast_to_user as _btu_c3
