@@ -6,5 +6,9 @@
   "capabilities": ["file_write"],
   "permissions": ["restricted_file_write"],
   "entrypoint": "main.py",
-  "node_type": "harness"
+  "node_type": "harness",
+  "params": {
+    "file_path": {"type": "string", "required": true, "desc": "相对路径，必须在允许目录内"},
+    "content": {"type": "string", "desc": "完整文件内容"}
+  }
 }

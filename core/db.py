@@ -1203,6 +1203,17 @@ def init_db():
             )
         """)
 
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS fs_observations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                run_id INTEGER NOT NULL,
+                path TEXT NOT NULL,
+                sha256 TEXT,
+                observed_at TEXT,
+                UNIQUE (run_id, path)
+            )
+        """)
+
         # ========== 任务执行轨迹（run_trace，P3-C1） ==========
         cur.execute("""
             CREATE TABLE IF NOT EXISTS run_trace (

@@ -406,6 +406,13 @@ async def _run_harness(module_id: str, params: Dict[str, Any], user_id=None, tas
             _db_circuit_record(module_id, user_id, task_id, _pollution["error"])
             return f"Harness 失败: {_pollution['error']}", "failed", dur
 
+        # P1: 把 run_id 注入参数，供工具做先读后写/观测
+        if idem_key:
+            _rid_s = str(idem_key).split(":")[0]
+            if _rid_s.isdigit():
+                params = dict(params or {})
+                params.setdefault("_run_id", int(_rid_s))
+
         try:
             response = await asyncio.wait_for(
                 tool_gateway.invoke_tool_async(module_id, params),

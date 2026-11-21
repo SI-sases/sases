@@ -46,6 +46,15 @@ def run(params):
     safe_path = _validate_path(file_path)
     abs_path = os.path.abspath(safe_path)
 
+    # P1: 先读后写 / 版本校验（新建文件放行）
+    try:
+        from core.services import fs_policy
+        _ok_fs, _code_fs, _msg_fs = fs_policy.check_modify(params.get("_run_id"), safe_path)
+        if not _ok_fs:
+            return {"success": False, "code": _code_fs, "error": _msg_fs}
+    except Exception as _e_fs:
+        print("[file_write] fs_policy 失败: " + str(_e_fs))
+
     existed = os.path.exists(abs_path)
     old_length = 0
     backup_path = None

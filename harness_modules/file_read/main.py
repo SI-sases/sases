@@ -38,6 +38,14 @@ def _safe_path(p):
 _RESOLVE_SKIP_DIRS = ('venv312', 'venv', 'node_modules', '.git', '__pycache__', '.backups', 'archive', 'training_data', 'seeds', 'static')
 
 
+def _mark_observed(params, safe):
+    try:
+        from core.services import fs_policy
+        fs_policy.observe(params.get('_run_id'), safe)
+    except Exception:
+        pass
+
+
 def _resolve_path(safe):
     """路径补全：裸文件名搜索同名文件。返回 (resolved, error_msg, candidates)"""
     full = os.path.join(REPO_ROOT, safe)
@@ -110,6 +118,7 @@ def run(params):
                 _out.append(str(_ln) + ': ' + _all_lines[_ln - 1].rstrip())
             else:
                 _out.append(str(_ln) + ': [超出范围]')
+        _mark_observed(params, safe)
         return {'success': True, 'file_path': safe, 'total_lines': total, 'mode': 'lines', 'content': chr(10).join(_out)}
     _grep = params.get('grep')
     if _grep:
@@ -127,6 +136,7 @@ def run(params):
         if _total_hits > _limit:
             _hits = _hits[:_limit]
             _hits.append('...[还有 ' + str(_total_hits - _limit) + ' 条，已截断]')
+        _mark_observed(params, safe)
         return {'success': True, 'file_path': safe, 'total_lines': total, 'mode': 'grep', 'grep': _grep, 'count': _total_hits, 'content': chr(10).join(_hits)}
     _tail = int(params.get('tail_lines', 0))
     if _tail > 0:
@@ -136,6 +146,7 @@ def run(params):
         _content = ''.join(_selected)
         if len(_content) > 8000:
             _content = _content[:8000] + '...[已截断]'
+        _mark_observed(params, safe)
         return {'success': True, 'file_path': safe, 'total_lines': total, 'mode': 'tail', 'tail_lines': _tail, 'content': _content}
     max_lines = int(params.get('max_lines', 300))
     if max_lines < 1 or max_lines > 1000:
@@ -147,4 +158,5 @@ def run(params):
     content = ''.join(selected)
     if len(content) > 8000:
         content = content[:8000] + '...[已截断]'
+    _mark_observed(params, safe)
     return {'success': True, 'file_path': safe, 'total_lines': total, 'showing_from': offset + 1, 'showing_to': min(offset + max_lines, total), 'content': content}

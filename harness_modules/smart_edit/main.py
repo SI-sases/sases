@@ -41,6 +41,15 @@ def run(params):
     if not os.path.exists(abs_path):
         return {"success": False, "error": "文件不存在: " + safe_path}
 
+    # P1: 先读后写 / 版本校验
+    try:
+        from core.services import fs_policy
+        _ok_fs, _code_fs, _msg_fs = fs_policy.check_modify(params.get("_run_id"), safe_path)
+        if not _ok_fs:
+            return {"success": False, "code": _code_fs, "error": _msg_fs}
+    except Exception as _e_fs:
+        print("[smart_edit] fs_policy 失败: " + str(_e_fs))
+
     # 备份
     backup_path = None
     try:
