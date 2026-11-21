@@ -1245,6 +1245,33 @@ def init_db():
         """)
         cur.execute("CREATE INDEX IF NOT EXISTS idx_checkpoints_run ON file_checkpoints(run_id, id)")
 
+        # ========== A0: LLM 消息日志（append-only，与 messages 双写） ==========
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS agent_messages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                conversation_id INTEGER NOT NULL,
+                run_id INTEGER,
+                seq INTEGER NOT NULL,
+                role TEXT NOT NULL,
+                content TEXT,
+                tool_calls TEXT,
+                tool_call_id TEXT,
+                created_at TEXT,
+                UNIQUE (conversation_id, seq)
+            )
+        """)
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_agent_messages_conv ON agent_messages(conversation_id, seq)")
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS agent_summary (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                conversation_id INTEGER NOT NULL,
+                covered_until_id INTEGER,
+                summary TEXT,
+                created_at TEXT,
+                UNIQUE (conversation_id)
+            )
+        """)
+
         # ========== 任务执行轨迹（run_trace，P3-C1） ==========
         cur.execute("""
             CREATE TABLE IF NOT EXISTS run_trace (

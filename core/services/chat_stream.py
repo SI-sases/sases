@@ -77,6 +77,12 @@ async def stream_chat(user_id: int, conversation_id: int, content: str, quote_co
                 (conversation_id, text))
             mid = cur.lastrowid
             cur.execute("UPDATE conversations SET updated_at=? WHERE id=?", (now, conversation_id))
+        try:
+            from . import agent_memory as _am_s
+            _am_s.append(conversation_id, "user", content)
+            _am_s.append(conversation_id, "assistant", text)
+        except Exception as _e_am:
+            print("[agent_memory] stream 双写失败: " + str(_e_am))
     except Exception as e:
         print("[stream] 保存消息失败: " + str(e))
         mid = None

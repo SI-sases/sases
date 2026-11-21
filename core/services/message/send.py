@@ -153,6 +153,15 @@ async def send_message(
     except Exception as _e_int:
         print("[intent] 识别失败: " + str(_e_int))
 
+    # A0: 双写 LLM 消息日志
+    try:
+        from .. import agent_memory as _am0
+        if conversation_id:
+            _am0.backfill(conversation_id)
+            _am0.append(conversation_id, "user", content, run_id=None)
+    except Exception as _e_am0:
+        print("[agent_memory] 双写失败: " + str(_e_am0))
+
     _scan_content = _normalize_prefix(content)
 
     # ===== #5 定时任务解析 =====

@@ -23,4 +23,9 @@ def insert_message(conversation_id, content, sender_agent_id=None,
         mid = cur.lastrowid
         cur.execute("UPDATE conversations SET updated_at=? WHERE id=?",
                     (datetime.now().isoformat(), conversation_id))
-        return mid
+    try:
+        from .. import agent_memory as _am
+        _am.append(conversation_id, sender, content)
+    except Exception as e:
+        print("[agent_memory] reply 双写失败: " + str(e))
+    return mid
