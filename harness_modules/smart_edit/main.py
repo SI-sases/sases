@@ -17,7 +17,8 @@ def _validate_path(file_path):
         raise ValueError("禁止绝对路径: " + p)
     if ".." in p.split("/"):
         raise ValueError("禁止路径穿越: " + p)
-    if not any(p.startswith(d) for d in ALLOWED_DIRS):
+    _pl = p.lower()
+    if not any(_pl.startswith(d) for d in ALLOWED_DIRS):
         raise ValueError("只允许写入: " + " / ".join(ALLOWED_DIRS) + "，收到: " + p)
     return p
 
