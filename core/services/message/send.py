@@ -99,7 +99,7 @@ async def send_message(
     msg_type: str = "standard",
     max_steps: int = None,
     attachments: list = None
-, enabled_api_ids=None):
+, enabled_api_ids=None, enabled_tool_ids=None, enabled_skill_ids=None):
     print(f"[MSG_DEBUG] content={content!r} | mode={mode!r} | agent_id={agent_id!r} | msg_type={msg_type}")
 
     # ===== P0-D: 付费墙预检（#1~#4 执行类消息必须通过 license 检查）=====
@@ -683,6 +683,8 @@ async def send_message(
                             supervisor_id=sender_agent_id or agent_id,
                             supervisor_run_id=_run_id,
                             enabled_api_ids=enabled_api_ids,
+                            enabled_tool_ids=enabled_tool_ids,
+                            enabled_skill_ids=enabled_skill_ids,
                         )
                         # v0.38.0: precheck 拦截时，自动重试一次（用 reason 修正 prompt）
                         if _plan_result and isinstance(_plan_result, dict) and _plan_result.get('status') == 'no_plan' and 'precheck blocked' in str(_plan_result.get('reason', '')):
@@ -696,6 +698,8 @@ async def send_message(
                                     supervisor_id=sender_agent_id or agent_id,
                                     supervisor_run_id=_run_id,
                             enabled_api_ids=enabled_api_ids,
+                            enabled_tool_ids=enabled_tool_ids,
+                            enabled_skill_ids=enabled_skill_ids,
                                 )
                             except Exception as _e_retry:
                                 print('[supervisor] precheck 重试失败: ' + str(_e_retry))
@@ -1268,7 +1272,10 @@ async def send_message(
                     user_input=content,
                     require_confirmation=require_confirmation,
                     supervisor_id=sender_agent_id,
-                    supervisor_run_id=locals().get('_supervisor_run_id')
+                    supervisor_run_id=locals().get('_supervisor_run_id'),
+                    enabled_api_ids=enabled_api_ids,
+                    enabled_tool_ids=enabled_tool_ids,
+                    enabled_skill_ids=enabled_skill_ids,
                 )
                 print(f"[MSG_DEBUG] plan_result={plan_result}")
 
