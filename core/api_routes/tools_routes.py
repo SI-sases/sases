@@ -20,6 +20,35 @@ def tool_usage(days: int = 30, user_id: int = Depends(get_current_user_id)):
     from ..services import tool_usage_service
     return {"days": days, "usage": tool_usage_service.summary(user_id, days)}
 
+
+@router.get("/slim-report")
+def tool_slim_report(days: int = 30, user_id: int = Depends(get_current_user_id)):
+    """按真实调用给出工具去留建议；不删除任何工具。"""
+    from ..services import tool_usage_service
+    from .. import harness_runtime
+    usage = {r["tool_id"]: r for r in tool_usage_service.summary(user_id, days)}
+    rows = []
+    try:
+        tools = harness_runtime.harness_runtime.list_tools()
+    except Exception:
+        tools = []
+    for t in tools:
+        mid = getattr(t, "module_id", "") or ""
+        if not mid:
+            continue
+        u = usage.get(mid) or {}
+        rows.append({
+            "tool_id": mid,
+            "name": getattr(t, "name", "") or "",
+            "core": mid not in harness_runtime.EXTENSION_TOOL_IDS,
+            "calls": int(u.get("calls") or 0),
+            "success_rate": u.get("success_rate") or 0.0,
+            "suggestion": "keep" if int(u.get("calls") or 0) > 0 else "hide_or_archive",
+        })
+    rows.sort(key=lambda r: (r["calls"], r["core"]))
+    return {"days": days, "tools": rows,
+            "zero_use": [r["tool_id"] for r in rows if r["calls"] == 0]}
+
 ADMIN_TOKEN_FILE = os.path.join("data", "tools_admin_token.txt")
 
 
