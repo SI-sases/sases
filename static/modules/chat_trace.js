@@ -113,6 +113,12 @@ function _ensure() {
   _detailToggle = cb;
   tools.appendChild(cb);
   tools.appendChild(_el('span', null, '显示 L3/L4 细节'));
+  const artBtn = document.createElement('button');
+  artBtn.id = 'trace-artifacts-btn';
+  artBtn.textContent = '产物';
+  artBtn.style.cssText = 'margin-left:auto;border:1px solid #ddd;background:#fff;border-radius:6px;padding:2px 8px;font-size:11px;cursor:pointer';
+  artBtn.onclick = () => _loadArtifacts();
+  tools.appendChild(artBtn);
 
   _body = _el('div', 'tr-list');
   _drawer.appendChild(head);
@@ -139,6 +145,39 @@ function _row(ev) {
   const t = String(ev.created_at || '');
   row.appendChild(_el('div', 'tm', t.length >= 16 ? t.slice(11, 16) : ''));
   return row;
+}
+
+async function _loadArtifacts() {
+  if (!_body) return;
+  if (!_runId) { _body.innerHTML = '<div class="tr-empty">当前没有任务</div>'; return; }
+  _body.innerHTML = '<div class="tr-empty">加载产物…</div>';
+  try {
+    const d = await _get('/supervisor/runs/' + _runId + '/artifacts');
+    const list = d.artifacts || [];
+    _body.innerHTML = '';
+    const back = document.createElement('div');
+    back.textContent = '← 返回轨迹';
+    back.style.cssText = 'padding:6px 8px;color:#007aff;cursor:pointer;font-size:12px';
+    back.onclick = () => _paint();
+    _body.appendChild(back);
+    if (!list.length) {
+      _body.appendChild(_el('div', 'tr-empty', '本次任务没有产物'));
+      return;
+    }
+    for (const a of list) {
+      const row = _el('div', 'tr-row');
+      const link = document.createElement('a');
+      link.href = a.path || '#';
+      link.target = '_blank';
+      link.textContent = a.name || a.path;
+      link.style.cssText = 'color:#007aff;word-break:break-all;font-size:12px';
+      row.appendChild(link);
+      if (a.kind) row.appendChild(_el('span', 'tm', a.kind));
+      _body.appendChild(row);
+    }
+  } catch (e) {
+    _body.innerHTML = '<div class="tr-empty">产物加载失败</div>';
+  }
 }
 
 function _paint() {

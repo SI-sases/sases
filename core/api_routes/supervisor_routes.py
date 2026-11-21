@@ -59,6 +59,17 @@ async def revert_run(run_id: int, body: RevertBody, user_id: int = Depends(get_c
     return {"status": "ok", **result}
 
 
+@router.get("/runs/{run_id}/artifacts")
+def list_run_artifacts(run_id: int, user_id: int = Depends(get_current_user)):
+    with db_cursor() as cur:
+        cur.execute("SELECT user_id FROM supervisor_runs WHERE id=?", (run_id,))
+        row = cur.fetchone()
+    if not row or int(row["user_id"] if isinstance(row, dict) else row[0]) != int(user_id):
+        raise HTTPException(status_code=404, detail="run not found")
+    from ..services.artifact_service import list_artifacts
+    return {"artifacts": list_artifacts(run_id)}
+
+
 @router.post("/runs/{run_id}/approve")
 async def approve_run(run_id: int, body: ApproveBody, user_id: int = Depends(get_current_user)):
     with db_cursor() as cur:
