@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # 统一上下文构建器 v4 — 全面放宽版
+import json
 import os
 from . import ctx_limits as L
 
@@ -10,6 +11,14 @@ PROVIDER_CTX = {
 }
 _PROTOCOL_PREFIXES = ("[TASK]:", "[STEP_DONE]:", "[SUMMARY]:", "[RED_PACKET]",
                       "[SUPERVISOR_PROGRESS]:", "[TRACE]")
+
+# A2: 会话压缩参数
+COMPACT_RATIO = 0.75
+RETAIN_RATIO = 0.18
+HEADROOM = 8192
+MIN_COMPACT_MESSAGES = 6
+MAX_SUMMARY_CHARS = 1600
+_COMPACTING = set()
 
 
 def estimate_tokens(text):
@@ -64,23 +73,182 @@ def _load_history(conversation_id, max_count=None):
     try:
         from core.db import db_cursor
         with db_cursor() as cur:
-            cur.execute("SELECT sender, content, msg_type FROM messages WHERE conversation_id=? ORDER BY id DESC LIMIT ?", (conversation_id, max_count))
+            cur.execute("SELECT id, sender, content, msg_type FROM messages WHERE conversation_id=? ORDER BY id DESC LIMIT ?", (conversation_id, max_count))
             rows = list(cur.fetchall())
     except Exception as e:
         print("[CTX] _load_history failed: " + str(e))
         return []
+    summ = _summary_record(conversation_id)
+    cut = int((summ or {}).get("covered_until_id") or 0)
     result = []
     for r in reversed(rows):
         if isinstance(r, dict):
-            sender, content, mtype = r.get("sender"), r.get("content"), r.get("msg_type")
+            _id, sender, content, mtype = r.get("id"), r.get("sender"), r.get("content"), r.get("msg_type")
         else:
-            sender, content, mtype = r[0], r[1], (r[2] if len(r) > 2 else None)
+            _id, sender, content, mtype = r[0], r[1], r[2], (r[3] if len(r) > 3 else None)
+        if cut and _id is not None and int(_id) <= cut:
+            continue
         t = str(content or "")
         if not t or any(t.startswith(p) for p in _PROTOCOL_PREFIXES):
             continue
         who = "用户" if sender == "user" else "AI"
-        result.append({"who": who, "content": t, "is_doc": (mtype == "doc_paste") or is_doc_paste(t)})
+        result.append({"id": _id, "who": who, "content": t, "is_doc": (mtype == "doc_paste") or is_doc_paste(t)})
+    if summ and summ.get("content"):
+        result.insert(0, {"id": 0, "who": "系统摘要", "content": summ["content"],
+                          "is_doc": True, "is_summary": True})
     return result
+
+
+def _raw_history(conversation_id, limit=400):
+    try:
+        from core.db import db_cursor
+        with db_cursor() as cur:
+            cur.execute("SELECT id, sender, content FROM messages WHERE conversation_id=? ORDER BY id DESC LIMIT ?",
+                        (conversation_id, limit))
+            rows = list(cur.fetchall())
+    except Exception as e:
+        print("[CTX] _raw_history failed: " + str(e))
+        return []
+    out = []
+    for r in reversed(rows):
+        if isinstance(r, dict):
+            _id, sender, content = r.get("id"), r.get("sender"), r.get("content")
+        else:
+            _id, sender, content = r[0], r[1], r[2]
+        t = str(content or "")
+        if not t or any(t.startswith(p) for p in _PROTOCOL_PREFIXES):
+            continue
+        out.append({"id": _id, "who": "用户" if sender == "user" else "AI", "content": t})
+    return out
+
+
+def _summary_record(conversation_id):
+    try:
+        from core.db import db_cursor
+        with db_cursor() as cur:
+            cur.execute(
+                "SELECT content, full_data FROM safety_memory WHERE task_id=? AND memory_type='conversation_summary' "
+                "ORDER BY id DESC LIMIT 1",
+                (str(conversation_id),),
+            )
+            r = cur.fetchone()
+        if not r:
+            return None
+        content = r["content"] if isinstance(r, dict) else r[0]
+        full = (r["full_data"] if isinstance(r, dict) else r[1]) or "{}"
+        try:
+            data = json.loads(full)
+        except Exception:
+            data = {}
+        return {"content": str(content or ""), "covered_until_id": int(data.get("covered_until_id") or 0)}
+    except Exception as e:
+        print("[CTX] _summary_record failed: " + str(e))
+        return None
+
+
+def _save_summary(conversation_id, user_id, text, covered_until_id, stats):
+    try:
+        from core.db import db_cursor
+        with db_cursor(commit=True) as cur:
+            cur.execute("DELETE FROM safety_memory WHERE task_id=? AND memory_type='conversation_summary'",
+                        (str(conversation_id),))
+        from . import memory_service
+        memory_service.remember(
+            user_id=user_id,
+            memory_type="conversation_summary",
+            content=text,
+            task_id=str(conversation_id),
+            importance=0.85,
+            full_data={"covered_until_id": int(covered_until_id), **stats},
+            enable_dedup=False,
+        )
+    except Exception as e:
+        print("[CTX] _save_summary failed: " + str(e))
+
+
+def _prune_tool_text(text, head=1200, tail=400):
+    s = str(text or "")
+    if len(s) <= head + tail + 100:
+        return s
+    return s[:head] + "\n…（完整结果见 run_trace / run_artifacts）…\n" + s[-tail:]
+
+
+def _summarize_prompt(rows):
+    lines = []
+    for m in rows:
+        lines.append(m["who"] + ": " + _prune_tool_text(m["content"]))
+    body = "\n".join(lines)
+    if len(body) > 24000:
+        body = body[:12000] + "\n…（中间省略）…\n" + body[-12000:]
+    return (
+        "你是会话压缩器。把下面的旧对话压缩成一段中文摘要，供后续任务继续使用。\n"
+        "必须保留：用户目标、已确认方案、改过的文件与行号、失败原因、未决问题、用户偏好。\n"
+        "禁止：编造、输出 JSON、输出工具调用、超过 " + str(MAX_SUMMARY_CHARS) + " 字。\n\n"
+        "【旧对话】\n" + body + "\n\n【摘要】"
+    )
+
+
+async def maybe_compact(conversation_id, user_id, budget=None, force=False):
+    """接近预算时压缩最旧历史；返回是否发生压缩。"""
+    if os.getenv("SASES_DISABLE_COMPACTION") == "1":
+        return False
+    if not conversation_id or conversation_id in _COMPACTING:
+        return False
+    budget = int(budget or _resolve_budget(user_id))
+    if not force:
+        try:
+            from core.db import db_cursor
+            with db_cursor() as cur:
+                cur.execute("SELECT 1 FROM supervisor_runs WHERE conversation_id=? AND status IN "
+                            "('running','running_resumed','paused','restart_pending') LIMIT 1",
+                            (conversation_id,))
+                if cur.fetchone():
+                    return False
+        except Exception:
+            pass
+
+    _COMPACTING.add(conversation_id)
+    try:
+        rows = _raw_history(conversation_id)
+        if len(rows) < MIN_COMPACT_MESSAGES:
+            return False
+        used = sum(estimate_tokens(m["content"]) for m in rows)
+        threshold = min(int(budget * COMPACT_RATIO), budget - HEADROOM)
+        if not force and used <= threshold:
+            return False
+
+        retain = max(400, int(budget * RETAIN_RATIO))
+        acc, cut = 0, len(rows)
+        for i in range(len(rows) - 1, -1, -1):
+            acc += estimate_tokens(rows[i]["content"])
+            if acc > retain:
+                cut = i + 1
+                break
+        old = rows[:cut]
+        if len(old) < 3:
+            return False
+
+        from .swarm.llm_parser import _call_llm
+        raw = await _call_llm(_summarize_prompt(old), max_tokens=1200,
+                              purpose="compaction", user_id=user_id, conversation_id=conversation_id)
+        summary = (raw or "").strip()
+        if not summary:
+            return False
+        if len(summary) > MAX_SUMMARY_CHARS:
+            summary = summary[:MAX_SUMMARY_CHARS]
+        covered = old[-1]["id"]
+        _save_summary(conversation_id, user_id, summary, covered, {
+            "messages_before": len(rows), "messages_compacted": len(old),
+            "tokens_before": used, "cut_index": len(old),
+        })
+        print("[CTX] compacted conv=" + str(conversation_id) + " old=" + str(len(old))
+              + " tokens=" + str(used) + " covered_until=" + str(covered))
+        return True
+    except Exception as e:
+        print("[CTX] maybe_compact failed: " + str(e))
+        return False
+    finally:
+        _COMPACTING.discard(conversation_id)
 
 
 def _build_history_section(history, budget_remaining):
