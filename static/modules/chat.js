@@ -319,7 +319,7 @@ async function sendMessage() {
       sender_agent_id: chatState.senderAgentId,
       mode: chatState.mode,
       max_steps: _maxSteps,
-      agent_mode: 'auto',
+      agent_mode: (typeof getAgentMode === 'function' ? getAgentMode() : 'auto'),
       enabled_api_ids: (window.currentSessionAPIs || []),
       enabled_tool_ids: (window.currentSessionTools || []),
       enabled_skill_ids: (window.currentSessionSkills || [])

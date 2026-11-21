@@ -103,9 +103,12 @@
       '#capsule-panel .cp-desc{font-size:10px;color:#999;margin-top:1px;word-break:break-all}',
       '#capsule-panel .cp-empty{color:#999;text-align:center;padding:20px}',
       '#capsule-panel .cp-foot{border-top:1px solid #eee;padding:6px 10px;display:flex;align-items:center;gap:8px;color:#888;font-size:11px}',
-      '#capsule-settings-menu{position:fixed;width:220px;background:#fff;border:1px solid #e5e5e5;border-radius:10px;',
+      '#capsule-settings-menu{position:fixed;width:260px;background:#fff;border:1px solid #e5e5e5;border-radius:10px;',
       'box-shadow:0 8px 24px rgba(0,0,0,.14);z-index:9999;display:none;padding:6px;font-size:12px;font-family:system-ui}',
       '#capsule-settings-menu.show{display:block}',
+      '#capsule-settings-menu .sm-title{padding:6px 6px 2px;color:#999;font-size:11px}',
+      '#capsule-settings-menu .sm-item{display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:6px;cursor:pointer}',
+      '#capsule-settings-menu .sm-select{margin-left:auto;border:1px solid #ddd;border-radius:5px;padding:2px 4px;font-size:12px}',
       '#capsule-settings-menu .sm-item{display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:6px;cursor:pointer}',
       '#capsule-settings-menu .sm-item:hover{background:#f6f8fb}',
       '#capsule-settings-menu .sm-reset{color:#d93025;text-align:center;padding:6px;cursor:pointer;border-top:1px solid #eee;margin-top:4px}'
@@ -223,13 +226,40 @@
     }
     if (m.classList.contains('show')) { m.classList.remove('show'); return; }
     var all = [['read', '读取'], ['write', '写入'], ['network', '网络'], ['git', 'Git'], ['external', '外部 API'], ['skill', '技能']];
-    var html = '<div style="padding:4px 6px;color:#999">显示哪些胶囊组</div>';
+    var _steps = localStorage.getItem('sases_max_steps') || '8';
+    var _mode = localStorage.getItem('sases_agent_mode') || 'auto';
+    var html = '<div class="sm-title">高级</div>';
+    html += '<label class="sm-item">轮数<select class="sm-select" id="sm-rounds">' +
+      ['5', '8', '15', '-1'].map(function (v) {
+        return '<option value="' + v + '" ' + (String(_steps) === v ? 'selected' : '') + '>' + (v === '-1' ? '不限' : v + '步') + '</option>';
+      }).join('') + '</select></label>';
+    html += '<label class="sm-item">模式<select class="sm-select" id="sm-mode">' +
+      [['auto', '自动'], ['fast', '快速'], ['strict', '严格']].map(function (v) {
+        return '<option value="' + v[0] + '" ' + (_mode === v[0] ? 'selected' : '') + '>' + v[1] + '</option>';
+      }).join('') + '</select></label>';
+    html += '<div class="sm-title">显示哪些胶囊组</div>';
     all.forEach(function (a) {
       var hidden = state.hidden.indexOf(a[0]) !== -1;
       html += '<label class="sm-item"><input type="checkbox" data-g="' + a[0] + '" ' + (hidden ? '' : 'checked') + '>' + a[1] + '</label>';
     });
     html += '<div class="sm-reset" id="sm-reset">恢复默认</div>';
     m.innerHTML = html;
+
+    var _rounds = document.getElementById('sm-rounds');
+    if (_rounds) _rounds.onchange = function () {
+      var v = parseInt(_rounds.value, 10);
+      try {
+        if (window.sasesParamBar && window.sasesParamBar.setParamMaxSteps) window.sasesParamBar.setParamMaxSteps(v);
+        else localStorage.setItem('sases_max_steps', String(v));
+      } catch (e) {}
+    };
+    var _modeSel = document.getElementById('sm-mode');
+    if (_modeSel) _modeSel.onchange = function () {
+      try {
+        if (window.sasesParamBar && window.sasesParamBar.setAgentMode) window.sasesParamBar.setAgentMode(_modeSel.value);
+        else localStorage.setItem('sases_agent_mode', _modeSel.value);
+      } catch (e) {}
+    };
     m.querySelectorAll('input').forEach(function (el) {
       el.onchange = function () {
         var g = el.dataset.g;
@@ -242,6 +272,10 @@
     var reset = document.getElementById('sm-reset');
     if (reset) reset.onclick = function () {
       state.apis = []; state.tools = []; state.skills = []; state.hidden = [];
+      try {
+        localStorage.removeItem('sases_max_steps');
+        localStorage.removeItem('sases_agent_mode');
+      } catch (e) {}
       save();
       m.classList.remove('show');
     };
