@@ -39,6 +39,13 @@ def answer(question_id, answer_text):
         return cur.rowcount > 0
 
 
+def get(question_id):
+    with db_cursor() as cur:
+        cur.execute("SELECT * FROM agent_questions WHERE id=?", (int(question_id),))
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
 def pending(conversation_id):
     with db_cursor() as cur:
         cur.execute(

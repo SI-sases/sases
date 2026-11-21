@@ -14,6 +14,7 @@ from . import chat_routes
 from . import message_routes
 from . import knowledge_routes
 from . import stats_routes
+from . import agent_question_routes
 from . import search_routes
 from . import ai_circle_routes
 from . import export_routes

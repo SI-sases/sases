@@ -31,15 +31,33 @@
     function send() {
       var text = (input.value || '').trim();
       if (!text) return;
-      var chatInput = document.getElementById('chat-input');
-      var sendBtn = document.getElementById('send-btn');
-      if (!chatInput || !sendBtn) return;
-      chatInput.value = text;
-      chatInput.dispatchEvent(new Event('input', { bubbles: true }));
       btn.disabled = true;
-      btn.textContent = '已回答';
-      card.style.opacity = '0.75';
-      sendBtn.click();
+      btn.textContent = '提交中…';
+      function fallbackSend() {
+        var chatInput = document.getElementById('chat-input');
+        var sendBtn = document.getElementById('send-btn');
+        if (!chatInput || !sendBtn) { btn.disabled = false; btn.textContent = '发送'; return; }
+        chatInput.value = text;
+        chatInput.dispatchEvent(new Event('input', { bubbles: true }));
+        btn.textContent = '已回答';
+        card.style.opacity = '0.75';
+        sendBtn.click();
+      }
+      fetch('/agent/questions/' + encodeURIComponent(d.question_id) + '/answer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + (localStorage.getItem('sases_token') || '')
+        },
+        body: JSON.stringify({ answer: text })
+      }).then(function (r) { return r.json(); }).then(function (j) {
+        if (j && j.resumed) {
+          btn.textContent = '已回答';
+          card.style.opacity = '0.75';
+        } else {
+          fallbackSend();
+        }
+      }).catch(function () { fallbackSend(); });
     }
     btn.onclick = send;
     input.addEventListener('keydown', function (e) {

@@ -90,6 +90,38 @@ async def run_a2a(run_id):
     return {"ok": status == "completed", "status": status, "content": res.get("content")}
 
 
+async def resume_run(run_id, answer_text):
+    """ask_user v2：用户回答后继续同一个 run。"""
+    run = _get_run(run_id)
+    if not run:
+        return {"ok": False, "error": "run not found"}
+    source = "a2a"
+    try:
+        with db_cursor() as cur:
+            cur.execute("SELECT is_friend_chat FROM conversations WHERE id=?", (run["conversation_id"],))
+            r = cur.fetchone()
+        if not r or not r["is_friend_chat"]:
+            source = "schedule"
+    except Exception:
+        pass
+    with db_cursor(commit=True) as cur:
+        cur.execute("UPDATE supervisor_runs SET status='running', finished_at=NULL WHERE id=?", (run_id,))
+    try:
+        res = await agent_loop.run(
+            run["user_id"], run["conversation_id"], answer_text,
+            max_steps=10, run_id=run_id, mode="strict",
+        )
+    except Exception as e:
+        _finish(run_id, run["conversation_id"], run["supervisor_id"], "failed",
+                "继续执行失败：" + str(e), source)
+        return {"ok": False, "error": str(e)}
+    status = "completed" if res.get("status") == "ok" else (
+        "waiting_user" if res.get("status") in ("awaiting_approval", "awaiting_user") else "failed")
+    _finish(run_id, run["conversation_id"], run["supervisor_id"], status,
+            res.get("content") or "", source)
+    return {"ok": status == "completed", "status": status, "content": res.get("content")}
+
+
 async def run_schedule(run_id, user_id, conversation_id, goal, supervisor_id, options=None):
     try:
         res = await agent_loop.run(

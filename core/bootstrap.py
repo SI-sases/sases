@@ -178,6 +178,7 @@ from .api_routes import (
     message_routes,
     knowledge_routes,
     stats_routes,
+    agent_question_routes,
     search_routes,
     hive_routes,
     ai_circle_routes,
@@ -834,6 +835,7 @@ def create_app() -> FastAPI:
     app.include_router(message_routes.router)
     app.include_router(knowledge_routes.router)
     app.include_router(stats_routes.router)
+    app.include_router(agent_question_routes.router)
     app.include_router(search_routes.router)
     app.include_router(ai_circle_routes.router)
     app.include_router(export_routes.router)
