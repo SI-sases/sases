@@ -6,7 +6,9 @@ from pydantic import BaseModel
 from jose import jwt, JWTError
 
 from ..auth_service import SECRET_KEY
+from ..db import db_cursor
 from ..services import supervisor_service
+from ..services import approval_service
 from ..services import trace_service as _trace_service
 
 router = APIRouter(prefix="/supervisor", tags=["supervisor"])
@@ -23,6 +25,12 @@ class ProposeBody(BaseModel):
     goal: str
 
 
+class ApproveBody(BaseModel):
+    step_id: str
+    decision: str = "allow"
+    scope: str = "once"
+
+
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     token = credentials.credentials
     try:
@@ -31,6 +39,17 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
     except (JWTError, ValueError):
         raise HTTPException(status_code=401, detail="Invalid token")
     return user_id
+
+
+@router.post("/runs/{run_id}/approve")
+async def approve_run(run_id: int, body: ApproveBody, user_id: int = Depends(get_current_user)):
+    with db_cursor() as cur:
+        cur.execute("SELECT user_id FROM supervisor_runs WHERE id=?", (run_id,))
+        row = cur.fetchone()
+    if not row or int(row["user_id"] if isinstance(row, dict) else row[0]) != int(user_id):
+        raise HTTPException(status_code=404, detail="run not found")
+    approval_service.decide(run_id, body.step_id, body.decision, body.scope)
+    return {"status": "ok", "decision": body.decision, "scope": body.scope}
 
 
 @router.post("/propose")

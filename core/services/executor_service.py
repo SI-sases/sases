@@ -714,7 +714,7 @@ async def _execute_task(task: Dict[str, Any]):
                 _run_state = _row_pause["status"] if isinstance(_row_pause, dict) else _row_pause[0]
         except Exception as _e_pause:
             print("[executor] pause check failed: " + str(_e_pause))
-        if _run_state in ("paused", "cancelled", "interrupted"):
+        if _run_state in ("paused", "cancelled", "interrupted", "awaiting_approval"):
             if _run_state == "cancelled" and _run_id and _rj:
                 try:
                     _rj.mark_interrupted(_run_id)
@@ -741,6 +741,19 @@ async def _execute_task(task: Dict[str, Any]):
         step_id = step.get("step")
         desc = step.get("description", "")
         step_type = "command" if str(step.get("command") or "").strip() else ("harness" if step.get("module_id") else step.get("type", "command"))
+
+        # P2-1: 写/网络/命令审批
+        if _run_id:
+            try:
+                from . import approval_service as _appr
+                if _appr.require_enabled() and _appr.is_risky(step) and not _appr.is_approved(_run_id, step_id, step):
+                    await _appr.request_approval(_run_id, step_id, step, conversation_id, task.get("user_id"))
+                    with db_cursor(commit=True) as _c_ap:
+                        _c_ap.execute("UPDATE supervisor_runs SET status='awaiting_approval' WHERE id=?", (_run_id,))
+                    print("[approval] run " + str(_run_id) + " 等待审批 step=" + str(step_id))
+                    return
+            except Exception as _e_ap:
+                print("[approval] 检查失败: " + str(_e_ap))
 
         # P0: 截止时间 + 心跳 + 步骤日志
         if _run_id and _rj:
@@ -1020,7 +1033,7 @@ async def _scan_and_execute():
                     _c_scan.execute("SELECT status FROM supervisor_runs WHERE id=?", (_rid_scan,))
                     _r_scan = _c_scan.fetchone()
                 _st_scan = (_r_scan["status"] if isinstance(_r_scan, dict) else _r_scan[0]) if _r_scan else None
-                if _st_scan == "paused":
+                if _st_scan in ("paused", "awaiting_approval"):
                     continue
         except Exception as _e_scan:
             print("[executor] scan pause check failed: " + str(_e_scan))

@@ -1214,6 +1214,22 @@ def init_db():
             )
         """)
 
+        # ========== 审批（P2-1） ==========
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS approvals (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                run_id INTEGER NOT NULL,
+                step_id TEXT NOT NULL,
+                tool_id TEXT,
+                decision TEXT DEFAULT 'pending',
+                scope TEXT DEFAULT 'once',
+                created_at TEXT,
+                decided_at TEXT,
+                UNIQUE (run_id, step_id)
+            )
+        """)
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_approvals_run ON approvals(run_id, id)")
+
         # ========== 任务执行轨迹（run_trace，P3-C1） ==========
         cur.execute("""
             CREATE TABLE IF NOT EXISTS run_trace (
