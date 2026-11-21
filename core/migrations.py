@@ -1,7 +1,7 @@
 """数据库迁移框架：按版本号顺序应用 schema 变更。"""
 import datetime
 
-SCHEMA_VERSION = 6
+SCHEMA_VERSION = 7
 
 
 def _now_iso():
@@ -54,9 +54,17 @@ def _migrate_v6_group_columns(cur):
     _ensure_col(cur, "group_tasks", "packet_type", "TEXT DEFAULT 'lucky'")
 
 
+def _migrate_v7_api_registry(cur):
+    cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='api_registry'")
+    if not cur.fetchone():
+        return
+    _ensure_col(cur, "api_registry", "tool_id", "TEXT")
+    cur.execute("UPDATE api_registry SET tool_id='api_' || id WHERE tool_id IS NULL OR tool_id=''")
+
+
 MIGRATIONS = {1: _migrate_v1_outbox, 2: _migrate_v2_hmac, 3: _migrate_v3_reconcile,
               4: _migrate_v4_transfer_fields, 5: _migrate_v5_credit_type,
-              6: _migrate_v6_group_columns}
+              6: _migrate_v6_group_columns, 7: _migrate_v7_api_registry}
 
 
 def ensure_schema():
