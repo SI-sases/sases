@@ -29,6 +29,13 @@ class UpdateShareRequest(BaseModel):
     visibility: str
     price: float
 
+class UpdateModelRequest(BaseModel):
+    name: Optional[str] = None
+    provider: Optional[str] = None
+    api_key: Optional[str] = None
+    node_url: Optional[str] = None
+    model_name: Optional[str] = None
+
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     token = credentials.credentials
     try:
@@ -75,6 +82,26 @@ async def update_share_settings(model_id: str, body: UpdateShareRequest, user_id
         price=body.price
     )
     return {"status": "updated"}
+
+@router.patch("/{model_id}")
+async def update_model(model_id: str, body: UpdateModelRequest, user_id: int = Depends(get_current_user)):
+    ok = model_service.update_model(
+        user_id=user_id, model_id=model_id,
+        name=body.name, provider=body.provider, api_key=body.api_key,
+        node_url=body.node_url, model_name=body.model_name,
+    )
+    if not ok:
+        raise HTTPException(status_code=404, detail="model not found or nothing to update")
+    return {"status": "updated"}
+
+
+@router.get("/{model_id}/refs")
+async def model_refs(model_id: str, user_id: int = Depends(get_current_user)):
+    refs = model_service.get_model_refs(user_id, model_id)
+    if refs is None:
+        raise HTTPException(status_code=404, detail="model not found")
+    return {"refs": refs}
+
 
 @router.delete("/{model_id}")
 async def delete_model(model_id: str, user_id: int = Depends(get_current_user)):

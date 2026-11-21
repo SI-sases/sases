@@ -8,6 +8,8 @@ export async function openModelManagement(returnAction = null) {
   try {
     const data = await api.listModels();
     const models = data.models || [];
+    window.__sasesModelsCache = {};
+    models.forEach(m => { window.__sasesModelsCache[m.id] = m; });
     if (models.length === 0) {
       modelsHtml = `<div class="subpage-placeholder">${t('no_models')}</div>`;
     } else {
@@ -27,6 +29,8 @@ export async function openModelManagement(returnAction = null) {
               <div class="model-share-info" style="font-size:12px;color:#007aff;">${shareText} · ${m.visibility} · ${m.price}${t('price_unit')}</div>
             </div>
             <button class="edit-share-btn" data-model-id="${m.id}">${t('share_settings')}</button>
+            <button class="edit-model-btn" data-model-id="${m.id}" style="margin-left:4px;">编辑</button>
+            <button class="delete-model-btn" data-model-id="${m.id}" style="margin-left:4px;color:#d93025;">删除</button>
           </div>
         `;
       });
@@ -68,6 +72,32 @@ export async function openModelManagement(returnAction = null) {
         const visibility = modelItem.dataset.visibility;
         const price = parseFloat(modelItem.dataset.price);
         openShareSettings(modelId, isShared, visibility, isNaN(price) ? 0 : price);
+      };
+    });
+
+    document.querySelectorAll('.edit-model-btn').forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.modelId;
+        const data = window.__sasesModelsCache && window.__sasesModelsCache[id];
+        openModelEditForm(id, data || {});
+      };
+    });
+
+    document.querySelectorAll('.delete-model-btn').forEach(btn => {
+      btn.onclick = async (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.modelId;
+        try {
+          const rr = await api.getModelRefs(id);
+          const refs = (rr && rr.refs) || {};
+          const n = refs.conversations || 0;
+          if (!confirm('删除后将同时删除 ' + n + ' 个会话，且不可恢复。确定删除？')) return;
+          await api.deleteModel(id);
+          openModelManagement();
+        } catch (err) {
+          alert('删除失败：' + (err.message || err));
+        }
       };
     });
   }, 100);
@@ -172,6 +202,51 @@ function openAddLocalModelForm() {
         window.closeSubpage();
         openModelManagement();
       } catch (e) { alert(t('add_failed') + ': ' + e.message); }
+    };
+  }, 100);
+}
+
+function openModelEditForm(modelId, m) {
+  const isLocal = m.model_type === 'local';
+  const contentHtml = `
+    <div class="me-menu">
+      <div class="me-menu-item"><span class="menu-label">名称</span>
+        <input type="text" id="edit-model-name" class="inline-input" value="${String(m.name || '').replace(/"/g, '&quot;')}"></div>
+      ${isLocal ? `
+      <div class="me-menu-item"><span class="menu-label">节点地址</span>
+        <input type="text" id="edit-node-url" class="inline-input" value="${String(m.node_url || '').replace(/"/g, '&quot;')}"></div>
+      <div class="me-menu-item"><span class="menu-label">模型名</span>
+        <input type="text" id="edit-model-name-field" class="inline-input" value="${String(m.model_name || '').replace(/"/g, '&quot;')}"></div>
+      ` : `
+      <div class="me-menu-item"><span class="menu-label">Provider</span>
+        <input type="text" id="edit-provider" class="inline-input" value="${String(m.provider || '').replace(/"/g, '&quot;')}"></div>
+      <div class="me-menu-item"><span class="menu-label">API Key</span>
+        <input type="password" id="edit-api-key" class="inline-input" placeholder="留空表示不修改"></div>
+      `}
+    </div>
+    <button class="save-btn" id="save-model-edit">保存</button>
+  `;
+  window.openSubpage('编辑智能体', contentHtml);
+  setTimeout(() => {
+    const btn = document.getElementById('save-model-edit');
+    if (!btn) return;
+    btn.onclick = async () => {
+      const payload = { name: (document.getElementById('edit-model-name').value || '').trim() };
+      if (isLocal) {
+        payload.node_url = (document.getElementById('edit-node-url').value || '').trim();
+        payload.model_name = (document.getElementById('edit-model-name-field').value || '').trim();
+      } else {
+        payload.provider = (document.getElementById('edit-provider').value || '').trim();
+        const k = (document.getElementById('edit-api-key').value || '').trim();
+        if (k) payload.api_key = k;
+      }
+      try {
+        await api.updateModel(modelId, payload);
+        window.closeSubpage();
+        openModelManagement();
+      } catch (e) {
+        alert('保存失败：' + (e.message || e));
+      }
     };
   }, 100);
 }

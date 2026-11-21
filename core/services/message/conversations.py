@@ -8,10 +8,12 @@ def list_conversations(user_id: int):
         cur.execute("""
             SELECT c.id, c.title, c.agent_id, c.updated_at, c.unread_count, c.is_pinned,
                    c.target_user_id, c.is_friend_chat, c.friend_mode,
+                   mc.name AS agent_name, mc.provider, mc.model_name AS model_name,
                    (SELECT content FROM messages WHERE conversation_id=c.id ORDER BY id DESC LIMIT 1) as last_message,
                    (SELECT sender FROM messages WHERE conversation_id=c.id ORDER BY id DESC LIMIT 1) as last_sender,
                    (SELECT sender_agent_id FROM messages WHERE conversation_id=c.id ORDER BY id DESC LIMIT 1) as last_sender_agent_id
             FROM conversations c
+            LEFT JOIN model_configs mc ON c.agent_id = mc.id
             WHERE c.user_id=?
             ORDER BY c.is_pinned DESC, c.updated_at DESC
         """, (user_id,))
@@ -41,6 +43,9 @@ def create_conversation(user_id: int, agent_id: str = None, title: str = "新会
                 row = cur.fetchone()
                 if row and row['name']:
                     title = row['name']
+                cur.execute("SELECT COUNT(*) FROM conversations WHERE user_id=? AND agent_id=?", (user_id, agent_id))
+                if (cur.fetchone() or [0])[0] > 0:
+                    title = title + " · " + datetime.now().strftime("%m-%d %H:%M")
                 
     with db_cursor(commit=True) as cur:
         cur.execute("""

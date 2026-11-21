@@ -85,6 +85,8 @@ export const api = {
   addApiKey: (data) => request('/models/api-key', { method: 'POST', body: JSON.stringify(data) }),
   addLocalModel: (data) => request('/models/local', { method: 'POST', body: JSON.stringify(data) }),
   updateModelShare: (modelId, data) => request(`/models/${modelId}/share`, { method: 'PATCH', body: JSON.stringify(data) }),
+  updateModel: (modelId, data) => request(`/models/${modelId}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  getModelRefs: (modelId) => request(`/models/${modelId}/refs`),
   deleteModel: (modelId) => request(`/models/${modelId}`, { method: 'DELETE' }),
 
   // 智能体
