@@ -1,7 +1,7 @@
 """数据库迁移框架：按版本号顺序应用 schema 变更。"""
 import datetime
 
-SCHEMA_VERSION = 5
+SCHEMA_VERSION = 6
 
 
 def _now_iso():
@@ -41,7 +41,22 @@ def _migrate_v5_credit_type(cur):
     if "credit_type" not in cols:
         cur.execute("ALTER TABLE transactions ADD COLUMN credit_type TEXT DEFAULT 'credits'")
 
-MIGRATIONS = {1: _migrate_v1_outbox, 2: _migrate_v2_hmac, 3: _migrate_v3_reconcile, 4: _migrate_v4_transfer_fields, 5: _migrate_v5_credit_type}
+def _ensure_col(cur, table, col, ddl):
+    cur.execute("PRAGMA table_info(" + table + ")")
+    cols = [r[1] for r in cur.fetchall()]
+    if col not in cols:
+        cur.execute("ALTER TABLE " + table + " ADD COLUMN " + col + " " + ddl)
+
+
+def _migrate_v6_group_columns(cur):
+    # 群红包/群任务在总结里声明过 packet_type，但基线表没有这一列
+    _ensure_col(cur, "group_red_packets", "packet_type", "TEXT DEFAULT 'lucky'")
+    _ensure_col(cur, "group_tasks", "packet_type", "TEXT DEFAULT 'lucky'")
+
+
+MIGRATIONS = {1: _migrate_v1_outbox, 2: _migrate_v2_hmac, 3: _migrate_v3_reconcile,
+              4: _migrate_v4_transfer_fields, 5: _migrate_v5_credit_type,
+              6: _migrate_v6_group_columns}
 
 
 def ensure_schema():

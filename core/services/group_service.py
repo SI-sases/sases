@@ -306,8 +306,14 @@ def list_group_members(group_id: int):
 
 
 def get_group_credits(group_id: int):
-    """获取群积分（暂返回0，后续可统计）"""
-    return 0.0
+    """获取群积分（群池可用余额）。"""
+    try:
+        with db_cursor() as cur:
+            cur.execute("SELECT credits FROM groups WHERE id=?", (group_id,))
+            row = cur.fetchone()
+            return float(row["credits"] or 0) if row else 0.0
+    except Exception:
+        return 0.0
 
 
 def remove_member_from_group(group_id: int, remover_id: int, member_identifier: str):
