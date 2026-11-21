@@ -189,6 +189,12 @@ def _summarize_prompt(rows):
 
 
 async def maybe_compact(conversation_id, user_id, budget=None, force=False):
+    """[deprecated] 旧 messages 压缩；新执行链统一使用 agent_compact。"""
+    print("[CTX] unified_context.maybe_compact 已停用，请使用 agent_compact")
+    return False
+
+
+async def _legacy_maybe_compact(conversation_id, user_id, budget=None, force=False):
     """接近预算时压缩最旧历史；返回是否发生压缩。"""
     if os.getenv("SASES_DISABLE_COMPACTION") == "1":
         return False

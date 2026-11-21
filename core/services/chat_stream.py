@@ -8,24 +8,28 @@ from ..db import db_cursor
 
 
 async def stream_chat(user_id: int, conversation_id: int, content: str, quote_content=None, max_tokens: int = 1200):
-    from .unified_context import build_context
+    from .agent_memory import backfill as _am_backfill, history as _am_history
+    from .agent_compact import maybe_compact as _maybe_compact
+    from .swarm.prompts import BASE_SYSTEM
     from .swarm.llm_parser import client, MODEL
 
-    _CHAT_SYSTEM = ("你是 SASES 的对话助手。用简洁中文直接回答用户；"
-                    "不要输出【分析】【步骤】、JSON、计划或工具调用；"
-                    "如果用户要执行任务，简短说明并让对方直接说需求。")
-
     try:
-        ctx, _ = build_context(user_id, conversation_id, content, mode="chat")
+        await _maybe_compact(conversation_id, user_id)
+    except Exception as e:
+        print("[stream] compact 跳过: " + str(e))
+    try:
+        _am_backfill(conversation_id)
+        hist = _am_history(conversation_id)
     except Exception:
-        ctx = content
-    if quote_content:
-        ctx = "【引用消息】\n" + str(quote_content)[:1000] + "\n\n【用户消息】\n" + ctx
+        hist = []
 
-    messages = [
-        {"role": "system", "content": _CHAT_SYSTEM},
-        {"role": "user", "content": ctx},
-    ]
+    messages = [{
+        "role": "system",
+        "content": BASE_SYSTEM + "\n【角色：聊天】简洁中文直接回答；不要输出计划、JSON 或工具调用。",
+    }] + hist
+    if quote_content:
+        messages.append({"role": "user", "content": "【引用消息】\n" + str(quote_content)[:1000]})
+    messages.append({"role": "user", "content": content})
     loop = asyncio.get_running_loop()
     q: asyncio.Queue = asyncio.Queue()
 
