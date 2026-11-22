@@ -7,7 +7,7 @@ from ..db import db_cursor
 
 _queue = asyncio.PriorityQueue()
 _started = False
-_worker_task = None
+_workers = []
 
 
 def _get_run(run_id):
@@ -23,9 +23,25 @@ def _set_status(run_id, status):
         cur.execute("UPDATE supervisor_runs SET status=? WHERE id=?", (status, int(run_id)))
 
 
+async def _notify(user_id, run_id, status):
+    try:
+        from ..api_routes.ws_routes import broadcast_to_user
+        await broadcast_to_user(int(user_id), {
+            "type": "sases_run_update", "run_id": int(run_id), "status": status,
+        })
+    except Exception:
+        pass
+
+
 async def enqueue(run_id, priority=5):
     _set_status(run_id, "queued")
     await _queue.put((int(priority), int(run_id)))
+    try:
+        run = _get_run(run_id)
+        if run:
+            await _notify(run["user_id"], run_id, "queued")
+    except Exception:
+        pass
     return int(run_id)
 
 
@@ -43,6 +59,7 @@ async def _worker():
                 supervisor_id=run.get("supervisor_id") or "sases_assistant",
                 run_id=run_id, finish=True,
             )
+            await _notify(run["user_id"], run_id, "completed")
         except Exception as e:
             print("[queue] run 失败: " + str(e))
             try:
@@ -54,11 +71,14 @@ async def _worker():
 
 
 async def start():
-    global _started, _worker_task
+    global _started, _workers
     if _started:
         return
     _started = True
-    _worker_task = asyncio.create_task(_worker())
+    from .capacity_service import profile
+    n = max(1, int(profile().get("background_parallel") or 1))
+    _workers = [asyncio.create_task(_worker()) for _ in range(n)]
+    print("[queue] workers=" + str(n))
     try:
         with db_cursor() as cur:
             cur.execute("SELECT id FROM supervisor_runs WHERE status='queued' ORDER BY id")

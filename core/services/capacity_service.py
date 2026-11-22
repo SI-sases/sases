@@ -39,7 +39,7 @@ def profile():
         "memory_gb": mem,
         "read_parallel": read,
         "write_parallel": write,
-        "background_parallel": 1,
+        "background_parallel": min(2, max(1, cpu // 4)),
         "subagent_parallel": read,
     }
 

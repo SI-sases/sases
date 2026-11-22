@@ -240,6 +240,10 @@
 
   window.sasesResizeChatInput = resizeChatInput;
 
+  window.addEventListener('sases_run_update', function () {
+    if (currentType === 'task-pill' && panel) render();
+  });
+
   function boot() {
     ensurePills();
     bindInput();

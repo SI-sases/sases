@@ -41,8 +41,11 @@ function _openWs(uid) {
         if (d && (d.type === 'new_message' || d.type === 'sases_new_message')) {
           window.dispatchEvent(new CustomEvent('sases_new_message', { detail: d }));
         }
-        if (d && d.type === 'task_trace') {
+        if (d && d.type === 'sases_task_trace') {
           window.dispatchEvent(new CustomEvent('sases_task_trace', { detail: d }));
+        }
+        if (d && d.type === 'sases_run_update') {
+          window.dispatchEvent(new CustomEvent('sases_run_update', { detail: d }));
         }
         if (d && d.type === 'approval_request') {
           window.dispatchEvent(new CustomEvent('sases_approval_request', { detail: d }));
