@@ -67,14 +67,28 @@ async def reply(group_id, user_id, agent_id, question, execute=False):
             pass
 
     try:
-        res = await agent_loop.run(
-            user_id, key, question,
-            allowed_tool_ids=allowed,
-            max_steps=max_steps,
-            mode=mode,
-            supervisor_id=agent_id,
-            on_event=_progress,
-        )
+        if execute:
+            from . import run_service, supervisor_service
+            _rr = await run_service.run_once(
+                user_id, key, question, source="group", supervisor_id=agent_id,
+                max_steps=max_steps, allowed_tool_ids=allowed,
+                finish=False, on_event=_progress,
+            )
+            res = _rr.get("loop") or {}
+            try:
+                supervisor_service.finish_run(
+                    _rr.get("run_id"), "completed" if res.get("status") == "ok" else "failed")
+            except Exception:
+                pass
+        else:
+            res = await agent_loop.run(
+                user_id, key, question,
+                allowed_tool_ids=allowed,
+                max_steps=max_steps,
+                mode=mode,
+                supervisor_id=agent_id,
+                on_event=_progress,
+            )
     except Exception as e:
         return False, "群智能体执行失败：" + str(e)
     text = (res.get("content") or "").strip()

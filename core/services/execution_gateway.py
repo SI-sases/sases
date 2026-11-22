@@ -142,10 +142,13 @@ async def run_a2a(run_id):
         target_uid = row["target_user_id"] if row else None
         if target_uid:
             hb_task = asyncio.create_task(_a2a_heartbeat(target_uid, stop_event))
-        res = await agent_loop.run(
-            run["user_id"], run["conversation_id"], run["goal"],
-            max_steps=10, run_id=run_id, mode="strict",
+        from . import run_service
+        _rr = await run_service.run_once(
+            run["user_id"], run["conversation_id"], run["goal"], source="a2a",
+            supervisor_id=run["supervisor_id"], max_steps=10, run_id=run_id,
+            finish=False,
         )
+        res = _rr.get("loop") or {}
     except Exception as e:
         _finish(run_id, run["conversation_id"], run["supervisor_id"], "failed", "执行失败：" + str(e), "a2a")
         return {"ok": False, "error": str(e)}
@@ -180,10 +183,13 @@ async def resume_run(run_id, answer_text):
     with db_cursor(commit=True) as cur:
         cur.execute("UPDATE supervisor_runs SET status='running', finished_at=NULL WHERE id=?", (run_id,))
     try:
-        res = await agent_loop.run(
-            run["user_id"], run["conversation_id"], answer_text,
-            max_steps=10, run_id=run_id, mode="strict", resume=True,
+        from . import run_service
+        _rr = await run_service.run_once(
+            run["user_id"], run["conversation_id"], answer_text, source=source,
+            supervisor_id=run["supervisor_id"], max_steps=10, run_id=run_id,
+            finish=False, resume=True,
         )
+        res = _rr.get("loop") or {}
     except Exception as e:
         _finish(run_id, run["conversation_id"], run["supervisor_id"], "failed",
                 "继续执行失败：" + str(e), source)
@@ -247,11 +253,14 @@ async def resume_after_approval(run_id):
 
 async def run_schedule(run_id, user_id, conversation_id, goal, supervisor_id, options=None):
     try:
-        res = await agent_loop.run(
-            user_id, conversation_id, goal,
+        from . import run_service
+        _rr = await run_service.run_once(
+            user_id, conversation_id, goal, source="schedule",
+            supervisor_id=supervisor_id, max_steps=10, run_id=run_id,
             allowed_tool_ids=(options or {}).get("tools") or None,
-            max_steps=10, run_id=run_id, mode="strict",
+            finish=False,
         )
+        res = _rr.get("loop") or {}
     except Exception as e:
         _finish(run_id, conversation_id, supervisor_id, "failed", "执行失败：" + str(e), "schedule")
         return {"ok": False, "error": str(e)}
