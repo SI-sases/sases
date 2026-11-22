@@ -140,7 +140,7 @@ window.openSwarmUsage = async function(groupId) {
       headers: { 'Authorization': 'Bearer ' + localStorage.getItem('sases_token') }
     });
     const data = await resp.json();
-    if (data.error || data.detail) { alert('加载失败：' + (data.error || data.detail)); return; }
+    if (data.error || data.detail) { alert(t('sw_load_failed') + (data.error || data.detail)); return; }
 
     const today = data.today || {};
     const topUsers = data.top_users || [];
@@ -148,11 +148,11 @@ window.openSwarmUsage = async function(groupId) {
 
     let topHtml = '';
     if (topUsers.length === 0) {
-      topHtml = '<div style="text-align:center;color:#999;padding:20px 0;font-size:13px;">暂无使用记录</div>';
+      topHtml = '<div style="text-align:center;color:#999;padding:20px 0;font-size:13px;">' + t('sw_no_usage') + '</div>';
     } else {
       topUsers.forEach((u, idx) => {
         topHtml += '<div class="me-menu-item">';
-        topHtml += '<span class="menu-label">' + (idx + 1) + '. ' + (u.username || '匿名') + '</span>';
+        topHtml += '<span class="menu-label">' + (idx + 1) + '. ' + (u.username || t('sw_anonymous')) + '</span>';
         topHtml += '<span class="menu-value">' + (u.calls || 0) + ' 次</span>';
         topHtml += '</div>';
       });
