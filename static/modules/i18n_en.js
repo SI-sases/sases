@@ -774,4 +774,7 @@ export const en = {
   'gt_no_submissions': 'No submissions yet',
   'gt_anonymous': 'Anonymous',
   'gt_pick': 'Pick this one',
+  'gt_submit_plan': 'Submit plan',
+  'gt_pick_hint': 'Click "Pick this one" in the submission list; otherwise it will time out and refund.',
+  'gt_untitled': 'Untitled task',
 };
