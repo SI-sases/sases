@@ -75,12 +75,13 @@ window.openMyCard = function() {
 }
 
 
-export function initMe() {
+export function initMe(force) {
 
   var myCardEl = document.getElementById('menu-my-card');
   if (myCardEl) { myCardEl.onclick = openMyCard; }
 
-  if (initialized) return;
+  // force=true 时忽略 initialized 缓存，强制按当前语言重绘（语言切换后调用）
+  if (initialized && !force) return;
 
   const container = document.getElementById('me-content');
   if (!container) return;

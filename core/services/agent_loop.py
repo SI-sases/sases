@@ -150,6 +150,13 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
         print("[todo] 注入计划失败: " + str(_e_plan))
 
     for step in range(1, max_steps + 1):
+        try:
+            from . import run_control_service
+            if run_control_service.is_paused(conversation_id):
+                return {"status": "paused", "content": "已暂停。发送“继续”可从当前进度恢复。",
+                        "steps": step - 1, "history": used}
+        except Exception:
+            pass
         if _force_final:
             try:
                 _fm = messages + [{"role": "user", "content":

@@ -89,6 +89,9 @@ async def send_message(
     try:
         from .continuation_service import rewrite as _cont_rewrite
         content = _cont_rewrite(content)
+        if conversation_id:
+            from .run_control_service import resume as _run_resume
+            _run_resume(conversation_id)
     except Exception as _e_cont:
         print("[continue] rewrite 失败: " + str(_e_cont))
     _ai_content = content

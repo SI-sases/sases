@@ -181,8 +181,25 @@ async def stream_message(body: StreamMessageRequest, user_id: int = Depends(get_
                              headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 
+@router.post("/{conversation_id}/pause")
+async def pause_conversation(conversation_id: int, user=Depends(get_current_user)):
+    from ..services import run_control_service
+    run_control_service.pause(conversation_id)
+    return {"ok": True, "conversation_id": conversation_id}
+
+
+@router.post("/{conversation_id}/resume")
+async def resume_conversation(conversation_id: int, user=Depends(get_current_user)):
+    from ..services import run_control_service
+    run_control_service.resume(conversation_id)
+    return {"ok": True, "conversation_id": conversation_id}
+
+
 @router.post("/send")
 async def send_message(body: SendMessageRequest, user_id: int = Depends(get_current_user)):
+    if body.conversation_id:
+        from ..services import run_control_service
+        run_control_service.resume(body.conversation_id)
     result = await message_service.send_message(
         user_id=user_id,
         conversation_id=body.conversation_id,

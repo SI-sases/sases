@@ -47,7 +47,15 @@ document.addEventListener('DOMContentLoaded', () => {
   // 之前只有 sidebar/discover 监听 langchange，主界面文案不会刷新。
   window.addEventListener('langchange', () => {
     applyLanguage();
-    // 注意：不要在这里调用 initMe()，否则会和 me_settings 里的调用重复渲染
+    // me 页文案是 innerHTML 缓存的，必须强制重绘，否则切语言后仍是旧语言
+    const meView = document.getElementById('view-me');
+    const meVisible = meView && meView.classList.contains('active');
+    if (meVisible && typeof window.initMe === 'function') window.initMe(true);
+    // 已打开的子页（设置/语言选择等）文案同样是快照，直接关闭避免显示旧语言
+    const subpage = document.getElementById('view-subpage');
+    if (subpage && subpage.classList.contains('active') && typeof window.closeSubpage === 'function') {
+      window.closeSubpage();
+    }
   });
   initLoginUI();
   initBottomNav();

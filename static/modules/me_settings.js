@@ -4,6 +4,9 @@ import { t } from './me_i18n.js';
 import { setLang, getLang } from './i18n.js';
 
 // 语言选择用全局函数 + 内联 onclick，避免子页面重绘后事件监听丢失
+// 注意：不要在这里 location.reload()。整页刷新会打断 openSettings 的 setTimeout 绑定、
+// 丢失当前所在 tab 与子页栈，且 me.js 的 initialized 缓存会让文案不更新。
+// 正确做法：setLang() 广播 langchange，由各模块监听后原地重绘。
 window.__sasesPickLang = function (lang) {
   if (lang === getLang()) {
     if (typeof window.closeSubpage === 'function') window.closeSubpage();
@@ -11,9 +14,7 @@ window.__sasesPickLang = function (lang) {
   }
   setLang(lang);
   if (typeof window.closeSubpage === 'function') window.closeSubpage();
-  setTimeout(function () { window.location.reload(); }, 120);
 };
-
 // ==================== 设置 ====================
 export function openSettings() {
   const contentHtml = `
