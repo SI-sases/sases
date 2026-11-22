@@ -100,17 +100,30 @@ async def stream_message(body: StreamMessageRequest, user_id: int = Depends(get_
                     yield _sse({"type": "error", "error": "会话不存在"})
                     return
 
-            from ..services.intent_service import route_intent
-            _ir = route_intent(body.content)
-            _fallback = (_ir.get("intent") != "chat"
-                         or body.content.lstrip().startswith("#")
-                         or (body.msg_type and body.msg_type != "standard"))
-            if _fallback:
+            # 统一入口：只有显式执行/附件/非标准消息才进入 strict loop；
+            # 其余文本仍走同一个 agent 的聊天流，不再用语义意图决定角色链。
+            _text = (body.content or "").strip()
+            _explicit_exec = _text.startswith(("执行：", "执行:"))
+            if _explicit_exec:
+                _text = _text.split("：", 1)[-1] if "：" in _text else _text.split(":", 1)[-1]
+                _text = _text.strip()
+            from ..db import db_cursor
+            with db_cursor() as cur:
+                cur.execute("SELECT agent_id FROM conversations WHERE id=? AND user_id=?",
+                            (body.conversation_id, user_id))
+                _conv = cur.fetchone()
+            _agent_id = _conv["agent_id"] if _conv else body.sender_agent_id
+            _strict = (_explicit_exec
+                       or _text.startswith("#")
+                       or (body.msg_type and body.msg_type != "standard"))
+            if _strict:
                 from ..services.message.send import send_message
                 res = await send_message(
                     user_id=user_id, conversation_id=body.conversation_id,
-                    content=body.content, sender_agent_id=body.sender_agent_id,
-                    quote_content=body.quote_content)
+                    agent_id=_agent_id,
+                    content=_text, sender_agent_id=body.sender_agent_id,
+                    quote_content=body.quote_content,
+                    agent_mode="strict")
                 yield _sse({"type": "final", "data": res})
                 return
 
