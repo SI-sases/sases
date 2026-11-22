@@ -1,6 +1,7 @@
 // static/modules/me_settings.js
 import { api } from './api.js';
 import { t } from './me_i18n.js';
+import { setLang, getLang } from './i18n.js';
 
 // ==================== 设置 ====================
 export function openSettings() {
@@ -99,7 +100,7 @@ function openPrivacySettings() {
 }
 
 function openLanguageSettings() {
-  const currentLang = localStorage.getItem('sases_lang') || 'zh';
+  const currentLang = getLang();
   const contentHtml = `
     <div class="me-menu">
       <div class="me-menu-item" id="lang-zh"><span class="menu-label">简体中文</span><span class="menu-check">${currentLang === 'zh' ? '✓' : ''}</span></div>
@@ -108,19 +109,17 @@ function openLanguageSettings() {
   `;
   window.openSubpage(t('language_settings'), contentHtml);
   setTimeout(() => {
-    document.getElementById('lang-zh').onclick = () => {
-      localStorage.setItem('sases_lang', 'zh');
-      alert(t('language_switched'));
-      window.closeSubpage();
-      // 重新渲染主页面
+    // 统一走 i18n.setLang：同步 currentLang / localStorage / <html lang> 并广播 langchange，
+    // 否则只写 localStorage 不会触发界面重渲染（切换后界面仍是旧语言）。
+    const applyLang = (lang) => {
+      setLang(lang);
+      alert(t(lang === 'en' ? 'language_switched_en' : 'language_switched'));
+      if (typeof window.closeSubpage === 'function') window.closeSubpage();
+      // 重新渲染主页面（侧边栏/发现页等由 langchange 监听器自行刷新）
       if (typeof window.initMe === 'function') window.initMe();
     };
-    document.getElementById('lang-en').onclick = () => {
-      localStorage.setItem('sases_lang', 'en');
-      alert(t('language_switched_en'));
-      window.closeSubpage();
-      if (typeof window.initMe === 'function') window.initMe();
-    };
+    document.getElementById('lang-zh').onclick = () => applyLang('zh');
+    document.getElementById('lang-en').onclick = () => applyLang('en');
   }, 100);
 }
 

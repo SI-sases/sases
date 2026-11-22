@@ -24,6 +24,20 @@ _OBJECT_WORDS = ("文件", "目录", "路径", "代码", "脚本", "页面", "�
                  "接口", "函数", "模块", "bug", "报错", "html", "js", "py", "css", "json", "md")
 
 
+def _is_smalltalk(text):
+    s = str(text or "").strip().lower()
+    if not s:
+        return True
+    if len(s) > 60:
+        return False
+    exact = ("你好", "您好", "hi", "hello", "在吗", "在不在", "谢谢", "多谢",
+             "好的", "好", "收到", "嗯", "哈哈", "再见", "拜拜", "晚安", "早安",
+             "你是谁", "你能做什么", "介绍一下你自己")
+    if s in exact:
+        return True
+    return any(s.startswith(x) for x in ("你好", "您好", "谢谢", "再见", "晚安")) and len(s) <= 20
+
+
 def _looks_like_task(text):
     s = str(text or "").strip()
     if not s:
@@ -141,6 +155,7 @@ async def stream_message(body: StreamMessageRequest, user_id: int = Depends(get_
             _agent_id = _conv["agent_id"] if _conv else body.sender_agent_id
             _strict = (_explicit_exec
                        or _looks_like_task(_text)
+                       or not _is_smalltalk(_text)
                        or _text.startswith("#")
                        or (body.msg_type and body.msg_type != "standard"))
             if _strict:
@@ -151,7 +166,7 @@ async def stream_message(body: StreamMessageRequest, user_id: int = Depends(get_
                     content=_text, sender_agent_id=body.sender_agent_id,
                     quote_content=body.quote_content,
                     enabled_skill_ids=body.enabled_skill_ids,
-                    agent_mode="strict")
+                    max_steps=12, agent_mode="strict")
                 yield _sse({"type": "final", "data": res})
                 return
 

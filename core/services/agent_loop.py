@@ -38,6 +38,19 @@ def _needs_plan(goal, mode):
     return any(m in text for m in markers)
 
 
+READ_PARALLEL_TOOLS = {"file_read", "grep_code", "dir_tree", "web_fetch",
+                       "read_user_doc", "search_tools"}
+
+
+def _is_investigation(goal):
+    text = str(goal or "")
+    markers = ("看看", "看下", "看一下", "是什么", "为什么", "问题", "检查",
+               "分析", "怎么样", "是否", "排查", "诊断")
+    write = ("改", "修复", "创建", "写入", "删除", "重命名", "重构",
+             "实现", "添加", "部署", "安装")
+    return any(m in text for m in markers) and not any(w in text for w in write)
+
+
 def _tool_schemas(allowed_tool_ids=None, mode="fast"):
     from core.harness_runtime import harness_runtime
     from .fast_agent import tool_schema
@@ -93,6 +106,34 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
     _verified_files = set()
     _ui_dirty = set()
     _ui_ok = True
+    _audit_steps = 0
+    _ask_suppressed = False
+    _force_final = False
+    _audit_nudged = False
+    _action_nudged = False
+    _all_schemas = schemas
+
+    def _audit_tick(batch_calls):
+        nonlocal _audit_steps, schemas, _force_final, _audit_nudged
+        if batch_calls and all(c.function.name in READ_PARALLEL_TOOLS for c in batch_calls):
+            _audit_steps += 1
+        else:
+            _audit_steps = 0
+            schemas = _all_schemas
+        if _is_investigation(goal) and _audit_steps >= 3 and schemas and not _audit_nudged:
+            _audit_nudged = True
+            # 调查够了：撤掉只读工具，只留写/验证工具，迫使模型落地修复
+            schemas = [s for s in _all_schemas
+                       if (s.get("function") or {}).get("name") not in READ_PARALLEL_TOOLS]
+            _gate = ("[调查够了] 已经查看 3 轮。现在开始按低风险默认修复并验证，"
+                     "只读工具已收起；不要继续读文件，也不要问用户是否需要修改。")
+            messages.append({"role": "user", "content": _gate})
+            agent_memory.append(conversation_id, "user", _gate)
+        if _is_investigation(goal) and _audit_steps >= 5 and schemas:
+            _gate = ("[调查截止] 已经查看 5 轮，不要再读文件。现在只允许写文件/验证，"
+                     "直接执行修复。")
+            messages.append({"role": "user", "content": _gate})
+            agent_memory.append(conversation_id, "user", _gate)
     try:
         _plan_ctx = todo_service.format_for_prompt(conversation_id, run_id)
         if _plan_ctx and messages and messages[-1].get("role") == "user":
@@ -105,6 +146,21 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
         print("[todo] 注入计划失败: " + str(_e_plan))
 
     for step in range(1, max_steps + 1):
+        if _force_final:
+            try:
+                _fm = messages + [{"role": "user", "content":
+                                   "现在只用自然语言给出结论/修复结果，不要输出任何工具调用标记。"}]
+                _fr = await asyncio.to_thread(
+                    client.chat.completions.create,
+                    model=MODEL, messages=_fm, temperature=0.3, max_tokens=1200,
+                    extra_body={"thinking": {"type": "disabled"}},
+                )
+                _txt = (_fr.choices[0].message.content or "").strip()
+                agent_memory.append(conversation_id, "assistant", _txt)
+                return {"status": "ok", "content": _txt, "steps": step, "history": used}
+            except Exception as _e_ff:
+                return {"status": "error", "content": "总结失败: " + str(_e_ff),
+                        "steps": step, "history": used}
         if step > 1:
             try:
                 if await maybe_compact(conversation_id, user_id):
@@ -164,6 +220,14 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
             agent_memory.append(conversation_id, "assistant", content)
             messages.append({"role": "assistant", "content": content})
             if _question:
+                if _is_investigation(goal) and not _ask_suppressed:
+                    _ask_suppressed = True
+                    _noask = ("[不要提问] 用户只给了现象。按低风险默认值继续定位/修复，"
+                              "产品偏好按现有设计保留；不要要求用户选文件、选方案或确认低风险修改。")
+                    messages.append({"role": "user", "content": _noask})
+                    agent_memory.append(conversation_id, "user", _noask)
+                    if step < max_steps:
+                        continue
                 if not run_id:
                     try:
                         from core.db import db_cursor
@@ -225,6 +289,15 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
                 except Exception as _e_ui:
                     _ui_ok = False
                     print("[ui] verify_ui 失败: " + str(_e_ui))
+            # 调查完但没落盘：强制进入“执行”，不要只给方案
+            if (_is_investigation(goal) and _audit_nudged and not _dirty_files
+                    and not _action_nudged and step < max_steps):
+                _action_nudged = True
+                _act = ("[不要总结] 你已经定位到问题。现在直接修改低风险文件并验证，"
+                        "不要问用户是否需要修改，也不要继续只给方案。")
+                messages.append({"role": "user", "content": _act})
+                agent_memory.append(conversation_id, "user", _act)
+                continue
             # 计划门禁：多步骤任务必须有 todo；todo 还有未完成项不允许结束
             try:
                 _all_todos = todo_service.get(conversation_id, run_id)
@@ -291,8 +364,7 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
         messages.append({"role": "assistant", "content": msg.content or "",
                          "tool_calls": assistant_tool_calls})
 
-        _READ_PARALLEL = {"file_read", "grep_code", "dir_tree", "web_fetch",
-                          "read_user_doc", "search_tools"}
+        _READ_PARALLEL = READ_PARALLEL_TOOLS
         if len(calls) > 1 and all(c.function.name in _READ_PARALLEL for c in calls):
             _batch = []
             _can_batch = True
@@ -336,6 +408,7 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
                             await on_event({"tool": name, "ok": ok, "step": step})
                         except Exception:
                             pass
+                _audit_tick(calls)
                 continue
 
         for c in calls:
@@ -425,5 +498,7 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
                     except Exception as e:
                         _verified_files.discard(_fp)
                         print("[strict] verify_syntax 失败: " + str(e))
+
+        _audit_tick(calls)
 
     return {"status": "max_steps", "content": "达到步数上限，未完成任务。", "steps": max_steps, "history": used}

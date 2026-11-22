@@ -43,6 +43,12 @@ document.addEventListener('DOMContentLoaded', function () {
 document.addEventListener('DOMContentLoaded', () => {
   window.currentGroupChat = false;
   applyLanguage();
+  // 语言切换后重新应用静态文案（登录页/底部导航/顶栏等），
+  // 之前只有 sidebar/discover 监听 langchange，主界面文案不会刷新。
+  window.addEventListener('langchange', () => {
+    applyLanguage();
+    // 注意：不要在这里调用 initMe()，否则会和 me_settings 里的调用重复渲染
+  });
   initLoginUI();
   initBottomNav();
   initTopActions();
