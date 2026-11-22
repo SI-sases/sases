@@ -73,10 +73,12 @@ async def run_fast(user_id: int, conversation_id: int, goal: str,
         from .agent_loop import run as _run_loop
         return await _run_loop(user_id, conversation_id, goal, allowed_tool_ids, max_steps, run_id, mode)
     from core.harness_runtime import harness_runtime
+    from .tool_visibility import visible
     tools = sorted(harness_runtime.list_tools(), key=lambda t: getattr(t, "module_id", "") or "")
     if allowed_tool_ids:
         allow = set(str(x) for x in allowed_tool_ids)
         tools = [t for t in tools if getattr(t, "module_id", "") in allow]
+    tools = visible(tools)
     schemas = [tool_schema(t) for t in tools if getattr(t, "module_id", "")]
 
     system = (COMMANDER_SYSTEM_PROMPT
