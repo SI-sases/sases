@@ -17,7 +17,7 @@ window.openGroupKnowledge = async function(groupId) {
 
   const renderList = (items) => {
     if (!items || items.length === 0) {
-      return '<div class="subpage-placeholder">暂无知识条目</div>';
+      return '<div class="subpage-placeholder">' + t('gk_empty') + '</div>';
     }
     let html = '<div class="me-menu">';
     items.forEach(it => {

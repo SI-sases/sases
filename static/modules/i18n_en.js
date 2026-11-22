@@ -461,6 +461,7 @@ export const en = {
   'sw_no_trend': 'No trend data',
   'sw_times': 'times',
   'sw_usage_title': 'Usage statistics',
+  'gk_empty': 'No knowledge entries',
   'gc_report_wip': 'Group reports coming soon',
   'gc_member': 'Member',
   'gc_switch_swarm': 'Switched to Swarm Mode',
