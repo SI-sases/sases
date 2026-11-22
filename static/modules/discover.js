@@ -450,19 +450,19 @@ async function openYunchongRescue(taskId) {
       const verifyResult = await api.verifyYunchongTask(taskId);
 
       if (!verifyResult.success) {
-        updateProcessStep(processContainer, 'verifying', 'failed', verifyResult.message || '验证未通过');
+        updateProcessStep(processContainer, 'verifying', 'failed', verifyResult.message || t('ds_verify_failed'));
         lastFailureReason = verifyResult.verification?.reason || verifyResult.message || '';
 
         if (verifyResult.comfort_reward) {
           const cr = verifyResult.comfort_reward;
           let rewardText = `阳光 +${cr.sunlight}`;
           if (cr.exp_small) rewardText += ` · 经验胶囊小 +${cr.exp_small}`;
-          addProcessStep(processContainer, 'comfort', '💊 安慰奖励', rewardText);
+          addProcessStep(processContainer, 'comfort', '💊 ' + t('ds_comfort'), rewardText);
         }
 
         const nextAttempts = (verifyResult.attempts || 0) + 1;
         if (nextAttempts >= 3) {
-          addProcessStep(processContainer, 'hint', '💡 提示', '下次解救将触发保底机制，直接成功');
+          addProcessStep(processContainer, 'hint', '💡 提示', t('ds_hint_guarantee'));
         } else {
           addProcessStep(processContainer, 'hint', '💡 提示', '可以点击「重新解救」让智能体根据失败原因重新生成方案');
         }
