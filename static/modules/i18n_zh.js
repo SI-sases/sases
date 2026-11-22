@@ -28,6 +28,8 @@ export const zh = {
   'gm_owner': '群主',
   'gm_admin': '管理员',
   'gm_user': '用户',
+  'gm_no_transfer': '没有可转让的成员',
+  'gm_transfer_title': '转让群主',
   'gm_remove': '移除',
   'gm_add_admin': '添加管理员',
   'gm_switch_failed': '切换失败',

@@ -178,11 +178,11 @@ window.openTransferOwnerDialog = async function(groupId) {
 
   let listHtml = '';
   if (members.length === 0) {
-    listHtml = '<div class="subpage-placeholder">没有可转让的成员</div>';
+    listHtml = '<div class="subpage-placeholder">' + t('gm_no_transfer') + '</div>';
   } else {
     members.forEach(m => {
       listHtml += '<div class="me-menu-item transfer-owner-item" data-uid="' + m.user_id + '" style="cursor:pointer;">';
-      listHtml += '<span class="menu-label">' + (m.display_name || m.username || ('用户 ' + m.user_id)) + '</span>';
+      listHtml += '<span class="menu-label">' + (m.display_name || m.username || (t('gm_user') + ' ' + m.user_id)) + '</span>';
       listHtml += '<span class="menu-arrow">›</span>';
       listHtml += '</div>';
     });
@@ -197,7 +197,7 @@ window.openTransferOwnerDialog = async function(groupId) {
     </div>
   `;
 
-  window.openSubpage('转让群主', html, {
+  window.openSubpage(t('gm_transfer_title'), html, {
     showMore: false,
     returnAction: () => window.openGroupManage(groupId)
   });

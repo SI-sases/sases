@@ -22,6 +22,8 @@ export const en = {
   'gm_owner': 'Owner',
   'gm_admin': 'Admin',
   'gm_user': 'User',
+  'gm_no_transfer': 'No members available to transfer',
+  'gm_transfer_title': 'Transfer group ownership',
   'gm_remove': 'Remove',
   'gm_add_admin': 'Add admin',
   'gm_switch_failed': 'Switch failed',
