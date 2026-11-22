@@ -102,7 +102,7 @@ function applyLanguage() {
     if (userAgreementLink) userAgreementLink.textContent = t('user_agreement');
     if (agreementText) agreementText.innerHTML = isEn
       ? `I have read and agree to <a href="/static/agreement.html" target="_blank" id="user-agreement-link" style="color:#4a90e2;">${t('user_agreement')}</a> and <a href="/static/privacy.html" target="_blank" id="privacy-policy-link" style="color:#4a90e2;">${t('privacy_policy')}</a>`
-      : `我已阅读并同意 <a href="/static/agreement.html" target="_blank" id="user-agreement-link" style="color:#4a90e2;">${t('user_agreement')}</a> 和 <a href="/static/privacy.html" target="_blank" id="privacy-policy-link" style="color:#4a90e2;">${t('privacy_policy')}</a>`;
+      : `我已阅读并同意 <a href="/static/agreement.html" target="_blank" id="user-agreement-link" style="color:#4a90e2;">${t('user_agreement')}</a> ${t('main.and')} <a href="/static/privacy.html" target="_blank" id="privacy-policy-link" style="color:#4a90e2;">${t('privacy_policy')}</a>`;
   }
 
   // ========== 底部导航 ==========

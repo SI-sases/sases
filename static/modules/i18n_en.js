@@ -16,6 +16,7 @@ export const en = {
   'main.register_failed': 'Registration failed',
   'main.network_error': 'Network error',
   'main.login_failed': 'Login failed',
+  'main.and': 'and',
   'main.node_cn': 'China node',
   'main.all_fields_required': 'All fields are required',
   'main.reset_failed': 'Reset failed',
