@@ -421,6 +421,8 @@ export const en = {
   'chat.upload_failed': 'Upload failed',
   'chat.unknown_error': 'Unknown error',
   'chat.placeholder.hold_to_talk': 'Hold to talk (simulated)',
+  'chat.sender.agent': 'Agent',
+  'chat.sender.me': 'Me',
   'chat.feedback.thanks': 'Recorded, thanks 🙏',
   'chat.feedback.submit_failed': 'Submit failed, please retry',
   'chat.feedback.unsatisfied': 'What was wrong?',

@@ -421,6 +421,8 @@ export const zh = {
   'chat.upload_failed': '上传失败',
   'chat.unknown_error': '未知错误',
   'chat.placeholder.hold_to_talk': '按住说话（模拟）',
+  'chat.sender.agent': '智能体',
+  'chat.sender.me': '我',
   'chat.feedback.thanks': '已记录，谢谢 🙏',
   'chat.feedback.submit_failed': '提交失败，请重试',
   'chat.feedback.unsatisfied': '哪里不满意？',

@@ -415,7 +415,7 @@ async function sendMessage() {
           if (res && res.url) content = '[FILE]:' + res.url + '|' + att.name + '|' + att.size;
         }
         if (content) {
-          appendMessage('user', content, chatState.senderAgentId ? '智能体 / 智能体' : '我', null, new Date().toISOString(), false, chatState);
+          appendMessage('user', content, chatState.senderAgentId ? t('chat.sender.agent') : t('chat.sender.me'), null, new Date().toISOString(), false, chatState);
           await api.sendMessage({
             conversation_id: chatState.conversationId,
             agent_id: chatState.agentId,
@@ -437,7 +437,7 @@ async function sendMessage() {
   }
 
   const tempId = 'temp-' + Date.now();
-  appendMessage('user', text, chatState.senderAgentId ? '智能体 / 智能体' : '我', tempId, new Date().toISOString(), true, chatState);
+  appendMessage('user', text, chatState.senderAgentId ? t('chat.sender.agent') : t('chat.sender.me'), tempId, new Date().toISOString(), true, chatState);
   input.value = '';
   updateSendButtonVisibility();
 
@@ -574,7 +574,7 @@ window.__sasesUploadFile = async (file) => {
       return;
     }
     const _content = '[FILE]:' + res.url + '|' + (file.name || 'file') + '|' + (file.size || 0);
-    appendMessage('user', _content, chatState.senderAgentId ? '智能体 / 智能体' : '我', null, new Date().toISOString(), false, chatState);
+    appendMessage('user', _content, chatState.senderAgentId ? t('chat.sender.agent') : t('chat.sender.me'), null, new Date().toISOString(), false, chatState);
     await api.sendMessage({
       conversation_id: chatState.conversationId,
       agent_id: chatState.agentId,
