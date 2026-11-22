@@ -144,6 +144,17 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
                 return {"status": "awaiting_user", "content": content,
                         "question": _question, "question_id": qid, "run_id": run_id,
                         "steps": step, "history": used}
+            # 最终门禁前重新读盘验证，不能只信任写入时的自检结果
+            if mode == "strict" and _dirty_files:
+                for _fp in list(_dirty_files):
+                    try:
+                        _vr2 = await tool_gateway.invoke_tool_async("verify_syntax", {"file_path": _fp})
+                        if bool(getattr(_vr2, "success", False)):
+                            _verified_files.add(_fp)
+                        else:
+                            _verified_files.discard(_fp)
+                    except Exception:
+                        _verified_files.discard(_fp)
             _unverified = _dirty_files - _verified_files
             if mode == "strict" and _unverified:
                 _gate = ("[自检未通过] 以下文件已修改但没有通过 verify_syntax：\n- "
