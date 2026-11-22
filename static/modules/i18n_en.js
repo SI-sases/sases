@@ -325,4 +325,11 @@ export const en = {
   'work_guide_kb': '*1: import to knowledge base, e.g. *1: import the following...',
   'work_guide_switch': 'Tap 🤖 to switch agent',
   'work_guide_dismiss': 'Do not show again',
+  'contacts_loading': 'Loading...',
+  'contacts_unnamed': 'Unnamed',
+  'contacts_pollination': 'Pollination +2',
+  'contacts_add_friend_agent': 'Add friend / agent',
+  'contacts_friend_agent': 'Friend agent',
+  'contacts_send_message': 'Send message',
+  'contacts_details': 'Details',
 };

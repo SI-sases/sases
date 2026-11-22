@@ -69,12 +69,12 @@ async function fetchAgents() {
 function generateAgentRow(agent, type) {
   // 兼容处理：好友列表可能没有 agent_id，用 target_user_id 兜底
   const aid = agent.agent_id || agent.target_user_id || 'unknown';
-  const aname = agent.name || agent.owner || '未命名';
+  const aname = agent.name || agent.owner || t('contacts_unnamed');
   
   const bgColor = hashColor(aid);
   const statusClass = getStatusDotClass(agent);
   
-  const nameHtml = type === 'my' ? `${aname}${agent.type === 'local' ? ' <span style="color:green;font-size:12px;">授粉+2</span>' : ''}` : aname;
+  const nameHtml = type === 'my' ? `${aname}${agent.type === 'local' ? ' <span style="color:green;font-size:12px;">' + t('contacts_pollination') + '</span>' : ''}` : aname;
   const desc = type === 'my' ? (agent.detail || agent.capability || '') : `${agent.owner || ''} - ${agent.detail || ''}`;
   
   const actions = type === 'my' ? `
@@ -185,7 +185,7 @@ async function renderContacts(container) {
       <input type="text" id="contact-search-input" class="search-input" placeholder="${t('search_placeholder')}">
     </div>
     <div class="me-menu">
-      <div class="me-menu-item" data-entry="new-agent">添加朋友/智能体</div>
+      <div class="me-menu-item" data-entry="new-agent">${t('contacts_add_friend_agent')}</div>
       <div class="me-menu-item" data-entry="api-agent"> ${t('api_agent')}</div>
       <div class="me-menu-item" data-entry="group-chat">&#128101; ${t('group_chat')}</div>
     </div>
@@ -256,12 +256,12 @@ async function renderContacts(container) {
       let html = '<div style="padding: 40px 20px; text-align: center; background: #fff; min-height: 100vh;">';
       html += '<div style="width: 80px; height: 80px; background: #007aff; color: white; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; font-size: 36px; font-weight: bold; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,122,255,0.3);">' + agentName.charAt(0) + '</div>';
       html += '<h2 style="margin: 0; font-size: 22px; color: #333;">' + agentName + '</h2>';
-      html += '<p style="color: #888; margin-top: 8px; font-size: 14px;">好友智能体</p>';
-      html += '<button id="btn-start-chat-from-info" style="margin-top: 40px; width: 100%; padding: 12px; background: #007aff; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;">发消息</button>';
+      html += '<p style="color: #888; margin-top: 8px; font-size: 14px;">' + t('contacts_friend_agent') + '</p>';
+      html += '<button id="btn-start-chat-from-info" style="margin-top: 40px; width: 100%; padding: 12px; background: #007aff; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;">' + t('contacts_send_message') + '</button>';
       html += '</div>';
 
       if (window.openSubpage) {
-        window.openSubpage('详细资料', html, { returnAction: () => window.activateMainView('contacts') });
+        window.openSubpage(t('contacts_details'), html, { returnAction: () => window.activateMainView('contacts') });
         setTimeout(() => {
           const btn = document.getElementById('btn-start-chat-from-info');
           if (btn) {

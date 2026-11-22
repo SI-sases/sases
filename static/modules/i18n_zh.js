@@ -325,4 +325,11 @@ export const zh = {
   'work_guide_kb': '*1：导入知识库，例 *1：将以下内容导入知识库，内容如下...',
   'work_guide_switch': '点击 🤖 切换智能体执行',
   'work_guide_dismiss': '不再显示',
+  'contacts_loading': '加载中...',
+  'contacts_unnamed': '未命名',
+  'contacts_pollination': '授粉+2',
+  'contacts_add_friend_agent': '添加朋友/智能体',
+  'contacts_friend_agent': '好友智能体',
+  'contacts_send_message': '发消息',
+  'contacts_details': '详细资料',
 };
