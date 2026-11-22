@@ -2,6 +2,7 @@
 // 草稿任务编辑器 + 蜂群操作按钮
 
 import { api } from './api.js';
+import { t } from './i18n.js';
 
 
 export function showProposedRunCard(runId) {
@@ -15,7 +16,7 @@ export function showProposedRunCard(runId) {
   wrap.style.borderRadius = '8px';
   wrap.id = 'proposed-run-' + runId;
   const title = document.createElement('div');
-  title.textContent = '⚡ 调度员提议执行此任务';
+  title.textContent = '⚡ ' + t('cd_proposal');
   title.style.fontWeight = '600';
   title.style.marginBottom = '8px';
   wrap.appendChild(title);
@@ -24,7 +25,7 @@ export function showProposedRunCard(runId) {
   btnGroup.style.gap = '8px';
   btnGroup.style.justifyContent = 'flex-end';
   const rejectBtn = document.createElement('button');
-  rejectBtn.textContent = '✕ 取消';
+  rejectBtn.textContent = '✕ ' + t('cd_cancel');
   rejectBtn.style.padding = '6px 16px';
   rejectBtn.style.fontSize = '13px';
   rejectBtn.style.border = '1px solid #ccc';
@@ -35,7 +36,7 @@ export function showProposedRunCard(runId) {
     try {
       await api.rejectRun(runId);
       btnGroup.remove();
-      title.textContent = '已拒绝，已通知对方';
+      title.textContent = t('cd_rejected_notified');
       wrap.style.borderColor = '#ddd';
       wrap.style.background = '#f5f5f5';
     } catch (e) {

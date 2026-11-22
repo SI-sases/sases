@@ -887,4 +887,7 @@ export const en = {
   'gr_title': 'Group reports',
   'gr_from_prefix': 'From ',
   'gr_from_suffix': '',
+  'cd_proposal': 'Dispatcher proposes to run this task',
+  'cd_cancel': 'Cancel',
+  'cd_rejected_notified': 'Rejected, the other party has been notified',
 };

@@ -885,4 +885,7 @@ export const zh = {
   'bs_add_failed': '添加失败：',
   'bs_remove_ok': '移除成功',
   'bs_remove_failed': '移除失败：',
+  'cd_proposal': '调度员提议执行此任务',
+  'cd_cancel': '取消',
+  'cd_rejected_notified': '已拒绝，已通知对方',
 };
