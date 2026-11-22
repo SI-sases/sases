@@ -13,6 +13,19 @@ from core.services.swarm.llm_parser import client, MODEL
 from core.services.swarm.prompts import BASE_SYSTEM, BASE_PREFIX_HASH
 
 
+def _direct_syntax_error(path):
+    """独立于 verify_syntax 的 Python 语法回读校验。"""
+    if not str(path).lower().endswith(".py"):
+        return None
+    try:
+        with open(path, encoding="utf-8") as f:
+            compile(f.read(), path, "exec")
+        return None
+    except Exception as e:
+        return str(e)
+
+
+
 def _tool_schemas(allowed_tool_ids=None):
     from core.harness_runtime import harness_runtime
     from .fast_agent import tool_schema
@@ -22,7 +35,6 @@ def _tool_schemas(allowed_tool_ids=None):
         allow = set(str(x) for x in allowed_tool_ids)
         tools = [t for t in tools if getattr(t, "module_id", "") in allow]
     tools = visible(tools)
-    return [tool_schema(t) for t in tools if getattr(t, "module_id", "")]
     return [tool_schema(t) for t in tools if getattr(t, "module_id", "")]
 
 
@@ -147,6 +159,10 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
             # 最终门禁前重新读盘验证，不能只信任写入时的自检结果
             if mode == "strict" and _dirty_files:
                 for _fp in list(_dirty_files):
+                    _direct_err = _direct_syntax_error(_fp)
+                    if _direct_err:
+                        _verified_files.discard(_fp)
+                        continue
                     try:
                         _vr2 = await tool_gateway.invoke_tool_async("verify_syntax", {"file_path": _fp})
                         if bool(getattr(_vr2, "success", False)):
