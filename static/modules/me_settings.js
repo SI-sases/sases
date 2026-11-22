@@ -115,8 +115,8 @@ function openLanguageSettings() {
       setLang(lang);
       alert(t(lang === 'en' ? 'language_switched_en' : 'language_switched'));
       if (typeof window.closeSubpage === 'function') window.closeSubpage();
-      // 重新渲染主页面（侧边栏/发现页等由 langchange 监听器自行刷新）
-      if (typeof window.initMe === 'function') window.initMe();
+      // 语言是全局状态：整页重新加载，确保所有未监听 langchange 的模块也切换
+      setTimeout(function () { window.location.reload(); }, 300);
     };
     document.getElementById('lang-zh').onclick = () => applyLang('zh');
     document.getElementById('lang-en').onclick = () => applyLang('en');
