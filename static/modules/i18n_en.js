@@ -299,6 +299,7 @@ export const en = {
   'gc_untitled': 'Untitled',
   'gc_stake_credits': 'Stake {n} credits · {cat}',
   'gc_redpacket_claims': 'Claim records',
+  'gc_credits_unit': 'credits',
   'gc_anonymous': 'Anonymous',
   'gc_rp_saved': 'Added to your credits',
   'gc_rp_empty': 'All claimed',

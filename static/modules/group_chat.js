@@ -269,9 +269,9 @@ window.openGroupRedPacket = async function(packetId) {
     if (detail.error || detail.detail) { alert('加载失败：' + (detail.error || detail.detail)); return; }
     let claimsHtml = '';
     if (detail.claims && detail.claims.length > 0) {
-      claimsHtml = '<div style="margin-top:20px;"><div style="font-size:13px;color:#999;margin-bottom:8px;">领取记录</div>';
+      claimsHtml = '<div style="margin-top:20px;"><div style="font-size:13px;color:#999;margin-bottom:8px;">' + t('gc_redpacket_claims') + '</div>';
       detail.claims.forEach(c => {
-        claimsHtml += '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f5f5f5;font-size:13px;"><span>' + (c.username || '匿名') + '</span><span style="color:#f59e0b;font-weight:600;">' + c.amount + ' 积分</span></div>';
+        claimsHtml += '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f5f5f5;font-size:13px;"><span>' + (c.username || t('gc_anonymous')) + '</span><span style="color:#f59e0b;font-weight:600;">' + c.amount + ' ' + t('gc_credits_unit') + '</span></div>';
       });
       claimsHtml += '</div>';
     }

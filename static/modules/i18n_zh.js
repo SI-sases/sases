@@ -299,6 +299,7 @@ export const zh = {
   'gc_untitled': '未命名',
   'gc_stake_credits': '质押 {n} 积分 · {cat}',
   'gc_redpacket_claims': '领取记录',
+  'gc_credits_unit': '积分',
   'gc_anonymous': '匿名',
   'gc_rp_saved': '已存入你的积分',
   'gc_rp_empty': '已抢完',
