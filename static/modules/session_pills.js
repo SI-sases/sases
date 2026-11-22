@@ -95,11 +95,11 @@
   }
 
   async function renderTasks() {
-    panel.innerHTML = '<div class="sp-title">后台任务</div><div class="sp-empty">加载中...</div>';
+    panel.innerHTML = '<div class="sp-title">' + t('sp_tasks') + '</div><div class="sp-empty">' + t('sp_loading') + '</div>';
     try {
       const data = await api('/supervisor/runs');
       const runs = data.runs || [];
-      if (!runs.length) { panel.innerHTML = '<div class="sp-title">后台任务</div><div class="sp-empty">暂无运行中的任务</div>'; return; }
+      if (!runs.length) { panel.innerHTML = '<div class="sp-title">' + t('sp_tasks') + '</div><div class="sp-empty">' + t('sp_no_tasks') + '</div>'; return; }
       panel.innerHTML = '<div class="sp-title">后台任务' +
         (runs.filter(function (x) { return x.status === 'queued'; }).length ? ' · 排队 ' +
           runs.filter(function (x) { return x.status === 'queued'; }).length : '') + '</div>' + runs.map(function (r) {
@@ -163,7 +163,7 @@
   }
 
   async function renderAgents() {
-    panel.innerHTML = '<div class="sp-title">子智能体</div><div class="sp-empty">加载中...</div>';
+    panel.innerHTML = '<div class="sp-title">' + t('sp_agents') + '</div><div class="sp-empty">' + t('sp_loading') + '</div>';
     try {
       const data = await api('/agents/list');
       const list = data.agents || [];
