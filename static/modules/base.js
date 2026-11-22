@@ -141,8 +141,8 @@ export async function openFacilityDetail(facilityType, returnAction) {
     const isCaptain = pet.id === captainId;
     const isMember = members.includes(pet.id);
     let statusTag = '';
-    if (isCaptain) statusTag = ' <span style="color:#ff9500;">[队长]</span>';
-    else if (isMember) statusTag = ' <span style="color:#34c759;">[队员]</span>';
+    if (isCaptain) statusTag = ' <span style="color:#ff9500;">[' + t('bs_captain_tag') + ']</span>';
+    else if (isMember) statusTag = ' <span style="color:#34c759;">[' + t('bs_member_tag') + ']</span>';
 
     petOptionsHtml += `
       <div class="pet-option-item" data-pet-id="${pet.id}">
@@ -156,16 +156,16 @@ export async function openFacilityDetail(facilityType, returnAction) {
     <div style="text-align:center;padding:20px;">
       <div style="font-size:64px;">${icon}</div>
       <div style="font-size:20px;font-weight:600;margin-top:8px;">${facilityType}</div>
-      <div style="font-size:14px;color:#888;">等级 ${facility.level} · 产出 ${facility.output_resource || '无'}</div>
+      <div style="font-size:14px;color:#888;">${t('bs_level')} ${facility.level} · ${t('bs_output')} ${facility.output_resource || t('bs_none')}</div>
     </div>
     <div class="me-menu">
-      <div class="me-menu-item"><span class="menu-label">当前产出</span><span class="menu-value">${getFacilityRate(facility)}/小时</span></div>
-      <div class="me-menu-item"><span class="menu-label">队长</span><span class="menu-value">${captainId ? '已任命' : '未任命'}</span></div>
-      <div class="me-menu-item"><span class="menu-label">队员</span><span class="menu-value">${members.length}/3</span></div>
+      <div class="me-menu-item"><span class="menu-label">${t('bs_output_current')}</span><span class="menu-value">${getFacilityRate(facility)}/${t('bs_hour')}</span></div>
+      <div class="me-menu-item"><span class="menu-label">${t('bs_captain_label')}</span><span class="menu-value">${captainId ? t('bs_assigned') : t('bs_unassigned')}</span></div>
+      <div class="me-menu-item"><span class="menu-label">${t('bs_members_label')}</span><span class="menu-value">${members.length}/3</span></div>
     </div>
     <div class="section-title">宠物任职</div>
     <div id="facility-pet-list" class="me-menu">
-      ${petOptionsHtml || '<div class="subpage-placeholder">暂无宠物</div>'}
+      ${petOptionsHtml || '<div class="subpage-placeholder">' + t('bs_no_pets') + '</div>'}
     </div>
   `;
   window.openSubpage(facilityType, contentHtml, {
@@ -183,30 +183,30 @@ export async function openFacilityDetail(facilityType, returnAction) {
         if (action === '1') {
           api.assignBaseCaptain(facilityType, petId).then(res => {
             if (res.success) {
-              alert('任命成功');
+              alert(t('bs_appoint_ok'));
               openFacilityDetail(facilityType, returnAction);
             } else {
               alert(res.message);
             }
-          }).catch(e => alert('任命失败：' + e.message));
+          }).catch(e => alert(t('bs_appoint_failed') + e.message));
         } else if (action === '2') {
           api.assignBaseMember(facilityType, petId).then(res => {
             if (res.success) {
-              alert('添加成功');
+              alert(t('bs_add_ok'));
               openFacilityDetail(facilityType, returnAction);
             } else {
               alert(res.message);
             }
-          }).catch(e => alert('添加失败：' + e.message));
+          }).catch(e => alert(t('bs_add_failed') + e.message));
         } else if (action === '3') {
           api.removeBaseMember(facilityType, petId).then(res => {
             if (res.success) {
-              alert('移除成功');
+              alert(t('bs_remove_ok'));
               openFacilityDetail(facilityType, returnAction);
             } else {
               alert(res.message);
             }
-          }).catch(e => alert('移除失败：' + e.message));
+          }).catch(e => alert(t('bs_remove_failed') + e.message));
         }
       };
     });

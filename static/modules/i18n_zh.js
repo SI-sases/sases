@@ -876,4 +876,13 @@ export const zh = {
   'bs_captain_label': '队长',
   'bs_assigned': '已任命',
   'bs_unassigned': '未任命',
+  'bs_output_current': '当前产出',
+  'bs_members_label': '队员',
+  'bs_no_pets': '暂无宠物',
+  'bs_appoint_ok': '任命成功',
+  'bs_appoint_failed': '任命失败：',
+  'bs_add_ok': '添加成功',
+  'bs_add_failed': '添加失败：',
+  'bs_remove_ok': '移除成功',
+  'bs_remove_failed': '移除失败：',
 };
