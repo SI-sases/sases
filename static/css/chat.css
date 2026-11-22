@@ -232,6 +232,13 @@
   flex-shrink: 0;
 }
 
+/* 会话胶囊固定视觉顺序：能力 → 后台 → 子智能体 → 权限 → 设置 */
+#api-pill { order: 1; }
+#task-pill { order: 2; }
+#agent-pill { order: 3; }
+#perm-pill { order: 4; }
+#capsule-settings-btn { order: 9; margin-left: auto; }
+
 .param-pill {
   display: inline-flex;
   align-items: center;
