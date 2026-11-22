@@ -161,12 +161,12 @@ function initLoginUI() {
     const p = document.getElementById('reg-password').value;
     const p2 = document.getElementById('reg-password2').value;
     const em = document.getElementById('reg-email').value.trim();
-    if (!u || !p) { alert('用户名和密码不能为空'); return; }
-    if (p !== p2) { alert('两次输入的密码不一致'); return; }
+    if (!u || !p) { alert(t('main.user_pwd_required')); return; }
+    if (p !== p2) { alert(t('main.pwd_mismatch')); return; }
     try {
       const res = await fetch('/auth/register', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ username: u, password: p, email: em || null }) });
       const data = await res.json();
-      if (!res.ok) { const msg = data.error || data.message || (Array.isArray(data.detail) ? data.detail[0]?.msg : data.detail) || '注册失败'; alert(msg); return; }
+      if (!res.ok) { const msg = data.error || data.message || (Array.isArray(data.detail) ? data.detail[0]?.msg : data.detail) || t('main.register_failed'); alert(msg); return; }
       localStorage.setItem('sases_token', data.access_token);
       localStorage.setItem('sases_username', data.username);
       localStorage.setItem('sases_user_id', data.user_id);
