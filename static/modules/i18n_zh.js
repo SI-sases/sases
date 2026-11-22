@@ -7,6 +7,9 @@ export const zh = {
   'cp_write_desc': '允许修改项目文件（需确认）',
   'cp_schedule': '定时',
   'cp_schedule_desc': '允许创建定时任务',
+  'cp_cap_switch': '能力开关',
+  'cp_cap': '能力',
+  'cp_click_remove': '点击移除',
   // 登录与通用
   'login_title': 'SASES',
   'login_subtitle': '登录你的账号',

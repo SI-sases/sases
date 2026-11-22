@@ -42,7 +42,7 @@
       ['write', t('cp_write'), t('cp_write_desc')],
       ['schedule', t('cp_schedule'), t('cp_schedule_desc')]
     ];
-    var h = '<div class="cp-perms"><div class="cp-ptitle">能力开关</div>';
+    var h = '<div class="cp-perms"><div class="cp-ptitle">' + t('cp_cap_switch') + '</div>';
     rows.forEach(function (r) {
       h += '<label class="cp-perm"><input type="checkbox" data-perm="' + r[0] + '" ' +
         (perms[r[0]] ? 'checked' : '') + '><span>' + r[1] + '</span>' +
@@ -84,7 +84,7 @@
   function updatePill() {
     var p = document.getElementById('api-pill');
     if (!p) return;
-    p.textContent = '🧩 能力';
+    p.textContent = '🧩 ' + t('cp_cap');
     renderChips();
   }
 
@@ -108,7 +108,7 @@
       var chip = document.createElement('span');
       chip.className = 'param-pill param-chip';
       chip.textContent = _findLabel(it.id) + ' ×';
-      chip.title = '点击移除';
+      chip.title = t('cp_click_remove');
       chip.onclick = function () {
         if (it.type === 'api') state.apis = state.apis.filter(function (x) { return x !== it.id; });
         else state.skills = state.skills.filter(function (x) { return x !== it.id; });

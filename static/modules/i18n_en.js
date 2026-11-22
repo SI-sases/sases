@@ -7,6 +7,9 @@ export const en = {
   'cp_write_desc': 'Allow modifying project files (needs confirmation)',
   'cp_schedule': 'Schedule',
   'cp_schedule_desc': 'Allow creating scheduled tasks',
+  'cp_cap_switch': 'Capability switches',
+  'cp_cap': 'Capabilities',
+  'cp_click_remove': 'Click to remove',
   // Login & General
   'login_title': 'SASES',
   'login_subtitle': 'Login to your account',
