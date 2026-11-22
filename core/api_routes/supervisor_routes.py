@@ -91,7 +91,7 @@ async def approve_run(run_id: int, body: ApproveBody, user_id: int = Depends(get
 def list_active_runs(user_id: int = Depends(get_current_user)):
     with db_cursor() as cur:
         cur.execute(
-            "SELECT r.id, r.conversation_id, r.goal, r.status, r.supervisor_id, r.created_at, r.parent_run_id, "
+            "SELECT r.id, r.conversation_id, r.goal, r.status, r.supervisor_id, r.created_at, r.parent_run_id, r.retry_count, "
             "(SELECT content FROM agent_messages am WHERE am.run_id=r.id AND am.role='assistant' "
             " ORDER BY am.id DESC LIMIT 1) AS last_result "
             "FROM supervisor_runs r WHERE r.user_id=? AND ("
@@ -149,13 +149,15 @@ async def cancel_run(run_id: int, user_id: int = Depends(get_current_user)):
 @router.post("/runs/{run_id}/resume")
 async def resume_run(run_id: int, user_id: int = Depends(get_current_user)):
     with db_cursor(commit=True) as cur:
-        cur.execute("SELECT conversation_id FROM supervisor_runs WHERE id=? AND user_id=?",
+        cur.execute("SELECT conversation_id, parent_run_id, retry_count FROM supervisor_runs WHERE id=? AND user_id=?",
                     (run_id, user_id))
         row = cur.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="run not found")
-        cur.execute("UPDATE supervisor_runs SET status='running' WHERE id=? AND user_id=?",
-                    (run_id, user_id))
+        if row["parent_run_id"] and int(row["retry_count"] or 0) >= 3:
+            raise HTTPException(status_code=429, detail="retry limit reached")
+        cur.execute("UPDATE supervisor_runs SET status='running', retry_count=COALESCE(retry_count,0)+1 "
+                    "WHERE id=? AND user_id=?", (run_id, user_id))
         cur.execute("SELECT id, conversation_id FROM supervisor_runs WHERE parent_run_id=?", (run_id,))
         children = cur.fetchall()
         for ch in children:

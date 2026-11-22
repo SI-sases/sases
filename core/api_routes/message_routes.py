@@ -71,6 +71,7 @@ class SendMessageRequest(BaseModel):
     background: Optional[bool] = False
     subagent_agent_id: Optional[str] = None
     multi_agent: Optional[bool] = False
+    priority: Optional[int] = 5
 
 
 class ConversationCreateRequest(BaseModel):
@@ -212,7 +213,7 @@ async def send_message(body: SendMessageRequest, user_id: int = Depends(get_curr
             cid = message_service.create_conversation(user_id, body.agent_id, "后台任务")
         rid = run_service.create_run(user_id, cid, "chat", body.content,
                                      supervisor_id=body.agent_id or "sases_assistant")
-        await run_queue_service.enqueue(rid)
+        await run_queue_service.enqueue(rid, body.priority or 5)
         return {"conversation_id": cid, "run_id": rid, "status": "queued", "background": True}
     _resume_id = None
     if body.conversation_id:

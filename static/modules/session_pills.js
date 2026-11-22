@@ -111,7 +111,8 @@
           (r.last_result ? '<div class="sp-detail" style="display:none;white-space:pre-wrap;margin-top:6px;font-size:11px;color:#555;max-height:160px;overflow:auto;">' +
             esc(String(r.last_result).slice(0, 1200)) + '</div>' : '') +
           '</div>' +
-          (r.parent_run_id ? (r.status === 'failed' ? '<button class="sp-btn warn" data-retry="' + r.id + '">重试</button>' : '') :
+          (r.parent_run_id ? (r.status === 'failed' ? (Number(r.retry_count || 0) >= 3 ?
+            '<span class="sp-sub">重试已达上限</span>' : '<button class="sp-btn warn" data-retry="' + r.id + '">重试</button>') : '') :
             '<button class="sp-btn ' + (paused ? 'warn' : '') + '" data-run="' + r.id + '" data-paused="' + (paused ? '1' : '0') + '">' +
             (paused ? '继续' : '暂停') + '</button><button class="sp-btn" data-cancel="' + r.id + '" style="margin-left:4px;">取消</button>') + '</div>';
       }).join('');

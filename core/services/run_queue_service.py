@@ -5,7 +5,7 @@ import asyncio
 
 from ..db import db_cursor
 
-_queue = asyncio.Queue()
+_queue = asyncio.PriorityQueue()
 _started = False
 _worker_task = None
 
@@ -23,15 +23,15 @@ def _set_status(run_id, status):
         cur.execute("UPDATE supervisor_runs SET status=? WHERE id=?", (status, int(run_id)))
 
 
-async def enqueue(run_id):
+async def enqueue(run_id, priority=5):
     _set_status(run_id, "queued")
-    await _queue.put(int(run_id))
+    await _queue.put((int(priority), int(run_id)))
     return int(run_id)
 
 
 async def _worker():
     while True:
-        run_id = await _queue.get()
+        _prio, run_id = await _queue.get()
         try:
             run = _get_run(run_id)
             if not run or run.get("status") not in ("queued", "interrupted", "running"):
@@ -64,7 +64,7 @@ async def start():
             cur.execute("SELECT id FROM supervisor_runs WHERE status='queued' ORDER BY id")
             ids = [int(r["id"]) for r in cur.fetchall()]
         for rid in ids:
-            await _queue.put(rid)
+            await _queue.put((5, rid))
         if ids:
             print("[queue] requeued " + str(len(ids)))
     except Exception as e:

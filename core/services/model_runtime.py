@@ -14,6 +14,18 @@ def resolve(user_id, agent_id):
     if not row:
         return None
     cfg = dict(row)
+    if cfg.get("model_type") == "local":
+        try:
+            from openai import OpenAI
+            base = str(cfg.get("node_url") or "").rstrip("/")
+            model = str(cfg.get("model_name") or "")
+            if not base or not model:
+                return None
+            return {"client": OpenAI(api_key="local", base_url=base + "/v1"),
+                    "model": model, "agent_id": cfg.get("id"), "name": cfg.get("name") or model}
+        except Exception as e:
+            print("[model] local resolve 失败: " + str(e))
+            return None
     if cfg.get("model_type") != "api":
         return None
     try:

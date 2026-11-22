@@ -1172,6 +1172,7 @@ def init_db():
         _ensure_column(cur, "supervisor_runs", "heartbeat_at", "TEXT")
         _ensure_column(cur, "supervisor_runs", "deadline_at", "TEXT")
         _ensure_column(cur, "supervisor_runs", "parent_run_id", "INTEGER DEFAULT NULL")
+        _ensure_column(cur, "supervisor_runs", "retry_count", "INTEGER DEFAULT 0")
 
         # ========== 执行步骤日志（P0-1）与副作用幂等（P0-3） ==========
         cur.execute("""
