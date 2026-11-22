@@ -14,6 +14,24 @@ def create_run(user_id, conversation_id, source, goal, supervisor_id="sases_assi
     return run_id
 
 
+def recover_stale_runs():
+    """断网/重启恢复：running 但 heartbeat 过期的 run 标记 interrupted。"""
+    try:
+        with db_cursor(commit=True) as cur:
+            cur.execute(
+                "UPDATE supervisor_runs SET status='interrupted', finished_at=datetime('now') "
+                "WHERE status='running' AND ("
+                "(heartbeat_at IS NOT NULL AND heartbeat_at < datetime('now','-90 seconds')) "
+                "OR (heartbeat_at IS NULL AND created_at < datetime('now','-10 minutes')))")
+            n = cur.rowcount
+        if n:
+            print("[run] recovered stale runs: " + str(n))
+        return n
+    except Exception as e:
+        print("[run] recover stale failed: " + str(e))
+        return 0
+
+
 async def run_once(user_id, conversation_id, goal, source="chat",
                    supervisor_id="sases_assistant", max_steps=8, skill_ids=None,
                    run_id=None, finish=True, allowed_tool_ids=None,

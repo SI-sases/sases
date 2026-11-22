@@ -164,6 +164,17 @@ async def _run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=
         print("[todo] 注入计划失败: " + str(_e_plan))
 
     for step in range(1, max_steps + 1):
+        if run_id:
+            try:
+                from core.db import db_cursor as _dc_hb
+                with _dc_hb(commit=True) as _chb:
+                    _chb.execute(
+                        "UPDATE supervisor_runs SET status='running', "
+                        "heartbeat_at=datetime('now'), lease_until=datetime('now','+2 minutes') "
+                        "WHERE id=? AND status IN ('running','interrupted','paused','running_resumed')",
+                        (int(run_id),))
+            except Exception as _e_hb:
+                print("[run] heartbeat failed: " + str(_e_hb))
         if run_control_service.is_paused(conversation_id):
             # P1-1: 在当前步退出，agent_messages / todo / used 全部保留
             # P1-2: 记下待恢复的 run，供“继续”复用同一个 run

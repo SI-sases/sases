@@ -67,7 +67,7 @@ def find_paused_run(conversation_id):
         from ..db import db_cursor
         with db_cursor() as cur:
             cur.execute(
-                "SELECT id, goal FROM supervisor_runs WHERE conversation_id=? AND status='paused' "
+                "SELECT id, goal FROM supervisor_runs WHERE conversation_id=? AND status IN ('paused','interrupted') "
                 "ORDER BY id DESC LIMIT 1", (int(conversation_id),))
             row = cur.fetchone()
         if row:
