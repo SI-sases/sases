@@ -343,7 +343,7 @@ async function openYunchongRescue(taskId) {
         <div class="agent-option-icon">🤖</div>
         <div class="agent-option-info">
           <div class="agent-option-name">${agent.name}</div>
-          <div class="agent-option-desc">${agent.description || '我的智能体'}</div>
+          <div class="agent-option-desc">${agent.description || t('ds_my_agent')}</div>
         </div>
         <div class="agent-option-check">✓</div>
       </div>
@@ -367,7 +367,7 @@ async function openYunchongRescue(taskId) {
 
     <div class="section-title">任务描述</div>
     <div class="rescue-detail-desc">
-      ${task.detail || '（无详细描述）'}
+      ${task.detail || t('ds_no_detail')}
     </div>
 
     <div class="section-title">选择执行智能体</div>
@@ -383,7 +383,7 @@ async function openYunchongRescue(taskId) {
     </div>
   `;
 
-  window.openSubpage('解救任务', html, {
+  window.openSubpage(t('ds_task_title'), html, {
     showMore: false,
     returnAction: () => openWisdomMap()
   });
