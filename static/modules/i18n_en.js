@@ -797,4 +797,6 @@ export const en = {
   'gr_anonymous': 'Anonymous',
   'gr_member': 'Group member',
   'gr_title': 'Group reports',
+  'gr_from_prefix': 'From ',
+  'gr_from_suffix': '',
 };

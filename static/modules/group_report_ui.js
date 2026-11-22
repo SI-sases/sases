@@ -62,7 +62,7 @@ window.openGroupReportQueue = async function(groupId) {
     const data = await resp.json();
     if (data.error || data.detail) { alert(t('gr_load_failed') + (data.error || data.detail)); return; }
     items = data.items || [];
-  } catch (e) { alert('网络错误：' + e.message); return; }
+  } catch (e) { alert(t('gr_network_error') + e.message); return; }
 
   let listHtml = '';
   if (items.length === 0) {
@@ -73,7 +73,7 @@ window.openGroupReportQueue = async function(groupId) {
       listHtml += '<div class="me-menu-item report-item" data-qid="' + it.id + '" style="cursor:pointer;">';
       listHtml += '<div style="flex:1;min-width:0;">';
       listHtml += '<div style="font-size:14px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (it.question || '') + '</div>';
-      listHtml += '<div style="font-size:12px;color:#999;margin-top:2px;">来自 ' + asker + '</div>';
+      listHtml += '<div style="font-size:12px;color:#999;margin-top:2px;">' + t('gr_from_prefix') + asker + t('gr_from_suffix') + '</div>';
       listHtml += '</div>';
       listHtml += '<span class="menu-arrow">›</span>';
       listHtml += '</div>';

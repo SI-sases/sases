@@ -797,4 +797,6 @@ export const zh = {
   'gr_anonymous': '匿名',
   'gr_member': '群友',
   'gr_title': '群汇报',
+  'gr_from_prefix': '来自 ',
+  'gr_from_suffix': '',
 };
