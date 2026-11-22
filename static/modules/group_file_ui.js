@@ -27,8 +27,8 @@ export async function openGroupFiles(groupId) {
     files.forEach(f => {
       listHtml += '<div class="me-menu-item group-file-item" data-url="' + f.url + '" style="cursor:pointer;">';
       listHtml += '<div style="flex:1;min-width:0;">';
-      listHtml += '<div style="font-size:14px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">📎 ' + (f.name || '文件') + '</div>';
-      listHtml += '<div style="font-size:12px;color:#999;margin-top:2px;">' + (f.sender_name || '群友') + ' · ' + fmtSize(f.size) + '</div>';
+      listHtml += '<div style="font-size:14px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">📎 ' + (f.name || t('gf_file')) + '</div>';
+      listHtml += '<div style="font-size:12px;color:#999;margin-top:2px;">' + (f.sender_name || t('gf_member')) + ' · ' + fmtSize(f.size) + '</div>';
       listHtml += '</div>';
       listHtml += '<span class="menu-arrow">›</span>';
       listHtml += '</div>';
@@ -36,7 +36,7 @@ export async function openGroupFiles(groupId) {
   }
 
   const html = '<div class="me-menu">' + listHtml + '</div>';
-  window.openSubpage('群文件', html, {
+  window.openSubpage(t('gf_title'), html, {
     showMore: false,
     returnAction: () => window.openGroupSettings && window.openGroupSettings()
   });
