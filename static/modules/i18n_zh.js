@@ -371,4 +371,11 @@ export const zh = {
   'redpacket_split_prefix': '已均分给 ',
   'redpacket_split_mid': ' 位成员，人均 ',
   'exec_result': '📋 执行结果',
+  'copy_link': '复制链接',
+  'my_card': '我的名片',
+  'link_copied': '链接已复制',
+  'user': '用户',
+  'male': '男',
+  'female': '女',
+  'secret': '保密',
 };

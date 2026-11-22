@@ -3,7 +3,7 @@ import { api } from './api.js';
 import { t } from './i18n.js';
 
 export async function openMarketPage() {
-  let ordersHtml = '<div class="subpage-placeholder">加载中...</div>';
+  let ordersHtml = `<div class="subpage-placeholder">${t('loading')}</div>`;
   window.openSubpage(t('market'), ordersHtml);
 
   try {

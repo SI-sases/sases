@@ -371,4 +371,11 @@ export const en = {
   'redpacket_split_prefix': 'Split among ',
   'redpacket_split_mid': ' members, ',
   'exec_result': '📋 Execution result',
+  'copy_link': 'Copy link',
+  'my_card': 'My card',
+  'link_copied': 'Link copied',
+  'user': 'User',
+  'male': 'Male',
+  'female': 'Female',
+  'secret': 'Secret',
 };

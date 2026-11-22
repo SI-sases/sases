@@ -21,8 +21,8 @@ function _showWxEditModal(title, defaultValue, isMultiline = false, options = nu
       <div style="text-align:center;font-size:16px;font-weight:600;margin-bottom:20px;">${title}</div>
       ${inputHtml}
       <div style="display:flex;gap:12px;margin-top:24px;">
-        <button id="_wx_edit_cancel" style="flex:1;padding:12px;border:none;border-radius:8px;background:#f2f2f2;color:#333;font-size:16px;">取消</button>
-        <button id="_wx_edit_save" style="flex:1;padding:12px;border:none;border-radius:8px;background:#07c160;color:#fff;font-size:16px;">保存</button>
+        <button id="_wx_edit_cancel" style="flex:1;padding:12px;border:none;border-radius:8px;background:#f2f2f2;color:#333;font-size:16px;">${t('cancel')}</button>
+        <button id="_wx_edit_save" style="flex:1;padding:12px;border:none;border-radius:8px;background:#07c160;color:#fff;font-size:16px;">${t('save')}</button>
       </div>
     `;
     overlay.appendChild(panel);
@@ -55,9 +55,9 @@ window.openMyCard = function() {
     '<div style="font-size:20px;font-weight:600;margin-bottom:6px;">' + name + '</div>' +
     '<div style="color:#888;margin-bottom:20px;">@' + handle + '</div>' +
     '<div id="qrcode-container" style="display:inline-block;padding:12px;background:#fff;border-radius:12px;"></div>' +
-    '<div style="margin-top:20px;"><button id="copy-card-link" style="padding:10px 24px;border:none;border-radius:8px;background:#07c160;color:#fff;font-size:15px;">复制链接</button></div>' +
+    '<div style="margin-top:20px;"><button id="copy-card-link" style="padding:10px 24px;border:none;border-radius:8px;background:#07c160;color:#fff;font-size:15px;">' + t('copy_link') + '</button></div>' +
     '</div>';
-  window.openSubpage('我的名片', html, { returnAction: function() { openMe(); } });
+  window.openSubpage(t('my_card'), html, { returnAction: function() { openMe(); } });
   setTimeout(function() {
     var el = document.getElementById('qrcode-container');
     if (el && typeof QRCode !== 'undefined') {
@@ -67,7 +67,7 @@ window.openMyCard = function() {
     if (btn) {
       btn.onclick = function() {
         navigator.clipboard.writeText(cardUrl).then(function() {
-          if (typeof showToast === 'function') { showToast('链接已复制'); }
+          if (typeof showToast === 'function') { showToast(t('link_copied')); }
         });
       };
     }
@@ -89,7 +89,7 @@ export function initMe(force) {
   initialized = true;
 
 
-  const username = localStorage.getItem('sases_username') || '用户';
+  const username = localStorage.getItem('sases_username') || t('user');
   const sasesId = localStorage.getItem('sases_sas_id') || t('not_set');
   const credits = localStorage.getItem('sases_credits_cache') || '0';
 
@@ -179,7 +179,7 @@ async function openPersonalInfo() {
     console.warn('获取资料失败', e);
   }
 
-  const username = profile?.username || localStorage.getItem('sases_username') || '用户';
+  const username = profile?.username || localStorage.getItem('sases_username') || t('user');
   const sasesId = profile?.sases_id || localStorage.getItem('sases_sas_id') || t('not_set');
   const gender = profile?.gender || localStorage.getItem('sases_gender') || t('not_set');
   const region = profile?.region || localStorage.getItem('sases_region') || t('not_set');
@@ -240,7 +240,7 @@ async function openPersonalInfo() {
     };
     document.getElementById('edit-sases-id').onclick = () => alert(t('sases_id') + ' ' + t('not_set'));
     document.getElementById('edit-gender').onclick = async () => {
-      const newGender = await _showWxEditModal(t('gender'), gender, false, ['男', '女', '保密']);
+      const newGender = await _showWxEditModal(t('gender'), gender, false, [t('male'), t('female'), t('secret')]);
       if (newGender) {
         try {
           await api.updateUserProfile({ gender: newGender });
