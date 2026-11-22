@@ -871,7 +871,9 @@ def create_app() -> FastAPI:
     app.include_router(memory_routes.router)
     app.include_router(work_routes.router)
     app.include_router(pollination_routes.router)
-    app.include_router(commander_routes.router)
+    # P2-1: commander 旧路由默认不注册；仅显式回退时启用
+    if os.getenv("SASES_LEGACY_COMMANDER", "0") == "1":
+        app.include_router(commander_routes.router)
     app.include_router(quality_routes.router)
     app.include_router(rescue_routes.router)
     app.include_router(pet_routes.router)
