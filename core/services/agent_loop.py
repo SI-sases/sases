@@ -747,6 +747,12 @@ async def _run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=
                                 if not _fg.get("ok"):
                                     _vok = False
                                     _vres = _fg.get("error") or "frontend semantic error"
+                                elif _bak:
+                                    from .file_gate import check_structure as _check_struct
+                                    _sg = _check_struct(_bak, _fp)
+                                    if not _sg.get("ok"):
+                                        _vok = False
+                                        _vres = _sg.get("error") or "frontend structure error"
                             except Exception as _e_fg:
                                 print("[gate] frontend 检查失败: " + str(_e_fg))
                     except Exception as e:

@@ -65,6 +65,20 @@ def check_duplicate_ids(raw):
     return sorted({i for i, n in seen.items() if n >= 2})
 
 
+def check_structure(old_path, new_path):
+    """写后结构门：不允许删除错误判断/return/关闭页等关键控制流。"""
+    try:
+        old = open(old_path, encoding="utf-8", errors="ignore").read()
+        new = open(new_path, encoding="utf-8", errors="ignore").read()
+    except Exception:
+        return {"ok": True}
+    critical = ("if (data.error", "if (detail.error", "return;", "closeSubpage", "catch (e)")
+    lost = [t for t in critical if old.count(t) > new.count(t)]
+    if lost:
+        return {"ok": False, "error": "关键控制流被删除: " + ", ".join(lost)}
+    return {"ok": True}
+
+
 def check_frontend(path):
     """前端写后语义门。返回 {ok, error, checks}。"""
     low = str(path or "").lower().replace("\\", "/")
