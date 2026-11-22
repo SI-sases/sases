@@ -306,6 +306,11 @@ export const zh = {
   'gc_rp_saved': '已存入你的积分',
   'gc_rp_empty': '已抢完',
   'gc_rp_expired': '已过期',
+  'gc_rp_saved': '已存入你的积分',
+  'gc_rp_default_msg': '恭喜发财',
+  'gc_group_member': '群友',
+  'gc_rp_from_prefix': '来自 ',
+  'gc_rp_from_suffix': ' 的群红包',
   'daily_limit': '每日上限',
 
   // 设置

@@ -277,7 +277,7 @@ window.openGroupRedPacket = async function(packetId) {
     }
     let bodyHtml = '';
     if (detail.claimed_by_me !== null && detail.claimed_by_me !== undefined) {
-      bodyHtml = '<div style="font-size:48px;font-weight:700;color:#f59e0b;margin:20px 0;">' + detail.claimed_by_me + '</div><div style="font-size:14px;color:#666;">已存入你的积分</div>';
+      bodyHtml = '<div style="font-size:48px;font-weight:700;color:#f59e0b;margin:20px 0;">' + detail.claimed_by_me + '</div><div style="font-size:14px;color:#666;">' + t('gc_rp_saved') + '</div>';
     } else if (detail.status === 'empty') {
       bodyHtml = '<div style="font-size:36px;color:#999;margin:20px 0;">' + t('gc_rp_all_claimed') + '</div>';
     } else if (detail.status === 'expired') {
@@ -286,8 +286,8 @@ window.openGroupRedPacket = async function(packetId) {
       bodyHtml = '<button id="grp-rp-claim-btn" style="width:180px;height:180px;border-radius:50%;background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#fff;font-size:24px;font-weight:700;border:none;cursor:pointer;margin:20px auto;display:block;box-shadow:0 8px 24px rgba(245,158,11,0.3);">開</button>';
     }
     const html = '<div style="text-align:center;padding:30px 20px;">'
-      + '<div style="font-size:18px;font-weight:600;margin-bottom:8px;">' + (detail.message || '恭喜发财') + '</div>'
-      + '<div style="font-size:13px;color:#999;margin-bottom:20px;">来自 ' + (detail.sender_name || '群友') + ' 的群红包</div>'
+      + '<div style="font-size:18px;font-weight:600;margin-bottom:8px;">' + (detail.message || t('gc_rp_default_msg')) + '</div>'
+      + '<div style="font-size:13px;color:#999;margin-bottom:20px;">' + t('gc_rp_from_prefix') + (detail.sender_name || t('gc_group_member')) + t('gc_rp_from_suffix') + '</div>'
       + '<div style="background:linear-gradient(135deg,#fef3c7,#fed7aa);border-radius:16px;padding:30px 20px;margin:0 auto;">'
       + bodyHtml
       + '<div style="font-size:12px;color:#92400e;margin-top:12px;">' + detail.claimed_count + '/' + detail.total_count + ' 已领取 · 总额 ' + detail.total_amount + ' 积分</div>'

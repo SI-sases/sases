@@ -306,6 +306,11 @@ export const en = {
   'gc_rp_saved': 'Added to your credits',
   'gc_rp_empty': 'All claimed',
   'gc_rp_expired': 'Expired',
+  'gc_rp_saved': 'Added to your credits',
+  'gc_rp_default_msg': 'Good luck',
+  'gc_group_member': 'Group member',
+  'gc_rp_from_prefix': 'From ',
+  'gc_rp_from_suffix': "'s group red packet",
   'daily_limit': 'Daily Limit',
 
   // Settings
