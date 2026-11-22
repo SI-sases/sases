@@ -1246,10 +1246,10 @@ window.openGroupNameEditor = function() {
             body: JSON.stringify({ content: newContent })
           });
           const data = await resp.json();
-          if (data.error || data.detail) { alert('保存失败：' + (data.error || data.detail)); return; }
-          alert('已保存');
+          if (data.error || data.detail) { alert(t('gc_save_failed') + (data.error || data.detail)); return; }
+          alert(t('gc_saved'));
           window.closeSubpage();
-        } catch (e) { alert('网络错误：' + e.message); }
+        } catch (e) { alert(t('gc_network_error') + e.message); }
       };
     }, 300);
   } else {

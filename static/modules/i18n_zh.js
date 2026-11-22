@@ -292,6 +292,8 @@ export const zh = {
   'gc_back': '返回',
   'gc_group_name': '群聊名称',
   'gc_announcement': '群公告',
+  'gc_save_failed': '保存失败：',
+  'gc_saved': '已保存',
   'gc_mode_swarm': '蜂群模式',
   'gc_files_wip': '群文件开发中',
   'gc_report_wip': '群汇报开发中',
