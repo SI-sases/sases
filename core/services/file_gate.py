@@ -26,7 +26,8 @@ def _node_bin():
         return _NODE_BIN or None
     cand = shutil.which("node")
     if not cand:
-        for p in (r"C:\Program Files\nodejs\node.exe",
+        for p in (r"D:\Harness\resources\runtime\primary-runtime\dependencies\node\bin\node.exe",
+                  r"C:\Program Files\nodejs\node.exe",
                   r"C:\Program Files (x86)\nodejs\node.exe"):
             if os.path.isfile(p):
                 cand = p
