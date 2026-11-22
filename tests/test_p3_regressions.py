@@ -33,3 +33,8 @@ def test_backoff_grows():
     b = datetime.fromisoformat(_backoff_next(3))
     assert (b - a).total_seconds() > 0
     assert (b - datetime.now()).total_seconds() <= 3600
+
+
+def test_goal_runner_imports_without_cycle():
+    from core.services import goal_runner
+    assert callable(goal_runner.run_goal_round)
