@@ -15,7 +15,9 @@ def _node_check(path):
     """有 Node/Electron 时用 node --check 做第二道语法关；无则跳过。"""
     exe = shutil.which("node")
     if not exe:
-        for cand in (r"D:\Harness\DeepSeek Harness.exe", r"C:\Program Files\nodejs\node.exe"):
+        for cand in (r"D:\Harness\resources\runtime\primary-runtime\dependencies\node\bin\node.exe",
+                     r"D:\Harness\DeepSeek Harness.exe",
+                     r"C:\Program Files\nodejs\node.exe"):
             if os.path.isfile(cand):
                 exe = cand
                 break
