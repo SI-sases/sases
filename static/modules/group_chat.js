@@ -1015,15 +1015,15 @@ function openInviteDialog() {
     </div>
     <button class="save-btn" id="confirm-invite-btn">邀请</button>
   `;
-  window.openSubpage('邀请成员', contentHtml);
+  window.openSubpage(t('gc_invite_members'), contentHtml);
 
   setTimeout(() => {
     document.getElementById('confirm-invite-btn').addEventListener('click', async () => {
       const input = document.getElementById('invite-input').value.trim();
-      if (!input) { alert('请输入用户名或 ID'); return; }
+      if (!input) { alert(t('gc_invite_input_ph')); return; }
       try {
         await api.inviteToGroup(currentGroupId, input);
-        alert('邀请成功');
+        alert(t('gc_invite_ok'));
         window.closeSubpage();
         openGroupSettings();
       } catch (e) {
