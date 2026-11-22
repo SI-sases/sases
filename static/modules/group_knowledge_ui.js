@@ -78,11 +78,11 @@ window.openGroupKnowledgeDetail = async function(docId, groupId) {
     });
     const d = await resp.json();
     if (d.error || d.detail) { alert(t('gk_load_failed') + (d.error || d.detail)); return; }
-    const catLabel = { doc: '文档', faq: 'FAQ', meeting: '会议纪要', policy: '规章制度' }[d.category] || '文档';
+    const catLabel = { doc: t('gk_doc'), faq: 'FAQ', meeting: t('gk_minutes'), policy: t('gk_policy') }[d.category] || t('gk_doc');
     const html = `
       <div class="me-menu">
         <div class="me-menu-item" style="display:block;padding:12px;">
-          <div style="font-size:16px;font-weight:600;color:#333;">${d.title || '(无标题)'}</div>
+          <div style="font-size:16px;font-weight:600;color:#333;">${d.title || t('gk_untitled')}</div>
           <div style="font-size:12px;color:#999;margin-top:4px;">${catLabel} · ${d.created_at || ''}</div>
         </div>
       </div>
@@ -94,7 +94,7 @@ window.openGroupKnowledgeDetail = async function(docId, groupId) {
       showMore: false,
       returnAction: () => window.openGroupKnowledge(groupId)
     });
-  } catch (e) { alert('网络错误：' + e.message); }
+  } catch (e) { alert(t('gk_network_error') + e.message); }
 };
 
 window.openGroupKnowledgeAdd = function(groupId) {
@@ -150,7 +150,7 @@ window.openGroupKnowledgeAdd = function(groupId) {
         if (data.error || data.detail) { alert(t('gk_save_failed') + (data.error || data.detail)); return; }
         alert(t('gk_saved'));
         window.openGroupKnowledge(groupId);
-      } catch (e) { alert('网络错误：' + e.message); }
+      } catch (e) { alert(t('gk_network_error') + e.message); }
     };
   }, 100);
 };

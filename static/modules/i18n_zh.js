@@ -476,6 +476,7 @@ export const zh = {
   'gk_untitled': '(无标题)',
   'gk_content_required': '内容不能为空',
   'gk_saved': '已保存',
+  'gk_network_error': '网络错误：',
   'gc_report_wip': '群汇报开发中',
   'gc_member': '成员',
   'gc_switch_swarm': '已切换到蜂群模式',

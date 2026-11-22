@@ -471,6 +471,7 @@ export const en = {
   'gk_load_failed': 'Load failed: ',
   'gk_save_failed': 'Save failed: ',
   'gk_saved': 'Saved',
+  'gk_network_error': 'Network error: ',
   'gk_untitled': '(Untitled)',
   'gk_detail_title': 'Knowledge details',
   'gk_content_required': 'Content cannot be empty',
