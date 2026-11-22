@@ -315,7 +315,7 @@ async function openYunchongRescue(taskId) {
   }
 
   const rarityColor = getRarityColor(task.pet_level);
-  const diffLabel = { low: '简单', medium: '中等', high: '困难' }[task.difficulty] || task.difficulty;
+  const diffLabel = { low: t('ds_low'), medium: t('ds_medium'), high: t('ds_high') }[task.difficulty] || task.difficulty;
   const attempts = task.attempts || 0;
   const isGuaranteeNext = attempts >= 3;
 
@@ -408,14 +408,14 @@ async function openYunchongRescue(taskId) {
     const abandonBtn = document.getElementById('rescue-abandon-btn');
     startBtn.disabled = true;
     abandonBtn.disabled = true;
-    startBtn.textContent = '解救中...';
+    startBtn.textContent = t('ds_rescuing');
     document.querySelectorAll('.agent-option-item').forEach(i => i.classList.add('disabled'));
 
     const processContainer = document.getElementById('rescue-process-container');
     processContainer.innerHTML = '';
 
     try {
-      const analyzeLabel = lastFailureReason ? '智能体正在重新分析（申诉）...' : '智能体正在分析问题...';
+      const analyzeLabel = lastFailureReason ? t('ds_reanalyzing') : t('ds_analyzing');
       addProcessStep(processContainer, 'analyzing', analyzeLabel);
 
       const analyzeResult = await api.analyzeYunchongTask(
