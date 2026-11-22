@@ -943,7 +943,7 @@ async function loadMessages(conversationId, force = false) {
     }
   } catch (err) {
     container.style.visibility = 'visible';
-    appendMessage('assistant', `加载历史消息 / Message失败 / Failed：${err.message}`, 'AI', null, new Date().toISOString(), false, chatState);
+    appendMessage('assistant', `${t('chat.load_history_failed')}：${err.message}`, 'AI', null, new Date().toISOString(), false, chatState);
   }
 }
 
@@ -969,7 +969,7 @@ async function handleScroll() {
       }
       chatState.offset += olderMessages.length;
     } catch (e) {
-      console.error('加载更多 / More消息 / Message失败 / Failed', e);
+      console.error(t('chat.load_more_failed'), e);
     } finally {
       chatState.loadingMore = false;
     }
@@ -992,7 +992,7 @@ window.addEventListener('sases_new_message', (e) => {
             // 普通消息渲染
             const _box = document.getElementById('chat-messages');
             if (_box) {
-              const _wrapper = createMessageElement('friend', d.content, '好友 / Friend', d.message_id, new Date().toISOString(), false, false, chatState);
+              const _wrapper = createMessageElement('friend', d.content, t('chat.friend'), d.message_id, new Date().toISOString(), false, false, chatState);
               _box.appendChild(_wrapper);
             }
         }
