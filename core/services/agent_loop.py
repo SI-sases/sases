@@ -27,6 +27,17 @@ def _direct_syntax_error(path):
 
 
 
+def _needs_plan(goal, mode):
+    if mode != "strict":
+        return False
+    text = str(goal or "")
+    if len(text) >= 80:
+        return True
+    markers = ("然后", "再", "并且", "并", "之后", "最后", "同时", "步骤",
+               "汇总", "批量", "依次", "修复", "验证", "写入", "创建", "读取")
+    return any(m in text for m in markers)
+
+
 def _tool_schemas(allowed_tool_ids=None):
     from core.harness_runtime import harness_runtime
     from .fast_agent import tool_schema
@@ -68,6 +79,7 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
         print("[context] runtime 注入失败: " + str(_e_rc))
     schemas = _tool_schemas(allowed_tool_ids)
     used = []
+    _plan_required = _needs_plan(goal, mode)
     _dirty_files = set()
     _verified_files = set()
     _ui_dirty = set()
@@ -76,6 +88,10 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
         _plan_ctx = todo_service.format_for_prompt(conversation_id, run_id)
         if _plan_ctx and messages and messages[-1].get("role") == "user":
             messages.insert(len(messages) - 1, {"role": "user", "content": _plan_ctx})
+        elif _plan_required:
+            messages.append({"role": "user", "content":
+                "【计划要求】这是多步骤任务。先调用 todo_write 列出步骤和验收条件，"
+                "再开始执行；每完成一步更新 todo；缺少依赖就标记 blocked。"})
     except Exception as _e_plan:
         print("[todo] 注入计划失败: " + str(_e_plan))
 
@@ -200,11 +216,21 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
                 except Exception as _e_ui:
                     _ui_ok = False
                     print("[ui] verify_ui 失败: " + str(_e_ui))
-            # 计划门禁：todo 还有 pending/in_progress 不允许结束
+            # 计划门禁：多步骤任务必须有 todo；todo 还有未完成项不允许结束
             try:
-                _pending_todos = todo_service.pending(conversation_id, run_id)
+                _all_todos = todo_service.get(conversation_id, run_id)
+                _pending_todos = [t for t in _all_todos if t.get("status") != "completed"]
             except Exception:
-                _pending_todos = []
+                _all_todos, _pending_todos = [], []
+            if mode == "strict" and _plan_required and not _all_todos:
+                _pgate = ("[计划缺失] 这个任务需要 todo_write。先列出步骤并标 in_progress，"
+                          "再继续执行；不能没有计划就结束。")
+                messages.append({"role": "user", "content": _pgate})
+                agent_memory.append(conversation_id, "user", _pgate)
+                if step < max_steps:
+                    continue
+                return {"status": "plan_required", "content": _pgate,
+                        "steps": step, "history": used}
             if mode == "strict" and _pending_todos:
                 _plines = "\n".join("- " + t.get("content", "") for t in _pending_todos)
                 _pgate = ("[计划未完成] 还有未完成 todo：\n" + _plines
