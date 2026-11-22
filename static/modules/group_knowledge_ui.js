@@ -147,7 +147,7 @@ window.openGroupKnowledgeAdd = function(groupId) {
           body: JSON.stringify({ title: title.trim(), content: content, category: category, tags: tags })
         });
         const data = await resp.json();
-        if (data.error || data.detail) { alert('保存失败：' + (data.error || data.detail)); return; }
+        if (data.error || data.detail) { alert(t('gk_save_failed') + (data.error || data.detail)); return; }
         alert('已保存');
         window.openGroupKnowledge(groupId);
       } catch (e) { alert('网络错误：' + e.message); }

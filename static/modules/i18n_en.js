@@ -469,6 +469,7 @@ export const en = {
   'gk_add': 'Add',
   'gk_add_title': 'Add knowledge',
   'gk_load_failed': 'Load failed: ',
+  'gk_save_failed': 'Save failed: ',
   'gk_untitled': '(Untitled)',
   'gk_detail_title': 'Knowledge details',
   'gk_content_required': 'Content cannot be empty',

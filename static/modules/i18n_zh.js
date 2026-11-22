@@ -472,6 +472,7 @@ export const zh = {
   'gk_untitled': '(未命名)',
   'gk_detail_title': '知识详情',
   'gk_load_failed': '加载失败：',
+  'gk_save_failed': '保存失败：',
   'gk_untitled': '(无标题)',
   'gk_content_required': '内容不能为空',
   'gc_report_wip': '群汇报开发中',
