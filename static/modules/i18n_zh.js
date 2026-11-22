@@ -23,6 +23,7 @@ export const zh = {
   'main.agree_required': '请先阅读并同意用户协议和隐私政策',
   'main.login_required': '请输入用户名和密码',
   'main.and': '和',
+  'main.read_agree': '我已阅读并同意',
   'err_password_mismatch': '两次输入的密码不一致',
   'err_register_failed': '注册失败',
   'err_network': '网络错误',
