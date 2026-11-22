@@ -57,11 +57,11 @@ export function showProposedRunCard(runId) {
     try {
       await api.confirmRun(runId);
       btnGroup.remove();
-      title.textContent = '✅ 已确认，对方智能体执行中…';
+      title.textContent = '✅ ' + t('cd_confirmed');
     } catch (e) {
       confirmBtn.disabled = false;
       confirmBtn.textContent = '▶ 执行';
-      alert('确认失败：' + (e.message || '未知错误'));
+      alert(t('cd_confirm_failed') + '：' + (e.message || '未知错误'));
     }
   };
   btnGroup.appendChild(rejectBtn);
@@ -84,7 +84,7 @@ export function showTaskDraftEditor(taskId, steps) {
   wrap.id = `task-draft-${taskId}`;
 
   const title = document.createElement('div');
-  title.textContent = '📝 任务草稿（可编辑）';
+  title.textContent = '📝 ' + t('cd_draft_title');
   title.style.fontWeight = '600';
   title.style.marginBottom = '10px';
   title.style.fontSize = '14px';
