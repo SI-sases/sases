@@ -206,7 +206,7 @@ window.openTransferOwnerDialog = async function(groupId) {
     document.querySelectorAll('.transfer-owner-item').forEach(el => {
       el.onclick = async () => {
         const uid = el.dataset.uid;
-        if (!confirm('确定将群主转让给该成员？转让后你将成为管理员，此操作不可撤销！')) return;
+        if (!confirm(t('gm_transfer_confirm'))) return;
         try {
           const resp = await fetch('/group/' + groupId + '/transfer-owner', {
             method: 'POST',
@@ -214,8 +214,8 @@ window.openTransferOwnerDialog = async function(groupId) {
             body: JSON.stringify({ username_or_id: String(uid) })
           });
           const data = await resp.json();
-          if (data.error || data.detail) { alert('转让失败：' + (data.error || data.detail)); return; }
-          alert('已转让');
+          if (data.error || data.detail) { alert(t('gm_transfer_failed') + '：' + (data.error || data.detail)); return; }
+          alert(t('gm_transferred'));
           window.closeSubpage();
           window.openGroupManage(groupId);
         } catch (e) { alert('网络错误：' + e.message); }
