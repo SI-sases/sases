@@ -139,7 +139,7 @@ window.openGroupKnowledgeAdd = function(groupId) {
       const content = (document.getElementById('gk-content') || {}).value || '';
       const category = (document.getElementById('gk-category') || {}).value || 'doc';
       const tags = (document.getElementById('gk-tags') || {}).value || '';
-      if (!content.trim()) { alert('内容不能为空'); return; }
+      if (!content.trim()) { alert(t('gk_content_required')); return; }
       try {
         const resp = await fetch('/group/' + groupId + '/knowledge', {
           method: 'POST',
