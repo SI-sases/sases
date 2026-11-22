@@ -293,9 +293,8 @@
     html += '<div class="sm-item" style="color:#999">工具由系统按任务自动选择</div>';
     html += '<div class="sm-reset" id="sm-reset">恢复默认</div>';
     html += '<label class="sm-item">执行<select class="sm-select" id="sm-exec">' +
-      [['single', '单窗口'], ['background', '后台执行'], ['multi', '多子智能体（P2 未完成）']].map(function (v) {
-        return '<option value="' + v[0] + '" ' + (_exec === v[0] ? 'selected' : '') +
-          (v[0] === 'multi' ? ' disabled' : '') + '>' + v[1] + '</option>';
+      [['single', '单窗口'], ['background', '后台执行'], ['multi', '多子智能体']].map(function (v) {
+        return '<option value="' + v[0] + '" ' + (_exec === v[0] ? 'selected' : '') + '>' + v[1] + '</option>';
       }).join('') + '</select></label>';
     m.innerHTML = html;
 

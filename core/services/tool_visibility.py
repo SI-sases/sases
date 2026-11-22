@@ -26,7 +26,6 @@ HIDDEN_DEFAULT = {
     "json_formatter", "json-formatter",
     "extract_keypoints", "extract-keypoints",
     "file_copy", "file-copy",
-    "subagent",
     "delete_block", "delete-block",
     # Phase 2
     "http_async", "http-async",
