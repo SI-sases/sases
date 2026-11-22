@@ -282,15 +282,17 @@ async def send_message(
             and __import__("os").getenv("SASES_AGENT_LOOP", "1") != "0":
         try:
             from ..supervisor import runs as _runs_s
-            from .. import fast_agent as _fa_s
-            _rid_s = _runs_s.create_run(user_id, conversation_id, sender_agent_id or agent_id or "", content)
-            _fr_s = await _fa_s.run_fast(
-                user_id, conversation_id, content,
+            from .. import run_service
+            _rid_s = run_service.create_run(user_id, conversation_id, "chat", content,
+                                            supervisor_id=sender_agent_id or agent_id or "sases_assistant")
+            _rs = await run_service.run_once(
+                user_id, conversation_id, content, source="chat",
+                supervisor_id=sender_agent_id or agent_id or "sases_assistant",
                 allowed_tool_ids=enabled_tool_ids,
                 max_steps=(max_steps if (max_steps and max_steps > 0) else 8),
-                mode="strict", run_id=_rid_s,
-                skill_ids=enabled_skill_ids,
+                run_id=_rid_s, finish=False, skill_ids=enabled_skill_ids,
             )
+            _fr_s = _rs.get("loop") or {}
             if _fr_s.get("status") == "awaiting_approval":
                 return {
                     'conversation_id': conversation_id, 'user_message': content,

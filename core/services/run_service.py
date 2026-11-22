@@ -16,19 +16,20 @@ def create_run(user_id, conversation_id, source, goal, supervisor_id="sases_assi
 
 async def run_once(user_id, conversation_id, goal, source="chat",
                    supervisor_id="sases_assistant", max_steps=8, skill_ids=None,
-                   run_id=None):
+                   run_id=None, finish=True, allowed_tool_ids=None):
     from .agent_loop import run
     from . import execution_gateway
     rid = run_id or create_run(user_id, conversation_id, source, goal, supervisor_id)
     try:
         r = await run(int(user_id), int(conversation_id), str(goal),
+                      allowed_tool_ids=allowed_tool_ids,
                       max_steps=int(max_steps), run_id=int(rid), mode="strict",
                       supervisor_id=supervisor_id, skill_ids=skill_ids)
         status = str(r.get("status") or "")
         mapped = "completed" if status == "ok" else (
             "failed" if status in ("max_steps", "verification_failed", "plan_incomplete",
                                    "plan_required", "error") else status)
-        if mapped in ("completed", "failed"):
+        if mapped in ("completed", "failed") and finish:
             try:
                 execution_gateway._finish(int(rid), int(conversation_id), supervisor_id,
                                           mapped, r.get("content") or "", source)
