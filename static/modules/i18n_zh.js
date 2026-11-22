@@ -41,6 +41,8 @@ export const zh = {
   'gm_network_error': '网络错误',
   'gm_add_failed': '添加失败：',
   'gm_added_admin': '已添加为管理员',
+  'gm_generate_failed': '生成失败：',
+  'gm_no_suggestion': '（无建议）',
   'main.read_agree': '我已阅读并同意',
   'err_password_mismatch': '两次输入的密码不一致',
   'err_register_failed': '注册失败',

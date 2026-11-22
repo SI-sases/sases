@@ -292,8 +292,8 @@ window._generateReplyWithAgent = async function(agentId, source, quotedText, gro
       body: JSON.stringify(body)
     });
     const data = await resp.json();
-    if (data.error || data.detail) { alert('生成失败：' + (data.error || data.detail)); return; }
-    const reply = data.response || '（无建议）';
+    if (data.error || data.detail) { alert(t('gm_generate_failed') + (data.error || data.detail)); return; }
+    const reply = data.response || t('gm_no_suggestion');
     const input = document.getElementById('chat-input');
     if (input) {
       input.value = reply;
@@ -303,6 +303,6 @@ window._generateReplyWithAgent = async function(agentId, source, quotedText, gro
       input.focus();
     }
   } catch (e) {
-    alert('网络错误：' + e.message);
+    alert(t('gm_network_error') + '：' + e.message);
   }
 };

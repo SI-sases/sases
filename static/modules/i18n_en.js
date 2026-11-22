@@ -35,6 +35,8 @@ export const en = {
   'gm_network_error': 'Network error',
   'gm_add_failed': 'Add failed: ',
   'gm_added_admin': 'Added as admin',
+  'gm_generate_failed': 'Generate failed: ',
+  'gm_no_suggestion': '(no suggestion)',
   'main.read_agree': 'I have read and agree to',
   'main.node_cn': 'China node',
   'main.all_fields_required': 'All fields are required',
