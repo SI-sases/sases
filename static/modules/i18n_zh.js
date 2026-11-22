@@ -868,4 +868,12 @@ export const zh = {
   'bs_title': '我的基地',
   'bs_collect_failed': '收取失败：',
   'bs_upgrade_failed': '升级失败：',
+  'bs_captain_tag': '队长',
+  'bs_member_tag': '队员',
+  'bs_level': '等级',
+  'bs_output': '产出',
+  'bs_none': '无',
+  'bs_captain_label': '队长',
+  'bs_assigned': '已任命',
+  'bs_unassigned': '未任命',
 };
