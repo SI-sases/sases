@@ -100,8 +100,8 @@
       const data = await api('/supervisor/runs');
       const runs = data.runs || [];
       if (!runs.length) { panel.innerHTML = '<div class="sp-title">' + t('sp_tasks') + '</div><div class="sp-empty">' + t('sp_no_tasks') + '</div>'; return; }
-      panel.innerHTML = '<div class="sp-title">后台任务' +
-        (runs.filter(function (x) { return x.status === 'queued'; }).length ? ' · 排队 ' +
+      panel.innerHTML = '<div class="sp-title">' + t('sp_tasks') +
+        (runs.filter(function (x) { return x.status === 'queued'; }).length ? ' · ' + t('sp_queued') + ' ' +
           runs.filter(function (x) { return x.status === 'queued'; }).length : '') + '</div>' + runs.map(function (r) {
         const paused = r.status === 'paused' || r.status === 'partial';
         const child = r.parent_run_id ? ' sp-child' : '';
@@ -112,9 +112,9 @@
             esc(String(r.last_result).slice(0, 1200)) + '</div>' : '') +
           '</div>' +
           (r.parent_run_id ? (r.status === 'failed' ? (Number(r.retry_count || 0) >= 3 ?
-            '<span class="sp-sub">重试已达上限</span>' : '<button class="sp-btn warn" data-retry="' + r.id + '">重试</button>') : '') :
+            '<span class="sp-sub">' + t('sp_retry_limit') + '</span>' : '<button class="sp-btn warn" data-retry="' + r.id + '">' + t('sp_retry') + '</button>') : '') :
             '<button class="sp-btn ' + (paused ? 'warn' : '') + '" data-run="' + r.id + '" data-paused="' + (paused ? '1' : '0') + '">' +
-            (paused ? '继续' : '暂停') + '</button><button class="sp-btn" data-cancel="' + r.id + '" style="margin-left:4px;">取消</button>') + '</div>';
+            (paused ? t('sp_resume') : t('sp_pause')) + '</button><button class="sp-btn" data-cancel="' + r.id + '" style="margin-left:4px;">' + t('sp_cancel') + '</button>') + '</div>';
       }).join('');
       panel.querySelectorAll('[data-cancel]').forEach(function (b) {
         b.onclick = async function (ev) {
