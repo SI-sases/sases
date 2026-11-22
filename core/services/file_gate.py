@@ -21,8 +21,8 @@ def check_frontend(path):
         if i in seen:
             dup.append(i)
         seen[i] = seen.get(i, 0) + 1
-    # 只拦截重复 3 次以上的 id；同一模板片段里偶尔出现两次，先报警不拦截
-    bad = sorted({i for i in dup if seen[i] >= 3})
+    # 静态前端写操作：重复 id 直接拦截（同一模板内重复通常就是坏改动）
+    bad = sorted({i for i in dup if seen[i] >= 2})
     if bad:
         return {"ok": False, "error": "重复 id: " + ", ".join(bad[:8])}
     return {"ok": True}
