@@ -698,8 +698,8 @@ async function openGroupModeMenu() {
     swarmEnabled = !!d.swarm_enabled;
   } catch (e) {}
 
-  const normalHtml = '<div class="plus-menu-item mode-item ' + (currentGroupMode === 'normal' ? 'active-mode' : '') + '" data-mode="normal"><span class="plus-menu-label">普通聊天</span></div>';
-  const swarmHtml = swarmEnabled ? '<div class="plus-menu-item mode-item ' + (currentGroupMode === 'swarm' ? 'active-mode' : '') + '" data-mode="swarm"><span class="plus-menu-label">蜂群模式</span></div>' : '';
+  const normalHtml = '<div class="plus-menu-item mode-item ' + (currentGroupMode === 'normal' ? 'active-mode' : '') + '" data-mode="normal"><span class="plus-menu-label">' + t('gc_mode_normal') + '</span></div>';
+  const swarmHtml = swarmEnabled ? '<div class="plus-menu-item mode-item ' + (currentGroupMode === 'swarm' ? 'active-mode' : '') + '" data-mode="swarm"><span class="plus-menu-label">' + t('gc_mode_swarm') + '</span></div>' : '';
   content.innerHTML = normalHtml + swarmHtml;
 
   const modeBtn = document.getElementById('chat-mode-btn');
@@ -783,7 +783,7 @@ async function openGroupSettings() {
       <div class="me-menu">
 <div class="me-menu-item" id="group-name-entry" style="cursor:pointer;"><span class="menu-label">群聊名称</span><span class="menu-value" id="group-name-value">${currentGroupName}</span><span class="menu-arrow">›</span></div>
         <div class="me-menu-item" id="identity-switch-entry"><span class="menu-label">身份切换</span><span class="menu-value" id="identity-current">以本人身份</span><span class="menu-arrow">›</span></div>
-        <div class="me-menu-item" id="group-mode-entry"><span class="menu-label">群模式</span><span class="menu-value" id="group-mode-current">${currentGroupMode === 'normal' ? '普通聊天' : '蜂群模式'}</span><span class="menu-arrow">›</span></div>
+        <div class="me-menu-item" id="group-mode-entry"><span class="menu-label">${t('gc_group_mode')}</span><span class="menu-value" id="group-mode-current">${currentGroupMode === 'normal' ? t('gc_mode_normal') : t('gc_mode_swarm')}</span><span class="menu-arrow">›</span></div>
         <div class="me-menu-item" id="announcement-entry"><span class="menu-label">群公告</span><span class="menu-arrow">›</span></div>
         <div class="me-menu-item" id="nickname-entry"><span class="menu-label">我在本群的昵称</span><span class="menu-arrow">›</span></div>
         <div class="me-menu-item" id="search-history-entry"><span class="menu-label">查找聊天记录</span><span class="menu-arrow">›</span></div>
