@@ -65,7 +65,7 @@ def _tool_schemas(allowed_tool_ids=None, mode="fast"):
     return [tool_schema(t) for t in tools if getattr(t, "module_id", "")]
 
 
-async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8, run_id=None, mode="fast", resume=False, supervisor_id=None, on_event=None, skill_ids=None):
+async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8, run_id=None, mode="fast", resume=False, supervisor_id=None, on_event=None, skill_ids=None, permissions=None):
     if not conversation_id:
         return {"status": "error", "content": "缺少会话", "steps": 0, "history": []}
 
@@ -428,6 +428,18 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
                 args = json.loads(c.function.arguments or "{}")
             except Exception:
                 args = {}
+            _deny = None
+            if permissions is not None:
+                if name in ("file_write", "file_replace_range", "smart_edit") and permissions.get("write") is False:
+                    _deny = "当前会话已关闭写文件权限"
+                elif name == "web_fetch" and permissions.get("web") is False:
+                    _deny = "当前会话已关闭联网权限"
+            if _deny:
+                text = "DENIED: " + _deny
+                agent_memory.append(conversation_id, "tool", text, tool_call_id=c.id)
+                messages.append({"role": "tool", "tool_call_id": c.id, "content": text})
+                used.append({"step": step, "tool": name, "ok": False})
+                continue
             if name == "todo_write":
                 _tr = todo_service.write(user_id, conversation_id, run_id, args.get("todos"))
                 ok = bool(_tr.get("success"))

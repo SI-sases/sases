@@ -84,7 +84,7 @@ async def send_message(
     max_steps: int = None,
     attachments: list = None
 , enabled_api_ids=None, enabled_tool_ids=None, enabled_skill_ids=None, agent_mode=None,
-      quote_content=None):
+      quote_content=None, permissions=None):
     print(f"[MSG_DEBUG] content={content!r} | mode={mode!r} | agent_id={agent_id!r} | msg_type={msg_type}")
     try:
         from .continuation_service import rewrite as _cont_rewrite
@@ -299,6 +299,7 @@ async def send_message(
                 allowed_tool_ids=enabled_tool_ids,
                 max_steps=(max_steps if (max_steps and max_steps > 0) else 8),
                 run_id=_rid_s, finish=False, skill_ids=enabled_skill_ids,
+                permissions=permissions,
             )
             _fr_s = _rs.get("loop") or {}
             if _fr_s.get("status") == "awaiting_approval":
@@ -815,7 +816,7 @@ async def send_message(
                             supervisor_id=sender_agent_id or agent_id,
                             max_steps=(max_steps if (max_steps and max_steps > 0) else 8),
                             run_id=_run_id, finish=True,
-                            skill_ids=enabled_skill_ids,
+                            skill_ids=enabled_skill_ids, permissions=permissions,
                         )
                         _loop = _rr.get("loop") or {}
                         _txt = (_loop.get("content") or "").strip()
@@ -1250,6 +1251,7 @@ async def send_message(
                         supervisor_id=sender_agent_id or agent_id or "sases_assistant",
                         max_steps=(max_steps if (max_steps and max_steps > 0) else 8),
                         skill_ids=enabled_skill_ids, finish=True,
+                        permissions=permissions,
                     )
                     _loop = _rr.get("loop") or {}
                     _txt = (_loop.get("content") or "").strip() or "执行完成"

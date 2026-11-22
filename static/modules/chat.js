@@ -448,6 +448,9 @@ async function sendMessage() {
       enabled_api_ids: (window.currentSessionAPIs || []),
       enabled_tool_ids: (window.currentSessionTools || []),
       enabled_skill_ids: (window.currentSessionSkills || []),
+      permissions: (function () {
+        try { return JSON.parse(localStorage.getItem('sases_perms_v1') || '{}'); } catch (e) { return {}; }
+      })(),
       quote_content: chatState.pendingQuote || null
     };
     let data = null, _streamed = false;

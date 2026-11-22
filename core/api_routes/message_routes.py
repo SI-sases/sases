@@ -67,6 +67,7 @@ class SendMessageRequest(BaseModel):
     sender_agent_id: Optional[str] = None
     mode: Optional[str] = "normal"  # normal / free / swarm
     max_steps: Optional[int] = None  # -1=不限，None=默认8
+    permissions: Optional[dict] = None
 
 
 class ConversationCreateRequest(BaseModel):
@@ -82,6 +83,7 @@ class StreamMessageRequest(BaseModel):
     attachments: Optional[list] = None
     quote_content: Optional[str] = None
     enabled_skill_ids: Optional[list] = None
+    permissions: Optional[dict] = None
 
 
 class PinRequest(BaseModel):
@@ -166,7 +168,7 @@ async def stream_message(body: StreamMessageRequest, user_id: int = Depends(get_
                     content=_text, sender_agent_id=body.sender_agent_id,
                     quote_content=body.quote_content,
                     enabled_skill_ids=body.enabled_skill_ids,
-                    max_steps=16, agent_mode="strict")
+                    max_steps=16, agent_mode="strict", permissions=body.permissions)
                 yield _sse({"type": "final", "data": res})
                 return
 
@@ -214,7 +216,8 @@ async def send_message(body: SendMessageRequest, user_id: int = Depends(get_curr
         quote_content=body.quote_content,
         max_steps=body.max_steps,
         msg_type=body.msg_type,
-        attachments=body.attachments
+        attachments=body.attachments,
+        permissions=body.permissions,
     )
     try:
         from .ws_routes import broadcast_to_user
