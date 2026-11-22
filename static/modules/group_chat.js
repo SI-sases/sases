@@ -307,7 +307,7 @@ window.openGroupRedPacket = async function(packetId) {
               headers: { 'Authorization': 'Bearer ' + localStorage.getItem('sases_token') }
             });
             const data = await resp.json();
-            if (data.error || data.detail) { alert(t('gc_rp_claim_failed') + (data.error || data.detail)); btn.disabled = false; btn.textContent = '開'; return; }
+            if (data.error || data.detail) { alert(t('gc_rp_claim_failed') + (data.error || data.detail)); btn.disabled = false; btn.textContent = t('gc_open'); return; }
             if (window.showGroupToast) window.showGroupToast('🧧 ' + t('gc_rp_claimed') + ' ' + data.amount + ' ' + t('gc_rp_points'));
             window.openGroupRedPacket(packetId);
             if (typeof loadGroupMessages === 'function') loadGroupMessages();
