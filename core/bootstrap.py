@@ -625,6 +625,11 @@ async def lifespan(app: FastAPI):
         recover_stale_runs()
     except Exception as _e_recover:
         print("[run] recovery 启动失败: " + str(_e_recover))
+    try:
+        from .services import run_queue_service
+        _background_tasks.append(asyncio.create_task(run_queue_service.start()))
+    except Exception as _e_queue:
+        print("[queue] 启动失败: " + str(_e_queue))
     # 旧 executor 默认退役；需要时 SASES_EXECUTOR=1 恢复
     if os.getenv("SASES_EXECUTOR", "0") == "1":
         _background_tasks.append(asyncio.create_task(executor_service.start_background_executor()))

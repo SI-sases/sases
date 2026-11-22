@@ -68,6 +68,7 @@ class SendMessageRequest(BaseModel):
     mode: Optional[str] = "normal"  # normal / free / swarm
     max_steps: Optional[int] = None  # -1=不限，None=默认8
     permissions: Optional[dict] = None
+    background: Optional[bool] = False
 
 
 class ConversationCreateRequest(BaseModel):
@@ -199,9 +200,18 @@ async def resume_conversation(conversation_id: int, user=Depends(get_current_use
 
 @router.post("/send")
 async def send_message(body: SendMessageRequest, user_id: int = Depends(get_current_user)):
-    if body.conversation_id:
+    if body.conversation_id and not body.background:
         from ..services import run_control_service
         run_control_service.resume(body.conversation_id)
+    if body.background:
+        from ..services import run_service, run_queue_service
+        cid = body.conversation_id
+        if not cid:
+            cid = message_service.create_conversation(user_id, body.agent_id, "后台任务")
+        rid = run_service.create_run(user_id, cid, "chat", body.content,
+                                     supervisor_id=body.agent_id or "sases_assistant")
+        await run_queue_service.enqueue(rid)
+        return {"conversation_id": cid, "run_id": rid, "status": "queued", "background": True}
     result = await message_service.send_message(
         user_id=user_id,
         conversation_id=body.conversation_id,
