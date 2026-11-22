@@ -77,7 +77,7 @@ window.openGroupKnowledgeDetail = async function(docId, groupId) {
       headers: { 'Authorization': 'Bearer ' + localStorage.getItem('sases_token') }
     });
     const d = await resp.json();
-    if (d.error || d.detail) { alert('加载失败：' + (d.error || d.detail)); return; }
+    if (d.error || d.detail) { alert(t('gk_load_failed') + (d.error || d.detail)); return; }
     const catLabel = { doc: '文档', faq: 'FAQ', meeting: '会议纪要', policy: '规章制度' }[d.category] || '文档';
     const html = `
       <div class="me-menu">

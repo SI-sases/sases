@@ -465,6 +465,7 @@ export const zh = {
   'gk_empty': '暂无知识条目',
   'gk_title': '群知识库',
   'gk_add': '添加',
+  'gk_load_failed': '加载失败：',
   'gc_report_wip': '群汇报开发中',
   'gc_member': '成员',
   'gc_switch_swarm': '已切换到蜂群模式',
