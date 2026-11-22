@@ -313,25 +313,25 @@
         return '<option value="' + v[0] + '" ' + (_mode === v[0] ? 'selected' : '') + '>' + v[1] + '</option>';
       }).join('') + '</select></label>';
     html += '<label class="sm-item">' + t('cp_font') + '<select class="sm-select" id="sm-font">' +
-      [['14', '小'], ['15', '中'], ['17', '大']].map(function (v) {
+      [['14', t('cp_small')], ['15', t('cp_medium')], ['17', t('cp_large')]].map(function (v) {
         return '<option value="' + v[0] + '" ' + (_font === v[0] ? 'selected' : '') + '>' + v[1] + '</option>';
       }).join('') + '</select></label>';
-    html += '<div class="sm-title">显示</div>';
-    html += '<div class="sm-item" style="color:#999">工具由系统按任务自动选择</div>';
-    html += '<div class="sm-reset" id="sm-reset">恢复默认</div>';
-    html += '<label class="sm-item">执行<select class="sm-select" id="sm-exec">' +
-      [['single', '单窗口'], ['background', '后台执行'], ['multi', '多子智能体']].map(function (v) {
+    html += '<div class="sm-title">' + t('cp_display') + '</div>';
+    html += '<div class="sm-item" style="color:#999">' + t('cp_tools_auto') + '</div>';
+    html += '<div class="sm-reset" id="sm-reset">' + t('cp_reset') + '</div>';
+    html += '<label class="sm-item">' + t('cp_exec') + '<select class="sm-select" id="sm-exec">' +
+      [['single', t('cp_single')], ['background', t('cp_background')], ['multi', t('cp_multi')]].map(function (v) {
         return '<option value="' + v[0] + '" ' + (_exec === v[0] ? 'selected' : '') + '>' + v[1] + '</option>';
       }).join('') + '</select></label>';
-    html += '<div class="sm-item" id="sm-capacity" style="color:#999;font-size:12px;">并发：读取中…</div>';
+    html += '<div class="sm-item" id="sm-capacity" style="color:#999;font-size:12px;">' + t('cp_concurrency_loading') + '</div>';
     m.innerHTML = html;
     try {
       fetch('/system/capacity', { headers: { Authorization: 'Bearer ' + token() } })
         .then(function (r) { return r.json(); })
         .then(function (c) {
           var el = document.getElementById('sm-capacity');
-          if (el) el.textContent = '并发：读 ' + (c.read_parallel || 1) +
-            ' / 写 ' + (c.write_parallel || 1) + ' / 后台 ' + (c.background_parallel || 1);
+          if (el) el.textContent = t('cp_concurrency_read') + (c.read_parallel || 1) +
+            ' / ' + t('cp_write_short') + ' ' + (c.write_parallel || 1) + ' / ' + t('cp_background_short') + ' ' + (c.background_parallel || 1);
         })
         .catch(function () {});
     } catch (e) {}
