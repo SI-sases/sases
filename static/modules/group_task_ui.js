@@ -113,7 +113,7 @@ window.openTaskDetail = function(taskId) {
             if (data.error || data.detail) { alert(t('gt_submit_failed') + (data.error || data.detail)); return; }
             alert(t('gt_submit_ok'));
             window.openTaskDetail(taskId);
-          }).catch(e => alert('网络错误：' + e.message));
+          }).catch(e => alert(t('gt_network_error') + e.message));
         };
       }
       document.querySelectorAll('.pick-sub-btn').forEach(btn => {
@@ -128,9 +128,9 @@ window.openTaskDetail = function(taskId) {
             if (data.error || data.detail) { alert(t('gt_pick_failed') + (data.error || data.detail)); return; }
             alert(t('gt_picked') + data.winner_gets + ' / +' + data.pool_gets);
             window.openTaskDetail(taskId);
-          }).catch(e => alert('网络错误：' + e.message));
+          }).catch(e => alert(t('gt_network_error') + e.message));
         };
       });
     }, 100);
-  }).catch(e => alert('网络错误：' + e.message));
+  }).catch(e => alert(t('gt_network_error') + e.message));
 };
