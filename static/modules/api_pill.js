@@ -296,7 +296,18 @@
       [['single', '单窗口'], ['background', '后台执行'], ['multi', '多子智能体']].map(function (v) {
         return '<option value="' + v[0] + '" ' + (_exec === v[0] ? 'selected' : '') + '>' + v[1] + '</option>';
       }).join('') + '</select></label>';
+    html += '<div class="sm-item" id="sm-capacity" style="color:#999;font-size:12px;">并发：读取中…</div>';
     m.innerHTML = html;
+    try {
+      fetch('/system/capacity', { headers: { Authorization: 'Bearer ' + token() } })
+        .then(function (r) { return r.json(); })
+        .then(function (c) {
+          var el = document.getElementById('sm-capacity');
+          if (el) el.textContent = '并发：读 ' + (c.read_parallel || 1) +
+            ' / 写 ' + (c.write_parallel || 1) + ' / 后台 ' + (c.background_parallel || 1);
+        })
+        .catch(function () {});
+    } catch (e) {}
 
     var _rounds = document.getElementById('sm-rounds');
     if (_rounds) _rounds.onchange = function () {
