@@ -21,7 +21,7 @@ window.openGroupKnowledge = async function(groupId) {
     }
     let html = '<div class="me-menu">';
     items.forEach(it => {
-      const catLabel = { doc: '文档', faq: 'FAQ', meeting: '纪要', policy: '制度' }[it.category] || '文档';
+      const catLabel = { doc: t('gk_doc'), faq: 'FAQ', meeting: t('gk_minutes'), policy: t('gk_policy') }[it.category] || t('gk_doc');
       html += '<div class="me-menu-item gk-item" data-docid="' + it.id + '" style="flex-direction:column;align-items:flex-start;padding:12px;">';
       html += '<div style="width:100%;display:flex;align-items:center;justify-content:space-between;">';
       html += '<span style="font-size:14px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:70%;">' + (it.title || '(无标题)') + '</span>';
