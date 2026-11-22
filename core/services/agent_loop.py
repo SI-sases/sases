@@ -72,7 +72,7 @@ def _tool_schemas(allowed_tool_ids=None, mode="fast"):
     return [tool_schema(t) for t in tools if getattr(t, "module_id", "")]
 
 
-async def _run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8, run_id=None, mode="fast", resume=False, supervisor_id=None, on_event=None, skill_ids=None, permissions=None, agent_id=None, subagent_agent_id=None, multi_agent=False):
+async def _run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8, run_id=None, mode="fast", resume=False, supervisor_id=None, on_event=None, skill_ids=None, permissions=None, agent_id=None, subagent_agent_id=None, multi_agent=False, budget_tokens=0):
     if not conversation_id:
         return {"status": "error", "content": "缺少会话", "steps": 0, "history": []}
 
@@ -187,6 +187,19 @@ async def _run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=
         messages.append({"role": "user", "content": _multi_gate})
         agent_memory.append(conversation_id, "user", _multi_gate, run_id=run_id)
 
+    _budget = int(budget_tokens or 0)
+    if not _budget and run_id:
+        try:
+            from core.db import db_cursor as _dc_budget
+            with _dc_budget() as _cb:
+                _cb.execute("SELECT budget_tokens FROM supervisor_runs WHERE id=?", (int(run_id),))
+                _r = _cb.fetchone()
+            if _r:
+                _budget = int(_r["budget_tokens"] or 0)
+        except Exception:
+            pass
+    _used_tokens = 0
+
     for step in range(1, max_steps + 1):
         if run_id:
             try:
@@ -252,6 +265,11 @@ async def _run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=
                 print("[ctx] pruner 失败: " + str(e))
         try:
             est = token_meter.measure(req_messages, tools=schemas)
+            if _budget and _used_tokens + int(est.get("total") or 0) > _budget:
+                return {"status": "budget_exceeded",
+                        "content": "Token 预算已用完（" + str(_budget) + "）",
+                        "steps": step - 1, "history": used}
+            _used_tokens += int(est.get("total") or 0)
             if est["total"] > 60000 or pruned_count:
                 print("[ctx] estimated tokens=" + str(est["total"]) +
                       " messages=" + str(est["messages"]) + " tools=" + str(est["tools"]))
@@ -598,10 +616,10 @@ _WRITE_LOCK = asyncio.Lock()
 async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8,
               run_id=None, mode="fast", resume=False, supervisor_id=None,
               on_event=None, skill_ids=None, permissions=None, agent_id=None,
-              subagent_agent_id=None, multi_agent=False):
+              subagent_agent_id=None, multi_agent=False, budget_tokens=0):
     if mode == "strict" and _is_write_task(goal):
         async with _WRITE_LOCK:
             return await _run(user_id, conversation_id, goal, allowed_tool_ids, max_steps,
-                              run_id, mode, resume, supervisor_id, on_event, skill_ids, permissions, agent_id, subagent_agent_id, multi_agent)
+                              run_id, mode, resume, supervisor_id, on_event, skill_ids, permissions, agent_id, subagent_agent_id, multi_agent, budget_tokens)
     return await _run(user_id, conversation_id, goal, allowed_tool_ids, max_steps,
-                      run_id, mode, resume, supervisor_id, on_event, skill_ids, permissions, agent_id, subagent_agent_id, multi_agent)
+                      run_id, mode, resume, supervisor_id, on_event, skill_ids, permissions, agent_id, subagent_agent_id, multi_agent, budget_tokens)
