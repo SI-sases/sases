@@ -103,15 +103,15 @@ window.openTaskDetail = function(taskId) {
       const submitBtn = document.getElementById('td-submit-btn');
       if (submitBtn) {
         submitBtn.onclick = function() {
-          const content = prompt('请输入你的方案（文字描述）：');
+          const content = prompt(t('gt_plan_prompt'));
           if (!content) return;
           fetch('/group/tasks/' + taskId + '/submit', {
             method: 'POST',
             headers: { 'Authorization': 'Bearer ' + localStorage.getItem('sases_token'), 'Content-Type': 'application/json' },
             body: JSON.stringify({ content: content, content_type: 'text' })
           }).then(r => r.json()).then(data => {
-            if (data.error || data.detail) { alert('提交失败：' + (data.error || data.detail)); return; }
-            alert('提交成功');
+            if (data.error || data.detail) { alert(t('gt_submit_failed') + (data.error || data.detail)); return; }
+            alert(t('gt_submit_ok'));
             window.openTaskDetail(taskId);
           }).catch(e => alert('网络错误：' + e.message));
         };
