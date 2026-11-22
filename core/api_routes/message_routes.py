@@ -218,6 +218,7 @@ async def send_message(body: SendMessageRequest, user_id: int = Depends(get_curr
         msg_type=body.msg_type,
         attachments=body.attachments,
         permissions=body.permissions,
+        force_strict=(str(body.agent_mode or "").lower() == "strict"),
     )
     try:
         from .ws_routes import broadcast_to_user

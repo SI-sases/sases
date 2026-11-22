@@ -84,7 +84,7 @@ async def send_message(
     max_steps: int = None,
     attachments: list = None
 , enabled_api_ids=None, enabled_tool_ids=None, enabled_skill_ids=None, agent_mode=None,
-      quote_content=None, permissions=None):
+      quote_content=None, permissions=None, force_strict=False):
     print(f"[MSG_DEBUG] content={content!r} | mode={mode!r} | agent_id={agent_id!r} | msg_type={msg_type}")
     try:
         from .continuation_service import is_continue as _is_cont, rewrite as _cont_rewrite
@@ -256,7 +256,7 @@ async def send_message(
     # =======================
 
     # A2: fast loop 默认入口（任务/普通消息都走，失败回退下面的旧路径）
-    if conversation_id and _should_fast(agent_mode, content, enabled_tool_ids):
+    if conversation_id and not force_strict and _should_fast(agent_mode, content, enabled_tool_ids):
         try:
             from .. import fast_agent as _fa_early
             _fr_early = await _fa_early.run_fast(
@@ -1358,7 +1358,7 @@ async def send_message(
                     print(f'[direct] 失败，回退 swarm: {_e_dc}')
 
                 # B2: fast 单 Agent（失败自动回退 strict）
-                if _should_fast(agent_mode, content, enabled_tool_ids):
+                if not force_strict and _should_fast(agent_mode, content, enabled_tool_ids):
                     try:
                         from .. import fast_agent as _fa
                         _fr = await _fa.run_fast(
