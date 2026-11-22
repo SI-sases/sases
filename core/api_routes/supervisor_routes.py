@@ -91,7 +91,7 @@ async def approve_run(run_id: int, body: ApproveBody, user_id: int = Depends(get
 def list_active_runs(user_id: int = Depends(get_current_user)):
     with db_cursor() as cur:
         cur.execute(
-            "SELECT id, conversation_id, goal, status, supervisor_id, created_at "
+            "SELECT id, conversation_id, goal, status, supervisor_id, created_at, parent_run_id "
             "FROM supervisor_runs WHERE user_id=? AND status IN "
             "('running','paused','awaiting_approval','awaiting_user') "
             "ORDER BY id DESC LIMIT 30", (user_id,))
@@ -109,13 +109,16 @@ async def pause_run(run_id: int, user_id: int = Depends(get_current_user)):
             raise HTTPException(status_code=404, detail="run not found")
         cur.execute("UPDATE supervisor_runs SET status='paused' WHERE id=? AND user_id=?",
                     (run_id, user_id))
-    # 暂停信号必须真正下发到执行侧，否则只是改了状态文字
-    try:
-        from ..services import run_control_service
-        run_control_service.pause(row["conversation_id"])
-    except Exception as _e_pause:
-        print('[pause] 下发暂停信号失败: ' + str(_e_pause))
-    return {"ok": True, "run_id": run_id, "status": "paused"}
+        cur.execute("SELECT id, conversation_id FROM supervisor_runs WHERE parent_run_id=?", (run_id,))
+        children = cur.fetchall()
+        for ch in children:
+            cur.execute("UPDATE supervisor_runs SET status='paused' WHERE id=?", (ch["id"],))
+    from ..services import run_control_service
+    run_control_service.pause(row["conversation_id"])
+    for ch in locals().get("children", []):
+        run_control_service.pause(ch["conversation_id"])
+    return {"ok": True, "run_id": run_id, "status": "paused",
+            "children_paused": [int(c["id"]) for c in locals().get("children", [])]}
 
 
 @router.post("/runs/{run_id}/resume")
@@ -128,9 +131,15 @@ async def resume_run(run_id: int, user_id: int = Depends(get_current_user)):
             raise HTTPException(status_code=404, detail="run not found")
         cur.execute("UPDATE supervisor_runs SET status='running' WHERE id=? AND user_id=?",
                     (run_id, user_id))
+        cur.execute("SELECT id, conversation_id FROM supervisor_runs WHERE parent_run_id=?", (run_id,))
+        children = cur.fetchall()
+        for ch in children:
+            cur.execute("UPDATE supervisor_runs SET status='running' WHERE id=?", (ch["id"],))
     try:
         from ..services import run_control_service
         run_control_service.resume(row["conversation_id"])
+        for ch in locals().get("children", []):
+            run_control_service.resume(ch["conversation_id"])
     except Exception as _e_res:
         print('[resume] 解除暂停信号失败: ' + str(_e_res))
     # 续跑失败不能吞掉：返回 resumed 标记，前端据此提示

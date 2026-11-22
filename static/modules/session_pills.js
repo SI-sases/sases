@@ -95,10 +95,12 @@
       if (!runs.length) { panel.innerHTML = '<div class="sp-title">后台任务</div><div class="sp-empty">暂无运行中的任务</div>'; return; }
       panel.innerHTML = '<div class="sp-title">后台任务</div>' + runs.map(function (r) {
         const paused = r.status === 'paused';
-        return '<div class="sp-row"><div class="sp-main"><div class="sp-name">' + esc(r.goal || ('run #' + r.id)) +
+        const child = r.parent_run_id ? ' sp-child' : '';
+        const label = r.parent_run_id ? '↳ ' : '';
+        return '<div class="sp-row' + child + '"><div class="sp-main"><div class="sp-name">' + label + esc(r.goal || ('run #' + r.id)) +
           '</div><div class="sp-sub">run #' + r.id + ' · ' + esc(r.status) + '</div></div>' +
-          '<button class="sp-btn ' + (paused ? 'warn' : '') + '" data-run="' + r.id + '" data-paused="' + (paused ? '1' : '0') + '">' +
-          (paused ? '继续' : '暂停') + '</button></div>';
+          (r.parent_run_id ? '' : '<button class="sp-btn ' + (paused ? 'warn' : '') + '" data-run="' + r.id + '" data-paused="' + (paused ? '1' : '0') + '">' +
+          (paused ? '继续' : '暂停') + '</button>') + '</div>';
       }).join('');
       panel.querySelectorAll('[data-run]').forEach(function (b) {
         b.onclick = async function () {

@@ -23,9 +23,10 @@ def run(params):
             cur.execute("INSERT INTO conversations (user_id,title) VALUES (?,?)",
                         (ctx["user_id"], "子任务"))
             cid = cur.lastrowid
+            parent_id = ctx.get("run_id")
             cur.execute("INSERT INTO supervisor_runs (user_id,conversation_id,supervisor_id,goal,status,"
-                        "current_round,max_rounds,history,task_type) VALUES (?,?,?,?,'running',0,1,'[]','subagent')",
-                        (ctx["user_id"], cid, "sases_assistant", goal))
+                        "current_round,max_rounds,history,task_type,parent_run_id) VALUES (?,?,?,?,'running',0,1,'[]','subagent',?)",
+                        (ctx["user_id"], cid, "sases_assistant", goal, parent_id))
             rid = cur.lastrowid
         loop = asyncio.run(agent_loop.run(
             ctx["user_id"], cid, goal, max_steps=min(int((params or {}).get("max_steps") or 4), 6),

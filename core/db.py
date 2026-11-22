@@ -1171,6 +1171,7 @@ def init_db():
         _ensure_column(cur, "supervisor_runs", "lease_until", "TEXT")
         _ensure_column(cur, "supervisor_runs", "heartbeat_at", "TEXT")
         _ensure_column(cur, "supervisor_runs", "deadline_at", "TEXT")
+        _ensure_column(cur, "supervisor_runs", "parent_run_id", "INTEGER DEFAULT NULL")
 
         # ========== 执行步骤日志（P0-1）与副作用幂等（P0-3） ==========
         cur.execute("""
