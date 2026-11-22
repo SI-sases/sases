@@ -8,6 +8,7 @@ from ..db import db_cursor
 _queue = asyncio.PriorityQueue()
 _started = False
 _workers = []
+_queued_ids = set()
 
 
 def _get_run(run_id):
@@ -35,6 +36,7 @@ async def _notify(user_id, run_id, status):
 
 async def enqueue(run_id, priority=5):
     _set_status(run_id, "queued")
+    _queued_ids.add(int(run_id))
     await _queue.put((int(priority), int(run_id)))
     try:
         run = _get_run(run_id)
@@ -48,6 +50,7 @@ async def enqueue(run_id, priority=5):
 async def _worker():
     while True:
         _prio, run_id = await _queue.get()
+        _queued_ids.discard(int(run_id))
         try:
             run = _get_run(run_id)
             if not run or run.get("status") not in ("queued", "interrupted", "running"):
@@ -70,6 +73,22 @@ async def _worker():
             _queue.task_done()
 
 
+async def _sweeper():
+    # 兜底：队列内存丢失/worker 卡死时，定时把 queued 重新入队
+    while True:
+        try:
+            await asyncio.sleep(5)
+            with db_cursor() as cur:
+                cur.execute("SELECT id FROM supervisor_runs WHERE status='queued' ORDER BY id")
+                ids = [int(r["id"]) for r in cur.fetchall()]
+            for rid in ids:
+                if rid not in _queued_ids:
+                    _queued_ids.add(rid)
+                    await _queue.put((5, rid))
+        except Exception:
+            await asyncio.sleep(5)
+
+
 async def start():
     global _started, _workers
     if _started:
@@ -78,12 +97,14 @@ async def start():
     from .capacity_service import profile
     n = max(1, int(profile().get("background_parallel") or 1))
     _workers = [asyncio.create_task(_worker()) for _ in range(n)]
+    _workers.append(asyncio.create_task(_sweeper()))
     print("[queue] workers=" + str(n))
     try:
         with db_cursor() as cur:
             cur.execute("SELECT id FROM supervisor_runs WHERE status='queued' ORDER BY id")
             ids = [int(r["id"]) for r in cur.fetchall()]
         for rid in ids:
+            _queued_ids.add(rid)
             await _queue.put((5, rid))
         if ids:
             print("[queue] requeued " + str(len(ids)))
