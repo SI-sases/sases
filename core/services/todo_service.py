@@ -71,9 +71,13 @@ def format_for_prompt(conversation_id, run_id=None):
     todos = get(conversation_id, run_id)
     if not todos:
         return ""
-    lines = ["【当前计划】"]
+    counts = {s: sum(1 for t in todos if t.get("status") == s) for s in VALID}
+    lines = ["【当前计划】pending=%d in_progress=%d completed=%d" %
+             (counts["pending"], counts["in_progress"], counts["completed"])]
     for i, t in enumerate(todos, 1):
-        mark = {"pending": " ", "in_progress": ">", "completed": "x"}.get(t["status"], " ")
+        if t.get("status") == "completed":
+            continue
+        mark = ">" if t["status"] == "in_progress" else " "
         lines.append("%d. [%s] %s" % (i, mark, t["content"]))
     return "\n".join(lines)
 

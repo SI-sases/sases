@@ -31,14 +31,14 @@ def _needs_plan(goal, mode):
     if mode != "strict":
         return False
     text = str(goal or "")
-    if len(text) >= 80:
+    if len(text) >= 120:
         return True
-    markers = ("然后", "再", "并且", "并", "之后", "最后", "同时", "步骤",
-               "汇总", "批量", "依次", "修复", "验证", "写入", "创建", "读取")
+    markers = ("然后", "之后", "最后", "同时", "步骤", "汇总", "批量",
+               "依次", "再读回", "写入后", "修复并", "并且")
     return any(m in text for m in markers)
 
 
-def _tool_schemas(allowed_tool_ids=None):
+def _tool_schemas(allowed_tool_ids=None, mode="fast"):
     from core.harness_runtime import harness_runtime
     from .fast_agent import tool_schema
     from .tool_visibility import visible
@@ -47,6 +47,8 @@ def _tool_schemas(allowed_tool_ids=None):
         allow = set(str(x) for x in allowed_tool_ids)
         tools = [t for t in tools if getattr(t, "module_id", "") in allow]
     tools = visible(tools)
+    if str(mode or "") != "strict":
+        tools = [t for t in tools if getattr(t, "module_id", "") != "todo_write"]
     return [tool_schema(t) for t in tools if getattr(t, "module_id", "")]
 
 
@@ -77,7 +79,7 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
                 messages.append({"role": "user", "content": _runtime})
     except Exception as _e_rc:
         print("[context] runtime 注入失败: " + str(_e_rc))
-    schemas = _tool_schemas(allowed_tool_ids)
+    schemas = _tool_schemas(allowed_tool_ids, mode=mode)
     used = []
     _plan_required = _needs_plan(goal, mode)
     _dirty_files = set()
