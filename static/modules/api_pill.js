@@ -43,8 +43,8 @@
       if (raw) {
         var s = JSON.parse(raw);
         state.apis = s.apis || [];
-        state.tools = s.tools || [];
-        state.skills = s.skills || [];
+        state.tools = [];
+        state.skills = [];
         state.hidden = s.hidden || [];
         return true;
       }
@@ -60,16 +60,48 @@
 
   function syncGlobals() {
     window.currentSessionAPIs = state.apis.slice();
-    window.currentSessionTools = state.tools.slice();
-    window.currentSessionSkills = state.skills.slice();
+    // 工具由系统按任务自动选择，不再由胶囊勾选限制
+    window.currentSessionTools = null;
+    window.currentSessionSkills = [];
   }
 
-  function total() { return state.apis.length + state.tools.length + state.skills.length; }
+  function total() { return state.apis.length; }
 
   function updatePill() {
     var p = document.getElementById('api-pill');
     if (!p) return;
-    p.textContent = total() > 0 ? ('🧩 能力 (' + total() + ')') : '🧩 能力';
+    p.textContent = '🧩 能力';
+    renderChips();
+  }
+
+  function _findLabel(id) {
+    for (var i = 0; i < groups.length; i++) {
+      var its = groups[i].items || [];
+      for (var j = 0; j < its.length; j++) if (its[j].id === id) return its[j].label;
+    }
+    return id;
+  }
+
+  function renderChips() {
+    var bar = document.getElementById('param-bar');
+    if (!bar) return;
+    bar.querySelectorAll('.param-chip').forEach(function (x) { x.remove(); });
+    var items = [];
+    state.apis.forEach(function (id) { items.push({ id: id, type: 'api' }); });
+    var settings = document.getElementById('capsule-settings-btn');
+    items.forEach(function (it) {
+      var chip = document.createElement('span');
+      chip.className = 'param-pill param-chip';
+      chip.textContent = _findLabel(it.id) + ' ×';
+      chip.title = '点击移除';
+      chip.onclick = function () {
+        if (it.type === 'api') state.apis = state.apis.filter(function (x) { return x !== it.id; });
+        else state.skills = state.skills.filter(function (x) { return x !== it.id; });
+        save();
+      };
+      if (settings) bar.insertBefore(chip, settings);
+      else bar.appendChild(chip);
+    });
   }
 
   function token() { return localStorage.getItem('sases_token') || ''; }
@@ -136,23 +168,20 @@
   function render() {
     if (!_panel) return;
     var tabs = [
-      ['api', '外部 API'], ['tool', '工具'], ['skill', '技能']
+      ['api', '外部 API']
     ];
-    var html = permsHtml() + '<div class="cp-tabs">';
+    var html = '<div class="cp-tabs">';
     tabs.forEach(function (t) {
       html += '<div class="cp-tab ' + (_tab === t[0] ? 'active' : '') + '" data-tab="' + t[0] + '">' + t[1] + '</div>';
     });
     html += '</div><div class="cp-body">';
 
     var shown = groups.filter(function (g) {
-      if (state.hidden.indexOf(g.id) !== -1) return false;
-      if (_tab === 'api') return g.id === 'external';
-      if (_tab === 'tool') return g.id !== 'external' && g.id !== 'skill';
-      return g.id === 'skill';
+      return g.id === 'external';
     });
 
     if (!shown.length) {
-      html += '<div class="cp-empty">' + (_tab === 'skill' ? '暂无技能（data/skills/*.md）' : '暂无可选项') + '</div>';
+      html += '<div class="cp-empty">暂无外部 API</div>';
     }
     shown.forEach(function (g) {
       html += '<div class="cp-group"><div class="cp-ghead">' + g.label +
@@ -207,9 +236,10 @@
       .then(function (res) { return res.json(); })
       .then(function (data) {
         groups = data.groups || [];
-        if (!groups.some(function (g) { return g.id === 'external'; })) _tab = 'tool';
+        if (!groups.some(function (g) { return g.id === 'external'; })) _tab = 'api';
         load();
         render();
+        renderChips();
       })
       .catch(function (e) {
         _panel.innerHTML = '<div class="cp-empty">加载失败：' + e.message + '</div>';
@@ -225,7 +255,6 @@
       document.body.appendChild(m);
     }
     if (m.classList.contains('show')) { m.classList.remove('show'); return; }
-    var all = [['read', '读取'], ['write', '写入'], ['network', '网络'], ['git', 'Git'], ['external', '外部 API'], ['skill', '技能']];
     var _steps = localStorage.getItem('sases_max_steps') || '8';
     var _mode = localStorage.getItem('sases_agent_mode') || 'auto';
     var _font = localStorage.getItem('sases_chat_font') || '15';
@@ -242,11 +271,8 @@
       [['14', '小'], ['15', '中'], ['17', '大']].map(function (v) {
         return '<option value="' + v[0] + '" ' + (_font === v[0] ? 'selected' : '') + '>' + v[1] + '</option>';
       }).join('') + '</select></label>';
-    html += '<div class="sm-title">显示哪些胶囊组</div>';
-    all.forEach(function (a) {
-      var hidden = state.hidden.indexOf(a[0]) !== -1;
-      html += '<label class="sm-item"><input type="checkbox" data-g="' + a[0] + '" ' + (hidden ? '' : 'checked') + '>' + a[1] + '</label>';
-    });
+    html += '<div class="sm-title">显示</div>';
+    html += '<div class="sm-item" style="color:#999">工具由系统按任务自动选择</div>';
     html += '<div class="sm-reset" id="sm-reset">恢复默认</div>';
     m.innerHTML = html;
 
@@ -312,6 +338,10 @@
     load();
     syncGlobals();
     updatePill();
+    fetch('/tools/capsules', { headers: { Authorization: 'Bearer ' + token() } })
+      .then(function (res) { return res.json(); })
+      .then(function (data) { groups = data.groups || []; renderChips(); })
+      .catch(function () {});
 
     var pill = document.getElementById('api-pill');
     if (pill) pill.onclick = function (e) { e.stopPropagation(); togglePanel(); };

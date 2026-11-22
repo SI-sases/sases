@@ -45,7 +45,7 @@ export async function openIdentitySwitch(chatState, api) {
       <div class="subpage-placeholder">加载智能体...</div>
     </div>
   `;
-  window.openSubpage('切换身份', contentHtml);
+  window.openSubpage('切换智能体', contentHtml);
 
   try {
     const data = await api.listMyAgents();

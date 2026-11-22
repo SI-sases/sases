@@ -261,6 +261,13 @@
   background: #fff4e5;
 }
 
+.param-chip {
+  max-width: 170px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* 参数选择面板 */
 .param-menu {
   position: fixed;

@@ -337,8 +337,7 @@ async function refreshChatMeta(agentId, isFriendChat) {
   }
   parts.push('#' + String(agentId).slice(-6));
   el.textContent = parts.join(' · ');
-  el.title = '点击切换智能体';
-  el.onclick = function (e) { e.stopPropagation(); openAgentSwitch(agentId); };
+  el.title = '智能体信息';
 }
 
 function openAgentSwitch(currentId) {
