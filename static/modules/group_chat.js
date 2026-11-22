@@ -1311,7 +1311,7 @@ async function openGroupCreditsDetail() {
       • 可用余额满 1000 可发群红包
     </div>
   `;
-  window.openSubpage('群积分', contentHtml, { showMore: false, returnAction: () => openGroupSettings() });
+  window.openSubpage(t('gc_group_credits'), contentHtml, { showMore: false, returnAction: () => openGroupSettings() });
   setTimeout(() => {
     const stake = document.getElementById('gc-stake-entry');
     if (stake) stake.onclick = openGroupStakeDialog;
@@ -1333,13 +1333,13 @@ function openGroupStakeDialog() {
     </div>
     <button class="save-btn" id="gc-stake-submit">质押</button>
   `;
-  window.openSubpage('质押积分', contentHtml, { returnAction: () => openGroupCreditsDetail() });
+  window.openSubpage(t('gc_stake_credits_title'), contentHtml, { returnAction: () => openGroupCreditsDetail() });
   setTimeout(() => {
     const btn = document.getElementById('gc-stake-submit');
     if (!btn) return;
     btn.onclick = async () => {
       const amount = parseFloat(document.getElementById('gc-stake-amount').value);
-      if (!amount || amount < 10) { alert('最少质押 10'); return; }
+      if (!amount || amount < 10) { alert(t('gc_min_stake')); return; }
       try {
         const resp = await fetch('/group/' + currentGroupId + '/stake', {
           method: 'POST',
