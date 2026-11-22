@@ -177,7 +177,7 @@ export function showTaskDraftEditor(taskId, steps) {
   wrap.appendChild(list);
 
   const addBtn = document.createElement('button');
-  addBtn.textContent = '+ 添加步骤';
+  addBtn.textContent = '+ ' + t('cd_add_step');
   addBtn.style.fontSize = '12px';
   addBtn.style.padding = '4px 12px';
   addBtn.style.border = '1px dashed #999';
@@ -198,7 +198,7 @@ export function showTaskDraftEditor(taskId, steps) {
   btnGroup.style.justifyContent = 'flex-end';
 
   const cancelBtn = document.createElement('button');
-  cancelBtn.textContent = '取消';
+  cancelBtn.textContent = t('cd_cancel_btn');
   cancelBtn.style.padding = '6px 16px';
   cancelBtn.style.fontSize = '13px';
   cancelBtn.style.border = '1px solid #ccc';
@@ -225,7 +225,7 @@ export function showTaskDraftEditor(taskId, steps) {
   btnGroup.appendChild(cancelBtn);
 
   const confirmBtn = document.createElement('button');
-  confirmBtn.textContent = '✓ 确认执行';
+  confirmBtn.textContent = '✓ ' + t('cd_confirm_exec');
   confirmBtn.style.padding = '6px 16px';
   confirmBtn.style.fontSize = '13px';
   confirmBtn.style.border = 'none';
