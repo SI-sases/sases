@@ -104,9 +104,23 @@
         b.onclick = async function () {
           const id = b.getAttribute('data-run');
           const paused = b.getAttribute('data-paused') === '1';
+          const action = paused ? 'resume' : 'pause';
           b.disabled = true;
-          try { await api('/supervisor/runs/' + id + (paused ? '/resume' : '/pause'), { method: 'POST' }); await render(); }
-          catch (e) { b.textContent = '失败'; b.disabled = false; }
+          b.textContent = paused ? '继续中...' : '暂停中...';
+          try {
+            // 真实调用后端接口：POST /supervisor/runs/{id}/pause|resume
+            const res = await api('/supervisor/runs/' + id + '/' + action, { method: 'POST' });
+            if (res && res.ok === false) throw new Error('接口返回失败');
+            if (action === 'resume' && res && res.resumed === false) {
+              b.textContent = '已解除暂停';
+            }
+            await render();
+          } catch (e) {
+            b.textContent = '失败';
+            b.disabled = false;
+            b.setAttribute('data-error', '1');
+            console.warn('[task-pill] ' + action + ' 失败 run#' + id, e);
+          }
         };
       });
     } catch (e) { panel.innerHTML = '<div class="sp-title">后台任务</div><div class="sp-empty">加载失败</div>'; }
@@ -149,22 +163,36 @@
     });
   }
 
+  const INPUT_MAX_H = 160;   // 最高 160px，超过滚动
+  const INPUT_MIN_H = 36;    // 1 行 36px
+
+  function resizeChatInput(input) {
+    const el = input || document.getElementById('chat-input');
+    if (!el) return;
+    el.style.height = 'auto';
+    const raw = el.scrollHeight;
+    const h = Math.max(INPUT_MIN_H, Math.min(raw, INPUT_MAX_H));
+    el.style.height = h + 'px';
+    el.style.overflowY = raw > INPUT_MAX_H ? 'auto' : 'hidden';
+  }
+
   function bindInput() {
     const input = document.getElementById('chat-input');
     if (!input || input._spBound) return;
     input._spBound = true;
-    const resize = function () {
-      input.style.height = 'auto';
-      const h = Math.min(input.scrollHeight, 160);
-      input.style.height = h + 'px';
-      input.style.overflowY = input.scrollHeight > 160 ? 'auto' : 'hidden';
-    };
+    const resize = function () { resizeChatInput(input); };
     input.addEventListener('input', resize);
     input.addEventListener('focus', resize);
+    // 发送后（点击发送 / 回车）恢复 1 行高度
     const send = document.getElementById('send-btn');
     if (send) send.addEventListener('click', function () { setTimeout(resize, 0); });
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey) setTimeout(resize, 0);
+    });
     resize();
   }
+
+  window.sasesResizeChatInput = resizeChatInput;
 
   function boot() {
     ensurePills();

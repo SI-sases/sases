@@ -109,8 +109,12 @@ async def pause_run(run_id: int, user_id: int = Depends(get_current_user)):
             raise HTTPException(status_code=404, detail="run not found")
         cur.execute("UPDATE supervisor_runs SET status='paused' WHERE id=? AND user_id=?",
                     (run_id, user_id))
-    from ..services import run_control_service
-    run_control_service.pause(row["conversation_id"])
+    # 暂停信号必须真正下发到执行侧，否则只是改了状态文字
+    try:
+        from ..services import run_control_service
+        run_control_service.pause(row["conversation_id"])
+    except Exception as _e_pause:
+        print('[pause] 下发暂停信号失败: ' + str(_e_pause))
     return {"ok": True, "run_id": run_id, "status": "paused"}
 
 
@@ -124,10 +128,20 @@ async def resume_run(run_id: int, user_id: int = Depends(get_current_user)):
             raise HTTPException(status_code=404, detail="run not found")
         cur.execute("UPDATE supervisor_runs SET status='running' WHERE id=? AND user_id=?",
                     (run_id, user_id))
-    from ..services import run_control_service, execution_gateway
-    run_control_service.resume(row["conversation_id"])
-    asyncio.create_task(execution_gateway.resume_run(run_id, "继续"))
-    return {"ok": True, "run_id": run_id, "status": "running"}
+    try:
+        from ..services import run_control_service
+        run_control_service.resume(row["conversation_id"])
+    except Exception as _e_res:
+        print('[resume] 解除暂停信号失败: ' + str(_e_res))
+    # 续跑失败不能吞掉：返回 resumed 标记，前端据此提示
+    resumed = False
+    try:
+        from ..services import execution_gateway
+        asyncio.create_task(execution_gateway.resume_run(run_id, "继续"))
+        resumed = True
+    except Exception as _e_run:
+        print('[resume] 续跑调度失败: ' + str(_e_run))
+    return {"ok": True, "run_id": run_id, "status": "running", "resumed": resumed}
 
 
 @router.post("/propose")

@@ -51,6 +51,12 @@ def _is_investigation(goal):
     return any(m in text for m in markers) and not any(w in text for w in write)
 
 
+def _is_write_task(goal):
+    text = str(goal or "")
+    return any(w in text for w in ("改", "修复", "创建", "写入", "删除", "重命名",
+                                   "重构", "实现", "添加", "部署", "安装", "执行"))
+
+
 def _tool_schemas(allowed_tool_ids=None, mode="fast"):
     from core.harness_runtime import harness_runtime
     from .fast_agent import tool_schema
@@ -122,7 +128,7 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
         else:
             _audit_steps = 0
             schemas = _all_schemas
-        if _is_investigation(goal) and _audit_steps >= 3 and schemas and not _audit_nudged:
+        if (_is_investigation(goal) or _is_write_task(goal)) and _audit_steps >= 3 and schemas and not _audit_nudged:
             _audit_nudged = True
             # 调查够了：撤掉只读工具，只留写/验证工具，迫使模型落地修复
             schemas = [s for s in _all_schemas
@@ -131,7 +137,7 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
                      "只读工具已收起；不要继续读文件，也不要问用户是否需要修改。")
             messages.append({"role": "user", "content": _gate})
             agent_memory.append(conversation_id, "user", _gate)
-        if _is_investigation(goal) and _audit_steps >= 5 and schemas:
+        if (_is_investigation(goal) or _is_write_task(goal)) and _audit_steps >= 5 and schemas:
             _gate = ("[调查截止] 已经查看 5 轮，不要再读文件。现在只允许写文件/验证，"
                      "直接执行修复。")
             messages.append({"role": "user", "content": _gate})

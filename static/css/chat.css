@@ -355,9 +355,11 @@
 
 #chat-input {
   width: 100%;
+  /* 1 行 = 36px（8+8 padding + 1.45*14≈20 行高）；长文本由 JS 逐步增高，最高 160px */
   min-height: 36px !important;
   max-height: 160px !important;
   height: 36px;
+  box-sizing: border-box;
   padding: 8px 14px;
   background: transparent;
   border: none;
@@ -374,7 +376,8 @@
 }
 #chat-input:focus { background: transparent; }
 
-textarea#chat-input { field-sizing: content !important; }
+/* 关闭浏览器原生 field-sizing，避免与 JS 的 scrollHeight 计算互相打架 */
+textarea#chat-input { field-sizing: fixed !important; }
 
 .send-btn {
   padding: 8px 16px;
