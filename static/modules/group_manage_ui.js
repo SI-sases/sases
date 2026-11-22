@@ -263,10 +263,10 @@ window.openAddAdminDialog = function(groupId, members, currentAdmins) {
             body: JSON.stringify({ username_or_id: uid, role: 'admin' })
           });
           const data = await resp.json();
-          if (data.error || data.detail) { alert('添加失败：' + (data.error || data.detail)); return; }
-          alert('已添加为管理员');
+          if (data.error || data.detail) { alert(t('gm_add_failed') + (data.error || data.detail)); return; }
+          alert(t('gm_added_admin'));
           window.openGroupManage(groupId);
-        } catch (err) { alert('网络错误：' + err.message); }
+        } catch (err) { alert(t('gm_network_error') + '：' + err.message); }
       };
     });
   }, 300);

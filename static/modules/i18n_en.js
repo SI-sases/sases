@@ -33,6 +33,8 @@ export const en = {
   'gm_add_admin': 'Add admin',
   'gm_switch_failed': 'Switch failed',
   'gm_network_error': 'Network error',
+  'gm_add_failed': 'Add failed: ',
+  'gm_added_admin': 'Added as admin',
   'main.read_agree': 'I have read and agree to',
   'main.node_cn': 'China node',
   'main.all_fields_required': 'All fields are required',

@@ -39,6 +39,8 @@ export const zh = {
   'gm_add_admin': '添加管理员',
   'gm_switch_failed': '切换失败',
   'gm_network_error': '网络错误',
+  'gm_add_failed': '添加失败：',
+  'gm_added_admin': '已添加为管理员',
   'main.read_agree': '我已阅读并同意',
   'err_password_mismatch': '两次输入的密码不一致',
   'err_register_failed': '注册失败',
