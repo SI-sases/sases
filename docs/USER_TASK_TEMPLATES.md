@@ -57,6 +57,20 @@
 执行：你的任务
 ```
 
+## 写操作审批
+
+默认分级：
+
+```text
+data/ static/ docs/ tests/        直接写
+core/ scripts/ launcher/          需要审批
+删除 / 重命名 / git / ssh / 部署  需要审批
+run_python 含删除、rm、DROP       需要审批
+仓库外路径 / .env / secrets        需要审批
+```
+
+用户会看到审批卡片，点允许后继续执行。
+
 ## 不建议的说法
 
 ```text

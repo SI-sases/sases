@@ -4,6 +4,36 @@
 WRITE_TOOLS = {"file_write", "smart_edit", "file_replace_range", "delete_block",
                "split_block", "git_ops"}
 NETWORK_TOOLS = {"web_fetch", "api_call", "http_async", "ssh_exec"}
+_HIGH_RISK_TOOLS = {"delete_block", "split_block", "git_ops", "ssh_exec"}
+
+
+def _is_high_risk(tool, args):
+    import os
+    if tool in _HIGH_RISK_TOOLS:
+        return True
+    if tool == "run_python":
+        code = str((args or {}).get("code") or "")
+        return any(x in code for x in ("os.remove", "shutil.rmtree", "rm -rf",
+                                       "unlink(", "DROP TABLE", "DELETE FROM"))
+    if tool not in WRITE_TOOLS or not isinstance(args, dict):
+        return False
+    fp = str(args.get("file_path") or "")
+    if not fp:
+        return True
+    root = os.path.realpath(os.getcwd())
+    real = os.path.realpath(fp)
+    try:
+        rel = os.path.relpath(real, root).replace("\\", "/")
+    except Exception:
+        return True
+    if rel.startswith("..") or os.path.isabs(rel):
+        return True
+    if any(rel == x or rel.startswith(x + "/") for x in
+           ("core", "scripts", "launcher", "build_portable", ".git")):
+        return True
+    if rel in ("app_full.py", "requirements.txt", "users.db", ".env") or "secret" in rel.lower():
+        return True
+    return False
 
 
 class ApprovalRequired(Exception):
@@ -16,7 +46,10 @@ class ApprovalRequired(Exception):
 async def before_tool(user_id, conversation_id, run_id, step, tool, args):
     import os
     try:
-        if run_id and os.getenv("SASES_REQUIRE_APPROVAL") == "1" and tool in (WRITE_TOOLS | NETWORK_TOOLS):
+        _mode = str(os.getenv("SASES_APPROVAL_MODE", "risk")).strip().lower()
+        _all = os.getenv("SASES_REQUIRE_APPROVAL") == "1"
+        _need = _all or (_mode != "off" and _is_high_risk(tool, args))
+        if run_id and _need and tool in (WRITE_TOOLS | NETWORK_TOOLS | {"run_python"}):
             from . import approval_service
             if not approval_service.is_approved(run_id, str(step), {"step": step, "module_id": tool}):
                 await approval_service.request_approval(run_id, str(step),
