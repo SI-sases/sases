@@ -62,7 +62,7 @@ window.openGroupManage = async function(groupId) {
         <span class="menu-arrow">›</span>
       </div>
     </div>
-    ${isOwner ? '<div class="me-menu"><div class="me-menu-item" id="gm-add-admin" style="cursor:pointer;"><span class="menu-label" style="color:#007aff;">+ 添加管理员</span></div></div>' : ''}
+    ${isOwner ? '<div class="me-menu"><div class="me-menu-item" id="gm-add-admin" style="cursor:pointer;"><span class="menu-label" style="color:#007aff;">+ ' + t('gm_add_admin') + '</span></div></div>' : ''}
     <div class="me-menu">
       <div class="me-menu-item" id="gm-qrcode" style="cursor:pointer;">
         <span class="menu-label">群二维码</span>
@@ -101,11 +101,11 @@ window.openGroupManage = async function(groupId) {
           body: JSON.stringify({ enabled: !cur })
         });
         const data = await resp.json();
-        if (data.error || data.detail) { alert('切换失败：' + (data.error || data.detail)); return; }
+        if (data.error || data.detail) { alert(t('gm_switch_failed') + '：' + (data.error || data.detail)); return; }
         if (sw) {
           if (data.invite_confirm) sw.classList.add('on'); else sw.classList.remove('on');
         }
-      } catch (e) { alert('网络错误：' + e.message); }
+      } catch (e) { alert(t('gm_network_error') + '：' + e.message); }
     };
     // 读取当前开关状态
     fetch('/group/' + groupId + '/invite-confirm', {
