@@ -137,7 +137,7 @@ function handleTouchEnd(e) {
 }
 
 async function renderContacts(container) {
-  container.innerHTML = '<div class="subpage-placeholder">加载中...</div>';
+  container.innerHTML = `<div class="subpage-placeholder">${t('contacts_loading')}</div>`;
   await fetchAgents();
 
   let myAgentsHtml = '';
@@ -360,18 +360,18 @@ function openNewAgentPage() {
   const contentHtml = `
     <div style="padding: 10px 0;">
       <div style="background: #fff; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
-        <div style="font-weight: 600; margin-bottom: 10px; font-size: 15px;">&#128269; 添加新好友 (通过 SASES ID)</div>
+        <div style="font-weight: 600; margin-bottom: 10px; font-size: 15px;">&#128269; ${t('contacts_add_user_title')}</div>
         <div style="display: flex; gap: 8px;">
-          <input type="text" class="search-input" id="add-user-input" placeholder="输入对方 SASES ID (如 sases_xxx)" style="flex:1;">
-          <button class="search-btn" id="add-user-btn">添加</button>
+          <input type="text" class="search-input" id="add-user-input" placeholder="${t('contacts_add_user_placeholder')}" style="flex:1;">
+          <button class="search-btn" id="add-user-btn">${t('add_friend')}</button>
         </div>
       </div>
 
       <div style="background: #fff; border-radius: 8px; padding: 15px;">
-        <div style="font-weight: 600; margin-bottom: 10px; font-size: 15px;">&#129302; 搜索并添加智能体</div>
+        <div style="font-weight: 600; margin-bottom: 10px; font-size: 15px;">&#129302; ${t('contacts_search_agent_title')}</div>
         <div class="subpage-search-bar" style="margin-bottom:0;">
-          <input type="text" class="search-input" id="agent-search-input" placeholder="搜索智能体名称...">
-          <button class="search-btn" id="search-agent-btn">搜索</button>
+          <input type="text" class="search-input" id="agent-search-input" placeholder="${t('contacts_search_agent_placeholder')}">
+          <button class="search-btn" id="search-agent-btn">${t('contacts_search_btn')}</button>
         </div>
         <div id="agent-search-results" class="me-menu" style="margin-top: 10px;"></div>
       </div>
@@ -381,7 +381,7 @@ function openNewAgentPage() {
     </div>
   `;
   
-  window.openSubpage('添加朋友', contentHtml, {
+  window.openSubpage(t('contacts_add_friend_title'), contentHtml, {
     showMore: false,
     returnAction: () => window.activateMainView('contacts')
   });
@@ -390,7 +390,7 @@ function openNewAgentPage() {
     // 添加用户事件
     document.getElementById('add-user-btn').addEventListener('click', async () => {
       const sasesId = document.getElementById('add-user-input').value.trim();
-      if (!sasesId) return alert('请输入 enter input enter enter enter enter enter enter enter enter enter enter input enter enter SASES ID');
+      if (!sasesId) return alert(t('contacts_enter_sases_id'));
       
       try {
         const res = await fetch('/agents/friend-request', {
@@ -402,10 +402,10 @@ function openNewAgentPage() {
           body: JSON.stringify({ target_sases_id: sasesId })
         });
         const data = await res.json();
-        if (res.ok) alert('✅ 好友请求已发送,等待对方同意！');
-        else alert('❌ 发送失败: ' + (data.detail || data.message || '未知错误'));
+        if (res.ok) alert('✅ ' + t('contacts_request_sent_ok'));
+        else alert('❌ ' + t('send_failed') + ': ' + (data.detail || data.message || t('contacts_unknown_error')));
       } catch (e) {
-        alert('网络错误 error: ' + e.message);
+        alert(t('contacts_network_error') + ': ' + e.message);
       }
     });
 
@@ -426,12 +426,12 @@ function openNewAgentPage() {
 
 async function searchAgents(q) {
   const resultsContainer = document.getElementById('agent-search-results');
-  resultsContainer.innerHTML = '<div class="subpage-placeholder">搜索中...</div>';
+  resultsContainer.innerHTML = `<div class="subpage-placeholder">${t('contacts_searching')}</div>`;
   try {
     const data = await api.searchAgents(q, true);
     const results = data.results || [];
     if (results.length === 0) {
-      resultsContainer.innerHTML = '<div class="subpage-placeholder">无结果</div>';
+      resultsContainer.innerHTML = `<div class="subpage-placeholder">${t('no_results')}</div>`;
       return;
     }
     let html = '';
@@ -459,7 +459,7 @@ async function searchAgents(q) {
       });
     });
   } catch (e) {
-    resultsContainer.innerHTML = `<div class="subpage-placeholder">搜索失败:${e.message}</div>`;
+    resultsContainer.innerHTML = `<div class="subpage-placeholder">${t('search_failed')}:${e.message}</div>`;
   }
 }
 
@@ -476,12 +476,12 @@ async function sendFriendRequest(agentId) {
 async function loadFriendRequests() {
   const container = document.getElementById('friend-requests-list');
   if (!container) return;
-  container.innerHTML = '<div class="subpage-placeholder">加载中...</div>';
+  container.innerHTML = `<div class="subpage-placeholder">${t('contacts_loading')}</div>`;
   try {
     const data = await api.getFriendRequests();
     const requests = data.requests || [];
     if (requests.length === 0) {
-      container.innerHTML = `<div class="subpage-placeholder">暂无好友请求</div>`;
+      container.innerHTML = `<div class="subpage-placeholder">${t('contacts_no_friend_requests')}</div>`;
       return;
     }
     let html = '';
@@ -490,11 +490,11 @@ async function loadFriendRequests() {
         <div class="me-menu-item friend-request-item">
           <div class="agent-avatar">${req.requester_name ? req.requester_name.charAt(0) : '?'}</div>
           <div class="agent-info">
-            <div class="agent-name">${req.requester_name || '未知用户'}</div>
-            <div class="agent-desc">请求添加您为好友</div>
+            <div class="agent-name">${req.requester_name || t('contacts_unknown_user')}</div>
+            <div class="agent-desc">${t('contacts_friend_request_hint')}</div>
           </div>
-          <button class="accept-request-btn" data-request-id="${req.id}" style="background:#007aff;color:#fff;border:none;padding:4px 10px;border-radius:4px;">同意</button>
-          <button class="reject-request-btn" data-request-id="${req.id}" style="margin-left:4px;">拒绝</button>
+          <button class="accept-request-btn" data-request-id="${req.id}" style="background:#007aff;color:#fff;border:none;padding:4px 10px;border-radius:4px;">${t('accept')}</button>
+          <button class="reject-request-btn" data-request-id="${req.id}" style="margin-left:4px;">${t('reject')}</button>
         </div>
       `;
     });
@@ -510,7 +510,7 @@ async function loadFriendRequests() {
           loadFriendRequests();
           if (window.loadFriendAgents) window.loadFriendAgents();
           if (window.initMessages) window.initMessages();
-        } catch (err) { alert('操作失败: ' + err.message); }
+        } catch (err) { alert(t('contacts_op_failed') + ': ' + err.message); }
       });
     });
     container.querySelectorAll('.reject-request-btn').forEach(btn => {
@@ -521,17 +521,17 @@ async function loadFriendRequests() {
           await api.rejectFriendRequest(requestId);
           alert(t('rejected') || '已拒绝');
           loadFriendRequests();
-        } catch (err) { alert('操作失败: ' + err.message); }
+        } catch (err) { alert(t('contacts_op_failed') + ': ' + err.message); }
       });
     });
   } catch (e) {
-    container.innerHTML = `<div class="subpage-placeholder">加载失败 failed failed:${e.message}</div>`;
+    container.innerHTML = `<div class="subpage-placeholder">${t('loading_failed')}:${e.message}</div>`;
   }
 }
 
 // ==================== 群聊列表 ====================
 async function openGroupChatList() {
-  let groupsHtml = '<div class="subpage-placeholder">加载中...</div>';
+  let groupsHtml = `<div class="subpage-placeholder">${t('contacts_loading')}</div>`;
   window.openSubpage(t('group_chat'), groupsHtml);
 
   try {
@@ -555,7 +555,7 @@ async function openGroupChatList() {
       groupsHtml += '</div>';
     }
   } catch (e) {
-    groupsHtml = `<div class="subpage-placeholder">加载失败 failed failed:${e.message}</div>`;
+    groupsHtml = `<div class="subpage-placeholder">${t('loading_failed')}:${e.message}</div>`;
   }
 
   const contentHtml = `
