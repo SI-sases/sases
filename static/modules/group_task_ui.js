@@ -119,14 +119,14 @@ window.openTaskDetail = function(taskId) {
       document.querySelectorAll('.pick-sub-btn').forEach(btn => {
         btn.onclick = function() {
           const sid = btn.dataset.sid;
-          if (!confirm('确定选择此方案？选定后 95% 质押积分将发给该提交者。')) return;
+          if (!confirm(t('gt_pick_confirm'))) return;
           fetch('/group/tasks/' + taskId + '/select', {
             method: 'POST',
             headers: { 'Authorization': 'Bearer ' + localStorage.getItem('sases_token'), 'Content-Type': 'application/json' },
             body: JSON.stringify({ submission_id: parseInt(sid) })
           }).then(r => r.json()).then(data => {
-            if (data.error || data.detail) { alert('选择失败：' + (data.error || data.detail)); return; }
-            alert('已选择，提交者获得 ' + data.winner_gets + ' 积分，群池 +' + data.pool_gets);
+            if (data.error || data.detail) { alert(t('gt_pick_failed') + (data.error || data.detail)); return; }
+            alert(t('gt_picked') + data.winner_gets + ' / +' + data.pool_gets);
             window.openTaskDetail(taskId);
           }).catch(e => alert('网络错误：' + e.message));
         };
