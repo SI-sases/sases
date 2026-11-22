@@ -311,7 +311,7 @@ window.openGroupRedPacket = async function(packetId) {
             if (window.showGroupToast) window.showGroupToast('🧧 ' + t('gc_rp_claimed') + ' ' + data.amount + ' ' + t('gc_rp_points'));
             window.openGroupRedPacket(packetId);
             if (typeof loadGroupMessages === 'function') loadGroupMessages();
-          } catch (e) { alert(t('gc_network_error') + e.message); btn.disabled = false; btn.textContent = '開'; }
+          } catch (e) { alert(t('gc_network_error') + e.message); btn.disabled = false; btn.textContent = t('gc_open'); }
         };
       }
     }, 100);
