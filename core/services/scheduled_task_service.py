@@ -108,8 +108,9 @@ async def execute_task(task):
         )
         if gw.get("status") != "completed":
             with db_cursor(commit=True) as cur:
-                cur.execute("UPDATE scheduled_tasks SET failure_count=failure_count+1, updated_at=? WHERE id=?",
-                            (datetime.now().isoformat(), task_id))
+                cur.execute("UPDATE scheduled_tasks SET failure_count=failure_count+1, "
+                            "next_run_at=?, updated_at=? WHERE id=?",
+                            (_backoff_next(task.get('failure_count') or 0), datetime.now().isoformat(), task_id))
             return {'ok': False, 'error': 'loop_failed: ' + str(gw.get('status') or gw.get('error'))}
 
         next_run = _compute_next_run(task['cron_expr'])
@@ -120,8 +121,9 @@ async def execute_task(task):
         return {'ok': True, 'run_id': run_id}
     except Exception as e:
         with db_cursor(commit=True) as cur:
-            cur.execute("UPDATE scheduled_tasks SET failure_count=failure_count+1, updated_at=? WHERE id=?",
-                        (datetime.now().isoformat(), task_id))
+            cur.execute("UPDATE scheduled_tasks SET failure_count=failure_count+1, "
+                        "next_run_at=?, updated_at=? WHERE id=?",
+                        (_backoff_next(task.get('failure_count') or 0), datetime.now().isoformat(), task_id))
         # 连续失败 3 次自动暂停
         with db_cursor() as cur:
             cur.execute("SELECT failure_count FROM scheduled_tasks WHERE id=?", (task_id,))
@@ -129,6 +131,15 @@ async def execute_task(task):
             if r and r['failure_count'] >= 3:
                 pause_task(task_id, 'consecutive_failures')
         return {'ok': False, 'error': str(e)}
+
+
+def _backoff_next(failure_count):
+    try:
+        n = max(0, int(failure_count or 0))
+    except Exception:
+        n = 0
+    seconds = min(3600, 60 * (2 ** min(n, 5)))
+    return (datetime.now() + timedelta(seconds=seconds)).isoformat()
 
 
 def _compute_next_run(cron_expr):
