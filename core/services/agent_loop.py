@@ -283,6 +283,53 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
         messages.append({"role": "assistant", "content": msg.content or "",
                          "tool_calls": assistant_tool_calls})
 
+        _READ_PARALLEL = {"file_read", "grep_code", "dir_tree", "web_fetch",
+                          "read_user_doc", "search_tools"}
+        if len(calls) > 1 and all(c.function.name in _READ_PARALLEL for c in calls):
+            _batch = []
+            _can_batch = True
+            for c in calls:
+                try:
+                    _args = json.loads(c.function.arguments or "{}")
+                except Exception:
+                    _args = {}
+                try:
+                    await before_tool(user_id, conversation_id, run_id, step, c.function.name, _args)
+                except ApprovalRequired:
+                    _can_batch = False
+                    break
+                except Exception:
+                    _can_batch = False
+                    break
+                _batch.append((c, _args))
+            if _can_batch:
+                _results = await asyncio.gather(
+                    *[tool_gateway.invoke_tool_async(c.function.name, a) for c, a in _batch],
+                    return_exceptions=True,
+                )
+                for (c, _args), _r in zip(_batch, _results):
+                    name = c.function.name
+                    if isinstance(_r, Exception):
+                        ok, text = False, "ERROR: " + str(_r)
+                    else:
+                        ok = bool(getattr(_r, "success", False))
+                        text = str(getattr(_r, "result", "") or getattr(_r, "error", ""))[:4000]
+                    used.append({"step": step, "tool": name, "args": _args, "ok": ok})
+                    try:
+                        from . import tool_usage_service
+                        tool_usage_service.record(user_id, name, ok)
+                    except Exception:
+                        pass
+                    agent_memory.append(conversation_id, "tool", text, tool_call_id=c.id)
+                    messages.append({"role": "tool", "tool_call_id": c.id, "content": text})
+                    await after_tool(user_id, conversation_id, run_id, step, name, _args, ok, text)
+                    if on_event:
+                        try:
+                            await on_event({"tool": name, "ok": ok, "step": step})
+                        except Exception:
+                            pass
+                continue
+
         for c in calls:
             name = c.function.name
             try:
