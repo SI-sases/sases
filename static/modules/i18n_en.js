@@ -290,6 +290,9 @@ export const en = {
 
   // Group chat UI (group_chat.js)
   'gc_mode_swarm': 'Swarm Mode',
+  'gc_files_wip': 'Group files coming soon',
+  'gc_report_wip': 'Group reports coming soon',
+  'gc_member': 'Member',
   'gc_switch_swarm': 'Switched to Swarm Mode',
   'gc_switch_normal': 'Switched to Normal Chat',
   'gc_mode_swarm': 'Swarm Mode',

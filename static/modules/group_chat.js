@@ -927,7 +927,7 @@ async function openGroupSettings() {
       if (typeof window.openGroupFiles === 'function') {
         window.openGroupFiles(currentGroupId);
       } else {
-        alert('群文件开发中');
+        alert(t('gc_files_wip'));
       }
     });
   }
@@ -941,7 +941,7 @@ async function openGroupSettings() {
         if (typeof window.openGroupReportQueue === 'function') {
           window.openGroupReportQueue(currentGroupId);
         } else {
-          alert('群汇报开发中');
+          alert(t('gc_report_wip'));
         }
       });
       fetch('/group/' + currentGroupId + '/report-queue?status=pending', {
@@ -979,7 +979,7 @@ async function loadGroupMembers() {
     let html = '';
     members.forEach(member => {
       const icon = member.member_type === 'agent' ? '🤖' : '👤';
-      const displayName = member.display_name || '成员';
+      const displayName = member.display_name || t('gc_member');
       html += `
         <div class="member-grid-item" data-user-id="${member.user_id || ''}" data-agent-id="${member.agent_id || ''}">
           <div class="member-grid-avatar">${icon}</div>

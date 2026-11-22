@@ -290,6 +290,9 @@ export const zh = {
 
   // 群聊界面（group_chat.js）
   'gc_mode_swarm': '蜂群模式',
+  'gc_files_wip': '群文件开发中',
+  'gc_report_wip': '群汇报开发中',
+  'gc_member': '成员',
   'gc_switch_swarm': '已切换到蜂群模式',
   'gc_switch_normal': '已切换到普通模式',
   'gc_mode_swarm': '蜂群模式',
