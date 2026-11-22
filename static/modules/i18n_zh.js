@@ -278,6 +278,22 @@ export const zh = {
   'group_pollination_rule': '群任务授粉分配：群主5%，算力提供者70%，执行者15%，红包池10%。',
   'extra': '额外',
   'times': '次',
+
+  // 群聊界面（group_chat.js）
+  'gc_mode_normal': '普通聊天',
+  'gc_mode_swarm': '蜂群模式',
+  'gc_ph_mention': '陪聊直接发；要执行请写：执行：你的任务',
+  'gc_ph_default': '聊天、执行命令或任务：描述',
+  'gc_thinking_tool': '🤖 正在执行 {tool}…',
+  'gc_thinking': '🤖 智能体思考中…',
+  'gc_tasks_running': '进行中任务 ({n})',
+  'gc_untitled': '未命名',
+  'gc_stake_credits': '质押 {n} 积分 · {cat}',
+  'gc_redpacket_claims': '领取记录',
+  'gc_anonymous': '匿名',
+  'gc_rp_saved': '已存入你的积分',
+  'gc_rp_empty': '已抢完',
+  'gc_rp_expired': '已过期',
   'daily_limit': '每日上限',
 
   // 设置

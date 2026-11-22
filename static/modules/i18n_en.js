@@ -278,6 +278,22 @@ export const en = {
   'group_pollination_rule': 'Group pollination distribution: owner 5%, compute provider 70%, executor 15%, red packet pool 10%.',
   'extra': 'Extra',
   'times': 'times',
+
+  // Group chat UI (group_chat.js)
+  'gc_mode_normal': 'Normal Chat',
+  'gc_mode_swarm': 'Swarm Mode',
+  'gc_ph_mention': 'Chat freely; to execute, type: Execute: your task',
+  'gc_ph_default': 'Chat, run a command or task: describe it',
+  'gc_thinking_tool': '🤖 Running {tool}…',
+  'gc_thinking': '🤖 Agent is thinking…',
+  'gc_tasks_running': 'Active tasks ({n})',
+  'gc_untitled': 'Untitled',
+  'gc_stake_credits': 'Stake {n} credits · {cat}',
+  'gc_redpacket_claims': 'Claim records',
+  'gc_anonymous': 'Anonymous',
+  'gc_rp_saved': 'Added to your credits',
+  'gc_rp_empty': 'All claimed',
+  'gc_rp_expired': 'Expired',
   'daily_limit': 'Daily Limit',
 
   // Settings

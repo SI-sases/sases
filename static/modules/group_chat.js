@@ -3,7 +3,7 @@ import { api } from './api.js';
 import { showGroupToast } from './group_toast.js';
 import { openGroupFiles } from './group_file_ui.js';
 import './group_knowledge_ui.js';
-import './group_redpacket_ui.js';
+import { t } from './i18n.js';
 import './group_task_ui.js';
 import './group_swarm_ui.js';
 import './group_manage_ui.js';
@@ -68,7 +68,7 @@ export async function openGroupChat(groupId, groupName) {
     document.getElementById('chat-window-title').textContent = groupName;
   }
   const _mt0 = document.getElementById('chat-mode-text');
-  if (_mt0) _mt0.textContent = currentGroupMode === 'normal' ? '普通聊天' : '蜂群模式';
+  if (_mt0) _mt0.textContent = currentGroupMode === 'normal' ? t('gc_mode_normal') : t('gc_mode_swarm');
   document.getElementById('view-chat-window').style.display = 'flex';
   document.querySelector('.bottom-nav').style.display = 'none';
   document.querySelector('.top-bar').style.display = 'none';
@@ -106,8 +106,8 @@ export async function openGroupChat(groupId, groupName) {
       if (window.updateSendButtonVisibility) window.updateSendButtonVisibility();
       const v = (_chatInput.value || '').trim();
       _chatInput.placeholder = v.startsWith('@')
-        ? '陪聊直接发；要执行请写：执行：你的任务'
-        : (_chatInput.dataset.origPh || '聊天、执行命令或任务：描述');
+        ? t('gc_ph_mention')
+        : (_chatInput.dataset.origPh || t('gc_ph_default'));
     };
   }
   let _sendBtn = document.getElementById('send-btn');
@@ -138,7 +138,7 @@ export async function openGroupChat(groupId, groupName) {
         try {
           const d = JSON.parse(e.data);
           if (d && d.type === 'agent_progress') {
-            _showGroupThinking(d.tool ? '🤖 正在执行 ' + d.tool + '…' : '🤖 智能体思考中…');
+            _showGroupThinking(d.tool ? t('gc_thinking_tool').replace('{tool}', d.tool) : t('gc_thinking'));
             return;
           }
           if (d && d.type === 'message') {
@@ -207,7 +207,7 @@ async function loadGroupTasks() {
       bar.style.display = 'none';
       return;
     }
-    text.textContent = '进行中任务 (' + tasks.length + ')';
+    text.textContent = t('gc_tasks_running').replace('{n}', tasks.length);
     bar.style.display = 'flex';
     bar.onclick = function() {
       openTaskListPage(tasks);
@@ -219,14 +219,14 @@ async function loadGroupTasks() {
 
 function openTaskListPage(tasks) {
   let html = '<div style="padding:12px;">';
-  tasks.forEach(t => {
-    html += '<div class="task-list-item" data-tid="' + t.id + '" style="border:1px solid #eee;border-radius:8px;padding:12px;margin-bottom:10px;cursor:pointer;">';
-    html += '<div style="font-size:15px;font-weight:600;margin-bottom:4px;">' + (t.title || '未命名') + '</div>';
-    html += '<div style="font-size:12px;color:#666;">质押 ' + (t.reward_credits || 0) + ' 积分 · ' + (t.task_category || 'text') + '</div>';
+  tasks.forEach(task => {
+    html += '<div class="task-list-item" data-tid="' + task.id + '" style="border:1px solid #eee;border-radius:8px;padding:12px;margin-bottom:10px;cursor:pointer;">';
+      html += '<div style="font-size:15px;font-weight:600;margin-bottom:4px;">' + (task.title || t('gc_untitled')) + '</div>';
+      html += '<div style="font-size:12px;color:#666;">' + t('gc_stake_credits').replace('{n}', task.reward_credits || 0).replace('{cat}', task.task_category || 'text') + '</div>';
     html += '</div>';
   });
   html += '</div>';
-  window.openSubpage('进行中任务', html);
+  window.openSubpage(t('gc_tasks_running').replace('{n}', tasks.length), html);
   setTimeout(function() {
     document.querySelectorAll('.task-list-item').forEach(el => {
       el.onclick = function() {
