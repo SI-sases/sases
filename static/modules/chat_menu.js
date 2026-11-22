@@ -283,12 +283,12 @@ export function showContextMenu(x, y, wrapper, chatState) {
       if (resp.ok) {
         wrapper.remove();
       } else if (resp.status === 404) {
-        alert('后端未提供删除消息接口');
+        alert(t('cm_delete_unavailable'));
       } else {
-        alert('删除失败: HTTP ' + resp.status);
+        alert(t('cm_delete_failed') + ' HTTP ' + resp.status);
       }
     } catch (e) {
-      alert('删除失败：' + (e.message || e));
+      alert(t('cm_delete_failed') + ' ' + (e.message || e));
     }
     closeContextMenu();
   });

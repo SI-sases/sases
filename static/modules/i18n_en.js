@@ -47,6 +47,8 @@ export const en = {
   'cm_input_ph': 'Type a message...',
   'cm_no_message': 'No message selected',
   'cm_delete_confirm': 'Delete this message?',
+  'cm_delete_unavailable': 'The backend does not provide a delete-message API',
+  'cm_delete_failed': 'Delete failed',
   'cp_mode': 'Mode',
   'cp_auto': 'Auto',
   'cp_fast': 'Fast',

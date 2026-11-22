@@ -52,6 +52,8 @@ export const zh = {
   'cm_input_ph': '输入消息...',
   'cm_no_message': '未选中消息',
   'cm_delete_confirm': '确定删除这条消息？',
+  'cm_delete_unavailable': '后端未提供删除消息接口',
+  'cm_delete_failed': '删除失败',
   // 登录与通用
   'login_title': 'SASES',
   'login_subtitle': '登录你的账号',
