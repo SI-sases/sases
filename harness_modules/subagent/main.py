@@ -10,9 +10,12 @@ def run(params):
     if not goal:
         return {"success": False, "error": "goal 不能为空"}
     from core.services.run_context import get_current
+    from core.services.capacity_service import acquire_subagent_slot, release_subagent_slot
     ctx = get_current()
     if not ctx.get("user_id") or not ctx.get("conversation_id"):
         return {"success": False, "error": "缺少父 run 上下文"}
+    if not acquire_subagent_slot(30):
+        return {"success": False, "error": "子智能体并发已满，请稍后继续"}
     try:
         from core.db import db_cursor
         from core.services import agent_loop
@@ -37,3 +40,5 @@ def run(params):
                 "result": str(loop.get("content") or "")[:4000]}
     except Exception as e:
         return {"success": False, "error": str(e)}
+    finally:
+        release_subagent_slot()

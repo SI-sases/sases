@@ -15,6 +15,12 @@ def _git(args):
     raise last or RuntimeError("git unavailable")
 
 
+@router.get("/system/capacity")
+def get_capacity():
+    from ..services.capacity_service import profile
+    return profile()
+
+
 @router.get("/version")
 def get_version():
     try:
