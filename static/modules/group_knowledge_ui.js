@@ -90,7 +90,7 @@ window.openGroupKnowledgeDetail = async function(docId, groupId) {
         <div class="me-menu-item" style="display:block;padding:14px;font-size:14px;color:#333;line-height:1.7;white-space:pre-wrap;">${d.content || ''}</div>
       </div>
     `;
-    window.openSubpage('知识详情', html, {
+    window.openSubpage(t('gk_detail_title'), html, {
       showMore: false,
       returnAction: () => window.openGroupKnowledge(groupId)
     });

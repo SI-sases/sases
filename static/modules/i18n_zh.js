@@ -468,6 +468,8 @@ export const zh = {
   'gk_policy': '制度',
   'gk_title': '群知识库',
   'gk_add': '添加',
+  'gk_untitled': '(未命名)',
+  'gk_detail_title': '知识详情',
   'gk_load_failed': '加载失败：',
   'gk_untitled': '(无标题)',
   'gc_report_wip': '群汇报开发中',

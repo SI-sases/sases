@@ -469,6 +469,7 @@ export const en = {
   'gk_add': 'Add',
   'gk_load_failed': 'Load failed: ',
   'gk_untitled': '(Untitled)',
+  'gk_detail_title': 'Knowledge details',
   'gc_report_wip': 'Group reports coming soon',
   'gc_member': 'Member',
   'gc_switch_swarm': 'Switched to Swarm Mode',
