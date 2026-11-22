@@ -462,12 +462,12 @@ async function openYunchongRescue(taskId) {
 
         const nextAttempts = (verifyResult.attempts || 0) + 1;
         if (nextAttempts >= 3) {
-          addProcessStep(processContainer, 'hint', '💡 提示', t('ds_hint_guarantee'));
+          addProcessStep(processContainer, 'hint', '💡 ' + t('ds_hint_label'), t('ds_hint_guarantee'));
         } else {
-          addProcessStep(processContainer, 'hint', '💡 提示', t('ds_hint_retry'));
+          addProcessStep(processContainer, 'hint', '💡 ' + t('ds_hint_label'), t('ds_hint_retry'));
         }
 
-        resetStartButton(startBtn, abandonBtn, '重新解救');
+        resetStartButton(startBtn, abandonBtn, t('ds_rescue_again'));
         return;
       }
 
@@ -476,15 +476,15 @@ async function openYunchongRescue(taskId) {
       const reward = verifyResult.reward || {};
       const pet = verifyResult.pet || {};
       const guaranteedTag = verifyResult.is_guaranteed ? t('ds_guaranteed') : '';
-      addProcessStep(processContainer, 'reward', `🎉 解救成功${guaranteedTag}！`, `
-        获得宠物：<strong>${pet.name || '未知'}</strong>（${pet.rarity || ''}级 · ${pet.camp || ''} · ${pet.element || ''}）
-        <br>阳光：${reward.sunlight || 0}
-        <br>经验胶囊：${(reward.exp_small || 0) + (reward.exp_medium || 0) + (reward.exp_large || 0)}
-        <br>万能钥匙：${reward.universal_key || 0}
-        ${verifyResult.kb_id ? '<br><span style="color:#34c759;">✅ 方案已存入知识库</span>' : ''}
+      addProcessStep(processContainer, 'reward', '🎉 ' + t('ds_success') + guaranteedTag + '！', `
+        ${t('ds_got_pet')}<strong>${pet.name || t('ds_unknown')}</strong>（${pet.rarity || ''}${t('ds_level_suffix')} · ${pet.camp || ''} · ${pet.element || ''}）
+        <br>${t('ds_sunlight')}${reward.sunlight || 0}
+        <br>${t('ds_exp_capsule')}${(reward.exp_small || 0) + (reward.exp_medium || 0) + (reward.exp_large || 0)}
+        <br>${t('ds_universal_key')}${reward.universal_key || 0}
+        ${verifyResult.kb_id ? '<br><span style="color:#34c759;">✅ ' + t('ds_saved_kb') + '</span>' : ''}
       `);
 
-      startBtn.textContent = '已完成';
+      startBtn.textContent = t('ds_done');
       startBtn.style.background = '#34c759';
       abandonBtn.style.display = 'none';
 
@@ -493,8 +493,8 @@ async function openYunchongRescue(taskId) {
       }
 
     } catch (e) {
-      addProcessStep(processContainer, 'error', '❌ 出错：' + e.message, '');
-      resetStartButton(startBtn, abandonBtn, '重试');
+      addProcessStep(processContainer, 'error', '❌ ' + t('ds_error') + e.message, '');
+      resetStartButton(startBtn, abandonBtn, t('ds_retry'));
     }
   };
 
