@@ -138,13 +138,27 @@ export async function openGroupChat(groupId, groupName) {
         try {
           const d = JSON.parse(e.data);
           if (d && d.type === 'agent_progress') {
+            // A2A progress 通道的 token 增量
+            if (d.stage === 'token' && d.delta) {
+              _appendGroupToken(d);
+              return;
+            }
             _showGroupThinking(d.tool ? t('gc_thinking_tool').replace('{tool}', d.tool) : t('gc_thinking'));
+            return;
+          }
+          if (d && d.type === 'token') {
+            _appendGroupToken(d);
             return;
           }
           if (d && d.type === 'message') {
             _hideGroupThinking();
             // 自己发的消息已乐观渲染，跳过
             if (d.sender_id && String(d.sender_id) === String(currentUserId) && !d.sender_agent_id) {
+              return;
+            }
+            // 流式已渲染过同一条消息：用最终内容覆盖，避免重复追加
+            if (d.msg_id && _groupStreamEls.has(String(d.msg_id))) {
+              _finalizeGroupStream(d);
               return;
             }
             // 增量追加
@@ -159,8 +173,6 @@ appendGroupMessage(d.sender_name || '?', _clean_content, false);
           }
         } catch (err) {}
       };
-      ws.onopen = () => console.log('[ws] connected to', ggid);
-      ws.onclose = () => console.log('[ws] disconnected');
       window._groupWs = ws;
     }).catch(() => {});
   } catch (e) {
@@ -577,7 +589,50 @@ function _showGroupThinking(text) {
 function _hideGroupThinking() {
   const el = document.getElementById('group-thinking');
   if (el) el.remove();
-  if (_groupThinkingTimer) { clearTimeout(_groupThinkingTimer); _groupThinkingTimer = null; }
+  }
+
+// ---- token 流式渲染 ----
+// msg_id -> { row, bubble, text }；最终 message 事件到达时按 msg_id 覆盖并清理
+const _groupStreamEls = new Map();
+
+function _appendGroupToken(d) {
+  const messages = document.getElementById('chat-messages');
+  if (!messages) return;
+  const key = String(d.msg_id || (d.sender_agent_id || d.sender_name || 'stream'));
+  let entry = _groupStreamEls.get(key);
+  if (!entry) {
+    _hideGroupThinking();
+    const row = document.createElement('div');
+    row.className = 'message-row assistant';
+    const avatar = document.createElement('div');
+    avatar.className = 'message-avatar';
+    avatar.textContent = (d.sender_name || '?').charAt(0).toUpperCase();
+    const bubble = document.createElement('div');
+    bubble.className = 'message assistant';
+    bubble.textContent = '';
+    row.appendChild(avatar);
+    row.appendChild(bubble);
+    messages.appendChild(row);
+    entry = { row, bubble, text: '' };
+    _groupStreamEls.set(key, entry);
+  }
+  entry.text += String(d.delta || '');
+  entry.bubble.textContent = entry.text;
+  messages.scrollTop = messages.scrollHeight;
+}
+
+function _finalizeGroupStream(d) {
+  const key = String(d.msg_id);
+  const entry = _groupStreamEls.get(key);
+  if (!entry) return;
+  let content = d.content == null ? '' : String(d.content);
+  if (d.sender_sases_id && content.startsWith(d.sender_sases_id + ': ')) {
+    content = content.substring(d.sender_sases_id.length + 2);
+  }
+  entry.bubble.textContent = content;
+  _groupStreamEls.delete(key);
+  const messages = document.getElementById('chat-messages');
+  if (messages) messages.scrollTop = messages.scrollHeight;
 }
 
 export async function sendGroupMessage() {  const input = document.getElementById('chat-input');

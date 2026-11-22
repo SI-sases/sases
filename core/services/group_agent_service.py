@@ -67,12 +67,33 @@ async def reply(group_id, user_id, agent_id, question, execute=False):
             pass
 
     try:
+        from ..db import db_cursor as _dc_g
+        with _dc_g() as _cg:
+            _cg.execute("SELECT global_group_id FROM groups WHERE id=?", (group_id,))
+            _gr = _cg.fetchone()
+        _global_gid = _gr["global_group_id"] if _gr else ""
+    except Exception:
+        _global_gid = ""
+
+    async def _on_token(piece):
+        if not piece or not _global_gid:
+            return
+        try:
+            from ..api_routes.ws_routes import broadcast_to_group
+            await broadcast_to_group(_global_gid, {
+                "type": "token", "msg_id": str(key), "delta": piece,
+                "sender_agent_id": agent_id,
+            })
+        except Exception:
+            pass
+
+    try:
         if execute:
             from . import run_service, supervisor_service
             _rr = await run_service.run_once(
                 user_id, key, question, source="group", supervisor_id=agent_id,
                 max_steps=max_steps, allowed_tool_ids=allowed,
-                finish=False, on_event=_progress,
+                finish=False, on_event=_progress, on_token=_on_token,
             )
             res = _rr.get("loop") or {}
             try:
@@ -88,6 +109,7 @@ async def reply(group_id, user_id, agent_id, question, execute=False):
                 mode=mode,
                 supervisor_id=agent_id,
                 on_event=_progress,
+                on_token=_on_token,
             )
     except Exception as e:
         return False, "群智能体执行失败：" + str(e)
