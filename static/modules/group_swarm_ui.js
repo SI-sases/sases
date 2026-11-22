@@ -32,7 +32,7 @@ window.openSwarmConfig = async function(groupId) {
   const renderPage = () => {
     let agentsHtml = '';
     if (allAgents.length === 0) {
-      agentsHtml = '<div style="text-align:center;color:#999;padding:20px 0;font-size:13px;">你还没有智能体，请先在"我的-模型管理"添加</div>';
+      agentsHtml = '<div style="text-align:center;color:#999;padding:20px 0;font-size:13px;">' + t('sw_no_agents') + '</div>';
     } else {
       allAgents.forEach(a => {
         const checked = sharedIds.has(a.agent_id);
@@ -67,7 +67,7 @@ window.openSwarmConfig = async function(groupId) {
         开启后，群成员切换身份时可以选择你共享的智能体，使用其模型资源。每人每日 100 次配额。
       </div>
     `;
-    window.openSubpage('蜂群模式管理', html, {
+    window.openSubpage(t('sw_title'), html, {
       showMore: false,
       returnAction: () => window.openGroupSettings()
     });
@@ -84,7 +84,7 @@ window.openSwarmConfig = async function(groupId) {
               body: JSON.stringify({ enabled: newVal })
             });
             const data = await resp.json();
-            if (data.error || data.detail) { alert('切换失败：' + (data.error || data.detail)); return; }
+            if (data.error || data.detail) { alert(t('sw_switch_failed') + (data.error || data.detail)); return; }
             swarmEnabled = newVal;
             const sw = document.getElementById('swarm-toggle-switch');
             if (sw) {
