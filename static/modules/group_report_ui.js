@@ -25,7 +25,7 @@ window.openReportResolveDialog = async function(groupId, queueId) {
     <button class="save-btn" id="report-save">保存答案</button>
   `;
 
-  window.openSubpage('补充答案', html, {
+  window.openSubpage(t('gr_answer_title'), html, {
     showMore: false,
     returnAction: () => window.openGroupReportQueue(groupId)
   });
@@ -35,7 +35,7 @@ window.openReportResolveDialog = async function(groupId, queueId) {
     if (!btn) return;
     btn.onclick = async () => {
       const answer = (document.getElementById('report-answer') || {}).value || '';
-      if (!answer.trim()) { alert('答案不能为空'); return; }
+      if (!answer.trim()) { alert(t('gr_answer_required')); return; }
       try {
         const resp = await fetch('/group/report-queue/' + queueId + '/resolve', {
           method: 'POST',
@@ -43,7 +43,7 @@ window.openReportResolveDialog = async function(groupId, queueId) {
           body: JSON.stringify({ answer: answer, category: 'faq' })
         });
         const data = await resp.json();
-        if (data.error || data.detail) { alert('保存失败：' + (data.error || data.detail)); return; }
+        if (data.error || data.detail) { alert(t('gr_save_failed') + (data.error || data.detail)); return; }
         alert('已保存并加入群知识库');
         window.closeSubpage();
         window.openGroupReportQueue(groupId);
