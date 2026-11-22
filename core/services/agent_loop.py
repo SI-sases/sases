@@ -72,7 +72,7 @@ def _tool_schemas(allowed_tool_ids=None, mode="fast"):
     return [tool_schema(t) for t in tools if getattr(t, "module_id", "")]
 
 
-async def _run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8, run_id=None, mode="fast", resume=False, supervisor_id=None, on_event=None, skill_ids=None, permissions=None):
+async def _run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8, run_id=None, mode="fast", resume=False, supervisor_id=None, on_event=None, skill_ids=None, permissions=None, agent_id=None):
     if not conversation_id:
         return {"status": "error", "content": "缺少会话", "steps": 0, "history": []}
 
@@ -82,6 +82,18 @@ async def _run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=
     except Exception as _e_cp:
         print("[compact] 跳过: " + str(_e_cp))
     agent_memory.backfill(conversation_id)
+    _client, _model = client, MODEL
+    _agent_name = "default"
+    if agent_id:
+        try:
+            from .model_runtime import resolve as _resolve_model
+            _mr = _resolve_model(user_id, agent_id)
+            if _mr:
+                _client, _model = _mr["client"], _mr["model"]
+                _agent_name = _mr.get("name") or agent_id
+                print("[model] child agent=" + str(agent_id) + " model=" + _model)
+        except Exception as _e_mr:
+            print("[model] 子智能体模型解析失败: " + str(_e_mr))
     hist = agent_memory.history(conversation_id, run_id=(run_id if resume else None))
     try:
         from .run_context import set_current, get_current
@@ -202,8 +214,8 @@ async def _run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=
                 _fm = messages + [{"role": "user", "content":
                                    "现在只用自然语言给出结论/修复结果，不要输出任何工具调用标记。"}]
                 _fr = await asyncio.to_thread(
-                    client.chat.completions.create,
-                    model=MODEL, messages=_fm, temperature=0.3, max_tokens=1200,
+                    _client.chat.completions.create,
+                    model=_model, messages=_fm, temperature=0.3, max_tokens=1200,
                     extra_body={"thinking": {"type": "disabled"}},
                 )
                 _txt = (_fr.choices[0].message.content or "").strip()
@@ -238,8 +250,8 @@ async def _run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=
             pass
         try:
             resp = await asyncio.to_thread(
-                client.chat.completions.create,
-                model=MODEL, messages=req_messages, tools=schemas or None,
+                _client.chat.completions.create,
+                model=_model, messages=req_messages, tools=schemas or None,
                 tool_choice="auto" if schemas else None,
                 temperature=0.3, max_tokens=2000,
                 extra_body={"thinking": {"type": "disabled"}},
@@ -400,8 +412,8 @@ async def _run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=
                     _rev_messages = _rev_messages + [{"role": "user", "content":
                                      "请审核上面的执行结果。只回答 PASS，或列出具体问题（不超过 5 条）。"}]
                     rr = await asyncio.to_thread(
-                        client.chat.completions.create,
-                        model=MODEL, messages=_rev_messages, temperature=0.2, max_tokens=800,
+                        _client.chat.completions.create,
+                        model=_model, messages=_rev_messages, temperature=0.2, max_tokens=800,
                         extra_body={"thinking": {"type": "disabled"}},
                     )
                     review = (rr.choices[0].message.content or "").strip()
@@ -576,10 +588,10 @@ _WRITE_LOCK = asyncio.Lock()
 
 async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8,
               run_id=None, mode="fast", resume=False, supervisor_id=None,
-              on_event=None, skill_ids=None, permissions=None):
+              on_event=None, skill_ids=None, permissions=None, agent_id=None):
     if mode == "strict" and _is_write_task(goal):
         async with _WRITE_LOCK:
             return await _run(user_id, conversation_id, goal, allowed_tool_ids, max_steps,
-                              run_id, mode, resume, supervisor_id, on_event, skill_ids, permissions)
+                              run_id, mode, resume, supervisor_id, on_event, skill_ids, permissions, agent_id)
     return await _run(user_id, conversation_id, goal, allowed_tool_ids, max_steps,
-                      run_id, mode, resume, supervisor_id, on_event, skill_ids, permissions)
+                      run_id, mode, resume, supervisor_id, on_event, skill_ids, permissions, agent_id)

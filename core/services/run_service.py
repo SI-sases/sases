@@ -35,7 +35,7 @@ def recover_stale_runs():
 async def run_once(user_id, conversation_id, goal, source="chat",
                    supervisor_id="sases_assistant", max_steps=8, skill_ids=None,
                    run_id=None, finish=True, allowed_tool_ids=None,
-                   resume=False, on_event=None, permissions=None):
+                   resume=False, on_event=None, permissions=None, agent_id=None):
     from .agent_loop import run
     from . import execution_gateway
     rid = run_id or create_run(user_id, conversation_id, source, goal, supervisor_id)
@@ -44,7 +44,7 @@ async def run_once(user_id, conversation_id, goal, source="chat",
                       allowed_tool_ids=allowed_tool_ids,
                       max_steps=int(max_steps), run_id=int(rid), mode="strict",
                       supervisor_id=supervisor_id, skill_ids=skill_ids,
-                      resume=resume, on_event=on_event, permissions=permissions)
+                      resume=resume, on_event=on_event, permissions=permissions, agent_id=agent_id)
         status = str(r.get("status") or "")
         mapped = "completed" if status == "ok" else (
             "failed" if status in ("max_steps", "verification_failed", "plan_incomplete",

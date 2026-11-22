@@ -9,6 +9,7 @@
   "node_type": "harness",
   "params": {
     "goal": {"type": "string", "required": true, "desc": "子任务目标"},
+    "agent_id": {"type": "string", "desc": "模型管理中的智能体 ID；空则用默认模型"},
     "max_steps": {"type": "int", "default": 4, "desc": "最多 6 步"}
   }
 }

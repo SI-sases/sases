@@ -7,6 +7,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 
 def run(params):
     goal = str((params or {}).get("goal") or "").strip()
+    agent_id = str((params or {}).get("agent_id") or "").strip() or None
     if not goal:
         return {"success": False, "error": "goal 不能为空"}
     from core.services.run_context import get_current
@@ -32,6 +33,7 @@ def run(params):
             ctx["user_id"], cid, goal, max_steps=min(int((params or {}).get("max_steps") or 4), 6),
             run_id=rid, mode="strict",
             allowed_tool_ids=["file_read", "grep_code", "dir_tree"],
+            agent_id=agent_id,
         ))
         with db_cursor(commit=True) as cur:
             cur.execute("UPDATE supervisor_runs SET status=?, finished_at=datetime('now') WHERE id=?",
