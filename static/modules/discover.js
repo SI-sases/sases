@@ -423,8 +423,8 @@ async function openYunchongRescue(taskId) {
       );
 
       if (!analyzeResult.success) {
-        updateProcessStep(processContainer, 'analyzing', 'failed', analyzeResult.message || '分析失败');
-        resetStartButton(startBtn, abandonBtn, '重新解救');
+        updateProcessStep(processContainer, 'analyzing', 'failed', analyzeResult.message || t('ds_analyze_failed'));
+        resetStartButton(startBtn, abandonBtn, t('ds_rescue_again'));
         return;
       }
 
@@ -440,7 +440,7 @@ async function openYunchongRescue(taskId) {
       }
 
       const sourceLabel = analyzeResult.source === 'knowledge_base'
-        ? '✅ 从知识库复用方案'
+        ? '✅ ' + t('ds_kb_reuse')
         : (analyzeResult.is_appeal ? '✅ 申诉后重新生成方案' : '✅ 方案已生成');
       updateProcessStep(processContainer, 'analyzing', 'success', sourceLabel);
 
