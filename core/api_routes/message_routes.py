@@ -179,6 +179,7 @@ async def stream_message(body: StreamMessageRequest, user_id: int = Depends(get_
                        or (body.msg_type and body.msg_type != "standard"))
             if _strict:
                 from ..services.message.send import send_message
+                yield _sse({"type": "status", "data": {"stage": "executing"}})
                 res = await send_message(
                     user_id=user_id, conversation_id=body.conversation_id,
                     agent_id=_agent_id,
