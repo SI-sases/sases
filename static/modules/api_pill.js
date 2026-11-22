@@ -154,6 +154,7 @@
   var _tab = 'api';
   var _skillQuery = '';
   var _panel = null;
+  var _notice = '';
 
   function inState(type) {
     if (type === 'api') return state.apis;
@@ -179,6 +180,9 @@
       html += '<div class="cp-tab ' + (_tab === t[0] ? 'active' : '') + '" data-tab="' + t[0] + '">' + t[1] + '</div>';
     });
     html += '</div>';
+    if (_notice) {
+      html += '<div class="cp-notice" style="margin:6px 0;padding:6px 8px;background:#fff7e6;border:1px solid #ffd591;border-radius:6px;font-size:12px;color:#ad6800;">' + _notice + '</div>';
+    }
     if (_tab === 'skill') {
       html += '<div class="cp-search"><input id="cp-skill-search" placeholder="搜索 DSH 技能，如 doc / office / verify" value="' +
         String(_skillQuery).replace(/"/g, '&quot;') + '"></div>';
@@ -253,6 +257,15 @@
       .then(function (res) { return res.json(); })
       .then(function (data) {
         groups = data.groups || [];
+        _notice = '';
+        if (data.skill_invalid && data.skill_invalid.length) {
+          var _bad = data.skill_invalid.map(function (x) {
+            return (x && (x.label || x.id)) || String(x);
+          }).filter(Boolean).slice(0, 3).join(', ');
+          _notice = '⚠ 技能绑定无效：' + _bad;
+        } else if (data.dsh && data.dsh.configured === false) {
+          _notice = '⚠ DSH 未配置，技能列表可能不完整（未同步）';
+        }
         if (!groups.some(function (g) { return g.id === 'external'; })) _tab = 'api';
         load();
         render();
