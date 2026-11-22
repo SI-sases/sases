@@ -57,7 +57,7 @@ async def _worker():
                 run["user_id"], run["conversation_id"], run["goal"],
                 source=run.get("task_type") or "chat",
                 supervisor_id=run.get("supervisor_id") or "sases_assistant",
-                run_id=run_id, finish=True,
+                max_steps=12, run_id=run_id, finish=True,
             )
             await _notify(run["user_id"], run_id, "completed")
         except Exception as e:
