@@ -87,12 +87,12 @@ async def send_message(
       quote_content=None, permissions=None, force_strict=False, resume_run_id=None):
     print(f"[MSG_DEBUG] content={content!r} | mode={mode!r} | agent_id={agent_id!r} | msg_type={msg_type}")
     try:
-        from .continuation_service import is_continue as _is_cont, rewrite as _cont_rewrite
+        from ..continuation_service import is_continue as _is_cont, rewrite as _cont_rewrite
         _was_continue = _is_cont(content)
         content = _cont_rewrite(content)
         _resume_run_id = resume_run_id
         if conversation_id:
-            from .run_control_service import resume as _run_resume, find_paused_run as _find_paused
+            from ..run_control_service import resume as _run_resume, find_paused_run as _find_paused
             _run_resume(conversation_id)
             if _was_continue and not _resume_run_id:
                 _rt = _find_paused(conversation_id)
@@ -101,6 +101,7 @@ async def send_message(
     except Exception as _e_cont:
         print("[continue] rewrite 失败: " + str(_e_cont))
         _resume_run_id = None
+    print("[resume] send cid=" + str(conversation_id) + " resume_run_id=" + str(_resume_run_id), flush=True)
     _ai_content = content
     if quote_content:
         _ai_content = "【引用消息】\n" + str(quote_content)[:1000] + "\n\n【用户消息】\n" + str(content)
