@@ -569,7 +569,7 @@ async def periodic_task_state_audit(interval_seconds=300):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     from .services.scheduled_scheduler import scheduled_task_scheduler
-    asyncio.create_task(supervisor_service.resume_restart_pending_runs())
+    # P2-3: 旧 plan_task 续跑已停用；只保留 RunService 同 run 恢复
     init_db()
     try:
         from .services.fts_service import ensure as _fts_ensure
