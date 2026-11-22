@@ -1532,7 +1532,7 @@ function openGroupNameEditor() {
     </div>
     <button class="save-btn" id="gn-save">保存</button>
   `;
-  window.openSubpage('群名称', html, {
+  window.openSubpage(t('gc_group_name'), html, {
     showMore: false,
     returnAction: () => openGroupSettings()
   });
@@ -1541,13 +1541,13 @@ function openGroupNameEditor() {
     if (!btn) return;
     btn.onclick = () => {
       const newName = (document.getElementById('gn-input') || {}).value || '';
-      if (!newName.trim()) { alert('群名不能为空'); return; }
+      if (!newName.trim()) { alert(t('gc_group_name_required')); return; }
       fetch('/group/' + currentGroupId + '/name', {
         method: 'PATCH',
         headers: { 'Authorization': 'Bearer ' + localStorage.getItem('sases_token'), 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: newName.trim() })
       }).then(r => r.json()).then(d => {
-        if (d.error || d.detail) { alert('保存失败：' + (d.error || d.detail)); return; }
+        if (d.error || d.detail) { alert(t('gc_save_failed') + (d.error || d.detail)); return; }
         currentGroupName = newName.trim();
         const el = document.getElementById('group-name-value');
         if (el) el.textContent = currentGroupName;

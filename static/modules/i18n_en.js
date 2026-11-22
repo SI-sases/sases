@@ -291,6 +291,7 @@ export const en = {
   // Group chat UI (group_chat.js)
   'gc_back': 'Back',
   'gc_group_name': 'Group Name',
+  'gc_group_name_required': 'Group name cannot be empty',
   'gc_announcement': 'Group Announcement',
   'gc_save_failed': 'Save failed: ',
   'gc_saved': 'Saved',
