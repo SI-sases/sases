@@ -1,5 +1,6 @@
 # core/api_routes/message_routes.py
 import json
+import re
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -28,6 +29,9 @@ def _looks_like_task(text):
     if not s:
         return False
     if any(v in s for v in _WRITE_ACTIONS):
+        return True
+    # 提到具体文件/代码时，即使是“是什么/在哪”也交给执行链路读文件
+    if re.search(r"[A-Za-z0-9_./\\-]+\.(py|js|mjs|md|json|html|css|yml|yaml|txt)\b", s, re.I):
         return True
     if any(v in s for v in _READ_ACTIONS):
         return len(s) >= 12 or any(o in s.lower() for o in _OBJECT_WORDS)
