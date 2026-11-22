@@ -214,7 +214,7 @@ export function showContextMenu(x, y, wrapper, chatState) {
     } catch (e) {
       console.error('[execute] generate failed:', e);
       const _fb = wrapper.dataset.content || '';
-      input.value = '#4: 请执行以下操作：' + _fb.slice(0, 300);
+      input.value = t('cm_reply_prefix') + _fb.slice(0, 300);
       if (typeof window.updateSendButtonVisibility === 'function') window.updateSendButtonVisibility();
     } finally {
       input.placeholder = _oldPlaceholder || t('cm_input_ph');
@@ -306,7 +306,7 @@ export function showContextMenu(x, y, wrapper, chatState) {
     // 单聊：原逻辑
     try {
       const data = await api.suggestReply(content);
-      const reply = data.response || '（无建议）';
+      const reply = data.response || t('cm_no_suggestion');
       const input = document.getElementById('chat-input');
       if (input) {
         input.value = reply;
@@ -316,7 +316,7 @@ export function showContextMenu(x, y, wrapper, chatState) {
         input.focus();
       }
     } catch (e) {
-      alert('生成回复失败：' + e.message);
+      alert(t('cm_generate_failed') + e.message);
     }
     closeContextMenu();
   });

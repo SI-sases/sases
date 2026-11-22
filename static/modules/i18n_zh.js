@@ -54,6 +54,9 @@ export const zh = {
   'cm_delete_confirm': '确定删除这条消息？',
   'cm_delete_unavailable': '后端未提供删除消息接口',
   'cm_delete_failed': '删除失败',
+  'cm_reply_prefix': '#4: 请执行以下操作：',
+  'cm_no_suggestion': '（无建议）',
+  'cm_generate_failed': '生成回复失败：',
   // 登录与通用
   'login_title': 'SASES',
   'login_subtitle': '登录你的账号',
