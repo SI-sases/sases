@@ -90,20 +90,19 @@ function applyLanguage() {
 
   // 注册 / 找回密码
   const goRegister = document.getElementById('go-register');
-  if (goRegister) goRegister.textContent = isEn ? 'Register' : '注册新账号';
+  if (goRegister) goRegister.textContent = t('register_link');
   const forgotPassword = document.getElementById('forgot-password');
-  if (forgotPassword) forgotPassword.textContent = isEn ? 'Forgot Password' : '找回密码';
+  if (forgotPassword) forgotPassword.textContent = t('forgot_password');
 
   // 用户协议行
   const agreementText = document.getElementById('agreement-text');
   if (agreementText) {
     const userAgreementLink = document.getElementById('user-agreement-link');
     const privacyPolicyLink = document.getElementById('privacy-policy-link');
-    if (userAgreementLink) userAgreementLink.textContent = isEn ? 'User Agreement' : '用户协议';
-    if (privacyPolicyLink) privacyPolicyLink.textContent = isEn ? 'Privacy Policy' : '隐私政策';
-    agreementText.innerHTML = isEn
-      ? `I have read and agree to <a href="/static/agreement.html" target="_blank" id="user-agreement-link" style="color:#4a90e2;">User Agreement</a> and <a href="/static/privacy.html" target="_blank" id="privacy-policy-link" style="color:#4a90e2;">Privacy Policy</a>`
-      : `我已阅读并同意 <a href="/static/agreement.html" target="_blank" id="user-agreement-link" style="color:#4a90e2;">用户协议</a> 和 <a href="/static/privacy.html" target="_blank" id="privacy-policy-link" style="color:#4a90e2;">隐私政策</a>`;
+    if (userAgreementLink) userAgreementLink.textContent = t('user_agreement');
+    if (agreementText) agreementText.innerHTML = isEn
+      ? `I have read and agree to <a href="/static/agreement.html" target="_blank" id="user-agreement-link" style="color:#4a90e2;">${t('user_agreement')}</a> and <a href="/static/privacy.html" target="_blank" id="privacy-policy-link" style="color:#4a90e2;">${t('privacy_policy')}</a>`
+      : `我已阅读并同意 <a href="/static/agreement.html" target="_blank" id="user-agreement-link" style="color:#4a90e2;">${t('user_agreement')}</a> 和 <a href="/static/privacy.html" target="_blank" id="privacy-policy-link" style="color:#4a90e2;">${t('privacy_policy')}</a>`;
   }
 
   // ========== 底部导航 ==========
