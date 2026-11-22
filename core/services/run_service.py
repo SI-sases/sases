@@ -31,9 +31,7 @@ def recover_stale_runs():
         with db_cursor(commit=True) as cur:
             cur.execute(
                 "UPDATE supervisor_runs SET status='interrupted', finished_at=datetime('now') "
-                "WHERE status='running' AND ("
-                "(heartbeat_at IS NOT NULL AND heartbeat_at < datetime('now','-90 seconds')) "
-                "OR (heartbeat_at IS NULL AND created_at < datetime('now','-10 minutes')))")
+                "WHERE status='running'")
             n = cur.rowcount
         if n:
             print("[run] recovered stale runs: " + str(n))
