@@ -87,7 +87,7 @@ function _showStopBtn(taskId) {
     if (window.chatState._stopTimer) clearTimeout(window.chatState._stopTimer);
     window.chatState._stopTimer = setTimeout(() => _hideStopBtn(), 30000);
   }
-  try { _startPollTimer(taskId); } catch (e) {}
+  try { if (taskId !== 'conv') _startPollTimer(taskId); } catch (e) {}
 }
 
 async function _pollTaskStatus(taskId) {
@@ -245,15 +245,22 @@ function _renderFeedbackBar(taskId, conversationId) {
 
 async function _stopCurrentTask() {
   const tid = window.chatState && window.chatState.currentTaskId;
+  const cid = window.chatState && window.chatState.conversationId;
   _hideStopBtn();
-  if (!tid) return;
   try {
     const token = localStorage.getItem('sases_token');
-    await fetch('/swarm/cancel', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify({ task_id: tid })
-    });
+    if (tid) {
+      await fetch('/swarm/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ task_id: tid })
+      });
+    } else if (cid) {
+      await fetch('/messages/' + cid + '/pause', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+    }
   } catch (e) { console.warn('[stop] 取消 / Cancel失败 / Failed', e); }
 }
 
@@ -263,6 +270,7 @@ window._hideStopBtn = _hideStopBtn;
 window._stopCurrentTask = _stopCurrentTask;
 
 async function streamSendMessage(payload, state) {
+  try { window._showStopBtn && window._showStopBtn('conv'); } catch (e) {}
   const token = localStorage.getItem('sases_token') || '';
   const resp = await fetch('/messages/stream', {
     method: 'POST',
@@ -311,6 +319,7 @@ async function streamSendMessage(payload, state) {
   if (bubble) {
     try { bubble.innerHTML = renderMarkdown(text); } catch (e) { bubble.textContent = text; }
   }
+  try { _hideStopBtn(); } catch (e) {}
   return { data: finalData, streamed: !!bubble, streamedText: text };
 }
 
