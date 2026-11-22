@@ -136,6 +136,17 @@ def _sse(obj) -> str:
     return "data: " + json.dumps(obj, ensure_ascii=False, default=str) + "\n\n"
 
 
+def _persist_skills(conversation_id, skill_ids):
+    if not conversation_id or skill_ids is None:
+        return
+    try:
+        with db_cursor(commit=True) as cur:
+            cur.execute("UPDATE conversations SET skill_ids=? WHERE id=?",
+                        (json.dumps(list(skill_ids or []), ensure_ascii=False), int(conversation_id)))
+    except Exception as e:
+        print("[skills] persist failed: " + str(e))
+
+
 @router.post("/stream")
 async def stream_message(body: StreamMessageRequest, user_id: int = Depends(get_current_user)):
     async def gen():
@@ -175,6 +186,7 @@ async def stream_message(body: StreamMessageRequest, user_id: int = Depends(get_
                     quote_content=body.quote_content,
                     enabled_skill_ids=body.enabled_skill_ids,
                     max_steps=16, agent_mode="strict", permissions=body.permissions)
+                _persist_skills(body.conversation_id, body.enabled_skill_ids)
                 yield _sse({"type": "final", "data": res})
                 return
 
@@ -218,6 +230,7 @@ async def send_message(body: SendMessageRequest, user_id: int = Depends(get_curr
                                      budget_tokens=body.budget_tokens or 0,
                                      timeout_seconds=body.timeout_seconds or 0)
         await run_queue_service.enqueue(rid, body.priority or 5)
+        _persist_skills(cid, body.enabled_skill_ids)
         return {"conversation_id": cid, "run_id": rid, "status": "queued", "background": True}
     _resume_id = None
     if body.conversation_id:
@@ -254,6 +267,7 @@ async def send_message(body: SendMessageRequest, user_id: int = Depends(get_curr
         budget_tokens=body.budget_tokens or 0,
         timeout_seconds=body.timeout_seconds or 0,
     )
+    _persist_skills(result.get("conversation_id") or body.conversation_id, body.enabled_skill_ids)
     try:
         from .ws_routes import broadcast_to_user
         await broadcast_to_user(user_id, {
