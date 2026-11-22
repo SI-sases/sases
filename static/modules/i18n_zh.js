@@ -49,6 +49,9 @@ export const zh = {
   'cp_skill_invalid': '技能绑定无效：',
   'cp_dsh_missing': 'DSH 未配置，技能列表可能不完整（未同步）',
   'cp_load_failed': '加载失败：',
+  'cm_input_ph': '输入消息...',
+  'cm_no_message': '未选中消息',
+  'cm_delete_confirm': '确定删除这条消息？',
   // 登录与通用
   'login_title': 'SASES',
   'login_subtitle': '登录你的账号',

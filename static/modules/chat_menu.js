@@ -217,7 +217,7 @@ export function showContextMenu(x, y, wrapper, chatState) {
       input.value = '#4: 请执行以下操作：' + _fb.slice(0, 300);
       if (typeof window.updateSendButtonVisibility === 'function') window.updateSendButtonVisibility();
     } finally {
-      input.placeholder = _oldPlaceholder || '输入消息...';
+      input.placeholder = _oldPlaceholder || t('cm_input_ph');
       input.disabled = false;
       input.focus();
       input.setSelectionRange(input.value.length, input.value.length);
@@ -272,8 +272,8 @@ export function showContextMenu(x, y, wrapper, chatState) {
   // FIX_MENU_V2: 删除单条消息
   menu.querySelector('[data-action="delete"]').addEventListener('click', async () => {
     const messageId = wrapper.dataset.messageId;
-    if (!messageId) { alert('未选中消息'); return; }
-    if (!confirm('确定删除这条消息？')) { closeContextMenu(); return; }
+    if (!messageId) { alert(t('cm_no_message')); return; }
+    if (!confirm(t('cm_delete_confirm'))) { closeContextMenu(); return; }
     try {
       const token = localStorage.getItem('sases_token') || '';
       const resp = await fetch('/messages/message/' + messageId, {
