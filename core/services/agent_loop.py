@@ -73,7 +73,90 @@ def _tool_schemas(allowed_tool_ids=None, mode="fast"):
     return [tool_schema(t) for t in tools if getattr(t, "module_id", "")]
 
 
-async def _run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8, run_id=None, mode="fast", resume=False, supervisor_id=None, on_event=None, skill_ids=None, permissions=None, agent_id=None, subagent_agent_id=None, multi_agent=False, budget_tokens=0):
+async def _stream_completion(_client, _model, req_messages, schemas, tool_choice, on_token):
+    """流式调用 LLM：累积 delta.content 与 delta.tool_calls，逐块透传 on_token。
+
+    返回与非流式响应结构兼容的轻量对象（choices[0].message.content / .tool_calls、usage），
+    供后续 record_from_response 与 msg.content / msg.tool_calls 复用。
+    """
+    stream = await asyncio.to_thread(
+        _client.chat.completions.create,
+        model=_model, messages=req_messages, tools=schemas or None,
+        tool_choice=tool_choice,
+        temperature=0.3, max_tokens=2000, stream=True,
+        extra_body={"thinking": {"type": "disabled"}},
+    )
+    text_parts = []
+    calls = {}
+    usage = None
+    for chunk in stream:
+        try:
+            if getattr(chunk, "usage", None):
+                usage = chunk.usage
+            choices = getattr(chunk, "choices", None) or []
+            if not choices:
+                continue
+            delta = getattr(choices[0], "delta", None)
+            if delta is None:
+                continue
+            piece = getattr(delta, "content", None)
+            if piece:
+                text_parts.append(piece)
+                try:
+                    await on_token(piece)
+                except Exception as _e_tok:
+                    print("[stream] on_token 失败: " + str(_e_tok))
+            for tc in (getattr(delta, "tool_calls", None) or []):
+                idx = getattr(tc, "index", 0) or 0
+                slot = calls.setdefault(idx, {"id": None, "name": "", "arguments": ""})
+                if getattr(tc, "id", None):
+                    slot["id"] = tc.id
+                fn = getattr(tc, "function", None)
+                if fn is not None:
+                    if getattr(fn, "name", None):
+                        slot["name"] = (slot["name"] or "") + fn.name
+                    if getattr(fn, "arguments", None):
+                        slot["arguments"] = (slot["arguments"] or "") + fn.arguments
+        except Exception as _e_chunk:
+            print("[stream] 解析 chunk 失败: " + str(_e_chunk))
+    try:
+        stream.close()
+    except Exception:
+        pass
+
+    class _Fn:
+        def __init__(self, name, arguments):
+            self.name = name
+            self.arguments = arguments
+
+    class _Call:
+        def __init__(self, cid, name, arguments):
+            self.id = cid
+            self.type = "function"
+            self.function = _Fn(name, arguments)
+
+    class _Msg:
+        def __init__(self, content, tool_calls):
+            self.content = content
+            self.tool_calls = tool_calls
+
+    class _Choice:
+        def __init__(self, message):
+            self.message = message
+
+    class _Resp:
+        def __init__(self, message, usage):
+            self.choices = [_Choice(message)]
+            self.usage = usage
+
+    tool_calls = [
+        _Call(v.get("id") or ("call_" + str(k)), v.get("name") or "", v.get("arguments") or "")
+        for k, v in sorted(calls.items())
+    ]
+    return _Resp(_Msg("".join(text_parts), tool_calls or None), usage)
+
+
+async def _run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8, run_id=None, mode="fast", resume=False, supervisor_id=None, on_event=None, skill_ids=None, permissions=None, agent_id=None, subagent_agent_id=None, multi_agent=False, budget_tokens=0, on_token=None):
     if not conversation_id:
         return {"status": "error", "content": "缺少会话", "steps": 0, "history": []}
 
@@ -310,16 +393,22 @@ async def _run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=
                       " messages=" + str(est["messages"]) + " tools=" + str(est["tools"]))
         except Exception:
             pass
+        _tool_choice = ({"type": "function", "function": {"name": "subagent"}}
+                        if (multi_agent and _subagent_calls < 2 and step <= 2 and schemas)
+                        else ("auto" if schemas else None))
         try:
-            resp = await asyncio.to_thread(
-                _client.chat.completions.create,
-                model=_model, messages=req_messages, tools=schemas or None,
-                tool_choice=({"type": "function", "function": {"name": "subagent"}}
-                             if (multi_agent and _subagent_calls < 2 and step <= 2 and schemas)
-                             else ("auto" if schemas else None)),
-                temperature=0.3, max_tokens=2000,
-                extra_body={"thinking": {"type": "disabled"}},
-            )
+            if on_token:
+                # 流式路径：累积 delta.content / delta.tool_calls，逐块透传 on_token
+                resp = await _stream_completion(_client, _model, req_messages, schemas,
+                                                _tool_choice, on_token)
+            else:
+                resp = await asyncio.to_thread(
+                    _client.chat.completions.create,
+                    model=_model, messages=req_messages, tools=schemas or None,
+                    tool_choice=_tool_choice,
+                    temperature=0.3, max_tokens=2000,
+                    extra_body={"thinking": {"type": "disabled"}},
+                )
         except Exception as e:
             return {"status": "error", "content": "LLM 调用失败: " + str(e), "steps": step, "history": used}
 
@@ -710,10 +799,10 @@ _WRITE_LOCK = asyncio.Lock()
 async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8,
               run_id=None, mode="fast", resume=False, supervisor_id=None,
               on_event=None, skill_ids=None, permissions=None, agent_id=None,
-              subagent_agent_id=None, multi_agent=False, budget_tokens=0):
+              subagent_agent_id=None, multi_agent=False, budget_tokens=0, on_token=None):
     if mode == "strict" and _is_write_task(goal):
         async with _WRITE_LOCK:
             return await _run(user_id, conversation_id, goal, allowed_tool_ids, max_steps,
-                              run_id, mode, resume, supervisor_id, on_event, skill_ids, permissions, agent_id, subagent_agent_id, multi_agent, budget_tokens)
+                              run_id, mode, resume, supervisor_id, on_event, skill_ids, permissions, agent_id, subagent_agent_id, multi_agent, budget_tokens, on_token)
     return await _run(user_id, conversation_id, goal, allowed_tool_ids, max_steps,
-                      run_id, mode, resume, supervisor_id, on_event, skill_ids, permissions, agent_id, subagent_agent_id, multi_agent, budget_tokens)
+                      run_id, mode, resume, supervisor_id, on_event, skill_ids, permissions, agent_id, subagent_agent_id, multi_agent, budget_tokens, on_token)

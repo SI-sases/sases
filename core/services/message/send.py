@@ -85,7 +85,8 @@ async def send_message(
     attachments: list = None
 , enabled_api_ids=None, enabled_tool_ids=None, enabled_skill_ids=None, agent_mode=None,
       quote_content=None, permissions=None, force_strict=False, resume_run_id=None,
-      subagent_agent_id=None, multi_agent=False, budget_tokens=0, timeout_seconds=0):
+      subagent_agent_id=None, multi_agent=False, budget_tokens=0, timeout_seconds=0,
+      on_token=None):
     print(f"[MSG_DEBUG] content={content!r} | mode={mode!r} | agent_id={agent_id!r} | msg_type={msg_type}")
     try:
         from ..continuation_service import is_continue as _is_cont, rewrite as _cont_rewrite
@@ -315,6 +316,7 @@ async def send_message(
                 multi_agent=multi_agent,
                 budget_tokens=budget_tokens,
                 timeout_seconds=timeout_seconds,
+                on_token=on_token,
             )
             _fr_s = _rs.get("loop") or {}
             if _fr_s.get("status") == "awaiting_approval":

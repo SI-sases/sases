@@ -49,7 +49,8 @@ async def run_once(user_id, conversation_id, goal, source="chat",
                    supervisor_id="sases_assistant", max_steps=8, skill_ids=None,
                    run_id=None, finish=True, allowed_tool_ids=None,
                    resume=False, on_event=None, permissions=None, agent_id=None,
-                   subagent_agent_id=None, multi_agent=False, budget_tokens=0, timeout_seconds=0):
+                   subagent_agent_id=None, multi_agent=False, budget_tokens=0, timeout_seconds=0,
+                   on_token=None):
     from .agent_loop import run
     from . import execution_gateway
     rid = run_id or create_run(user_id, conversation_id, source, goal, supervisor_id,
@@ -61,7 +62,7 @@ async def run_once(user_id, conversation_id, goal, source="chat",
                       supervisor_id=supervisor_id, skill_ids=skill_ids,
                       resume=resume, on_event=on_event, permissions=permissions, agent_id=agent_id,
                       subagent_agent_id=subagent_agent_id, multi_agent=multi_agent,
-                      budget_tokens=budget_tokens)
+                      budget_tokens=budget_tokens, on_token=on_token)
         status = str(r.get("status") or "")
         mapped = "completed" if status == "ok" else (
             "failed" if status in ("max_steps", "verification_failed", "plan_incomplete",

@@ -1,4 +1,4 @@
-# core/api_routes/message_routes.py
+import asyncio
 import json
 import re
 from fastapi import APIRouter, Depends, HTTPException
@@ -181,13 +181,33 @@ async def stream_message(body: StreamMessageRequest, user_id: int = Depends(get_
             if _strict:
                 from ..services.message.send import send_message
                 yield _sse({"type": "status", "data": {"stage": "executing"}})
-                res = await send_message(
+                # token 流式：agent_loop 每产生一段 delta.content 就推一个 SSE token 事件
+                _token_q: asyncio.Queue = asyncio.Queue()
+
+                async def _on_token(piece):
+                    await _token_q.put(piece)
+
+                _task = asyncio.create_task(send_message(
                     user_id=user_id, conversation_id=body.conversation_id,
                     agent_id=_agent_id,
                     content=_text, sender_agent_id=body.sender_agent_id,
                     quote_content=body.quote_content,
                     enabled_skill_ids=body.enabled_skill_ids,
-                    max_steps=16, agent_mode="strict", permissions=body.permissions)
+                    max_steps=16, agent_mode="strict", permissions=body.permissions,
+                    on_token=_on_token))
+                while True:
+                    _getter = asyncio.create_task(_token_q.get())
+                    _done, _ = await asyncio.wait({_getter, _task},
+                                                  return_when=asyncio.FIRST_COMPLETED)
+                    if _getter in _done:
+                        yield _sse({"type": "token", "text": _getter.result()})
+                        continue
+                    _getter.cancel()
+                    # 任务已结束：先排空队列里剩余的 token，再取结果
+                    while not _token_q.empty():
+                        yield _sse({"type": "token", "text": _token_q.get_nowait()})
+                    break
+                res = await _task
                 _persist_skills(body.conversation_id, body.enabled_skill_ids)
                 yield _sse({"type": "final", "data": res})
                 return
