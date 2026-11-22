@@ -811,7 +811,7 @@ async function openGroupSettings() {
       </div>
     </div>
   `;
-  window.openSubpage('群设置', contentHtml, { showMore: false });
+  window.openSubpage(t('gc_group_settings'), contentHtml, { showMore: false });
 
   loadGroupCredits();
   await loadGroupMembers();
@@ -1027,7 +1027,7 @@ function openInviteDialog() {
         window.closeSubpage();
         openGroupSettings();
       } catch (e) {
-        alert('邀请失败：' + e.message);
+        alert(t('gc_invite_failed') + e.message);
       }
     });
   }, 300);
@@ -1055,7 +1055,7 @@ function openRemoveDialog() {
         window.closeSubpage();
         openGroupSettings();
       } catch (e) {
-        alert('移除失败：' + e.message);
+        alert(t('gc_remove_failed') + e.message);
       }
     });
   }, 300);
