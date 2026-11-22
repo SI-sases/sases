@@ -1043,15 +1043,15 @@ function openRemoveDialog() {
     </div>
     <button class="save-btn" id="confirm-remove-btn" style="background:#ff3b30;">移除</button>
   `;
-  window.openSubpage('移除成员', contentHtml);
+  window.openSubpage(t('gc_remove_member'), contentHtml);
 
   setTimeout(() => {
     document.getElementById('confirm-remove-btn').addEventListener('click', async () => {
       const input = document.getElementById('remove-input').value.trim();
-      if (!input) { alert('请输入成员标识'); return; }
+      if (!input) { alert(t('gc_remove_input_ph')); return; }
       try {
         await api.removeGroupMember(currentGroupId, input);
-        alert('移除成功');
+        alert(t('gc_remove_ok'));
         window.closeSubpage();
         openGroupSettings();
       } catch (e) {
