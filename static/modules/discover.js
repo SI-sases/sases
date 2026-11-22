@@ -441,12 +441,12 @@ async function openYunchongRescue(taskId) {
 
       const sourceLabel = analyzeResult.source === 'knowledge_base'
         ? '✅ ' + t('ds_kb_reuse')
-        : (analyzeResult.is_appeal ? '✅ 申诉后重新生成方案' : '✅ 方案已生成');
+        : (analyzeResult.is_appeal ? '✅ ' + t('ds_regenerated') : '✅ ' + t('ds_generated'));
       updateProcessStep(processContainer, 'analyzing', 'success', sourceLabel);
 
-      addProcessStep(processContainer, 'solution', '智能体生成的方案：', analyzeResult.solution);
+      addProcessStep(processContainer, 'solution', t('ds_solution_label'), analyzeResult.solution);
 
-      addProcessStep(processContainer, 'verifying', '正在验证方案...');
+      addProcessStep(processContainer, 'verifying', t('ds_verifying'));
       const verifyResult = await api.verifyYunchongTask(taskId);
 
       if (!verifyResult.success) {
