@@ -461,6 +461,7 @@ async function sendMessage() {
         try { return JSON.parse(localStorage.getItem('sases_perms_v1') || '{}'); } catch (e) { return {}; }
       })(),
       background: localStorage.getItem('sases_exec_mode') === 'background',
+      multi_agent: localStorage.getItem('sases_exec_mode') === 'multi',
       subagent_agent_id: localStorage.getItem('sases_subagent_agent_id') || null,
       quote_content: chatState.pendingQuote || null
     };

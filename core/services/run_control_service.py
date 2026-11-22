@@ -10,6 +10,7 @@ import threading
 
 _lock = threading.Lock()
 _paused = set()
+_cancelled = set()
 # conversation_id -> {"run_id": int, "goal": str}：暂停时记下待恢复的 run
 _resume_target = {}
 
@@ -39,6 +40,16 @@ def resume(conversation_id):
 def is_paused(conversation_id):
     with _lock:
         return int(conversation_id) in _paused
+
+
+def cancel(conversation_id):
+    with _lock:
+        _cancelled.add(int(conversation_id))
+
+
+def is_cancelled(conversation_id):
+    with _lock:
+        return int(conversation_id) in _cancelled
 
 
 def set_resume_target(conversation_id, run_id, goal=""):

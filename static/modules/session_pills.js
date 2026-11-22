@@ -113,8 +113,18 @@
           '</div>' +
           (r.parent_run_id ? (r.status === 'failed' ? '<button class="sp-btn warn" data-retry="' + r.id + '">重试</button>' : '') :
             '<button class="sp-btn ' + (paused ? 'warn' : '') + '" data-run="' + r.id + '" data-paused="' + (paused ? '1' : '0') + '">' +
-            (paused ? '继续' : '暂停') + '</button>') + '</div>';
+            (paused ? '继续' : '暂停') + '</button><button class="sp-btn" data-cancel="' + r.id + '" style="margin-left:4px;">取消</button>') + '</div>';
       }).join('');
+      panel.querySelectorAll('[data-cancel]').forEach(function (b) {
+        b.onclick = async function (ev) {
+          ev.stopPropagation();
+          const id = b.getAttribute('data-cancel');
+          b.disabled = true;
+          b.textContent = '取消中...';
+          try { await api('/supervisor/runs/' + id + '/cancel', { method: 'POST' }); await render(); }
+          catch (e) { b.textContent = '失败'; b.disabled = false; }
+        };
+      });
       panel.querySelectorAll('[data-retry]').forEach(function (b) {
         b.onclick = async function (ev) {
           ev.stopPropagation();

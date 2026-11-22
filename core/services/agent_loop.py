@@ -72,7 +72,7 @@ def _tool_schemas(allowed_tool_ids=None, mode="fast"):
     return [tool_schema(t) for t in tools if getattr(t, "module_id", "")]
 
 
-async def _run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8, run_id=None, mode="fast", resume=False, supervisor_id=None, on_event=None, skill_ids=None, permissions=None, agent_id=None, subagent_agent_id=None):
+async def _run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8, run_id=None, mode="fast", resume=False, supervisor_id=None, on_event=None, skill_ids=None, permissions=None, agent_id=None, subagent_agent_id=None, multi_agent=False):
     if not conversation_id:
         return {"status": "error", "content": "缺少会话", "steps": 0, "history": []}
 
@@ -180,6 +180,13 @@ async def _run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=
     except Exception as _e_plan:
         print("[todo] 注入计划失败: " + str(_e_plan))
 
+    if multi_agent:
+        _multi_gate = ("[多子智能体] 这是父任务。只要目标能拆成 2 个以上独立调查，"
+                       "必须先调用 subagent 并行处理（最多 3 个），不要自己逐个读文件；"
+                       "收齐子结果后统一汇总、再写文件；子任务只读，写由父任务串行完成。")
+        messages.append({"role": "user", "content": _multi_gate})
+        agent_memory.append(conversation_id, "user", _multi_gate, run_id=run_id)
+
     for step in range(1, max_steps + 1):
         if run_id:
             try:
@@ -192,6 +199,8 @@ async def _run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=
                         (int(run_id),))
             except Exception as _e_hb:
                 print("[run] heartbeat failed: " + str(_e_hb))
+        if run_control_service.is_cancelled(conversation_id):
+            return {"status": "cancelled", "content": "任务已取消。", "steps": step - 1, "history": used}
         if run_control_service.is_paused(conversation_id):
             # P1-1: 在当前步退出，agent_messages / todo / used 全部保留
             # P1-2: 记下待恢复的 run，供“继续”复用同一个 run
@@ -589,10 +598,10 @@ _WRITE_LOCK = asyncio.Lock()
 async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8,
               run_id=None, mode="fast", resume=False, supervisor_id=None,
               on_event=None, skill_ids=None, permissions=None, agent_id=None,
-              subagent_agent_id=None):
+              subagent_agent_id=None, multi_agent=False):
     if mode == "strict" and _is_write_task(goal):
         async with _WRITE_LOCK:
             return await _run(user_id, conversation_id, goal, allowed_tool_ids, max_steps,
-                              run_id, mode, resume, supervisor_id, on_event, skill_ids, permissions, agent_id, subagent_agent_id)
+                              run_id, mode, resume, supervisor_id, on_event, skill_ids, permissions, agent_id, subagent_agent_id, multi_agent)
     return await _run(user_id, conversation_id, goal, allowed_tool_ids, max_steps,
-                      run_id, mode, resume, supervisor_id, on_event, skill_ids, permissions, agent_id, subagent_agent_id)
+                      run_id, mode, resume, supervisor_id, on_event, skill_ids, permissions, agent_id, subagent_agent_id, multi_agent)

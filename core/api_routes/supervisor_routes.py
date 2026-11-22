@@ -126,6 +126,26 @@ async def pause_run(run_id: int, user_id: int = Depends(get_current_user)):
             "children_paused": [int(c["id"]) for c in locals().get("children", [])]}
 
 
+@router.post("/runs/{run_id}/cancel")
+async def cancel_run(run_id: int, user_id: int = Depends(get_current_user)):
+    with db_cursor(commit=True) as cur:
+        cur.execute("SELECT conversation_id FROM supervisor_runs WHERE id=? AND user_id=?",
+                    (run_id, user_id))
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="run not found")
+        cur.execute("UPDATE supervisor_runs SET status='cancelled' WHERE id=?", (run_id,))
+        cur.execute("SELECT id, conversation_id FROM supervisor_runs WHERE parent_run_id=?", (run_id,))
+        children = cur.fetchall()
+        for ch in children:
+            cur.execute("UPDATE supervisor_runs SET status='cancelled' WHERE id=?", (ch["id"],))
+    from ..services import run_control_service
+    run_control_service.cancel(row["conversation_id"])
+    for ch in children:
+        run_control_service.cancel(ch["conversation_id"])
+    return {"ok": True, "run_id": run_id, "status": "cancelled"}
+
+
 @router.post("/runs/{run_id}/resume")
 async def resume_run(run_id: int, user_id: int = Depends(get_current_user)):
     with db_cursor(commit=True) as cur:
