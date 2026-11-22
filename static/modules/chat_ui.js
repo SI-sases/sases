@@ -1,4 +1,5 @@
 import { renderMarkdown } from './markdown.js';
+import { t } from './i18n.js';
 // static/modules/chat_ui.js
 
 // ========== 协议消息过滤（v0.17.0） ==========
@@ -58,7 +59,7 @@ export function appendWorkMessage(role, content, senderName = null) {
   avatar.style.justifyContent = 'center';
   avatar.style.flexShrink = '0';
   avatar.style.fontSize = '16px';
-  avatar.textContent = (senderName || (role === 'user' ? '我' : 'AI')).charAt(0).toUpperCase();
+  avatar.textContent = (senderName || (role === 'user' ? t('chat_me') : 'AI')).charAt(0).toUpperCase();
 
   const bubble = document.createElement('div');
   bubble.style.maxWidth = '70%';
@@ -74,7 +75,7 @@ export function appendWorkMessage(role, content, senderName = null) {
   } else {
     bubble.style.background = '#f0f0f0';
     bubble.style.color = '#333';
-    bubble.innerHTML = `<div style="font-weight:600; margin-bottom:6px;">📋 执行结果</div><pre style="margin:0; white-space:pre-wrap; word-break:break-word;">${escapeHtml(content)}</pre>`;
+    bubble.innerHTML = `<div style="font-weight:600; margin-bottom:6px;">${t('exec_result')}</div><pre style="margin:0; white-space:pre-wrap; word-break:break-word;">${escapeHtml(content)}</pre>`;
   }
 
   if (role === 'user') {
@@ -122,7 +123,7 @@ export function createMessageElement(role, content, senderName, messageId, timeI
   wrapper.style.margin = '8px 12px';
   wrapper.dataset.messageId = messageId || '';
   wrapper.dataset.role = role;
-  wrapper.dataset.senderName = senderName || (role === 'user' ? '我' : 'AI');
+  wrapper.dataset.senderName = senderName || (role === 'user' ? t('chat_me') : 'AI');
   wrapper.dataset.content = content;
 
   if (role === 'user') {
@@ -142,7 +143,7 @@ export function createMessageElement(role, content, senderName, messageId, timeI
   avatar.style.justifyContent = 'center';
   avatar.style.flexShrink = '0';
   avatar.style.fontSize = '16px';
-  avatar.textContent = (senderName || (role === 'user' ? '我' : 'AI')).charAt(0).toUpperCase();
+  avatar.textContent = (senderName || (role === 'user' ? t('chat_me') : 'AI')).charAt(0).toUpperCase();
 
   const bubble = document.createElement('div');
   bubble.style.maxWidth = '70%';
@@ -176,7 +177,7 @@ export function createMessageElement(role, content, senderName, messageId, timeI
       status.style.color = '#999';
       status.style.alignSelf = 'center';
       status.style.marginRight = '8px';
-      status.textContent = '发送中...';
+      status.textContent = t('chat_sending');
       wrapper.appendChild(status);
     }
   } else {
@@ -212,12 +213,12 @@ export function appendMessage(role, content, senderName = null, messageId = null
     bubble.addEventListener('click', async () => {
       const tx = bubble.dataset.redPacketTx;
       if (!tx) return;
-      if (!confirm('确定领取这个红包？')) return;
+      if (!confirm(t('redpacket_confirm_open'))) return;
       try {
         await api.claimRedPacket(parseInt(tx));
-        alert('领取成功');
+        alert(t('redpacket_open_success'));
       } catch (e) {
-        alert('领取失败：' + (e.message || '未知错误'));
+        alert(t('redpacket_open_failed') + (e.message || t('unknown_error')));
       }
     });
   }
@@ -416,7 +417,7 @@ export function renderImageBubble(content, role = 'user', senderName = null) {
   avatar.style.fontSize = '16px';
   avatar.style.marginLeft = role === 'user' ? '8px' : '0';
   avatar.style.marginRight = role === 'user' ? '0' : '8px';
-  avatar.textContent = (senderName || (role === 'user' ? '我' : 'AI')).charAt(0).toUpperCase();
+  avatar.textContent = (senderName || (role === 'user' ? t('chat_me') : 'AI')).charAt(0).toUpperCase();
   if (role === 'user') {
     wrapper.appendChild(imgBox);
     wrapper.appendChild(avatar);
@@ -432,9 +433,9 @@ export function renderTransferBubble(content, role = 'user', senderName = null) 
   let data = {};
   try { data = JSON.parse(content.substring(11)); } catch (e) {}
   const amount = data.amount || 0;
-  const typeStr = data.credit_type === 'compute' ? '算力' : '积分';
+  const typeStr = data.credit_type === 'compute' ? t('credit_compute') : t('credit_points');
   const icon = data.credit_type === 'compute' ? '⚡' : '💰';
-  const note = data.message || '转账';
+  const note = data.message || t('transfer');
   const isSelf = role === 'user';
   
   const el = document.createElement('div');
@@ -445,7 +446,7 @@ export function renderTransferBubble(content, role = 'user', senderName = null) 
     
   el.innerHTML = `<div style="font-size:14px;font-weight:bold;margin-bottom:8px;">${icon} ${note}</div>
                   <div style="font-size:24px;font-weight:bold;color:${isSelf ? '#fff' : '#f59e0b'};">${amount} <span style="font-size:14px;font-weight:normal;color:${isSelf ? '#fff' : '#666'};">${typeStr}</span></div>
-                  <div style="font-size:12px;opacity:0.9;margin-top:8px;border-top:1px solid ${isSelf ? 'rgba(255,255,255,0.3)' : '#eee'};padding-top:4px;">转账</div>`;
+                  <div style="font-size:12px;opacity:0.9;margin-top:8px;border-top:1px solid ${isSelf ? 'rgba(255,255,255,0.3)' : '#eee'};padding-top:4px;">${t('transfer')}</div>`;
                   
   el.onclick = () => {
     let html = `
@@ -453,13 +454,13 @@ export function renderTransferBubble(content, role = 'user', senderName = null) 
         <div style="font-size: 40px; margin-bottom: 10px;">${icon}</div>
         <div style="font-size: 24px; font-weight: bold; margin-bottom: 20px;">${amount} ${typeStr}</div>
         <div style="color: #666; margin-bottom: 10px;">${note}</div>
-        <div style="color: #f59e0b; font-size: 14px;">✅ 已实时到账</div>
+        <div style="color: #f59e0b; font-size: 14px;">${t('transfer_arrived')}</div>
       </div>
     `;
     if (window.openSubpage) {
-      window.openSubpage('转账详情', html, { returnAction: () => { window.closeSubpage(); } });
+      window.openSubpage(t('transfer_detail'), html, { returnAction: () => { window.closeSubpage(); } });
     } else {
-      alert(`转账详情\n金额：${amount} ${typeStr}\n备注：${note}\n(实时到账)`);
+      alert(`${t('transfer_detail')}\n${t('transfer_amount')}: ${amount} ${typeStr}\n${t('transfer_note')}: ${note}\n(${t('transfer_arrived_short')})`);
     }
   };
   
@@ -477,7 +478,7 @@ export function renderRedPacketBubble(content, role = 'user', senderName = null)
   // 优先用 sender_id 判断是不是自己发的，如果没有 sender_id 再回退到 role
   const isSelf = data.sender_id ? (String(data.sender_id) === String(_myId)) : (role === 'user');
   
-  const senderTitle = isSelf ? '我发出的红包' : `${data.sender_name || senderName || '好友'}的红包`;
+  const senderTitle = isSelf ? t('redpacket_mine') : `${data.sender_name || senderName || t('friend')}${t('redpacket_of_suffix')}`;
   
   const div = document.createElement('div');
   div.className = 'red-packet-bubble';
@@ -498,15 +499,15 @@ export function renderRedPacketBubble(content, role = 'user', senderName = null)
       }
     } catch(e) {}
 
-    let statusText = (detailData && detailData.status === 'completed') ? '已领取' : '未领取';
+    let statusText = (detailData && detailData.status === 'completed') ? t('redpacket_status_taken') : t('redpacket_status_untaken');
 
     if (isSelf) {
       if (window.openSubpage) {
-        window.openSubpage('红包详情', `
+        window.openSubpage(t('redpacket_detail'), `
           <div style="background:#f4f4f4;min-height:100vh;padding-top:40px;text-align:center;">
             <div style="width:80px;height:80px;background:#ef4444;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 15px;">🧧</div>
-            <div style="font-size:18px;color:#333;">我发出的红包</div>
-            <div style="color:#888;margin-top:10px;font-size:14px;">${data.message || '恭喜发财，大吉大利'}</div>
+            <div style="font-size:18px;color:#333;">${t('redpacket_mine')}</div>
+            <div style="color:#888;margin-top:10px;font-size:14px;">${data.message || t('redpacket_default_msg')}</div>
             <div style="font-size:32px;font-weight:bold;margin-top:20px;color:#333;">¥${data.amount || 0}</div>
             <div style="color:#ef4444;margin-top:10px;font-size:16px;font-weight:bold;">${statusText}</div>
           </div>
@@ -516,18 +517,18 @@ export function renderRedPacketBubble(content, role = 'user', senderName = null)
     }
 
     // 如果已经领过，直接显示灰色的“已领”页面
-    if (statusText === '已领取') {
+    if (statusText === t('redpacket_status_taken')) {
       if (window.openSubpage) {
-        window.openSubpage('红包详情', `
+        window.openSubpage(t('redpacket_detail'), `
           <div style="background:#f4f4f4;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding-top:40px;">
             <div style="width:80px;height:80px;background:#ddd;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;margin-bottom:15px;">🧧</div>
-            <div style="font-size:18px;font-weight:bold;color:#333;margin-bottom:10px;">${data.sender_name || '好友'}发出的红包</div>
-            <div style="color:#888;margin-bottom:40px;font-size:14px;">${data.message || '恭喜发财，大吉大利'}</div>
+            <div style="font-size:18px;font-weight:bold;color:#333;margin-bottom:10px;">${data.sender_name || t('friend')}${t('redpacket_from_suffix')}</div>
+            <div style="color:#888;margin-bottom:40px;font-size:14px;">${data.message || t('redpacket_default_msg')}</div>
             
             <div style="width:120px;height:120px;background:#eee;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#999;font-size:36px;font-weight:bold;">
-              已领
+        ${t('redpacket_taken_short')}
             </div>
-            <div style="margin-top:20px;font-size:16px;color:#f59e0b;font-weight:bold;">手慢了，红包派完了 / 已存入零钱</div>
+            <div style="margin-top:20px;font-size:16px;color:#f59e0b;font-weight:bold;">${t('redpacket_gone')}</div>
           </div>
         `, { returnAction: () => window.closeSubpage() });
       }
@@ -538,18 +539,18 @@ export function renderRedPacketBubble(content, role = 'user', senderName = null)
     let html = `
       <div style="background:#f4f4f4;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding-top:40px;">
         <div style="width:80px;height:80px;background:#ddd;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;margin-bottom:15px;">🧧</div>
-        <div style="font-size:18px;font-weight:bold;color:#333;margin-bottom:10px;">${data.sender_name || '好友'}发出的红包</div>
-        <div style="color:#888;margin-bottom:40px;font-size:14px;">${data.message || '恭喜发财，大吉大利'}</div>
+        <div style="font-size:18px;font-weight:bold;color:#333;margin-bottom:10px;">${data.sender_name || t('friend')}${t('redpacket_from_suffix')}</div>
+        <div style="color:#888;margin-bottom:40px;font-size:14px;">${data.message || t('redpacket_default_msg')}</div>
         
         <div id="rp-btn-open" style="width:120px;height:120px;background:linear-gradient(135deg,#f59e0b,#f97316);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:36px;font-weight:bold;cursor:pointer;box-shadow:0 10px 20px rgba(245,158,11,0.3);">
-          開
+        ${t('redpacket_open_btn')}
         </div>
         <div id="rp-msg" style="margin-top:20px;font-size:16px;color:#f59e0b;font-weight:bold;"></div>
       </div>
     `;
     
     if (window.openSubpage) {
-      window.openSubpage('拆红包', html, { returnAction: () => window.closeSubpage() });
+      window.openSubpage(t('redpacket_open_title'), html, { returnAction: () => window.closeSubpage() });
       
       setTimeout(() => {
         const btn = document.getElementById('rp-btn-open');
@@ -571,8 +572,8 @@ export function renderRedPacketBubble(content, role = 'user', senderName = null)
                 btn.style.background = '#eee';
                 btn.style.color = '#999';
                 btn.style.boxShadow = 'none';
-                btn.textContent = '已领';
-                if (msgEl) msgEl.textContent = '🎉 领取成功，积分已到账';
+                btn.textContent = t('redpacket_taken_short');
+                if (msgEl) msgEl.textContent = t('redpacket_open_success_points');
                 setTimeout(() => {
                   window.closeSubpage();
                   if (window.loadMessages && window.chatState && window.chatState.conversationId) {
@@ -585,24 +586,24 @@ export function renderRedPacketBubble(content, role = 'user', senderName = null)
                 btn.style.background = '#eee';
                 btn.style.color = '#999';
                 btn.style.boxShadow = 'none';
-                btn.textContent = '已领';
+                btn.textContent = t('redpacket_taken_short');
                 btn.setAttribute('data-loading', '0');
                 if (msgEl) {
                   msgEl.style.color = '#f59e0b'; // 改成微信的橙色
                   if (errMsg.includes('completed')) {
-                    msgEl.textContent = '手慢了，红包派完了 / 已存入零钱';
+                    msgEl.textContent = t('redpacket_gone');
                   } else {
-                    msgEl.textContent = '红包已失效';
+                    msgEl.textContent = t('redpacket_expired');
                   }
                 }
               }
             } catch (e) {
-              btn.textContent = '開';
+              btn.textContent = t('redpacket_open_btn');
               btn.setAttribute('data-loading', '0');
               const msgEl = document.getElementById('rp-msg');
               if (msgEl) {
                 msgEl.style.color = '#ef4444';
-                msgEl.textContent = '网络异常或已领取';
+                msgEl.textContent = t('redpacket_net_error');
               }
             }
           };
@@ -632,19 +633,19 @@ export function renderGroupRedPacketBubble(content) {
   const t1 = document.createElement('div');
   t1.style.fontSize = '13px';
   t1.style.opacity = '0.9';
-  t1.textContent = isPool ? '🎁 群福利红包' : '🧧 群红包';
+  t1.textContent = isPool ? t('redpacket_group_pool') : t('redpacket_group');
   div.appendChild(t1);
   const t2 = document.createElement('div');
   t2.style.fontSize = '20px';
   t2.style.fontWeight = '700';
   t2.style.marginTop = '4px';
-  t2.textContent = (data.total_amount || 0) + ' 积分';
+  t2.textContent = (data.total_amount || 0) + ' ' + t('credit_points');
   div.appendChild(t2);
   const t3 = document.createElement('div');
   t3.style.fontSize = '12px';
   t3.style.opacity = '0.85';
   t3.style.marginTop = '4px';
-  t3.textContent = '共 ' + (data.total_count || 0) + ' 份' + (isPool ? ' · 群池出资' : '');
+  t3.textContent = t('redpacket_count_prefix') + (data.total_count || 0) + t('redpacket_count_suffix') + (isPool ? t('redpacket_pool_funded') : '');
   div.appendChild(t3);
   if (data.message) {
     const t4 = document.createElement('div');
@@ -702,19 +703,19 @@ export function renderRedPacketDoneBubble(content) {
   const t1 = document.createElement('div');
   t1.style.fontSize = '13px';
   t1.style.opacity = '0.9';
-  t1.textContent = '群红包已发放';
+  t1.textContent = t('redpacket_group_sent');
   div.appendChild(t1);
   const t2 = document.createElement('div');
   t2.style.fontSize = '20px';
   t2.style.fontWeight = '700';
   t2.style.marginTop = '6px';
-  t2.textContent = '共 ' + (data.total || 0) + ' 积分';
+  t2.textContent = t('redpacket_total_prefix') + (data.total || 0) + ' ' + t('credit_points');
   div.appendChild(t2);
   const t3 = document.createElement('div');
   t3.style.fontSize = '12px';
   t3.style.opacity = '0.9';
   t3.style.marginTop = '4px';
-  t3.textContent = '已均分给 ' + (data.recipients || 0) + ' 位成员，人均 ' + (data.per_person || 0);
+  t3.textContent = t('redpacket_split_prefix') + (data.recipients || 0) + t('redpacket_split_mid') + (data.per_person || 0);
   div.appendChild(t3);
   return div;
 }
@@ -732,9 +733,9 @@ export function updateMessageStatus(messageId, status) {
       existingStatus.style.color = '#ff3b30';
       existingStatus.style.alignSelf = 'center';
       existingStatus.style.marginRight = '8px';
-      existingStatus.textContent = '发送失败';
+      existingStatus.textContent = t('send_failed');
       const retryBtn = document.createElement('button');
-      retryBtn.textContent = '重试';
+      retryBtn.textContent = t('retry');
       retryBtn.style.fontSize = '12px';
       retryBtn.style.marginLeft = '4px';
       retryBtn.addEventListener('click', () => {
@@ -757,7 +758,7 @@ export function updateMessageStatus(messageId, status) {
     statusEl.style.color = '#ff3b30';
     statusEl.style.alignSelf = 'center';
     statusEl.style.marginRight = '8px';
-    statusEl.textContent = '发送失败';
+    statusEl.textContent = t('send_failed');
     wrapper.appendChild(statusEl);
   }
 }
