@@ -793,4 +793,8 @@ export const zh = {
   'gr_saved': '已保存并加入群知识库',
   'gr_network_error': '网络错误：',
   'gr_load_failed': '加载失败：',
+  'gr_no_items': '暂无待补充问题',
+  'gr_anonymous': '匿名',
+  'gr_member': '群友',
+  'gr_title': '群汇报',
 };

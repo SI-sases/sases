@@ -66,10 +66,10 @@ window.openGroupReportQueue = async function(groupId) {
 
   let listHtml = '';
   if (items.length === 0) {
-    listHtml = '<div class="subpage-placeholder">暂无待补充问题</div>';
+    listHtml = '<div class="subpage-placeholder">' + t('gr_no_items') + '</div>';
   } else {
     items.forEach(it => {
-      const asker = it.anonymous ? '匿名' : (it.username || '群友');
+      const asker = it.anonymous ? t('gr_anonymous') : (it.username || t('gr_member'));
       listHtml += '<div class="me-menu-item report-item" data-qid="' + it.id + '" style="cursor:pointer;">';
       listHtml += '<div style="flex:1;min-width:0;">';
       listHtml += '<div style="font-size:14px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (it.question || '') + '</div>';
@@ -89,7 +89,7 @@ window.openGroupReportQueue = async function(groupId) {
     </div>
   `;
 
-  window.openSubpage('群汇报', html, {
+  window.openSubpage(t('gr_title'), html, {
     showMore: false,
     returnAction: () => window.openGroupSettings()
   });

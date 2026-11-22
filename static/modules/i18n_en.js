@@ -793,4 +793,8 @@ export const en = {
   'gr_saved': 'Saved and added to group knowledge base',
   'gr_network_error': 'Network error: ',
   'gr_load_failed': 'Load failed: ',
+  'gr_no_items': 'No questions to answer',
+  'gr_anonymous': 'Anonymous',
+  'gr_member': 'Group member',
+  'gr_title': 'Group reports',
 };
