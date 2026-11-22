@@ -1643,11 +1643,11 @@ function toggleGroupMute() {
     headers: { 'Authorization': 'Bearer ' + localStorage.getItem('sases_token'), 'Content-Type': 'application/json' },
     body: JSON.stringify({ muted: !cur })
   }).then(r => r.json()).then(d => {
-    if (d.error || d.detail) { alert('失败：' + (d.error || d.detail)); return; }
+    if (d.error || d.detail) { alert(t('gc_failed') + (d.error || d.detail)); return; }
     if (sw) {
       if (d.is_muted) sw.classList.add('on'); else sw.classList.remove('on');
     }
-  }).catch(e => alert('网络错误：' + e.message));
+  }).catch(e => alert(t('gc_network_error') + e.message));
 }
 
 function toggleGroupPin() {
@@ -1657,7 +1657,7 @@ function toggleGroupPin() {
     if (sw) {
       if (!cur) sw.classList.add('on'); else sw.classList.remove('on');
     }
-  }).catch(e => alert('操作失败: ' + e.message));
+  }).catch(e => alert(t('gc_op_failed') + e.message));
 }
 
 

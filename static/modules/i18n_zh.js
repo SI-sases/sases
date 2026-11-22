@@ -299,6 +299,8 @@ export const zh = {
   'gc_my_nickname': '我的群昵称',
   'gc_me': '我',
   'gc_send_failed': '发送失败：',
+  'gc_failed': '失败：',
+  'gc_op_failed': '操作失败: ',
   'gc_unknown_error': '未知错误',
   'gc_group_settings': '群设置',
   'gc_invite_failed': '邀请失败：',

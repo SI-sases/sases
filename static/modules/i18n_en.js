@@ -298,6 +298,8 @@ export const en = {
   'gc_my_nickname': 'My Group Nickname',
   'gc_me': 'Me',
   'gc_send_failed': 'Send failed: ',
+  'gc_failed': 'Failed: ',
+  'gc_op_failed': 'Operation failed: ',
   'gc_unknown_error': 'Unknown error',
   'gc_group_settings': 'Group settings',
   'gc_invite_failed': 'Invite failed: ',
