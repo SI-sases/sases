@@ -1347,11 +1347,11 @@ function openGroupStakeDialog() {
           body: JSON.stringify({ amount: amount })
         });
         const data = await resp.json();
-        if (data.error || data.detail) { alert('质押失败：' + (data.error || data.detail)); return; }
-        alert('质押成功');
+        if (data.error || data.detail) { alert(t('gc_stake_failed') + (data.error || data.detail)); return; }
+        alert(t('gc_stake_ok'));
         window.closeSubpage();
         openGroupCreditsDetail();
-      } catch (e) { alert('网络错误：' + e.message); }
+      } catch (e) { alert(t('gc_network_error') + e.message); }
     };
   }, 300);
 }
