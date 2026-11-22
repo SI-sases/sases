@@ -142,11 +142,24 @@ async def run_a2a(run_id):
         target_uid = row["target_user_id"] if row else None
         if target_uid:
             hb_task = asyncio.create_task(_a2a_heartbeat(target_uid, stop_event))
+
+        async def _on_token(piece):
+            if not piece or not target_uid:
+                return
+            try:
+                from ..api_routes.ws_routes import broadcast_to_user
+                await broadcast_to_user(int(target_uid), {
+                    "type": "agent_progress", "stage": "token",
+                    "run_id": int(run_id), "delta": piece,
+                })
+            except Exception:
+                pass
+
         from . import run_service
         _rr = await run_service.run_once(
             run["user_id"], run["conversation_id"], run["goal"], source="a2a",
             supervisor_id=run["supervisor_id"], max_steps=10, run_id=run_id,
-            finish=False,
+            finish=False, on_token=_on_token,
         )
         res = _rr.get("loop") or {}
     except Exception as e:
