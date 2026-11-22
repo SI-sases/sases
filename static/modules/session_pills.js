@@ -38,15 +38,20 @@
     if (!bar) return;
     const apiPill = document.getElementById('api-pill');
     if (!apiPill) return;
+    let anchor = apiPill;
     [['task-pill', '⏳ 后台'], ['agent-pill', '🤖 子智能体'], ['perm-pill', '🔐 权限']].forEach(function (p) {
-      if (document.getElementById(p[0])) return;
+      if (document.getElementById(p[0])) {
+        anchor = document.getElementById(p[0]);
+        return;
+      }
       const el = document.createElement('div');
       el.id = p[0];
       el.className = 'param-pill';
       el.textContent = p[1];
       el.style.cursor = 'pointer';
       el.onclick = function (e) { e.stopPropagation(); toggle(p[0]); };
-      apiPill.parentNode.insertBefore(el, apiPill.nextSibling);
+      anchor.parentNode.insertBefore(el, anchor.nextSibling);
+      anchor = el;
     });
   }
 
