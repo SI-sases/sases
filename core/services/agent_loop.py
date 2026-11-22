@@ -86,7 +86,9 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
         if not hist or str(hist[-1].get("content") or "") != str(goal):
             agent_memory.append(conversation_id, "user", goal)
             hist = agent_memory.history(conversation_id)
-
+    else:
+        # P1-7: 恢复时沿用已有 history；不要把“继续”指令再写成新目标
+        pass
     messages = [{"role": "system", "content": BASE_SYSTEM}] + hist
     try:
         from . import skill_service
@@ -156,13 +158,23 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
         print("[todo] 注入计划失败: " + str(_e_plan))
 
     for step in range(1, max_steps + 1):
-        try:
-            from . import run_control_service
-            if run_control_service.is_paused(conversation_id):
-                return {"status": "paused", "content": "已暂停。发送“继续”可从当前进度恢复。",
-                        "steps": step - 1, "history": used}
-        except Exception:
-            pass
+        if run_control_service.is_paused(conversation_id):
+            # P1-1: 在当前步退出，agent_messages / todo / used 全部保留
+            # P1-2: 记下待恢复的 run，供“继续”复用同一个 run
+            try:
+                run_control_service.set_resume_target(conversation_id, run_id, goal)
+            except Exception as _e_rt:
+                print("[pause] 记录恢复目标失败: " + str(_e_rt))
+            try:
+                from . import trace_service
+                trace_service.emit(run_id, conversation_id, step, "paused",
+                                   content="第 " + str(step - 1) + " 步后暂停，等待继续",
+                                   status="paused")
+            except Exception:
+                pass
+            return {"status": "paused",
+                    "content": "已暂停。发送“继续”可从当前进度恢复。",
+                    "steps": step - 1, "history": used}
         if _force_final:
             try:
                 _fm = messages + [{"role": "user", "content":

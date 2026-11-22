@@ -87,13 +87,20 @@ async def send_message(
       quote_content=None, permissions=None):
     print(f"[MSG_DEBUG] content={content!r} | mode={mode!r} | agent_id={agent_id!r} | msg_type={msg_type}")
     try:
-        from .continuation_service import rewrite as _cont_rewrite
+        from .continuation_service import is_continue as _is_cont, rewrite as _cont_rewrite
+        _was_continue = _is_cont(content)
         content = _cont_rewrite(content)
+        _resume_run_id = None
         if conversation_id:
-            from .run_control_service import resume as _run_resume
+            from .run_control_service import resume as _run_resume, find_paused_run as _find_paused
             _run_resume(conversation_id)
+            if _was_continue:
+                _rt = _find_paused(conversation_id)
+                if _rt:
+                    _resume_run_id = _rt.get("run_id")
     except Exception as _e_cont:
         print("[continue] rewrite 失败: " + str(_e_cont))
+        _resume_run_id = None
     _ai_content = content
     if quote_content:
         _ai_content = "【引用消息】\n" + str(quote_content)[:1000] + "\n\n【用户消息】\n" + str(content)
@@ -291,7 +298,7 @@ async def send_message(
         try:
             from ..supervisor import runs as _runs_s
             from .. import run_service
-            _rid_s = run_service.create_run(user_id, conversation_id, "chat", content,
+            _rid_s = _resume_run_id or run_service.create_run(user_id, conversation_id, "chat", content,
                                             supervisor_id=sender_agent_id or agent_id or "sases_assistant")
             _rs = await run_service.run_once(
                 user_id, conversation_id, content, source="chat",
@@ -299,7 +306,7 @@ async def send_message(
                 allowed_tool_ids=enabled_tool_ids,
                 max_steps=(max_steps if (max_steps and max_steps > 0) else 8),
                 run_id=_rid_s, finish=False, skill_ids=enabled_skill_ids,
-                permissions=permissions,
+                permissions=permissions, resume=bool(_resume_run_id),
             )
             _fr_s = _rs.get("loop") or {}
             if _fr_s.get("status") == "awaiting_approval":
@@ -1252,6 +1259,7 @@ async def send_message(
                         max_steps=(max_steps if (max_steps and max_steps > 0) else 8),
                         skill_ids=enabled_skill_ids, finish=True,
                         permissions=permissions,
+                        run_id=_resume_run_id, resume=bool(_resume_run_id),
                     )
                     _loop = _rr.get("loop") or {}
                     _txt = (_loop.get("content") or "").strip() or "执行完成"
