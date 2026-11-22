@@ -1,3 +1,4 @@
+import os
 from core.services.outbox.outbox_worker import outbox_worker
 
 async def poll_cross_network_messages():
@@ -618,7 +619,14 @@ async def lifespan(app: FastAPI):
     _background_tasks = []
 
     # 【秒级】
-    _background_tasks.append(asyncio.create_task(executor_service.start_background_executor()))
+    # 旧 executor 默认退役；需要时 SASES_EXECUTOR=1 恢复
+    if os.getenv("SASES_EXECUTOR", "0") == "1":
+        _background_tasks.append(asyncio.create_task(executor_service.start_background_executor()))
+    try:
+        from .services.goal_runner import goal_runner_loop
+        _background_tasks.append(asyncio.create_task(goal_runner_loop()))
+    except Exception as _e_goal:
+        print("[goal] runner 启动失败: " + str(_e_goal))
     _background_tasks.append(asyncio.create_task(async_task_service.poller_loop()))
 
     _background_tasks.append(asyncio.create_task(outbox_worker()))

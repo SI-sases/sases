@@ -1273,6 +1273,22 @@ def init_db():
             )
         """)
         cur.execute("""
+            CREATE TABLE IF NOT EXISTS agent_goals (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                conversation_id INTEGER,
+                goal TEXT NOT NULL,
+                status TEXT DEFAULT 'active',
+                max_rounds INTEGER DEFAULT 10,
+                rounds_done INTEGER DEFAULT 0,
+                budget_tokens INTEGER DEFAULT 200000,
+                next_run_at TEXT,
+                last_run_id INTEGER,
+                created_at TEXT,
+                updated_at TEXT
+            )
+        """)
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS tool_usage_daily (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER NOT NULL,

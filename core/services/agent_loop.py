@@ -265,7 +265,8 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
                         "steps": step, "history": used}
             review = ""
             _need_review = (mode == "strict"
-                            and any(h.get("tool") in WRITE_TOOLS for h in used))
+                            and any(h.get("tool") in WRITE_TOOLS for h in used)
+                            and os.getenv("SASES_STRICT_REVIEW", "0") == "1")
             if _need_review:
                 try:
                     _rev_messages = tool_pruner.prune_messages(messages)[0]

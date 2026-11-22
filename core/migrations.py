@@ -1,7 +1,7 @@
 """数据库迁移框架：按版本号顺序应用 schema 变更。"""
 import datetime
 
-SCHEMA_VERSION = 11
+SCHEMA_VERSION = 12
 
 
 def _now_iso():
@@ -134,11 +134,31 @@ def _migrate_v11_agent_todos(cur):
     """)
 
 
+def _migrate_v12_agent_goals(cur):
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS agent_goals (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            conversation_id INTEGER,
+            goal TEXT NOT NULL,
+            status TEXT DEFAULT 'active',
+            max_rounds INTEGER DEFAULT 10,
+            rounds_done INTEGER DEFAULT 0,
+            budget_tokens INTEGER DEFAULT 200000,
+            next_run_at TEXT,
+            last_run_id INTEGER,
+            created_at TEXT,
+            updated_at TEXT
+        )
+    """)
+
+
 MIGRATIONS = {1: _migrate_v1_outbox, 2: _migrate_v2_hmac, 3: _migrate_v3_reconcile,
               4: _migrate_v4_transfer_fields, 5: _migrate_v5_credit_type,
               6: _migrate_v6_group_columns, 7: _migrate_v7_api_registry,
               8: _migrate_v8_legacy_columns, 9: _migrate_v9_sync_received,
-              10: _migrate_v10_agent_context, 11: _migrate_v11_agent_todos}
+              10: _migrate_v10_agent_context, 11: _migrate_v11_agent_todos,
+              12: _migrate_v12_agent_goals}
 
 
 def ensure_schema():
