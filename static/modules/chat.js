@@ -706,14 +706,14 @@ export function openChatWindow(conversationId, chatName, agentId = null, agentTy
         }
       } catch (err) {
         console.error('[切换模式] 报错:', err);
-        alert('网络错误，切换失败');
+        alert(t('chat.switch_failed'));
       }
     };
     
     topBar.insertBefore(btn, topBar.firstChild);
   }
 
-  if (titleEl) titleEl.textContent = chatName || '会话 / 会话';
+  if (titleEl) titleEl.textContent = chatName || t('chat.session');
   refreshChatMeta(agentId, isFriendChat);
 
   // 如果是新建会话（ / 如果是新建会话（conversationId为空），清空聊天框历史
@@ -825,8 +825,8 @@ function updateModeText() {
   const modeTextEl = document.getElementById('chat-mode-text');
   if (!modeTextEl) return;
   const modeMap = {
-    'free': '自由模式',
-    'normal': '普通模式'
+    'free': t('chat.mode.free'),
+    'normal': t('chat.mode.normal')
   };
   modeTextEl.textContent = modeMap[chatState.mode] || chatState.mode;
 }
