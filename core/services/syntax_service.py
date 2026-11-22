@@ -5,8 +5,34 @@
 不经过 verify_syntax 工具，供 agent_loop 最终门禁使用。
 """
 import os
+import shutil
+import subprocess
 
 _JS_EXTS = (".js", ".mjs", ".cjs", ".jsx")
+
+
+def _node_check(path):
+    """有 Node/Electron 时用 node --check 做第二道语法关；无则跳过。"""
+    exe = shutil.which("node")
+    if not exe:
+        for cand in (r"D:\Harness\DeepSeek Harness.exe", r"C:\Program Files\nodejs\node.exe"):
+            if os.path.isfile(cand):
+                exe = cand
+                break
+    if not exe:
+        return None
+    env = dict(os.environ)
+    if exe.lower().endswith(".exe") and "harness" in exe.lower():
+        env["ELECTRON_RUN_AS_NODE"] = "1"
+    try:
+        p = subprocess.run([exe, "--check", path], capture_output=True, text=True,
+                           timeout=20, env=env)
+        if p.returncode == 0:
+            return {"ok": True, "engine": "node-check"}
+        return {"ok": False, "engine": "node-check",
+                "error": (p.stderr or p.stdout or "node --check failed")[:800]}
+    except Exception:
+        return None
 
 
 def _check_python(path):
@@ -41,6 +67,9 @@ def _check_js(path):
         data = open(path, "rb").read()
         tree = parser.parse(data)
         if not tree.root_node.has_error:
+            _n = _node_check(path)
+            if _n and not _n.get("ok"):
+                return _n
             return {"ok": True, "engine": "tree-sitter"}
         err = _first_error(tree.root_node)
         if not err:
