@@ -1552,9 +1552,9 @@ function openGroupNameEditor() {
         const el = document.getElementById('group-name-value');
         if (el) el.textContent = currentGroupName;
         document.getElementById('chat-window-title').textContent = currentGroupName;
-        alert('已保存');
+        alert(t('gc_saved'));
         window.closeSubpage();
-      }).catch(e => alert('网络错误：' + e.message));
+      }).catch(e => alert(t('gc_network_error') + e.message));
     };
   }, 300);
 }
@@ -1584,7 +1584,7 @@ function openNicknameEditor() {
         body: JSON.stringify({ nickname: nn })
       }).then(r => r.json()).then(d => {
         if (d.error || d.detail) { alert(t('gc_save_failed') + (d.error || d.detail)); return; }
-        alert('已保存');
+        alert(t('gc_saved'));
         window.closeSubpage();
       }).catch(e => alert(t('gc_network_error') + e.message));
     };
