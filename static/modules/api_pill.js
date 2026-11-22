@@ -364,6 +364,12 @@
   }
 
   document.addEventListener('DOMContentLoaded', function () {
+  window.addEventListener('sases_skills_restore', function (e) {
+    var ids = (e.detail && e.detail.ids) || [];
+    state.skills = ids.slice();
+    syncGlobals();
+    updatePill();
+  });
     css();
     try {
       var _f = localStorage.getItem('sases_chat_font') || '15';

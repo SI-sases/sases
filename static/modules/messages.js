@@ -78,7 +78,7 @@ async function loadConversations(container) {
       const _sub = _modelLine ? (_modelLine + (_sid ? ' · #' + _sid : '')) : '';
 
       html += `
-        <div class="session-item ${pinned}" data-type="single" data-conversation-id="${conv.id}" data-agent-id="${conv.agent_id || ''}" data-title="${agentName}" data-target-user-id="${conv.target_user_id || ''}" data-is-friend="${conv.is_friend_chat || 0}" data-friend-mode="${conv.friend_mode || 'normal'}">
+        <div class="session-item ${pinned}" data-type="single" data-conversation-id="${conv.id}" data-agent-id="${conv.agent_id || ''}" data-title="${agentName}" data-target-user-id="${conv.target_user_id || ''}" data-is-friend="${conv.is_friend_chat || 0}" data-friend-mode="${conv.friend_mode || 'normal'}" data-skill-ids="${encodeURIComponent(conv.skill_ids || '[]')}">
           <div class="session-avatar">
             ${agentName.charAt(0)}
             ${unread > 0 ? `<span class="unread-badge">${unread}</span>` : ''}
@@ -150,6 +150,11 @@ async function loadConversations(container) {
           
           // 把 is_friend_chat 和 friend_mode 透传给聊天窗口
           const targetUserId = parseInt(item.dataset.targetUserId || 0) || null;
+          try {
+            const ids = JSON.parse(decodeURIComponent(item.dataset.skillIds || '%5B%5D'));
+            window.currentSessionSkills = Array.isArray(ids) ? ids : [];
+            window.dispatchEvent(new CustomEvent('sases_skills_restore', { detail: { ids: window.currentSessionSkills } }));
+          } catch (e) { window.currentSessionSkills = []; }
           openChatWindow(conversationId, title, agentId, agentType, isFriendChat, friendMode, targetUserId);
         } else if (type === 'group') {
           const groupId = item.dataset.groupId;
