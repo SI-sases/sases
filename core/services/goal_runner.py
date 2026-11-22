@@ -52,19 +52,23 @@ def finish_round(goal_id, run_id, status):
 
 
 async def run_goal_round(g):
-    from . import supervisor_service, execution_gateway
+    from . import run_service
     user_id = int(g["user_id"])
     cid = int(g["conversation_id"] or 0)
     if not cid:
         return
-    run_id = supervisor_service.create_run(user_id, cid, "sases_assistant", g["goal"])
+    run_id = run_service.create_run(user_id, cid, "goal", g["goal"],
+                                    supervisor_id="sases_assistant",
+                                    max_rounds=int(g.get("max_rounds") or 10))
     # 标记为运行中，避免下一次轮询重复取
     with db_cursor(commit=True) as cur:
         cur.execute("UPDATE agent_goals SET status='running', last_run_id=?, updated_at=? WHERE id=?",
                     (run_id, _now(), g["id"]))
     try:
-        res = await execution_gateway.run_schedule(run_id, user_id, cid, g["goal"], "sases_assistant")
-        finish_round(g["id"], run_id, "completed" if res.get("ok") else "failed")
+        res = await run_service.run_once(user_id, cid, g["goal"], source="goal",
+                                         supervisor_id="sases_assistant",
+                                         max_steps=8, run_id=run_id)
+        finish_round(g["id"], run_id, "completed" if res.get("status") == "completed" else "failed")
     except Exception as e:
         print("[goal] round 失败: " + str(e))
         finish_round(g["id"], run_id, "failed")
