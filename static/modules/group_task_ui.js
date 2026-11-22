@@ -90,15 +90,15 @@ window.openTaskDetail = function(taskId) {
       <div style="padding:16px;">
         <div style="font-size:18px;font-weight:600;margin-bottom:8px;">${task.title || t('gt_untitled')}</div>
         <div style="font-size:13px;color:#666;margin-bottom:12px;">
-          质押 ${task.reward_credits || 0} 积分 · 状态：${isOpen ? '进行中' : task.status}
+          质押 ${task.reward_credits || 0} 积分 · 状态：${isOpen ? t('gt_in_progress') : task.status}
         </div>
-        <div style="background:#f8f8f8;border-radius:8px;padding:12px;margin-bottom:20px;font-size:14px;color:#333;white-space:pre-wrap;">${task.description || '（无描述）'}</div>
+        <div style="background:#f8f8f8;border-radius:8px;padding:12px;margin-bottom:20px;font-size:14px;color:#333;white-space:pre-wrap;">${task.description || t('gt_no_desc')}</div>
         <div style="font-size:15px;font-weight:600;margin-bottom:10px;">提交列表 (${subs.length})</div>
         ${subHtml}
         ${actionHtml}
       </div>
     `;
-    window.openSubpage('任务详情', html);
+    window.openSubpage(t('gt_detail_title'), html);
     setTimeout(function() {
       const submitBtn = document.getElementById('td-submit-btn');
       if (submitBtn) {

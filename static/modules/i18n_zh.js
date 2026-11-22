@@ -777,4 +777,7 @@ export const zh = {
   'gt_submit_plan': '提交方案',
   'gt_pick_hint': '请在提交列表中点击"选择此方案"，未选择将超时退款。',
   'gt_untitled': '未命名任务',
+  'gt_in_progress': '进行中',
+  'gt_no_desc': '（无描述）',
+  'gt_detail_title': '任务详情',
 };

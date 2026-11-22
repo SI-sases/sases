@@ -777,4 +777,7 @@ export const en = {
   'gt_submit_plan': 'Submit plan',
   'gt_pick_hint': 'Click "Pick this one" in the submission list; otherwise it will time out and refund.',
   'gt_untitled': 'Untitled task',
+  'gt_in_progress': 'In progress',
+  'gt_no_desc': '(No description)',
+  'gt_detail_title': 'Task details',
 };
