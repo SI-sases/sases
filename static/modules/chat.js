@@ -425,7 +425,7 @@ async function sendMessage() {
           });
         }
       } catch (e) {
-        alert('上传失败 / Failed: ' + (e.message || ''));
+        alert(t('chat.upload_failed') + ' / Failed: ' + (e.message || ''));
       }
     }
   }
@@ -564,13 +564,13 @@ window.__sasesClearAttachment = function() {
 window.__sasesUploadFile = async (file) => {
   if (!file) return;
   if (!chatState.conversationId) {
-    alert('请先进入会话 / 请先进入会话');
+    alert(t('chat.need_conversation'));
     return;
   }
   try {
     const res = await api.uploadFile(file);
     if (!res || !res.url) {
-      alert('上传失败 / Failed');
+      alert(t('chat.upload_failed'));
       return;
     }
     const _content = '[FILE]:' + res.url + '|' + (file.name || 'file') + '|' + (file.size || 0);
@@ -583,20 +583,20 @@ window.__sasesUploadFile = async (file) => {
       mode: chatState.mode
     });
   } catch (e) {
-    alert('上传失败 / Failed：' + (e.message || '未知错误'));
+    alert(t('chat.upload_failed') + '：' + (e.message || t('chat.unknown_error')));
   }
 };
 
 window.__sasesUploadImage = async (file) => {
   if (!file) return;
   if (!chatState.conversationId) {
-    alert('请先进入会话 / 请先进入会话');
+    alert(t('chat.need_conversation'));
     return;
   }
   try {
     const res = await api.uploadImage(file);
     if (!res || !res.url) {
-      alert('上传失败 / Failed');
+      alert(t('chat.upload_failed'));
       return;
     }
     await api.sendMessage({
@@ -608,7 +608,7 @@ window.__sasesUploadImage = async (file) => {
     });
     await loadMessages(chatState.conversationId);
   } catch (e) {
-    alert('上传失败 / Failed：' + (e.message || '未知错误'));
+    alert(t('chat.upload_failed') + '：' + (e.message || t('chat.unknown_error')));
   }
 };
 
@@ -621,7 +621,7 @@ function toggleVoiceMode() {
   if (chatState.voiceMode) {
     input.style.display = 'none';
     toggleBtn.textContent = '⌨️';
-    input.placeholder = '按住说话（模拟）';
+    input.placeholder = t('chat.placeholder.hold_to_talk');
   } else {
     input.style.display = 'block';
     toggleBtn.textContent = '🎤';
@@ -633,11 +633,11 @@ function updateInputPlaceholder() {
   const input = document.getElementById('chat-input');
   if (!input) return;
   if (chatState.mode === 'normal') {
-    input.placeholder = '输入消息 / Message...';
+    input.placeholder = t('chat.placeholder.message');
   } else if (chatState.mode === 'free') {
-    input.placeholder = '聊天、执行命令 或 任务：描述';
+    input.placeholder = t('chat.placeholder.command_or_task');
   } else {
-    input.placeholder = '输入消息 / Message...';
+    input.placeholder = t('chat.placeholder.message');
   }
 }
 
@@ -678,7 +678,7 @@ export function openChatWindow(conversationId, chatName, agentId = null, agentTy
     const btn = document.createElement('button');
     btn.id = 'friend-mode-btn';
     btn.style.cssText = 'margin-right: 8px; padding: 4px 8px; font-size: 12px; border-radius: 4px; border: none; color: #fff; cursor: pointer; background: ' + (friendMode === 'free' ? '#ff9500' : '#007aff') + ';';
-    btn.textContent = friendMode === 'free' ? '⚡ 自由模式' : '💬 普通模式';
+    btn.textContent = friendMode === 'free' ? t('chat.mode.free') : t('chat.mode.normal');
     
     btn.onclick = async () => {
       const nextMode = friendMode === 'free' ? 'normal' : 'free';
@@ -696,13 +696,13 @@ export function openChatWindow(conversationId, chatName, agentId = null, agentTy
         
         if (res.ok) {
           friendMode = nextMode;
-          btn.textContent = friendMode === 'free' ? '⚡ 自由模式' : '💬 普通模式';
+          btn.textContent = friendMode === 'free' ? t('chat.mode.free') : t('chat.mode.normal');
           btn.style.background = friendMode === 'free' ? '#ff9500' : '#007aff';
-          alert('模式已切换为：' + (nextMode === 'free' ? '自由模式' : '普通模式'));
+          alert(t('chat.mode.switched') + (nextMode === 'free' ? t('chat.mode.free') : t('chat.mode.normal')));
           if (window.loadConversations) window.loadConversations(); // 强制刷新左侧列表
         } else {
           const errData = await res.json();
-          alert('切换失败: ' + (errData.detail || '未知错误'));
+          alert(t('chat.mode.switch_failed') + (errData.detail || t('chat.unknown_error')));
         }
       } catch (err) {
         console.error('[切换模式] 报错:', err);
