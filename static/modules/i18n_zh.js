@@ -292,7 +292,9 @@ export const zh = {
   // 群聊界面（group_chat.js）
   'gc_back': '返回',
   'gc_group_name': '群聊名称',
-  'gc_group_name_required': '群名不能为空',
+  'gc_save_failed': '保存失败：',
+  'gc_network_error': '网络错误：',
+  'gc_my_nickname': '我的群昵称',
   'gc_announcement': '群公告',
   'gc_save_failed': '保存失败：',
   'gc_saved': '已保存',

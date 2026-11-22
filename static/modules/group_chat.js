@@ -1569,7 +1569,7 @@ function openNicknameEditor() {
     </div>
     <button class="save-btn" id="nick-save">保存</button>
   `;
-  window.openSubpage('我的群昵称', html, {
+  window.openSubpage(t('gc_my_nickname'), html, {
     showMore: false,
     returnAction: () => openGroupSettings()
   });
@@ -1583,10 +1583,10 @@ function openNicknameEditor() {
         headers: { 'Authorization': 'Bearer ' + localStorage.getItem('sases_token'), 'Content-Type': 'application/json' },
         body: JSON.stringify({ nickname: nn })
       }).then(r => r.json()).then(d => {
-        if (d.error || d.detail) { alert('保存失败：' + (d.error || d.detail)); return; }
+        if (d.error || d.detail) { alert(t('gc_save_failed') + (d.error || d.detail)); return; }
         alert('已保存');
         window.closeSubpage();
-      }).catch(e => alert('网络错误：' + e.message));
+      }).catch(e => alert(t('gc_network_error') + e.message));
     };
   }, 300);
 }
