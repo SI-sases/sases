@@ -3,9 +3,9 @@
   // i18n：本文件是 IIFE，动态引入 t()；未加载完成时回退中文原文
   var _t = null;
   var _tFallback = {
-    cp_web: '联网', cp_web_desc: '允许读取网页 / 调用外部 API',
-    cp_write: '改文件', cp_write_desc: '允许修改项目文件（需确认）',
-    cp_schedule: '定时', cp_schedule_desc: '允许创建定时任务'
+    cp_web: 'Web', cp_web_desc: 'Allow reading web pages / calling external APIs',
+    cp_write: 'Write files', cp_write_desc: 'Allow modifying project files (requires confirmation)',
+    cp_schedule: 'Schedule', cp_schedule_desc: 'Allow creating scheduled tasks'
   };
   function t(key) {
     if (_t) {
