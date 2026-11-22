@@ -305,7 +305,7 @@ export const en = {
   'memory_management': 'Memory Management',
   'importance': 'Importance',
   'no_memory': 'No memories',
-  'language_switched': '已切换为简体中文',
+  'language_switched': 'Language switched',
   'language_switched_en': 'Switched to English',
 
   // Wisdom Panel

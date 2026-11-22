@@ -55,6 +55,11 @@ function applyLanguage() {
   const lang = getLang();
   const isEn = lang === 'en';
 
+  // 语言按钮激活态与当前语言保持一致（刷新后也正确）
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.lang === lang);
+  });
+
   // ========== 登录界面 ==========
   const loginTitle = document.getElementById('login-title');
   if (loginTitle) loginTitle.textContent = t('login_title');
@@ -173,10 +178,26 @@ function initLoginUI() {
   langButtons.forEach(btn => {
     btn.addEventListener('click', () => {
       const lang = btn.dataset.lang;
+      if (lang === getLang()) return;
+      // 切换语言前先保存用户已输入的内容，避免刷新/重绘丢失
+      const draft = {
+        username: usernameInput.value,
+        password: passwordInput.value,
+        agree: agreeCheckbox.checked,
+        activeForm: (document.querySelector('.login-form.active') || {}).id || 'form-login'
+      };
       setLang(lang);
       applyLanguage();
-      langButtons.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
+      langButtons.forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
+      // 回填用户输入
+      usernameInput.value = draft.username;
+      passwordInput.value = draft.password;
+      agreeCheckbox.checked = draft.agree;
+      const form = document.getElementById(draft.activeForm);
+      if (form) {
+        document.querySelectorAll('.login-form').forEach(el => el.classList.remove('active'));
+        form.classList.add('active');
+      }
     });
   });
 
