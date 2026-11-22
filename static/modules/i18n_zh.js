@@ -10,6 +10,10 @@ export const zh = {
   'cp_cap_switch': '能力开关',
   'cp_cap': '能力',
   'cp_click_remove': '点击移除',
+  'cp_advanced': '高级',
+  'cp_rounds': '轮数',
+  'cp_unlimited': '不限',
+  'cp_steps': '步',
   // 登录与通用
   'login_title': 'SASES',
   'login_subtitle': '登录你的账号',

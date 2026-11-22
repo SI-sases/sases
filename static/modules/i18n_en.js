@@ -10,6 +10,10 @@ export const en = {
   'cp_cap_switch': 'Capability switches',
   'cp_cap': 'Capabilities',
   'cp_click_remove': 'Click to remove',
+  'cp_advanced': 'Advanced',
+  'cp_rounds': 'Rounds',
+  'cp_unlimited': 'Unlimited',
+  'cp_steps': ' steps',
   // Login & General
   'login_title': 'SASES',
   'login_subtitle': 'Login to your account',

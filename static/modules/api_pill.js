@@ -303,10 +303,10 @@
     var _mode = localStorage.getItem('sases_agent_mode') || 'auto';
     var _exec = localStorage.getItem('sases_exec_mode') || 'single';
     var _font = localStorage.getItem('sases_chat_font') || '15';
-    var html = '<div class="sm-title">高级</div>';
-    html += '<label class="sm-item">轮数<select class="sm-select" id="sm-rounds">' +
+    var html = '<div class="sm-title">' + t('cp_advanced') + '</div>';
+    html += '<label class="sm-item">' + t('cp_rounds') + '<select class="sm-select" id="sm-rounds">' +
       ['5', '8', '15', '-1'].map(function (v) {
-        return '<option value="' + v + '" ' + (String(_steps) === v ? 'selected' : '') + '>' + (v === '-1' ? '不限' : v + '步') + '</option>';
+        return '<option value="' + v + '" ' + (String(_steps) === v ? 'selected' : '') + '>' + (v === '-1' ? t('cp_unlimited') : v + t('cp_steps')) + '</option>';
       }).join('') + '</select></label>';
     html += '<label class="sm-item">模式<select class="sm-select" id="sm-mode">' +
       [['auto', '自动'], ['fast', '快速'], ['strict', '严格']].map(function (v) {
