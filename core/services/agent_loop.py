@@ -632,6 +632,15 @@ async def _run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=
                         _vres = getattr(_vr, "result", None) or getattr(_vr, "error", "")
                         used.append({"step": step, "tool": "verify_syntax", "ok": _vok})
                         if _vok:
+                            try:
+                                from .file_gate import check_frontend as _check_front
+                                _fg = _check_front(_fp)
+                                if not _fg.get("ok"):
+                                    _vok = False
+                                    _vres = _fg.get("error") or "frontend semantic error"
+                            except Exception as _e_fg:
+                                print("[gate] frontend 检查失败: " + str(_e_fg))
+                        if _vok:
                             _verified_files.add(_fp)
                             _vmsg = "[自检] verify_syntax 通过: " + _fp
                             if _bak:
