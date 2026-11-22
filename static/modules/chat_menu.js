@@ -2,13 +2,13 @@
 function openTransferDialog() {
   const chatState = window.chatState || {};
   const conversationId = chatState.conversationId;
-  if (!conversationId) { alert('请先进入会话'); return; }
+  if (!conversationId) { alert(t('cm_enter_chat_first')); return; }
   
   // 自动获取当前聊天的对象
   // 优先读刚存的缓存，其次读 chatState，最后读 agentId（智能体聊天时）
   const receiverId = chatState.targetUserId || localStorage.getItem('sases_current_target_uid') || chatState.agentId;
   if (!receiverId) {
-    alert('无法识别当前转账对象');
+    alert(t('cm_no_transfer_target'));
     return;
   }
 
@@ -16,34 +16,34 @@ function openTransferDialog() {
     <div style="padding: 20px; background: #f4f4f4; min-height: 100vh;">
       <div style="background: white; border-radius: 8px; overflow: hidden;">
         <div style="padding: 16px; border-bottom: 1px solid #eee; display: flex; align-items: center;">
-          <span style="width: 80px; color: #666;">金额</span>
+          <span style="width: 80px; color: #666;">${t('cm_amount')}</span>
           <input type="number" id="transfer-amount" placeholder="0.00" style="flex:1; border:none; outline:none; font-size:24px; font-weight:bold; text-align:right;">
         </div>
         <div style="padding: 16px; border-bottom: 1px solid #eee; display: flex; align-items: center;">
-          <span style="width: 80px; color: #666;">积分类型</span>
+          <span style="width: 80px; color: #666;">${t('cm_credit_type')}</span>
           <select id="transfer-type" style="flex:1; border:none; outline:none; text-align:right; font-size:16px;">
-            <option value="credits">种子积分</option>
-            <option value="compute">算力积分</option>
+            <option value="credits">${t('seed_credits')}</option>
+            <option value="compute">${t('compute_power')}</option>
           </select>
         </div>
         <div style="padding: 16px; display: flex; align-items: center;">
-          <span style="width: 80px; color: #666;">留言</span>
-          <input type="text" id="transfer-note" placeholder="转账说明" style="flex:1; border:none; outline:none; text-align:right; font-size:16px;">
+          <span style="width: 80px; color: #666;">${t('cm_note')}</span>
+          <input type="text" id="transfer-note" placeholder="${t('cm_transfer_note_ph')}" style="flex:1; border:none; outline:none; text-align:right; font-size:16px;">
         </div>
       </div>
-      <button id="btn-do-transfer" style="margin-top: 20px; width: 100%; padding: 14px; background: #f59e0b; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold;">转账</button>
+      <button id="btn-do-transfer" style="margin-top: 20px; width: 100%; padding: 14px; background: #f59e0b; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold;">${t('cm_transfer')}</button>
     </div>
   `;
   
   if (window.openSubpage) {
-    window.openSubpage('转账', html, { returnAction: () => { window.closeSubpage(); } });
+    window.openSubpage(t('cm_transfer'), html, { returnAction: () => { window.closeSubpage(); } });
     setTimeout(async () => {
       try {
         const token = localStorage.getItem('sases_token');
         const res = await fetch('/credits/balance', { headers: { Authorization: 'Bearer ' + token } });
         const data = await res.json();
         const hint = document.getElementById('transfer-balance-hint');
-        if (hint && data.balance !== undefined) hint.textContent = '当前种子积分余额：' + data.balance;
+        if (hint && data.balance !== undefined) hint.textContent = t('cm_seed_balance') + data.balance;
       } catch(e) {}
     }, 50);
 
@@ -52,16 +52,16 @@ function openTransferDialog() {
         const amount = parseFloat(document.getElementById('transfer-amount').value);
         const type = document.getElementById('transfer-type').value;
         const note = document.getElementById('transfer-note').value;
-        if (!amount || amount <= 0) { alert('请输入有效金额'); return; }
+        if (!amount || amount <= 0) { alert(t('cm_invalid_amount')); return; }
         
         // 二次确认（微信式）
-        if (!confirm(`确认转账 ${amount} ${type === 'compute' ? '算力积分' : '种子积分'} 给对方？`)) return;
+        if (!confirm(t('cm_confirm_transfer').replace('{amount}', amount).replace('{type}', type === 'compute' ? t('compute_power') : t('seed_credits')))) return;
 
         try {
           // 直接调 api 发起请求
           const res = await window.sendTransfer(String(receiverId), amount, note, conversationId, type);
           if (res.status === 'completed' || res.tx_id) {
-            alert('✅ 转账成功');
+            alert(t('cm_transfer_ok'));
             window.closeSubpage();
             // 强制刷新聊天记录以显示气泡
             if (window.loadMessages && conversationId) {
@@ -69,10 +69,10 @@ function openTransferDialog() {
             }
             if (window.loadMessages) window.loadMessages(conversationId);
           } else {
-            alert('❌ 转账失败: ' + (res.error || res.err || '未知错误'));
+            alert(t('cm_transfer_failed') + (res.error || res.err || t('cm_unknown_error')));
           }
         } catch (e) {
-          alert('转账失败: ' + (e.message || '网络异常'));
+          alert(t('cm_transfer_failed') + (e.message || t('cm_network_error')));
         }
       };
     }, 100);
@@ -88,26 +88,26 @@ function openRedPacketDialog() {
   const html = `
     <div class="red-packet-send-page">
       <div class="red-packet-header">
-        <div class="red-packet-title">发红包</div>
+        <div class="red-packet-title">${t('cm_red_packet')}</div>
       </div>
       <div class="red-packet-body">
         <div class="red-packet-row">
-          <label>金额</label>
+          <label>${t('cm_amount')}</label>
           <input type="number" id="rp-amount" placeholder="0.00" min="0.01" step="0.01">
         </div>
         <div class="red-packet-row">
-          <label>接收者</label>
-          <input type="text" id="rp-receiver" placeholder="SASES ID 或用户ID">
+          <label>${t('cm_receiver')}</label>
+          <input type="text" id="rp-receiver" placeholder="${t('cm_receiver_ph')}">
         </div>
         <div class="red-packet-row">
-          <label>留言</label>
-          <input type="text" id="rp-message" placeholder="恭喜发财，大吉大利" maxlength="30">
+          <label>${t('cm_note')}</label>
+          <input type="text" id="rp-message" placeholder="${t('cm_rp_default_msg')}" maxlength="30">
         </div>
       </div>
-      <button id="rp-submit" class="red-packet-submit-btn">塞钱进红包</button>
+      <button id="rp-submit" class="red-packet-submit-btn">${t('cm_rp_submit')}</button>
     </div>
   `;
-  window.openSubpage('发红包', html, { showMore: false });
+  window.openSubpage(t('cm_red_packet'), html, { showMore: false });
 
   setTimeout(() => {
     const submitBtn = document.getElementById('rp-submit');
@@ -115,27 +115,28 @@ function openRedPacketDialog() {
     submitBtn.addEventListener('click', async () => {
       const amount = parseFloat(document.getElementById('rp-amount').value);
       const receiver = document.getElementById('rp-receiver').value.trim();
-      const message = document.getElementById('rp-message').value || '恭喜发财，大吉大利';
+      const message = document.getElementById('rp-message').value || t('cm_rp_default_msg');
 
-      if (!amount || amount <= 0) { alert('请输入有效金额'); return; }
-      if (!receiver) { alert('请输入接收者的 SASES ID'); return; }
+      if (!amount || amount <= 0) { alert(t('cm_invalid_amount')); return; }
+      if (!receiver) { alert(t('cm_receiver_required')); return; }
 
       submitBtn.disabled = true;
-      submitBtn.textContent = '发送中...';
+      submitBtn.textContent = t('cm_sending');
       try {
         await api.sendRedPacket(receiver, amount, message, conversationId);
-        alert('红包已发出');
+        alert(t('cm_rp_sent'));
         window.closeSubpage && window.closeSubpage();
       } catch (e) {
-        alert('发送失败：' + (e.message || '未知错误'));
+        alert(t('cm_send_failed') + (e.message || t('cm_unknown_error')));
         submitBtn.disabled = false;
-        submitBtn.textContent = '塞钱进红包';
+        submitBtn.textContent = t('cm_rp_submit');
       }
     });
   }, 100);
 }
 import { api } from './api.js';
 import { openIdentitySwitch } from './chat_identity.js';
+import { t } from './i18n.js';
 
 // ========== 长按菜单 ==========
 export function createContextMenu() {
@@ -158,13 +159,13 @@ export function showContextMenu(x, y, wrapper, chatState) {
   if (!menu) return;
   const _isUserMsg = wrapper.dataset.role === 'user';
   menu.innerHTML = `
-    <div class="context-menu-item" data-action="quote" style="padding:10px 16px; cursor:pointer;">引用</div>
-    <div class="context-menu-item" data-action="reply" style="padding:10px 16px; cursor:pointer;">帮我回复</div>
-    <div class="context-menu-item" data-action="execute" style="padding:10px 16px; cursor:pointer;">帮我执行</div>
-    <div class="context-menu-item" data-action="copy" style="padding:10px 16px; cursor:pointer;">复制</div>
-    <div class="context-menu-item" data-action="retry" style="padding:10px 16px; cursor:pointer;">重试</div>
-    ${_isUserMsg ? '<div class="context-menu-item" data-action="edit" style="padding:10px 16px; cursor:pointer;">编辑</div>' : ''}
-    <div class="context-menu-item" data-action="delete" style="padding:10px 16px; cursor:pointer; color:#ff3b30;">删除</div>
+    <div class="context-menu-item" data-action="quote" style="padding:10px 16px; cursor:pointer;">${t('cm_quote')}</div>
+    <div class="context-menu-item" data-action="reply" style="padding:10px 16px; cursor:pointer;">${t('cm_reply_for_me')}</div>
+    <div class="context-menu-item" data-action="execute" style="padding:10px 16px; cursor:pointer;">${t('cm_execute_for_me')}</div>
+    <div class="context-menu-item" data-action="copy" style="padding:10px 16px; cursor:pointer;">${t('cm_copy')}</div>
+    <div class="context-menu-item" data-action="retry" style="padding:10px 16px; cursor:pointer;">${t('cm_retry')}</div>
+    ${_isUserMsg ? '<div class="context-menu-item" data-action="edit" style="padding:10px 16px; cursor:pointer;">' + t('cm_edit') + '</div>' : ''}
+    <div class="context-menu-item" data-action="delete" style="padding:10px 16px; cursor:pointer; color:#ff3b30;">${t('cm_delete')}</div>
   `;
   menu.style.display = 'block';
   menu.style.left = x + 'px';
@@ -201,13 +202,13 @@ export function showContextMenu(x, y, wrapper, chatState) {
     }
 
     const _oldPlaceholder = input.placeholder;
-    input.placeholder = '🤔 AI 正在生成执行指令...';
+    input.placeholder = t('chatMenu.aiGenerating');
     input.disabled = true;
 
     try {
       const _data = await api.suggestExecute(_recent);
       const _ins = (_data && (_data.instruction || _data.task)) || '';
-      if (!_ins) throw new Error('空指令');
+      if (!_ins) throw new Error(t('chatMenu.emptyInstruction'));
       input.value = _ins;
       if (typeof window.updateSendButtonVisibility === 'function') window.updateSendButtonVisibility();
     } catch (e) {
@@ -395,34 +396,34 @@ export function openChatInfo(chatState) {
     </div>
     <div class="me-menu">
       <div class="me-menu-item" id="switch-identity-entry">
-        <span class="menu-label">切换身份</span>
-        <span class="menu-value" id="current-identity-text">${chatState.senderAgentId ? '智能体身份' : '以本人身份'}</span>
+        <span class="menu-label">${t('cm_switch_identity')}</span>
+        <span class="menu-value" id="current-identity-text">${chatState.senderAgentId ? t('cm_identity_agent') : t('cm_identity_self')}</span>
         <span class="menu-arrow">›</span>
       </div>
       <div class="me-menu-item" id="set-remark-entry">
-        <span class="menu-label">设置备注和标签</span>
+        <span class="menu-label">${t('cm_set_remark')}</span>
         <span class="menu-arrow">›</span>
       </div>
       <div class="me-menu-item" id="complain-entry">
-        <span class="menu-label">投诉</span>
+        <span class="menu-label">${t('cm_complain')}</span>
         <span class="menu-arrow">›</span>
       </div>
       <div class="me-menu-item" id="delete-chat-entry">
-        <span class="menu-label" style="color:#ff3b30;">删除聊天</span>
+        <span class="menu-label" style="color:#ff3b30;">${t('cm_delete_chat')}</span>
       </div>
     </div>
   `;
-  window.openSubpage('聊天信息', contentHtml, { showMore: false });
+  window.openSubpage(t('cm_chat_info'), contentHtml, { showMore: false });
 
   setTimeout(() => {
     document.getElementById('switch-identity-entry').addEventListener('click', () => openIdentitySwitch(chatState, api));
     document.getElementById('set-remark-entry').addEventListener('click', () => {
-      const remark = prompt('请输入备注名：', chatName);
-      if (remark) alert('备注已设置（模拟）');
+      const remark = prompt(t('cm_remark_prompt'), chatName);
+      if (remark) alert(t('cm_remark_set'));
     });
-    document.getElementById('complain-entry').addEventListener('click', () => alert('投诉功能待实现'));
+    document.getElementById('complain-entry').addEventListener('click', () => alert(t('cm_complain_todo')));
     document.getElementById('delete-chat-entry').addEventListener('click', () => {
-      if (confirm('确定删除聊天记录吗？')) alert('已删除（模拟）');
+      if (confirm(t('cm_confirm_delete_chat'))) alert(t('cm_chat_deleted'));
     });
   }, 100);
 }
@@ -444,17 +445,17 @@ export function openChatPlusPanel() {
   const content = document.getElementById('chat-plus-content');
   if (content) {
     const items = [
-      { icon: '📷', label: '相册', action: () => { const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*'; inp.multiple = true; inp.onchange = () => { if (!inp.files || !inp.files.length) return; window.chatState = window.chatState || {}; window.chatState.pendingAttachments = window.chatState.pendingAttachments || []; Array.from(inp.files).forEach(f => { window.chatState.pendingAttachments.push({ type: 'image', file: f, name: f.name, size: f.size }); }); import('./chat_ui.js').then(m => m.renderAttachmentPreview(window.chatState.pendingAttachments)); }; inp.click(); } },
-      { icon: '💰', label: '转账', action: () => openTransferDialog() },
-      ...(window.currentGroupId ? [] : [{ icon: '🧧', label: '红包', action: () => openRedPacketDialog() },]),
-{ icon: '📁', label: '文件', action: () => { const inp = document.createElement('input'); inp.type = 'file'; inp.multiple = true; inp.onchange = () => { if (!inp.files || !inp.files.length) return; window.chatState = window.chatState || {}; window.chatState.pendingAttachments = window.chatState.pendingAttachments || []; Array.from(inp.files).forEach(f => { window.chatState.pendingAttachments.push({ type: 'file', file: f, name: f.name, size: f.size }); }); import('./chat_ui.js').then(m => m.renderAttachmentPreview(window.chatState.pendingAttachments)); }; inp.click(); } },
-      { icon: '📍', label: '位置', action: () => alert('位置功能待实现') }
+      { icon: '📷', label: t('cm_album'), action: () => { const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*'; inp.multiple = true; inp.onchange = () => { if (!inp.files || !inp.files.length) return; window.chatState = window.chatState || {}; window.chatState.pendingAttachments = window.chatState.pendingAttachments || []; Array.from(inp.files).forEach(f => { window.chatState.pendingAttachments.push({ type: 'image', file: f, name: f.name, size: f.size }); }); import('./chat_ui.js').then(m => m.renderAttachmentPreview(window.chatState.pendingAttachments)); }; inp.click(); } },
+      { icon: '💰', label: t('cm_transfer'), action: () => openTransferDialog() },
+      ...(window.currentGroupId ? [] : [{ icon: '🧧', label: t('cm_red_packet'), action: () => openRedPacketDialog() },]),
+{ icon: '📁', label: t('cm_file'), action: () => { const inp = document.createElement('input'); inp.type = 'file'; inp.multiple = true; inp.onchange = () => { if (!inp.files || !inp.files.length) return; window.chatState = window.chatState || {}; window.chatState.pendingAttachments = window.chatState.pendingAttachments || []; Array.from(inp.files).forEach(f => { window.chatState.pendingAttachments.push({ type: 'file', file: f, name: f.name, size: f.size }); }); import('./chat_ui.js').then(m => m.renderAttachmentPreview(window.chatState.pendingAttachments)); }; inp.click(); } },
+      { icon: '📍', label: t('cm_location'), action: () => alert(t('cm_location_todo')) }
     ];
 if (window.currentGroupId) {
 
     items.push({
       icon: '🧧',
-      label: '群红包',
+      label: t('cm_group_red_packet'),
       badge_id: 'rp-badge',
       action: () => {
         if (typeof window.openGroupRedPacketDialog === 'function') window.openGroupRedPacketDialog(window.currentGroupId);
@@ -462,7 +463,7 @@ if (window.currentGroupId) {
     });
     items.push({
       icon: '📌',
-      label: '发任务',
+      label: t('cm_publish_task'),
       action: () => {
         if (typeof window.openPublishTaskDialog === 'function') window.openPublishTaskDialog(window.currentGroupId);
       }

@@ -288,11 +288,11 @@ async function openKnowledgeBase() {
     const _d = await _r.json();
     const _docs = _d.documents || [];
     if (_docs.length === 0) {
-      myDocsHtml = '<div class="subpage-placeholder">' + t('kb_no_docs') + '</div>';
+      myDocsHtml = '<div class="subpage-placeholder">' + t('me_kb_no_docs') + '</div>';
     } else {
       myDocsHtml = '<div class="me-menu">';
       _docs.forEach(function(d, idx) {
-        myDocsHtml += '<div class="me-menu-item" data-doc-index="' + idx + '" style="cursor:pointer;"><span class="menu-icon">📄</span><div class="menu-text"><div class="menu-title">' + (d.source_file || t('kb_untitled')) + '</div><div class="menu-desc">' + (d.chunk_count || 0) + ' 个分片</div></div><span class="menu-arrow">›</span></div>';
+        myDocsHtml += '<div class="me-menu-item" data-doc-index="' + idx + '" style="cursor:pointer;"><span class="menu-icon">📄</span><div class="menu-text"><div class="menu-title">' + (d.source_file || t('me_kb_untitled')) + '</div><div class="menu-desc">' + (d.chunk_count || 0) + ' 个分片</div></div><span class="menu-arrow">›</span></div>';
       });
       myDocsHtml += '</div>';
       window._myDocsCache = _docs;
@@ -300,7 +300,7 @@ async function openKnowledgeBase() {
   } catch (_e) {
     myDocsHtml = '<div class="subpage-placeholder">' + t('load_failed') + '</div>';
   }
-  window.openSubpage(t('kb_title'), myDocsHtml);
+  window.openSubpage(t('me_kb_title'), myDocsHtml);
 
   setTimeout(function() {
     const _rows = document.querySelectorAll('#subpage-content [data-doc-index]');
@@ -347,11 +347,11 @@ async function openMyDoc(sourceFile) {
     const r = await fetch(url, { headers: { 'Authorization': 'Bearer ' + token } });
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const d = await r.json();
-    const content = d.content || t('kb_empty_content');
+    const content = d.content || t('me_kb_empty_content');
     const html = '<div style="padding:12px;"><div style="font-size:13px;color:#888;margin-bottom:12px;">' + (d.source_file || '') + ' · ' + (d.chunk_count || 0) + ' 分片</div><pre style="white-space:pre-wrap;word-break:break-word;font-size:14px;line-height:1.6;font-family:inherit;">' + content.replace(/</g, '&lt;') + '</pre></div>';
     window.openSubpage(sourceFile, html);
   } catch (e) {
-    alert(t('open_failed') + e.message);
+    alert(t('me_open_failed') + e.message);
   }
 }
 
@@ -441,7 +441,7 @@ document.addEventListener('click', function(e) {
             '<h2 style="color: #007aff; margin-bottom: 5px;">SASES</h2>' +
             '<p style="color: #888; font-size: 14px; margin-bottom: 30px;">v1.0.0-Release</p>' +
             '<div style="text-align: left; background: #fff; padding: 15px; border-radius: 8px; line-height: 1.8; font-size: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">' +
-                '<p><strong>' + t('open_source_license') + '：</strong>MIT License</p>' +
+                '<p><strong>' + t('license') + '：</strong>MIT License</p>' +
                 '<p><strong>' + t('about_project_url') + '</strong><a href="https://github.com/SI-sases/sases" target="_blank" style="color: #007aff; text-decoration: none;">github.com/SI-sases/sases</a></p>' +
                 '<p><strong>' + t('about_commercial_title') + '</strong>' + t('about_commercial_body') + '</p>' +
             '</div>' +
