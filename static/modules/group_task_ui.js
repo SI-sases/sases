@@ -1,8 +1,10 @@
+import { t } from './i18n.js';
+
 window.openPublishTaskDialog = function(groupId) {
   const html = `
     <div style="padding:16px;">
       <div style="margin-bottom:16px;">
-        <div style="font-size:13px;color:#666;margin-bottom:6px;">任务标题</div>
+        <div style="font-size:13px;color:#666;margin-bottom:6px;">${t('groupTask.titleLabel')}</div>
         <input id="pt-title" type="text" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;" placeholder="请输入标题">
       </div>
       <div style="margin-bottom:16px;">
@@ -28,7 +30,7 @@ window.openPublishTaskDialog = function(groupId) {
       <button id="pt-submit" style="width:100%;padding:12px;background:#07c160;color:#fff;border:none;border-radius:6px;font-size:16px;font-weight:600;cursor:pointer;">发布任务</button>
     </div>
   `;
-  window.openSubpage('发布任务', html);
+  window.openSubpage(t('groupTask.publishTitle'), html);
   setTimeout(function() {
     const btn = document.getElementById('pt-submit');
     if (!btn) return;
@@ -39,14 +41,14 @@ window.openPublishTaskDialog = function(groupId) {
       const rewardStr = (document.getElementById('pt-reward') || {}).value || '0';
       if (!title.trim()) { alert('请输入标题'); return; }
       const reward = parseFloat(rewardStr);
-      if (isNaN(reward) || reward < 10) { alert('质押积分最少 10'); return; }
+      if (isNaN(reward) || reward < 10) { alert(t('groupTask.rewardMin')); return; }
       fetch('/group/' + groupId + '/tasks/publish', {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + localStorage.getItem('sases_token'), 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: title.trim(), description: desc, category: category, reward: reward })
       }).then(r => r.json()).then(data => {
         if (data.error || data.detail) { alert('发布失败：' + (data.error || data.detail)); return; }
-        alert('任务已发布');
+        alert(t('groupTask.published'));
         if (typeof window.closeSubpage === 'function') window.closeSubpage();
         if (typeof loadGroupMessages === 'function') loadGroupMessages();
       }).catch(e => alert('网络错误：' + e.message));

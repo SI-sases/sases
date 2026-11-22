@@ -396,6 +396,8 @@ export const en = {
   'redpacket_split_prefix': 'Split among ',
   'redpacket_split_mid': ' members, ',
   'exec_result': '📋 Execution result',
+  'groupTask.titleLabel': 'Task title',
+  'groupTask.publishTitle': 'Publish task',
   'kb_no_docs': 'No personal documents. Send *1: title: content below\\nbody in chat to import.',
   'kb_untitled': 'Untitled',
   'kb_title': 'Personal Knowledge Base',

@@ -396,6 +396,8 @@ export const zh = {
   'redpacket_split_prefix': '已均分给 ',
   'redpacket_split_mid': ' 位成员，人均 ',
   'exec_result': '📋 执行结果',
+  'groupTask.titleLabel': '任务标题',
+  'groupTask.publishTitle': '发布任务',
   'kb_no_docs': '暂无个人文档。在会话里发 *1：标题：内容如下\n正文 即可投喂。',
   'kb_untitled': '未命名',
   'kb_title': '个人知识库',
