@@ -14,6 +14,11 @@ export const en = {
   'cp_rounds': 'Rounds',
   'cp_unlimited': 'Unlimited',
   'cp_steps': ' steps',
+  'cp_mode': 'Mode',
+  'cp_auto': 'Auto',
+  'cp_fast': 'Fast',
+  'cp_strict': 'Strict',
+  'cp_font': 'Font',
   // Login & General
   'login_title': 'SASES',
   'login_subtitle': 'Login to your account',

@@ -13,7 +13,12 @@ export const zh = {
   'cp_advanced': '高级',
   'cp_rounds': '轮数',
   'cp_unlimited': '不限',
-  'cp_steps': '步',
+  'cp_steps': ' 步',
+  'cp_mode': '模式',
+  'cp_auto': '自动',
+  'cp_fast': '快速',
+  'cp_strict': '严格',
+  'cp_font': '字体',
   // 登录与通用
   'login_title': 'SASES',
   'login_subtitle': '登录你的账号',
