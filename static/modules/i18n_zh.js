@@ -308,6 +308,8 @@ export const zh = {
   'gc_rp_claimed': '你抢到了',
   'gc_rp_points': '积分',
   'gc_network_error': '网络错误：',
+  'gc_none': '无',
+  'gc_shared_agents': '群共享智能体',
   'gc_anonymous': '匿名',
   'gc_rp_saved': '已存入你的积分',
   'gc_rp_empty': '已抢完',

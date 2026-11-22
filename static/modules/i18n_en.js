@@ -308,6 +308,8 @@ export const en = {
   'gc_rp_claimed': 'You got',
   'gc_rp_points': 'credits',
   'gc_network_error': 'Network error: ',
+  'gc_none': 'None',
+  'gc_shared_agents': 'Shared group agents',
   'gc_anonymous': 'Anonymous',
   'gc_rp_saved': 'Added to your credits',
   'gc_rp_empty': 'All claimed',
