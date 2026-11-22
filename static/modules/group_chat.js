@@ -381,7 +381,7 @@ window.openGroupAgentPickerForReply = async function(quotedText, groupId) {
     </div>
   `;
 
-  window.openSubpage('选择智能体生成回复', html, {
+  window.openSubpage(t('gc_pick_reply_agent'), html, {
     showMore: false,
     returnAction: () => {}
   });
@@ -432,7 +432,7 @@ async function loadGroupMessages() {
       setTimeout(() => { container.scrollTop = container.scrollHeight; }, t);
     });
   } catch (e) {
-    appendGroupMessage('系统', '加载消息失败：' + e.message, false);
+    appendGroupMessage('系统', t('gc_load_msgs_failed') + e.message, false);
   }
 }
 
@@ -580,7 +580,7 @@ function _showGroupThinking(text) {
   const el = document.createElement('div');
   el.id = 'group-thinking';
   el.style.cssText = 'margin:8px 14px;color:#888;font-size:12px;font-family:system-ui';
-  el.textContent = text || '🤖 智能体思考中…';
+  el.textContent = text || t('gc_thinking');
   box.appendChild(el);
   box.scrollTop = box.scrollHeight;
   _groupThinkingTimer = setTimeout(_hideGroupThinking, 30000);

@@ -321,6 +321,8 @@ export const en = {
   'gc_stake_ok': 'Stake succeeded',
   'gc_network_error': 'Network error: ',
   'gc_thinking': '🤖 Agent is thinking…',
+  'gc_pick_reply_agent': 'Choose an agent to reply',
+  'gc_load_msgs_failed': 'Failed to load messages: ',
   'gc_tasks_running': 'Active tasks ({n})',
   'gc_untitled': 'Untitled',
   'gc_stake_credits': 'Stake {n} credits · {cat}',

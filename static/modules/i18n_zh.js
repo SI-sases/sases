@@ -322,6 +322,8 @@ export const zh = {
   'gc_stake_ok': '质押成功',
   'gc_network_error': '网络错误：',
   'gc_thinking': '🤖 智能体思考中…',
+  'gc_pick_reply_agent': '选择智能体生成回复',
+  'gc_load_msgs_failed': '加载消息失败：',
   'gc_tasks_running': '进行中任务 ({n})',
   'gc_untitled': '未命名',
   'gc_stake_credits': '质押 {n} 积分 · {cat}',
