@@ -881,7 +881,7 @@ async function openGroupSettings() {
       if (typeof window.openGroupKnowledge === 'function') {
         window.openGroupKnowledge(currentGroupId);
       } else {
-        alert('群知识库开发中');
+        alert(t('gc_kb_wip'));
       }
     });
   }
@@ -895,7 +895,7 @@ async function openGroupSettings() {
         if (typeof window.openSwarmConfig === 'function') {
           window.openSwarmConfig(currentGroupId);
         } else {
-          alert('蜂群模式管理开发中');
+          alert(t('gc_swarm_wip'));
         }
       });
     } else {
@@ -912,7 +912,7 @@ async function openGroupSettings() {
         if (typeof window.openGroupManage === 'function') {
           window.openGroupManage(currentGroupId);
         } else {
-          alert('群管理开发中');
+          alert(t('gc_manage_wip'));
         }
       });
     } else {
