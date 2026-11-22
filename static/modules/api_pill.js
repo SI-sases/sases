@@ -274,6 +274,7 @@
     if (m.classList.contains('show')) { m.classList.remove('show'); return; }
     var _steps = localStorage.getItem('sases_max_steps') || '8';
     var _mode = localStorage.getItem('sases_agent_mode') || 'auto';
+    var _exec = localStorage.getItem('sases_exec_mode') || 'single';
     var _font = localStorage.getItem('sases_chat_font') || '15';
     var html = '<div class="sm-title">高级</div>';
     html += '<label class="sm-item">轮数<select class="sm-select" id="sm-rounds">' +
@@ -291,6 +292,11 @@
     html += '<div class="sm-title">显示</div>';
     html += '<div class="sm-item" style="color:#999">工具由系统按任务自动选择</div>';
     html += '<div class="sm-reset" id="sm-reset">恢复默认</div>';
+    html += '<label class="sm-item">执行<select class="sm-select" id="sm-exec">' +
+      [['single', '单窗口'], ['background', '后台执行'], ['multi', '多子智能体（未启用）']].map(function (v) {
+        return '<option value="' + v[0] + '" ' + (_exec === v[0] ? 'selected' : '') +
+          (v[0] === 'multi' ? ' disabled' : '') + '>' + v[1] + '</option>';
+      }).join('') + '</select></label>';
     m.innerHTML = html;
 
     var _rounds = document.getElementById('sm-rounds');
@@ -309,6 +315,10 @@
       } catch (e) {}
     };
     var _fontSel = document.getElementById('sm-font');
+    var _execSel = document.getElementById('sm-exec');
+    if (_execSel) _execSel.onchange = function () {
+      try { localStorage.setItem('sases_exec_mode', _execSel.value); } catch (e) {}
+    };
     if (_fontSel) _fontSel.onchange = function () {
       try {
         localStorage.setItem('sases_chat_font', _fontSel.value);

@@ -460,6 +460,7 @@ async function sendMessage() {
       permissions: (function () {
         try { return JSON.parse(localStorage.getItem('sases_perms_v1') || '{}'); } catch (e) { return {}; }
       })(),
+      background: localStorage.getItem('sases_exec_mode') === 'background',
       quote_content: chatState.pendingQuote || null
     };
     let data = null, _streamed = false;
@@ -494,6 +495,10 @@ async function sendMessage() {
     } catch (e) {}
 
     updateMessageStatus(tempId, 'sent');
+    if (data.background) {
+      appendMessage('assistant', '后台任务已提交：run #' + data.run_id + '（可继续聊天）', 'AI', null, new Date().toISOString(), false, chatState);
+      return;
+    }
     const _is_swarm_task = !!(data.swarm && data.task_id);
     if (!_is_swarm_task && !_streamed && data.assistant_reply && String(data.assistant_reply).trim() !== String(text).trim()) {
       appendMessage('assistant', data.assistant_reply, 'AI', null, new Date().toISOString(), false, chatState);
