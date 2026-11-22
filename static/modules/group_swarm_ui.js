@@ -153,7 +153,7 @@ window.openSwarmUsage = async function(groupId) {
       topUsers.forEach((u, idx) => {
         topHtml += '<div class="me-menu-item">';
         topHtml += '<span class="menu-label">' + (idx + 1) + '. ' + (u.username || t('sw_anonymous')) + '</span>';
-        topHtml += '<span class="menu-value">' + (u.calls || 0) + ' 次</span>';
+        topHtml += '<span class="menu-value">' + (u.calls || 0) + ' ' + t('sw_times') + '</span>';
         topHtml += '</div>';
       });
     }
@@ -189,5 +189,5 @@ window.openSwarmUsage = async function(groupId) {
       showMore: false,
       returnAction: () => openSwarmConfig(groupId)
     });
-  } catch (e) { alert('网络错误：' + e.message); }
+  } catch (e) { alert(t('sw_network_error') + e.message); }
 };
