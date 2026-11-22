@@ -368,7 +368,7 @@ function openAgentSwitch(currentId) {
     const list = document.getElementById('agent-switch-list');
     if (!list) return;
     const models = d.models || [];
-    if (!models.length) { list.textContent = '还没有智能体'; return; }
+    if (!models.length) { list.textContent = t('chat.no_agents'); return; }
     list.innerHTML = '';
     models.forEach(function (m) {
       const row = document.createElement('div');
@@ -383,7 +383,7 @@ function openAgentSwitch(currentId) {
     });
   }).catch(function () {
     const list = document.getElementById('agent-switch-list');
-    if (list) list.textContent = '加载失败';
+    if (list) list.textContent = t('chat.load_failed');
   });
   setTimeout(function () {
     const close = function (e) {
@@ -499,7 +499,7 @@ async function sendMessage() {
 
     updateMessageStatus(tempId, 'sent');
     if (data.background) {
-      appendMessage('assistant', '后台任务已提交：run #' + data.run_id + '（可继续聊天）', 'AI', null, new Date().toISOString(), false, chatState);
+      appendMessage('assistant', t('chat.bg_task_submitted').replace('{run}', data.run_id), 'AI', null, new Date().toISOString(), false, chatState);
       return;
     }
     const _is_swarm_task = !!(data.swarm && data.task_id);
