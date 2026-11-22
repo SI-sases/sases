@@ -12,6 +12,7 @@ search_tools 仍能发现它们，但不会自动把 schema 加回本轮请求�
 import os
 
 # 第一批隐藏：演示性质 / 可被 run_python 等核心工具替代 / 长期零调用
+# 第二批隐藏：低频且可被核心工具组合替代（http_async / split_block / verify_* / smart_edit）
 HIDDEN_DEFAULT = {
     # 同时保留下划线与连字符写法：manifest id 实际使用连字符
     "is_prime", "is-prime",
@@ -26,8 +27,13 @@ HIDDEN_DEFAULT = {
     "extract_keypoints", "extract-keypoints",
     "file_copy", "file-copy",
     "delete_block", "delete-block",
+    # Phase 2
+    "http_async", "http-async",
+    "split_block", "split-block",
+    "verify_patch", "verify-patch",
+    "verify_claim", "verify-claim",
+    "smart_edit", "smart-edit",
 }
-
 
 def hidden_ids():
     """当前生效的隐藏集合；SASES_TOOL_HIDE=off 时返回空集。"""

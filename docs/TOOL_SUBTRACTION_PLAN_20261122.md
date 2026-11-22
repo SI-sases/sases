@@ -78,27 +78,39 @@ SASES 执行时曾误删 `fast_agent.run_fast` 函数头，指挥官已修复。
 
 ## 三、Phase 2：继续减 5 个入口
 
-目标：17 → 12，schema 再降约 600 token。
-
-| 工具 | 当前 token | 处理 | 能力保留 |
-|---|---:|---|---|
-| http_async | 261 | 隐藏 | `api_call` + `run_python` |
-| split_block | 133 | 隐藏 | `run_python` 字符串处理 |
-| verify_patch | 111 | 合并/隐藏 | `verify_syntax` + `grep_code` |
-| verify_claim | 75 | 隐藏 | `grep_code` + `verify_syntax` |
-| smart_edit | 60 | 隐藏 | `file_replace_range` |
-
-不删除实现；只从默认 schema 隐藏。  
-`verify_ui` 保留，前端验收必需。
-
-验收：
+实际执行结果：
 
 ```text
-可见工具 17 -> 12
-schema token 再降 500-650
-file_read/file_write/run_python/grep_code/verify_syntax 仍可见
-一次只读任务 + 一次写文件任务通过
+runtime 可见 23
+实际隐藏 10
+剩余 13
+schema 2,497 -> 1,471 token
+节省 1,026（-41.1%）
 ```
+
+新增隐藏：
+
+```text
+http_async
+smart_edit
+verify_claim
+verify_patch
+split_block（磁盘有，runtime 未加载）
+```
+
+说明：
+
+- `split_block` 不在 runtime，加入隐藏集合但本轮无实际效果
+- 没有为了凑 12 再去隐藏 `web_fetch` / `read_user_doc`，因为它们不可替代
+- `verify_patch` 被隐藏后，`fast_agent._READ_TOOLS` 的白名单是冗余，不影响运行
+
+目标从“12 个”修正为：
+
+```text
+13 个是当前合理值
+12 个只能靠隐藏 web_fetch/read_user_doc，不建议
+```
+
 
 ---
 
