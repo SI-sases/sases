@@ -287,6 +287,7 @@ export const zh = {
   'group_pollination_rule': '群任务授粉分配：群主5%，算力提供者70%，执行者15%，红包池10%。',
   'extra': '额外',
   'times': '次',
+  'daily_limit': '每日上限',
 
   // 群聊界面（group_chat.js）
   'gc_back': '返回',
@@ -352,7 +353,9 @@ export const zh = {
   'gc_group_member': '群友',
   'gc_rp_from_prefix': '来自 ',
   'gc_rp_from_suffix': ' 的群红包',
-  'daily_limit': '每日上限',
+  'gc_rank_contribution': '贡献榜',
+  'gc_rank_task': '任务榜',
+  'gc_rank_rp': '红包榜',
 
   // 设置
   'account_security': '账号与安全',

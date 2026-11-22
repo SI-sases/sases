@@ -352,6 +352,9 @@ export const en = {
   'gc_group_member': 'Group member',
   'gc_rp_from_prefix': 'From ',
   'gc_rp_from_suffix': "'s group red packet",
+  'gc_rank_contribution': 'Contribution',
+  'gc_rank_task': 'Tasks',
+  'gc_rank_rp': 'Red Packets',
   'daily_limit': 'Daily Limit',
 
   // Settings

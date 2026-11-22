@@ -1440,9 +1440,9 @@ function sendRedPacketNow() {
 
 async function openGroupLeaderboard() {
   const tabs = [
-    { key: 'contribution', label: '贡献榜' },
-    { key: 'task', label: '任务榜' },
-    { key: 'redpacket', label: '红包榜' }
+    { key: 'contribution', label: t('gc_rank_contribution') },
+    { key: 'task', label: t('gc_rank_task') },
+    { key: 'redpacket', label: t('gc_rank_rp') }
   ];
   let currentType = 'contribution';
   let cache = {};
