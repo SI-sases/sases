@@ -7,11 +7,11 @@ from .llm_parser import _call_llm, _parse_plan, _normalize_steps, _validate_step
 from .task_state import _save_task_state, _load_task_state
 from .summarizer import _summarize, _summary_sender
 from .commander import plan_task, confirm_task, reject_task, cancel_task, submit_feedback, replan_failed_steps
-from .executor_callback import handle_step_done
+# P2-2: executor_callback 退出默认链，避免 supervisor/runs 循环导入
 
 __all__ = [
     'plan_task', 'confirm_task', 'reject_task', 'cancel_task', 'submit_feedback', 'replan_failed_steps',
-    'handle_step_done', 'review_step', 'restore_pending_tasks', 'clear_conversation_lock',
+    'review_step', 'restore_pending_tasks', 'clear_conversation_lock',
     'COMMANDER_SYSTEM_PROMPT', 'SUMMARY_SYSTEM_PROMPT', 'REPLAN_SYSTEM_PROMPT',
     'ERROR_KEYWORDS', 'COMMANDS_THAT_SHOULD_OUTPUT', 'UNRECOVERABLE_KEYWORDS',
     'pick_swarm_agents', '_get_conversation_history', '_insert_message',
