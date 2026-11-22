@@ -89,7 +89,20 @@ async def execute_task(task):
         pause_task(task_id, 'missing_params')
         return {'ok': False, 'error': 'missing_params'}
 
-    goal = '#4: ' + task['task_template']
+    goal = '#4[' + str(task_id) + ']: ' + task['task_template']
+
+    # P3-4: 同一 scheduled task 已有 queued/running run 时不再重复创建
+    try:
+        with db_cursor() as _cur:
+            _cur.execute(
+                "SELECT id FROM supervisor_runs WHERE user_id=? AND goal=? "
+                "AND status IN ('queued','running','paused','awaiting_approval') "
+                "ORDER BY id DESC LIMIT 1", (user_id, goal))
+            _active = _cur.fetchone()
+        if _active:
+            return {'ok': False, 'error': 'already_running', 'run_id': int(_active['id'])}
+    except Exception:
+        pass
 
     try:
         from .supervisor.runs import create_run
