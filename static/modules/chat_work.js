@@ -1,5 +1,6 @@
 // static/modules/chat_work.js
 import { appendWorkMessage } from './chat_ui.js';
+import { t } from './i18n.js';
 
 // ========== 风险提示 ==========
 export function showWorkWarning(command, chatState, api) {
@@ -162,18 +163,18 @@ export function showFreeModeGuide(container, isSases = false) {
   guide.style.fontSize = '14px';
   guide.style.color = '#333';
   guide.innerHTML = `
-    <div style="font-weight:600; margin-bottom:8px;">💡 使用提示</div>
-    <div>· 直接自然语言与我对话</div>
-    <div>· #0：任务卡死，例 #0 清锁/卡死/重启服务器</div>
-            <div>· #1：单步执行，例 #1 看看 core 目录有什么</div>
-    <div>· #2：多步骤执行，例 #2 帮我做一份文件放在D盘上</div>
-    <div>· #3：先看步骤再写入，例 #3 整理一下我的下载文件夹</div>
-    <div>· #4：自主循环完成，例 #4 把A到B功能做好</div>
+    <div style="font-weight:600; margin-bottom:8px;">${t('work_guide_title')}</div>
+    <div>· ${t('work_guide_direct')}</div>
+    <div>· ${t('work_guide_0')}</div>
+    <div>· ${t('work_guide_1')}</div>
+    <div>· ${t('work_guide_2')}</div>
+    <div>· ${t('work_guide_3')}</div>
+    <div>· ${t('work_guide_4')}</div>
 
-    ${isSases ? '<div>· *1：导入知识库，例 *1：将以下内容导入知识库，内容如下...</div>' : ''}
-    <div>· 点击 🤖 切换智能体执行</div>
+    ${isSases ? '<div>· ' + t('work_guide_kb') + '</div>' : ''}
+    <div>· ${t('work_guide_switch')}</div>
     <div style="margin-top:8px; text-align:right;">
-      <button id="dismiss-free-mode-guide" style="background:none; border:none; color:#007aff; cursor:pointer;">不再显示</button>
+      <button id="dismiss-free-mode-guide" style="background:none; border:none; color:#007aff; cursor:pointer;">${t('work_guide_dismiss')}</button>
     </div>
   `;
   container.appendChild(guide);
