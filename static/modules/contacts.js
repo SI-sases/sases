@@ -216,14 +216,14 @@ async function renderContacts(container) {
       const type = item.dataset.entry;
       if (type === 'new-agent') {
           if (typeof openNewAgentPage === 'function') openNewAgentPage();
-          else window.openSubpage('添加朋友', '<div class="me-menu" style="margin-top:10px;"><div class="me-menu-item"><span class="menu-label" style="padding:20px; display:block; text-align:center; color:#888;">搜索账号功能开发中</span></div></div>', { returnAction: () => window.activateMainView('contacts') });
+          else window.openSubpage(t('ct_add_friend'), '<div class="me-menu" style="margin-top:10px;"><div class="me-menu-item"><span class="menu-label" style="padding:20px; display:block; text-align:center; color:#888;">' + t('ct_search_wip') + '</span></div></div>', { returnAction: () => window.activateMainView('contacts') });
       }
       else if (type === 'api-agent') { 
           if (window.openModelManagement) window.openModelManagement(() => window.activateMainView('contacts')); 
       }
       else if (type === 'group-chat') {
           if (typeof openGroupChatList === 'function') openGroupChatList();
-          else window.openSubpage('群聊', '<div class="me-menu" style="margin-top:10px;"><div class="me-menu-item"><span class="menu-label" style="padding:20px; display:block; text-align:center; color:#888;">群聊列表开发中</span></div></div>', { returnAction: () => window.activateMainView('contacts') });
+          else window.openSubpage(t('ct_groups'), '<div class="me-menu" style="margin-top:10px;"><div class="me-menu-item"><span class="menu-label" style="padding:20px; display:block; text-align:center; color:#888;">' + t('ct_groups_wip') + '</span></div></div>', { returnAction: () => window.activateMainView('contacts') });
       }
     });
   });
@@ -506,7 +506,7 @@ async function loadFriendRequests() {
         const requestId = btn.dataset.requestId;
         try {
           await api.acceptFriendRequest(requestId);
-          alert(t('accepted') || '已同意');
+          alert(t('accepted'));
           loadFriendRequests();
           if (window.loadFriendAgents) window.loadFriendAgents();
           if (window.initMessages) window.initMessages();
@@ -519,7 +519,7 @@ async function loadFriendRequests() {
         const requestId = btn.dataset.requestId;
         try {
           await api.rejectFriendRequest(requestId);
-          alert(t('rejected') || '已拒绝');
+          alert(t('rejected'));
           loadFriendRequests();
         } catch (err) { alert(t('contacts_op_failed') + ': ' + err.message); }
       });
