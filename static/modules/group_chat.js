@@ -1115,11 +1115,11 @@ async function openAgentSwitch(fromChat = false) {
       html += '</div>';
     } else {
       // 蜂群模式：以本人身份 + 群共享
-      html += '<div class="section-title">群共享智能体</div>';
+      html += '<div class="section-title">' + t('gc_shared_agents') + '</div>';
       html += '<div class="me-menu">';
       html += '<div class="me-menu-item agent-option" data-agent-id="" data-agent-source="self">以本人身份</div>';
       if (sharedAgents.length === 0) {
-        html += '<div class="subpage-placeholder" style="padding:20px 0;font-size:13px;">群主未共享智能体</div>';
+        html += '<div class="subpage-placeholder" style="padding:20px 0;font-size:13px;">' + t('gc_no_shared') + '</div>';
       } else {
         sharedAgents.forEach(p => {
           html += '<div class="me-menu-item agent-option" data-agent-id="' + p.agent_id + '" data-agent-name="' + (p.model_name || p.agent_id) + '" data-agent-source="group">';
@@ -1165,7 +1165,7 @@ async function openAgentSwitch(fromChat = false) {
             _btn.style.fontSize = '';
           }
         }
-        document.getElementById('chat-window-title').textContent = currentGroupName + (currentAgentId ? ' (' + (_name || '智能体') + ')' : '');
+        document.getElementById('chat-window-title').textContent = currentGroupName + (currentAgentId ? ' (' + (_name || t('gc_agent')) + ')' : '');
       });
     });
   } catch (e) {
