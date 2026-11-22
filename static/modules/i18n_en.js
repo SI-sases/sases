@@ -303,6 +303,7 @@ export const en = {
   'gc_invite_failed': 'Invite failed: ',
   'gc_remove_failed': 'Remove failed: ',
   'gc_announcement': 'Group Announcement',
+  'gc_no_announcement': 'No announcement yet',
   'gc_save_failed': 'Save failed: ',
   'gc_saved': 'Saved',
   'gc_rp_config': 'Red packet settings',

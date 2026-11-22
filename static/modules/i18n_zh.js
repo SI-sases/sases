@@ -304,6 +304,7 @@ export const zh = {
   'gc_invite_failed': '邀请失败：',
   'gc_remove_failed': '移除失败：',
   'gc_announcement': '群公告',
+  'gc_no_announcement': '暂无群公告',
   'gc_save_failed': '保存失败：',
   'gc_saved': '已保存',
   'gc_rp_config': '红包配置',

@@ -1255,8 +1255,8 @@ window.openGroupNameEditor = function() {
   } else {
     const html = content
       ? '<div class="me-menu"><div class="me-menu-item" style="display:block;padding:14px;font-size:14px;color:#333;line-height:1.7;white-space:pre-wrap;">' + content + '</div></div>'
-      : '<div class="subpage-placeholder">暂无群公告</div>';
-    window.openSubpage('群公告', html, {
+      : '<div class="subpage-placeholder">' + t('gc_no_announcement') + '</div>';
+    window.openSubpage(t('gc_announcement'), html, {
       returnAction: () => openGroupSettings()
     });
   }
@@ -1429,7 +1429,7 @@ function sendRedPacketNow() {
     alert(t('gc_rp_sent') + data.total + ' 积分给 ' + data.recipients + ' 人');
     window.closeSubpage();
     openGroupCreditsDetail();
-  }).catch(e => alert('网络错误：' + e.message));
+  }).catch(e => alert(t('gc_network_error') + e.message));
 }
 
 
