@@ -22,7 +22,7 @@ def build_runtime_context(user_id, conversation_id, goal, mode="fast"):
     if not _is_task(goal, mode):
         return ""
     parts = []
-    _recall = os.getenv("SASES_RUNTIME_RECALL", "1") == "1"
+    _recall = os.getenv("SASES_RUNTIME_RECALL", "0") == "1"
     if _recall:
         try:
             mems = memory_service.recall(user_id=user_id, query=goal, top_k=3)
