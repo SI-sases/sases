@@ -1071,7 +1071,7 @@ async function openAgentSwitch(fromChat = false) {
       <div class="subpage-placeholder">加载中...</div>
     </div>
   `;
-  window.openSubpage('选择发言身份', contentHtml, {
+  window.openSubpage(t('gc_pick_sender'), contentHtml, {
     returnAction: fromChat ? null : (() => openGroupSettings())
   });
 
@@ -1098,9 +1098,9 @@ async function openAgentSwitch(fromChat = false) {
 
     if (!isSwarm) {
       // 普通模式：我的智能体
-      html += '<div class="section-title">我的智能体</div>';
+      html += '<div class="section-title">' + t('gc_my_agents') + '</div>';
       html += '<div class="me-menu">';
-      html += '<div class="me-menu-item agent-option" data-agent-id="" data-agent-source="self">以本人身份</div>';
+      html += '<div class="me-menu-item agent-option" data-agent-id="" data-agent-source="self">' + t('gc_as_self') + '</div>';
       const _myFiltered = myAgents.filter(a => !(a.agent_id || '').startsWith('sases_assistant'));
       if (_myFiltered.length === 0) {
         html += '<div class="subpage-placeholder" style="padding:20px 0;font-size:13px;">你还没有智能体</div>';
