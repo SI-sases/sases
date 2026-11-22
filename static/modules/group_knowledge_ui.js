@@ -24,7 +24,7 @@ window.openGroupKnowledge = async function(groupId) {
       const catLabel = { doc: t('gk_doc'), faq: 'FAQ', meeting: t('gk_minutes'), policy: t('gk_policy') }[it.category] || t('gk_doc');
       html += '<div class="me-menu-item gk-item" data-docid="' + it.id + '" style="flex-direction:column;align-items:flex-start;padding:12px;">';
       html += '<div style="width:100%;display:flex;align-items:center;justify-content:space-between;">';
-      html += '<span style="font-size:14px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:70%;">' + (it.title || '(无标题)') + '</span>';
+      html += '<span style="font-size:14px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:70%;">' + (it.title || t('gk_untitled')) + '</span>';
       html += '<span class="menu-value" style="font-size:12px;color:#999;">' + catLabel + '</span>';
       html += '</div>';
       html += '<div style="font-size:12px;color:#999;margin-top:4px;width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (it.content || '').substring(0, 50) + '</div>';

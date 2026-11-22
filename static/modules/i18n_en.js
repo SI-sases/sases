@@ -468,6 +468,7 @@ export const en = {
   'gk_title': 'Group knowledge base',
   'gk_add': 'Add',
   'gk_load_failed': 'Load failed: ',
+  'gk_untitled': '(Untitled)',
   'gc_report_wip': 'Group reports coming soon',
   'gc_member': 'Member',
   'gc_switch_swarm': 'Switched to Swarm Mode',
