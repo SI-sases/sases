@@ -4,6 +4,7 @@
 import asyncio
 import json
 import os
+import shutil
 
 from core import tool_gateway
 from core.services import agent_memory
@@ -580,12 +581,26 @@ async def _run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=
                         print("[approval] 保存待审批失败: " + str(_e_pend))
                 return {"status": "awaiting_approval", "content": "等待审批：" + str(_ar.tool),
                         "step": _ar.step, "tool": _ar.tool, "steps": step, "history": used}
+            _bak = None
+            if name in ("file_write", "file_replace_range", "smart_edit") and isinstance(args, dict):
+                _bp = str(args.get("file_path") or "")
+                if _bp and os.path.isfile(_bp):
+                    try:
+                        _bak = _bp + ".agentbak"
+                        shutil.copy2(_bp, _bak)
+                    except Exception:
+                        _bak = None
             try:
                 r = await tool_gateway.invoke_tool_async(name, args)
                 ok = bool(getattr(r, "success", False))
                 text = str(getattr(r, "result", "") or getattr(r, "error", ""))[:4000]
             except Exception as e:
                 ok, text = False, "ERROR: " + str(e)
+            if not ok and _bak:
+                try:
+                    shutil.copy2(_bak, _bp)
+                except Exception:
+                    pass
             used.append({"step": step, "tool": name, "args": args, "ok": ok})
             if name == "subagent":
                 _subagent_calls += 1
@@ -619,9 +634,20 @@ async def _run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=
                         if _vok:
                             _verified_files.add(_fp)
                             _vmsg = "[自检] verify_syntax 通过: " + _fp
+                            if _bak:
+                                try:
+                                    os.remove(_bak)
+                                except Exception:
+                                    pass
                         else:
                             _verified_files.discard(_fp)
                             _vmsg = "[自检] verify_syntax 失败: " + _fp + " -> " + str(_vres)[:800]
+                            if _bak:
+                                try:
+                                    shutil.copy2(_bak, _fp)
+                                    _vmsg += "（已回滚该文件）"
+                                except Exception:
+                                    pass
                         messages.append({"role": "user", "content": _vmsg})
                         _mem_append("user", _vmsg)
                     except Exception as e:
