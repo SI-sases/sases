@@ -279,9 +279,9 @@ window.openGroupRedPacket = async function(packetId) {
     if (detail.claimed_by_me !== null && detail.claimed_by_me !== undefined) {
       bodyHtml = '<div style="font-size:48px;font-weight:700;color:#f59e0b;margin:20px 0;">' + detail.claimed_by_me + '</div><div style="font-size:14px;color:#666;">已存入你的积分</div>';
     } else if (detail.status === 'empty') {
-      bodyHtml = '<div style="font-size:36px;color:#999;margin:20px 0;">已抢完</div>';
+      bodyHtml = '<div style="font-size:36px;color:#999;margin:20px 0;">' + t('gc_rp_all_claimed') + '</div>';
     } else if (detail.status === 'expired') {
-      bodyHtml = '<div style="font-size:36px;color:#999;margin:20px 0;">已过期</div>';
+      bodyHtml = '<div style="font-size:36px;color:#999;margin:20px 0;">' + t('gc_rp_expired') + '</div>';
     } else {
       bodyHtml = '<button id="grp-rp-claim-btn" style="width:180px;height:180px;border-radius:50%;background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#fff;font-size:24px;font-weight:700;border:none;cursor:pointer;margin:20px auto;display:block;box-shadow:0 8px 24px rgba(245,158,11,0.3);">開</button>';
     }
@@ -294,7 +294,7 @@ window.openGroupRedPacket = async function(packetId) {
       + '</div>'
       + claimsHtml
       + '</div>';
-    window.openSubpage('群红包', html);
+    window.openSubpage(t('gc_rp_title'), html);
     setTimeout(() => {
       const btn = document.getElementById('grp-rp-claim-btn');
       if (btn) {
@@ -759,9 +759,9 @@ async function applyGroupMode(mode) {
     }
   }
   const modeText = document.getElementById('chat-mode-text');
-  if (modeText) modeText.textContent = mode === 'normal' ? '普通聊天' : '蜂群模式';
+  if (modeText) modeText.textContent = mode === 'normal' ? t('gc_mode_normal') : t('gc_mode_swarm');
   if (typeof window.showGroupToast === 'function') {
-    window.showGroupToast(mode === 'swarm' ? '已切换到蜂群模式' : '已切换到普通模式');
+    window.showGroupToast(mode === 'swarm' ? t('gc_switch_swarm') : t('gc_switch_normal'));
   }
   // 更新 🤖 按钮显示
   try {

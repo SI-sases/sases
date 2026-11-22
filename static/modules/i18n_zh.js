@@ -289,7 +289,9 @@ export const zh = {
   'times': '次',
 
   // 群聊界面（group_chat.js）
-  'gc_mode_normal': '普通聊天',
+  'gc_mode_swarm': '蜂群模式',
+  'gc_switch_swarm': '已切换到蜂群模式',
+  'gc_switch_normal': '已切换到普通模式',
   'gc_mode_swarm': '蜂群模式',
   'gc_ph_mention': '陪聊直接发；要执行请写：执行：你的任务',
   'gc_ph_default': '聊天、执行命令或任务：描述',

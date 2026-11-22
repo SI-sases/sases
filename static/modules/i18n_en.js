@@ -289,7 +289,9 @@ export const en = {
   'times': 'times',
 
   // Group chat UI (group_chat.js)
-  'gc_mode_normal': 'Normal Chat',
+  'gc_mode_swarm': 'Swarm Mode',
+  'gc_switch_swarm': 'Switched to Swarm Mode',
+  'gc_switch_normal': 'Switched to Normal Chat',
   'gc_mode_swarm': 'Swarm Mode',
   'gc_ph_mention': 'Chat freely; to execute, type: Execute: your task',
   'gc_ph_default': 'Chat, run a command or task: describe it',
