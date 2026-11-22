@@ -293,6 +293,8 @@ export const en = {
   'gc_group_name': 'Group Name',
   'gc_save_failed': 'Save failed: ',
   'gc_network_error': 'Network error: ',
+  'gc_search_history': 'Search Chat History',
+  'gc_no_match': 'No matching results',
   'gc_my_nickname': 'My Group Nickname',
   'gc_announcement': 'Group Announcement',
   'gc_save_failed': 'Save failed: ',

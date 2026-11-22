@@ -1599,7 +1599,7 @@ function openGroupSearch() {
     </div>
     <div id="gs-results"></div>
   `;
-  window.openSubpage('查找聊天记录', html, {
+  window.openSubpage(t('gc_search_history'), html, {
     showMore: false,
     returnAction: () => openGroupSettings()
   });
@@ -1616,7 +1616,7 @@ function openGroupSearch() {
         const container = document.getElementById('gs-results');
         if (!container) return;
         if (msgs.length === 0) {
-          container.innerHTML = '<div class="subpage-placeholder">无匹配结果</div>';
+          container.innerHTML = '<div class="subpage-placeholder">' + t('gc_no_match') + '</div>';
         } else {
           let h = '<div class="me-menu">';
           msgs.forEach(m => {
@@ -1628,7 +1628,7 @@ function openGroupSearch() {
           h += '</div>';
           container.innerHTML = h;
         }
-      }).catch(e => alert('网络错误：' + e.message));
+      }).catch(e => alert(t('gc_network_error') + e.message));
     };
     if (btn) btn.onclick = doSearch;
     if (input) input.onkeydown = (e) => { if (e.key === 'Enter') doSearch(); };

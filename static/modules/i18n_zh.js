@@ -294,6 +294,8 @@ export const zh = {
   'gc_group_name': '群聊名称',
   'gc_save_failed': '保存失败：',
   'gc_network_error': '网络错误：',
+  'gc_search_history': '查找聊天记录',
+  'gc_no_match': '无匹配结果',
   'gc_my_nickname': '我的群昵称',
   'gc_announcement': '群公告',
   'gc_save_failed': '保存失败：',
