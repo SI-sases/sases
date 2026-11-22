@@ -9,6 +9,7 @@ from core import tool_gateway
 from core.services import agent_memory
 from core.services import token_meter, tool_pruner
 from core.services import todo_service
+from core.services import run_control_service
 from core.services.agent_policy import before_tool, after_tool, WRITE_TOOLS, ApprovalRequired
 from core.services.swarm.llm_parser import client, MODEL
 from core.services.swarm.prompts import BASE_SYSTEM, BASE_PREFIX_HASH
