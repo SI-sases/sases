@@ -289,6 +289,9 @@ export const en = {
   'times': 'times',
 
   // Group chat UI (group_chat.js)
+  'gc_back': 'Back',
+  'gc_group_name': 'Group Name',
+  'gc_announcement': 'Group Announcement',
   'gc_mode_swarm': 'Swarm Mode',
   'gc_files_wip': 'Group files coming soon',
   'gc_report_wip': 'Group reports coming soon',

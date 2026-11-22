@@ -1188,7 +1188,7 @@ window.openGroupNameEditor = function() {
   var v = currentGroupName || '';
   var h = document.getElementById('gne-page');
   if (!h) { h = document.createElement('div'); h.id = 'gne-page'; h.className = 'page-secondary'; document.body.appendChild(h); }
-  h.innerHTML = '<div class="sp-bar"><span id="gne-back">返回</span><b>群聊名称</b></div><input id="gne-in" value="' + v + '"' + (canEdit ? '' : ' readonly') + '><button id="gne-save"' + (canEdit ? '' : ' style=display:none') + '>保存</button>';
+  h.innerHTML = '<div class="sp-bar"><span id="gne-back">' + t('gc_back') + '</span><b>' + t('gc_group_name') + '</b></div><input id="gne-in" value="' + v + '"' + (canEdit ? '' : ' readonly') + '><button id="gne-save"' + (canEdit ? '' : ' style=display:none') + '>保存</button>';
   h.style.display = 'block';
   document.getElementById('gne-back').onclick = function(){ h.style.display = 'none'; };
   document.getElementById('gne-save').onclick = function(){ currentGroupName = document.getElementById('gne-in').value.trim(); h.style.display = 'none'; if (window.renderGroupSettings) window.renderGroupSettings(); };
@@ -1231,7 +1231,7 @@ window.openGroupNameEditor = function() {
       </div>
       <button class="save-btn" id="announcement-save">保存</button>
     `;
-    window.openSubpage('群公告', html, {
+    window.openSubpage(t('gc_announcement'), html, {
       returnAction: () => openGroupSettings()
     });
     setTimeout(() => {
