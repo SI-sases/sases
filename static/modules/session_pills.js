@@ -39,7 +39,7 @@
     const apiPill = document.getElementById('api-pill');
     if (!apiPill) return;
     let anchor = apiPill;
-    [['task-pill', '⏳ 后台'], ['agent-pill', '🤖 子智能体'], ['perm-pill', '🔐 权限']].forEach(function (p) {
+    [['task-pill', '⏳ ' + t('sp_pill_task')], ['agent-pill', '🤖 ' + t('sp_pill_agent')], ['perm-pill', '🔐 ' + t('sp_pill_perm')]].forEach(function (p) {
       if (document.getElementById(p[0])) {
         anchor = document.getElementById(p[0]);
         return;
@@ -146,7 +146,7 @@
           try {
             // 真实调用后端接口：POST /supervisor/runs/{id}/pause|resume
             const res = await api('/supervisor/runs/' + id + '/' + action, { method: 'POST' });
-            if (res && res.ok === false) throw new Error('接口返回失败');
+            if (res && res.ok === false) throw new Error(t('sp_api_failed'));
             if (action === 'resume' && res && res.resumed === false) {
               b.textContent = t('sp_unpaused');
             }
