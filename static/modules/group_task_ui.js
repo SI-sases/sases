@@ -82,13 +82,13 @@ window.openTaskDetail = function(taskId) {
     }
     let actionHtml = '';
     if (!isOwner && isOpen) {
-      actionHtml = '<button id="td-submit-btn" style="width:100%;padding:12px;background:#07c160;color:#fff;border:none;border-radius:6px;font-size:16px;font-weight:600;cursor:pointer;margin-top:16px;">提交方案</button>';
+      actionHtml = '<button id="td-submit-btn" style="width:100%;padding:12px;background:#07c160;color:#fff;border:none;border-radius:6px;font-size:16px;font-weight:600;cursor:pointer;margin-top:16px;">' + t('gt_submit_plan') + '</button>';
     } else if (isOwner && isOpen && subs.length > 0) {
-      actionHtml = '<div style="background:#fff7e6;border:1px solid #ffd591;border-radius:6px;padding:10px;margin-top:16px;font-size:12px;color:#874d00;">请在提交列表中点击"选择此方案"，未选择将超时退款。</div>';
+      actionHtml = '<div style="background:#fff7e6;border:1px solid #ffd591;border-radius:6px;padding:10px;margin-top:16px;font-size:12px;color:#874d00;">' + t('gt_pick_hint') + '</div>';
     }
     const html = `
       <div style="padding:16px;">
-        <div style="font-size:18px;font-weight:600;margin-bottom:8px;">${task.title || '未命名任务'}</div>
+        <div style="font-size:18px;font-weight:600;margin-bottom:8px;">${task.title || t('gt_untitled')}</div>
         <div style="font-size:13px;color:#666;margin-bottom:12px;">
           质押 ${task.reward_credits || 0} 积分 · 状态：${isOpen ? '进行中' : task.status}
         </div>
