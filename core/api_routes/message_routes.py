@@ -166,7 +166,7 @@ async def stream_message(body: StreamMessageRequest, user_id: int = Depends(get_
                     content=_text, sender_agent_id=body.sender_agent_id,
                     quote_content=body.quote_content,
                     enabled_skill_ids=body.enabled_skill_ids,
-                    max_steps=12, agent_mode="strict")
+                    max_steps=16, agent_mode="strict")
                 yield _sse({"type": "final", "data": res})
                 return
 

@@ -100,6 +100,8 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
     except Exception as _e_rc:
         print("[context] runtime 注入失败: " + str(_e_rc))
     schemas = _tool_schemas(allowed_tool_ids, mode=mode)
+    if _is_investigation(goal) and int(max_steps) < 16:
+        max_steps = 16
     used = []
     _plan_required = _needs_plan(goal, mode)
     _dirty_files = set()
@@ -500,5 +502,7 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
                         print("[strict] verify_syntax 失败: " + str(e))
 
         _audit_tick(calls)
+        if (_is_investigation(goal) and step >= max_steps - 1 and _dirty_files):
+            _force_final = True
 
     return {"status": "max_steps", "content": "达到步数上限，未完成任务。", "steps": max_steps, "history": used}
