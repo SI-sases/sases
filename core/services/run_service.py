@@ -6,7 +6,7 @@ import os
 from ..db import db_cursor
 
 
-def create_run(user_id, conversation_id, source, goal, supervisor_id="sases_assistant", max_rounds=10, budget_tokens=0, timeout_seconds=0):
+def create_run(user_id, conversation_id, source, goal, supervisor_id="sases_assistant", max_rounds=10, budget_tokens=0, timeout_seconds=0, file_scope=None):
     from . import supervisor_service
     run_id = supervisor_service.create_run(
         int(user_id), int(conversation_id), supervisor_id or "sases_assistant",
@@ -20,6 +20,10 @@ def create_run(user_id, conversation_id, source, goal, supervisor_id="sases_assi
                 if timeout_seconds:
                     cur.execute("UPDATE supervisor_runs SET deadline_at=datetime('now', ?) WHERE id=?",
                                 ("+" + str(int(timeout_seconds)) + " seconds", int(run_id)))
+                if file_scope:
+                    import json as _json
+                    cur.execute("UPDATE supervisor_runs SET file_scope=? WHERE id=?",
+                                (_json.dumps(list(file_scope), ensure_ascii=False), int(run_id)))
         except Exception:
             pass
     return run_id

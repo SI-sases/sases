@@ -203,6 +203,18 @@ async def _run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=
         except Exception:
             pass
     _used_tokens = 0
+    _file_scope = []
+    if run_id:
+        try:
+            from core.db import db_cursor as _dc_scope
+            with _dc_scope() as _cs:
+                _cs.execute("SELECT file_scope FROM supervisor_runs WHERE id=?", (int(run_id),))
+                _sr = _cs.fetchone()
+            if _sr and _sr["file_scope"]:
+                import json as _json_scope
+                _file_scope = [os.path.abspath(str(x)) for x in _json_scope.loads(_sr["file_scope"])]
+        except Exception:
+            pass
     _deadline = None
     if run_id:
         try:
@@ -534,6 +546,10 @@ async def _run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=
             except Exception:
                 args = {}
             _deny = None
+            if _file_scope and name in ("file_write", "file_replace_range", "smart_edit"):
+                _fp_scope = os.path.abspath(str(args.get("file_path") or ""))
+                if _fp_scope not in _file_scope:
+                    _deny = "文件不在本任务 file_scope 内: " + _fp_scope
             if permissions is not None:
                 if name in ("file_write", "file_replace_range", "smart_edit") and permissions.get("write") is False:
                     _deny = "当前会话已关闭写文件权限"

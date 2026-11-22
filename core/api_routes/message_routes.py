@@ -74,6 +74,7 @@ class SendMessageRequest(BaseModel):
     priority: Optional[int] = 0
     budget_tokens: Optional[int] = 0
     timeout_seconds: Optional[int] = 0
+    file_scope: Optional[list] = None
 
 
 class ConversationCreateRequest(BaseModel):
@@ -229,7 +230,8 @@ async def send_message(body: SendMessageRequest, user_id: int = Depends(get_curr
         rid = run_service.create_run(user_id, cid, "chat", body.content,
                                      supervisor_id=body.agent_id or "sases_assistant",
                                      budget_tokens=body.budget_tokens or 0,
-                                     timeout_seconds=body.timeout_seconds or 0)
+                                     timeout_seconds=body.timeout_seconds or 0,
+                                     file_scope=body.file_scope)
         await run_queue_service.enqueue(rid, 0 if body.priority is None else body.priority)
         _persist_skills(cid, body.enabled_skill_ids)
         return {"conversation_id": cid, "run_id": rid, "status": "queued", "background": True}
