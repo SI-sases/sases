@@ -29,6 +29,8 @@ export const zh = {
   'gm_admin': '管理员',
   'gm_user': '用户',
   'gm_no_transfer': '没有可转让的成员',
+  'gm_no_add': '没有可添加的成员',
+  'gm_add_admin_title': '添加管理员',
   'gm_transfer_title': '转让群主',
   'gm_transfer_confirm': '确定将群主转让给该成员？转让后你将成为管理员，此操作不可撤销！',
   'gm_transfer_failed': '转让失败：',

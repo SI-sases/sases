@@ -23,6 +23,8 @@ export const en = {
   'gm_admin': 'Admin',
   'gm_user': 'User',
   'gm_no_transfer': 'No members available to transfer',
+  'gm_no_add': 'No members available to add',
+  'gm_add_admin_title': 'Add admin',
   'gm_transfer_title': 'Transfer group ownership',
   'gm_transfer_confirm': 'Transfer group ownership to this member? You will become an admin and this cannot be undone!',
   'gm_transfer_failed': 'Transfer failed: ',
