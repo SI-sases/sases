@@ -71,7 +71,9 @@
     const pill = document.getElementById(type);
     const r = pill.getBoundingClientRect();
     panel.style.left = Math.max(8, Math.min(r.left, innerWidth - 336)) + 'px';
-    panel.style.top = (r.bottom + 6) + 'px';
+    // 和能力胶囊一致：面板在按钮上方展开，避免遮住输入框
+    panel.style.top = 'auto';
+    panel.style.bottom = Math.max(8, innerHeight - r.top + 6) + 'px';
     panel.onclick = function (e) { e.stopPropagation(); };
     document.body.appendChild(panel);
     render();

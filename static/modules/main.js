@@ -1,6 +1,6 @@
 // static/modules/main.js
 // 会话胶囊：后台任务 / 子智能体 / 权限
-import './session_pills.js?v=20261130';
+import './session_pills.js?v=20261131';
 import { login, register, isLoggedIn } from './auth.js';
 import { api } from './api.js';
 import { initMessages } from './messages.js';
