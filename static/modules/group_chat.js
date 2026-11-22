@@ -266,7 +266,7 @@ window.openGroupRedPacket = async function(packetId) {
     const detail = await fetch('/group/red-packets/' + packetId, {
       headers: { 'Authorization': 'Bearer ' + localStorage.getItem('sases_token') }
     }).then(r => r.json());
-    if (detail.error || detail.detail) { alert('加载失败：' + (detail.error || detail.detail)); return; }
+    if (detail.error || detail.detail) { alert(t('gc_load_failed') + (detail.error || detail.detail)); return; }
     let claimsHtml = '';
     if (detail.claims && detail.claims.length > 0) {
       claimsHtml = '<div style="margin-top:20px;"><div style="font-size:13px;color:#999;margin-bottom:8px;">' + t('gc_redpacket_claims') + '</div>';
@@ -290,7 +290,7 @@ window.openGroupRedPacket = async function(packetId) {
       + '<div style="font-size:13px;color:#999;margin-bottom:20px;">' + t('gc_rp_from_prefix') + (detail.sender_name || t('gc_group_member')) + t('gc_rp_from_suffix') + '</div>'
       + '<div style="background:linear-gradient(135deg,#fef3c7,#fed7aa);border-radius:16px;padding:30px 20px;margin:0 auto;">'
       + bodyHtml
-      + '<div style="font-size:12px;color:#92400e;margin-top:12px;">' + detail.claimed_count + '/' + detail.total_count + ' 已领取 · 总额 ' + detail.total_amount + ' 积分</div>'
+      + '<div style="font-size:12px;color:#92400e;margin-top:12px;">' + detail.claimed_count + '/' + detail.total_count + ' ' + t('gc_rp_claimed_summary') + ' ' + detail.total_amount + ' ' + t('gc_credits_unit') + '</div>'
       + '</div>'
       + claimsHtml
       + '</div>';
