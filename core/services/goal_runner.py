@@ -59,7 +59,8 @@ async def run_goal_round(g):
         return
     run_id = run_service.create_run(user_id, cid, "goal", g["goal"],
                                     supervisor_id="sases_assistant",
-                                    max_rounds=int(g.get("max_rounds") or 10))
+                                    max_rounds=int(g.get("max_rounds") or 10),
+                                    budget_tokens=int(g.get("budget_tokens") or 0))
     # 标记为运行中，避免下一次轮询重复取
     with db_cursor(commit=True) as cur:
         cur.execute("UPDATE agent_goals SET status='running', last_run_id=?, updated_at=? WHERE id=?",
