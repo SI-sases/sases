@@ -1666,11 +1666,11 @@ function toggleGroupPin() {
 // ======================================================================
 
 function clearGroupHistory() {
-  if (!confirm('确定清空本群聊天记录（仅你的视角）？')) return;
-  alert('清空功能开发中');
+  if (!confirm(t('gc_clear_confirm'))) return;
+  alert(t('gc_clear_wip'));
 }
 function leaveGroup() {
-  if (!confirm('确定退出群聊？')) return;
+  if (!confirm(t('gc_leave_confirm'))) return;
   api.removeGroupMember(currentGroupId, 'self').then(() => { window.closeSubpage(); location.reload(); }).catch(e => alert('失败: ' + e.message));
 }
 
