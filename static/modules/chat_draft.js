@@ -1,8 +1,7 @@
 // static/modules/chat_draft.js
 // 草稿任务编辑器 + 蜂群操作按钮
 
-import { api } from './api.js';
-import { t } from './i18n.js';
+import { api } from './api.js'; import { t } from './i18n.js';
 
 
 export function showProposedRunCard(runId) {
@@ -40,11 +39,11 @@ export function showProposedRunCard(runId) {
       wrap.style.borderColor = '#ddd';
       wrap.style.background = '#f5f5f5';
     } catch (e) {
-      alert('取消失败：' + (e.message || '未知错误'));
+      alert(t('cd_cancel_failed') + (e.message || '未知错误'));
     }
   };
   const confirmBtn = document.createElement('button');
-  confirmBtn.textContent = '▶ 执行';
+  confirmBtn.textContent = t('cd_execute');
   confirmBtn.style.padding = '6px 16px';
   confirmBtn.style.fontSize = '13px';
   confirmBtn.style.border = 'none';
@@ -54,7 +53,7 @@ export function showProposedRunCard(runId) {
   confirmBtn.style.cursor = 'pointer';
   confirmBtn.onclick = async () => {
     confirmBtn.disabled = true;
-    confirmBtn.textContent = '已提交';
+    confirmBtn.textContent = t('cd_submitted');
     try {
       await api.confirmRun(runId);
       btnGroup.remove();
