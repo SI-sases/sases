@@ -355,6 +355,8 @@ export const en = {
   'gc_rank_contribution': 'Contribution',
   'gc_rank_task': 'Tasks',
   'gc_rank_rp': 'Red Packets',
+  'gc_no_data': 'No data',
+  'gc_rank_title': 'Group leaderboard',
   'daily_limit': 'Daily Limit',
 
   // Settings
