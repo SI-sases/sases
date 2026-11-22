@@ -3,6 +3,17 @@ import { api } from './api.js';
 import { t } from './me_i18n.js';
 import { setLang, getLang } from './i18n.js';
 
+// 语言选择用全局函数 + 内联 onclick，避免子页面重绘后事件监听丢失
+window.__sasesPickLang = function (lang) {
+  if (lang === getLang()) {
+    if (typeof window.closeSubpage === 'function') window.closeSubpage();
+    return;
+  }
+  setLang(lang);
+  if (typeof window.closeSubpage === 'function') window.closeSubpage();
+  setTimeout(function () { window.location.reload(); }, 120);
+};
+
 // ==================== 设置 ====================
 export function openSettings() {
   const contentHtml = `
@@ -103,27 +114,11 @@ function openLanguageSettings() {
   const currentLang = getLang();
   const contentHtml = `
     <div class="me-menu">
-      <div class="me-menu-item" id="lang-zh"><span class="menu-label">简体中文</span><span class="menu-check">${currentLang === 'zh' ? '✓' : ''}</span></div>
-      <div class="me-menu-item" id="lang-en"><span class="menu-label">English</span><span class="menu-check">${currentLang === 'en' ? '✓' : ''}</span></div>
+      <div class="me-menu-item" id="lang-zh" data-lang-choice="zh" onclick="window.__sasesPickLang('zh')"><span class="menu-label">简体中文</span><span class="menu-check">${currentLang === 'zh' ? '✓' : ''}</span></div>
+      <div class="me-menu-item" id="lang-en" data-lang-choice="en" onclick="window.__sasesPickLang('en')"><span class="menu-label">English</span><span class="menu-check">${currentLang === 'en' ? '✓' : ''}</span></div>
     </div>
   `;
   window.openSubpage(t('language_settings'), contentHtml);
-  setTimeout(() => {
-    // 统一走 i18n.setLang：同步 currentLang / localStorage / <html lang> 并广播 langchange，
-    // 否则只写 localStorage 不会触发界面重渲染（切换后界面仍是旧语言）。
-    const applyLang = (lang) => {
-      if (lang === getLang()) {
-        if (typeof window.closeSubpage === 'function') window.closeSubpage();
-        return;
-      }
-      setLang(lang);
-      if (typeof window.closeSubpage === 'function') window.closeSubpage();
-      // 整页 reload 让所有未监听 langchange 的模块一起切换
-      setTimeout(function () { window.location.reload(); }, 120);
-    };
-    document.getElementById('lang-zh').onclick = () => applyLang('zh');
-    document.getElementById('lang-en').onclick = () => applyLang('en');
-  }, 100);
 }
 
 function openAboutPage() {
