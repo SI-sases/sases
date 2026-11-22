@@ -154,7 +154,6 @@ from .services import debug_service
 from .services import rescue_service
 from .services import swarm_service
 from .services import supervisor_service
-from .services import executor_service
 from .services import async_task_service
 from .services import cleanup_service
 from .services import pattern_service
@@ -631,8 +630,7 @@ async def lifespan(app: FastAPI):
     except Exception as _e_queue:
         print("[queue] 启动失败: " + str(_e_queue))
     # 旧 executor 默认退役；需要时 SASES_EXECUTOR=1 恢复
-    if os.getenv("SASES_EXECUTOR", "0") == "1":
-        _background_tasks.append(asyncio.create_task(executor_service.start_background_executor()))
+    # P2-2: executor 已退出默认执行链
     try:
         from .services.goal_runner import goal_runner_loop
         _background_tasks.append(asyncio.create_task(goal_runner_loop()))
