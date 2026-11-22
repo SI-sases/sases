@@ -79,11 +79,14 @@ export function initMe() {
 
   var myCardEl = document.getElementById('menu-my-card');
   if (myCardEl) { myCardEl.onclick = openMyCard; }
+
   if (initialized) return;
-  initialized = true;
 
   const container = document.getElementById('me-content');
   if (!container) return;
+  // 容器存在才标记已初始化，避免容器未挂载时被永久锁死
+  initialized = true;
+
 
   const username = localStorage.getItem('sases_username') || '用户';
   const sasesId = localStorage.getItem('sases_sas_id') || t('not_set');
@@ -115,7 +118,7 @@ export function initMe() {
       </div>
       <div class="me-menu-item" id="menu-knowledge">
         <span class="menu-icon">📚</span>
-        <span class="menu-label">个人知识库</span>
+        <span class="menu-label">${t('personal_knowledge')}</span>
         <span class="menu-arrow">›</span>
       </div>
       <div class="me-menu-item" id="menu-settings">

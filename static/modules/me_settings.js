@@ -112,11 +112,14 @@ function openLanguageSettings() {
     // 统一走 i18n.setLang：同步 currentLang / localStorage / <html lang> 并广播 langchange，
     // 否则只写 localStorage 不会触发界面重渲染（切换后界面仍是旧语言）。
     const applyLang = (lang) => {
+      if (lang === getLang()) {
+        if (typeof window.closeSubpage === 'function') window.closeSubpage();
+        return;
+      }
       setLang(lang);
-      alert(t(lang === 'en' ? 'language_switched_en' : 'language_switched'));
       if (typeof window.closeSubpage === 'function') window.closeSubpage();
-      // 语言是全局状态：整页重新加载，确保所有未监听 langchange 的模块也切换
-      setTimeout(function () { window.location.reload(); }, 300);
+      // 整页 reload 让所有未监听 langchange 的模块一起切换
+      setTimeout(function () { window.location.reload(); }, 120);
     };
     document.getElementById('lang-zh').onclick = () => applyLang('zh');
     document.getElementById('lang-en').onclick = () => applyLang('en');

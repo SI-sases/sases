@@ -37,6 +37,7 @@ export const zh = {
   'settings': '设置',
   'logout': '退出登录',
   'model_management': '模型管理',
+  'personal_knowledge': '个人知识库',
   'credits_center': '积分中心',
   'wallet': '积分中心',
   'knowledge_base': '知识库',

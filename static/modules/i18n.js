@@ -45,19 +45,19 @@ export function t(key) {
   const dict = translations[currentLang] || translations.en;
   const val = dict[key];
   if (typeof val === 'string' && val !== '') return val;
-  // 英文缺 key 不回退中文：直接显示 key 本身，便于发现漏翻
+  // 当前语言缺 key：显示 key 本身，便于发现漏翻（不回退中文）
   return key;
 }
 
 export function setLang(lang) {
   if (SUPPORTED.indexOf(lang) === -1) return;
+  if (lang === currentLang) return; // 语言未变化，不重复广播
   currentLang = lang;
   try { localStorage.setItem(STORAGE_KEY, lang); } catch (e) { /* 隐私模式下忽略 */ }
   syncDocumentLang(lang);
   // 触发语言变化事件，通知各模块更新界面文本
   window.dispatchEvent(new CustomEvent('langchange', { detail: { lang } }));
 }
-
 export function getLang() {
   return currentLang;
 }

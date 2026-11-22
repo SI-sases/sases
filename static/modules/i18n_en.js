@@ -37,6 +37,7 @@ export const en = {
   'settings': 'Settings',
   'logout': 'Log Out',
   'model_management': 'Model Management',
+  'personal_knowledge': 'Personal Knowledge',
   'credits_center': 'Credits Center',
   'wallet': 'Credits Center',
   'knowledge_base': 'Knowledge Base',
