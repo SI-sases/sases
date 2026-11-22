@@ -32,6 +32,8 @@ HIDDEN_DEFAULT = {
     "split_block", "split-block",
     "verify_patch", "verify-patch",
     "verify_claim", "verify-claim",
+    # verify_ui：Playwright driver 缺失（WinError 2），当前不可用；实现保留不删
+    "verify_ui", "verify-ui",
     "smart_edit", "smart-edit",
 }
 

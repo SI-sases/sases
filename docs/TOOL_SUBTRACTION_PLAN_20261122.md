@@ -82,10 +82,10 @@ SASES 执行时曾误删 `fast_agent.run_fast` 函数头，指挥官已修复。
 
 ```text
 runtime 可见 23
-实际隐藏 10
-剩余 13
-schema 2,497 -> 1,471 token
-节省 1,026（-41.1%）
+隐藏 11
+剩余 12
+schema 2,497 -> 约 1,320 token
+节省约 1,177（-47%）
 ```
 
 新增隐藏：
@@ -95,20 +95,21 @@ http_async
 smart_edit
 verify_claim
 verify_patch
+verify_ui（Playwright driver 缺失，当前不可用）
 split_block（磁盘有，runtime 未加载）
 ```
 
 说明：
 
-- `split_block` 不在 runtime，加入隐藏集合但本轮无实际效果
-- 没有为了凑 12 再去隐藏 `web_fetch` / `read_user_doc`，因为它们不可替代
+- `verify_ui` 因 Playwright driver 缺失（WinError 2）不可用，先隐藏；实现保留
+- `split_block` 不在 runtime，加入隐藏集合
+- 保留 `web_fetch` / `read_user_doc`，它们不可替代
 - `verify_patch` 被隐藏后，`fast_agent._READ_TOOLS` 的白名单是冗余，不影响运行
 
-目标从“12 个”修正为：
+当前合理值：
 
 ```text
-13 个是当前合理值
-12 个只能靠隐藏 web_fetch/read_user_doc，不建议
+12 个可见
 ```
 
 
