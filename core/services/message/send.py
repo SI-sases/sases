@@ -85,7 +85,7 @@ async def send_message(
     attachments: list = None
 , enabled_api_ids=None, enabled_tool_ids=None, enabled_skill_ids=None, agent_mode=None,
       quote_content=None, permissions=None, force_strict=False, resume_run_id=None,
-      subagent_agent_id=None, multi_agent=False, budget_tokens=0):
+      subagent_agent_id=None, multi_agent=False, budget_tokens=0, timeout_seconds=0):
     print(f"[MSG_DEBUG] content={content!r} | mode={mode!r} | agent_id={agent_id!r} | msg_type={msg_type}")
     try:
         from ..continuation_service import is_continue as _is_cont, rewrite as _cont_rewrite
@@ -302,7 +302,8 @@ async def send_message(
             from .. import run_service
             _rid_s = _resume_run_id or run_service.create_run(user_id, conversation_id, "chat", content,
                                             supervisor_id=sender_agent_id or agent_id or "sases_assistant",
-                                            budget_tokens=budget_tokens)
+                                            budget_tokens=budget_tokens,
+                                            timeout_seconds=timeout_seconds)
             _rs = await run_service.run_once(
                 user_id, conversation_id, content, source="chat",
                 supervisor_id=sender_agent_id or agent_id or "sases_assistant",
@@ -313,6 +314,7 @@ async def send_message(
                 subagent_agent_id=subagent_agent_id,
                 multi_agent=multi_agent,
                 budget_tokens=budget_tokens,
+                timeout_seconds=timeout_seconds,
             )
             _fr_s = _rs.get("loop") or {}
             if _fr_s.get("status") == "awaiting_approval":
@@ -1269,6 +1271,7 @@ async def send_message(
                         subagent_agent_id=subagent_agent_id,
                         multi_agent=multi_agent,
                         budget_tokens=budget_tokens,
+                        timeout_seconds=timeout_seconds,
                     )
                     _loop = _rr.get("loop") or {}
                     _txt = (_loop.get("content") or "").strip() or "执行完成"

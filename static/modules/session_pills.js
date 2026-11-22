@@ -84,7 +84,7 @@
     });
     document.body.appendChild(panel);
     render();
-    if (type === 'task-pill') timer = setInterval(render, 5000);
+    if (type === 'task-pill') timer = setInterval(render, 2000);
   }
 
   async function render() {

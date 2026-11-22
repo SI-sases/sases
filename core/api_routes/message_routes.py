@@ -73,6 +73,7 @@ class SendMessageRequest(BaseModel):
     multi_agent: Optional[bool] = False
     priority: Optional[int] = 5
     budget_tokens: Optional[int] = 0
+    timeout_seconds: Optional[int] = 0
 
 
 class ConversationCreateRequest(BaseModel):
@@ -214,7 +215,8 @@ async def send_message(body: SendMessageRequest, user_id: int = Depends(get_curr
             cid = message_service.create_conversation(user_id, body.agent_id, "后台任务")
         rid = run_service.create_run(user_id, cid, "chat", body.content,
                                      supervisor_id=body.agent_id or "sases_assistant",
-                                     budget_tokens=body.budget_tokens or 0)
+                                     budget_tokens=body.budget_tokens or 0,
+                                     timeout_seconds=body.timeout_seconds or 0)
         await run_queue_service.enqueue(rid, body.priority or 5)
         return {"conversation_id": cid, "run_id": rid, "status": "queued", "background": True}
     _resume_id = None
@@ -250,6 +252,7 @@ async def send_message(body: SendMessageRequest, user_id: int = Depends(get_curr
         subagent_agent_id=body.subagent_agent_id,
         multi_agent=body.multi_agent,
         budget_tokens=body.budget_tokens or 0,
+        timeout_seconds=body.timeout_seconds or 0,
     )
     try:
         from .ws_routes import broadcast_to_user

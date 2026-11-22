@@ -202,8 +202,27 @@ async def _run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=
         except Exception:
             pass
     _used_tokens = 0
+    _deadline = None
+    if run_id:
+        try:
+            from core.db import db_cursor as _dc_dl
+            with _dc_dl() as _cd:
+                _cd.execute("SELECT deadline_at FROM supervisor_runs WHERE id=?", (int(run_id),))
+                _dr = _cd.fetchone()
+            if _dr and _dr["deadline_at"]:
+                _deadline = str(_dr["deadline_at"])
+        except Exception:
+            pass
 
     for step in range(1, max_steps + 1):
+        if _deadline:
+            try:
+                from datetime import datetime as _dt
+                if _dt.now() > _dt.fromisoformat(_deadline.replace("Z", "")):
+                    return {"status": "timeout", "content": "任务超时，已停止。",
+                            "steps": step - 1, "history": used}
+            except Exception:
+                pass
         if run_id:
             try:
                 from core.db import db_cursor as _dc_hb
