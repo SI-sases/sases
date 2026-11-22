@@ -138,6 +138,8 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
             agent_memory.append(conversation_id, "user", _gate)
     try:
         _plan_ctx = todo_service.format_for_prompt(conversation_id, run_id)
+        if not _plan_ctx and "继续执行上一条" in str(goal):
+            _plan_ctx = todo_service.format_items(todo_service.latest(conversation_id))
         if _plan_ctx and messages and messages[-1].get("role") == "user":
             messages.insert(len(messages) - 1, {"role": "user", "content": _plan_ctx})
         elif _plan_required:

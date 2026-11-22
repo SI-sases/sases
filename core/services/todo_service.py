@@ -67,8 +67,7 @@ def get(conversation_id, run_id=None):
         return []
 
 
-def format_for_prompt(conversation_id, run_id=None):
-    todos = get(conversation_id, run_id)
+def format_items(todos):
     if not todos:
         return ""
     counts = {s: sum(1 for t in todos if t.get("status") == s) for s in VALID}
@@ -82,8 +81,27 @@ def format_for_prompt(conversation_id, run_id=None):
     return "\n".join(lines)
 
 
+def format_for_prompt(conversation_id, run_id=None):
+    return format_items(get(conversation_id, run_id))
+
+
 def pending(conversation_id, run_id=None):
     return [t for t in get(conversation_id, run_id) if t.get("status") != "completed"]
+
+
+def latest(conversation_id):
+    """同会话最近一次计划（跨 run），用于“继续”类消息。"""
+    try:
+        with db_cursor() as cur:
+            cur.execute("SELECT items_json FROM agent_todos WHERE conversation_id=? "
+                        "ORDER BY updated_at DESC LIMIT 1", (int(conversation_id),))
+            row = cur.fetchone()
+        if not row:
+            return []
+        import json
+        return json.loads(row["items_json"])
+    except Exception:
+        return []
 
 
 def reset(conversation_id, run_id=None):

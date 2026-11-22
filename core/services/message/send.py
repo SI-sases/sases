@@ -86,6 +86,11 @@ async def send_message(
 , enabled_api_ids=None, enabled_tool_ids=None, enabled_skill_ids=None, agent_mode=None,
       quote_content=None):
     print(f"[MSG_DEBUG] content={content!r} | mode={mode!r} | agent_id={agent_id!r} | msg_type={msg_type}")
+    try:
+        from .continuation_service import rewrite as _cont_rewrite
+        content = _cont_rewrite(content)
+    except Exception as _e_cont:
+        print("[continue] rewrite 失败: " + str(_e_cont))
     _ai_content = content
     if quote_content:
         _ai_content = "【引用消息】\n" + str(quote_content)[:1000] + "\n\n【用户消息】\n" + str(content)
