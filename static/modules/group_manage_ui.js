@@ -81,14 +81,14 @@ window.openGroupManage = async function(groupId) {
     </div>
   `;
 
-  window.openSubpage('群管理', html, {
+  window.openSubpage(t('gm_title'), html, {
     showMore: false,
     returnAction: () => window.openGroupSettings()
   });
 
   setTimeout(() => {
     const ann = document.getElementById('gm-announcement');
-    if (ann) ann.onclick = () => alert('群公告开发中');
+    if (ann) ann.onclick = () => alert(t('gm_announcement_wip'));
 
     const inv = document.getElementById('gm-invite-confirm');
     if (inv) inv.onclick = async () => {

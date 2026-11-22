@@ -17,6 +17,8 @@ export const en = {
   'main.network_error': 'Network error',
   'main.login_failed': 'Login failed',
   'main.and': 'and',
+  'gm_title': 'Group management',
+  'gm_announcement_wip': 'Group announcement is under development',
   'main.read_agree': 'I have read and agree to',
   'main.node_cn': 'China node',
   'main.all_fields_required': 'All fields are required',
