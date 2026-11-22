@@ -156,13 +156,13 @@ window.openGroupManage = async function(groupId) {
     });
 
     const qr = document.getElementById('gm-qrcode');
-    if (qr) qr.onclick = () => alert('群二维码开发中');
+    if (qr) qr.onclick = () => alert(t('gm_qr_wip'));
 
     const tr = document.getElementById('gm-transfer');
-    if (tr) tr.onclick = () => { if (typeof window.openTransferOwnerDialog === 'function') window.openTransferOwnerDialog(groupId); else alert('群主转让开发中'); };
+    if (tr) tr.onclick = () => { if (typeof window.openTransferOwnerDialog === 'function') window.openTransferOwnerDialog(groupId); else alert(t('gm_transfer_wip')); };
 
     const rl = document.getElementById('gm-remove-log');
-    if (rl) rl.onclick = () => alert('移出记录开发中');
+    if (rl) rl.onclick = () => alert(t('gm_remove_log_wip'));
   }, 300);
 };
 
