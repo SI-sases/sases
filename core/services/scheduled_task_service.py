@@ -93,7 +93,7 @@ async def execute_task(task):
 
     try:
         from .supervisor.runs import create_run
-        from . import execution_gateway
+        from . import run_service
 
         run_id = create_run(
             user_id=user_id,
@@ -102,15 +102,15 @@ async def execute_task(task):
             goal=goal,
         )
 
-        gw = await execution_gateway.run_schedule(
-            run_id=run_id, user_id=user_id, conversation_id=cid, goal=goal,
-            supervisor_id=sid, options=(params.get('capsule_snapshot') or {}),
+        gw = await run_service.run_once(
+            user_id, cid, goal, source="schedule", supervisor_id=sid,
+            max_steps=8, run_id=run_id,
         )
-        if not gw.get('ok'):
+        if gw.get("status") != "completed":
             with db_cursor(commit=True) as cur:
                 cur.execute("UPDATE scheduled_tasks SET failure_count=failure_count+1, updated_at=? WHERE id=?",
                             (datetime.now().isoformat(), task_id))
-            return {'ok': False, 'error': 'loop_failed: ' + str(gw.get('error') or gw.get('status'))}
+            return {'ok': False, 'error': 'loop_failed: ' + str(gw.get('status') or gw.get('error'))}
 
         next_run = _compute_next_run(task['cron_expr'])
         now = datetime.now().isoformat()

@@ -18,7 +18,7 @@ async def run_once(user_id, conversation_id, goal, source="chat",
                    supervisor_id="sases_assistant", max_steps=8, skill_ids=None,
                    run_id=None):
     from .agent_loop import run
-    from . import supervisor_service
+    from . import execution_gateway
     rid = run_id or create_run(user_id, conversation_id, source, goal, supervisor_id)
     try:
         r = await run(int(user_id), int(conversation_id), str(goal),
@@ -30,9 +30,10 @@ async def run_once(user_id, conversation_id, goal, source="chat",
                                    "plan_required", "error") else status)
         if mapped in ("completed", "failed"):
             try:
-                supervisor_service.finish_run(int(rid), mapped)
+                execution_gateway._finish(int(rid), int(conversation_id), supervisor_id,
+                                          mapped, r.get("content") or "", source)
             except Exception as e:
-                print("[run] finish_run 失败: " + str(e))
+                print("[run] finish 失败: " + str(e))
         return {"run_id": rid, "status": mapped, "loop": r}
     except Exception as e:
         try:
