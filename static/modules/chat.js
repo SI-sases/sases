@@ -1,5 +1,6 @@
 import { initParamBar, getParamMaxSteps, getAgentMode } from './param_bar.js';
 // static/modules/chat.js
+import { t } from './i18n.js';
 import { api } from './api.js';
 
 import { closeGroupChat, sendGroupMessage } from './group_chat.js';
@@ -170,7 +171,7 @@ function _renderFeedbackBar(taskId, conversationId) {
   const bar = document.createElement('div');
   bar.className = 'feedback-bar';
   bar.dataset.taskId = taskId;
-  bar.innerHTML = '<span class="feedback-label">这次结果满意吗？ / 这次结果满意吗？</span>'
+  bar.innerHTML = `<span class="feedback-label">${t('chat.feedback.satisfied')}</span>`
     + '<button class="feedback-btn" data-rating="up">👍</button>'
     + '<button class="feedback-btn" data-rating="down">👎</button>'
     + '<button class="feedback-btn" data-rating="neutral">🤷</button>';
@@ -192,25 +193,25 @@ function _renderFeedbackBar(taskId, conversationId) {
       });
       console.log('[feedback] 提交返回 / 提交返回', resp.status);
       if (bar.parentNode) {
-        bar.innerHTML = '<span class="feedback-done">已记录，谢谢 / 已记录，谢谢 🙏</span>';
+        bar.innerHTML = `<span class="feedback-done">${t('chat.feedback.thanks')}</span>`;
       }
       setTimeout(() => {
         try { if (bar.parentNode) bar.parentNode.removeChild(bar); } catch (e) {}
       }, 3000);
     } catch (e) {
       console.warn('[feedback] 提交失败 / Failed', e);
-      bar.innerHTML = '<span style="color:#ff3b30;">提交失败 / Failed，请重试</span>';
+      bar.innerHTML = `<span style="color:#ff3b30;">${t('chat.feedback.submit_failed')}</span>`;
     }
   };
 
   const _showReasonPanel = () => {
     // 用二级小条替换主条内容 / 用二级小条替换主条内容
-    bar.innerHTML = '<span class="feedback-label">哪里不满意？ / 哪里不满意？</span>'
-      + '<button class="feedback-reason-btn" data-rt="understood_wrong">理解错了 / 理解错了</button>'
-      + '<button class="feedback-reason-btn" data-rt="decomposed_wrong">拆解乱了 / 拆解乱了</button>'
-      + '<button class="feedback-reason-btn" data-rt="exec_failed">执行失败</button>'
-      + '<button class="feedback-reason-btn" data-rt="output_poor">结果不好看 / 结果不好看</button>'
-      + '<button class="feedback-reason-btn feedback-skip-btn" data-rt="">跳过 / 跳过</button>';
+    bar.innerHTML = `<span class="feedback-label">${t('chat.feedback.unsatisfied')}</span>`
+      + `<button class="feedback-reason-btn" data-rt="understood_wrong">${t('chat.feedback.reason.understood_wrong')}</button>`
+      + `<button class="feedback-reason-btn" data-rt="decomposed_wrong">${t('chat.feedback.reason.decomposed_wrong')}</button>`
+      + `<button class="feedback-reason-btn" data-rt="exec_failed">${t('chat.feedback.reason.exec_failed')}</button>`
+      + `<button class="feedback-reason-btn" data-rt="output_poor">${t('chat.feedback.reason.output_poor')}</button>`
+      + `<button class="feedback-reason-btn feedback-skip-btn" data-rt="">${t('chat.feedback.skip')}</button>`;
     bar.querySelectorAll('.feedback-reason-btn').forEach(rb => {
       rb.onclick = () => {
         const rt = rb.dataset.rt || null;
