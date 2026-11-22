@@ -464,18 +464,18 @@ async function openYunchongRescue(taskId) {
         if (nextAttempts >= 3) {
           addProcessStep(processContainer, 'hint', '💡 提示', t('ds_hint_guarantee'));
         } else {
-          addProcessStep(processContainer, 'hint', '💡 提示', '可以点击「重新解救」让智能体根据失败原因重新生成方案');
+          addProcessStep(processContainer, 'hint', '💡 提示', t('ds_hint_retry'));
         }
 
         resetStartButton(startBtn, abandonBtn, '重新解救');
         return;
       }
 
-      updateProcessStep(processContainer, 'verifying', 'success', '验证通过！');
+      updateProcessStep(processContainer, 'verifying', 'success', t('ds_verify_ok'));
 
       const reward = verifyResult.reward || {};
       const pet = verifyResult.pet || {};
-      const guaranteedTag = verifyResult.is_guaranteed ? '（保底成功）' : '';
+      const guaranteedTag = verifyResult.is_guaranteed ? t('ds_guaranteed') : '';
       addProcessStep(processContainer, 'reward', `🎉 解救成功${guaranteedTag}！`, `
         获得宠物：<strong>${pet.name || '未知'}</strong>（${pet.rarity || ''}级 · ${pet.camp || ''} · ${pet.element || ''}）
         <br>阳光：${reward.sunlight || 0}
