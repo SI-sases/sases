@@ -10,6 +10,14 @@
 <link rel="stylesheet" href="/static/css/layout.css?v=82">
 <link rel="stylesheet" href="/static/css/components.css?v=82">
 <link rel="stylesheet" href="/static/css/chat.css?v=83">
+<style>
+  /* 会话胶囊顺序内联兜底，避免旧 chat.css 缓存导致顺序反转 */
+  #api-pill { order: 1 !important; }
+  #task-pill { order: 2 !important; }
+  #agent-pill { order: 3 !important; }
+  #perm-pill { order: 4 !important; }
+  #capsule-settings-btn { order: 9 !important; margin-left: auto; }
+</style>
 <link rel="stylesheet" href="/static/css/contacts.css?v=82">
 <link rel="stylesheet" href="/static/css/discover.css?v=82">
 <link rel="stylesheet" href="/static/css/me.css?v=82">
