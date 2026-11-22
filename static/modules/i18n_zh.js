@@ -15,6 +15,8 @@ export const zh = {
   'main.pwd_mismatch': '两次输入的密码不一致',
   'main.register_failed': '注册失败',
   'main.network_error': '网络错误',
+  'main.login_failed': '登录失败',
+  'main.node_cn': '国内节点',
   'main.all_fields_required': '所有字段都必须填写',
   'main.reset_failed': '重置失败',
   'main.pwd_reset_ok': '密码已重置，请用新密码登录',

@@ -15,6 +15,8 @@ export const en = {
   'main.pwd_mismatch': 'The two passwords do not match',
   'main.register_failed': 'Registration failed',
   'main.network_error': 'Network error',
+  'main.login_failed': 'Login failed',
+  'main.node_cn': 'China node',
   'main.all_fields_required': 'All fields are required',
   'main.reset_failed': 'Reset failed',
   'main.pwd_reset_ok': 'Password reset. Please sign in with the new password',

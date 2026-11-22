@@ -187,7 +187,7 @@ function initLoginUI() {
       if (!res.ok) { const msg = data.error || data.message || (Array.isArray(data.detail) ? data.detail[0]?.msg : data.detail) || t('main.reset_failed'); alert(msg); return; }
       alert(data.message || t('main.pwd_reset_ok'));
       showLoginForm('login');
-    } catch (err) { alert('网络错误: ' + err.message); }
+    } catch (err) { alert(t('main.network_error') + ': ' + err.message); }
   });
 
   langButtons.forEach(btn => {
@@ -231,7 +231,7 @@ function initLoginUI() {
       await login(username, password);
       enterMainApp();
     } catch (e) {
-      alert('登录失败：' + e.message);
+      alert(t('main.login_failed') + ': ' + e.message);
     }
   });
 
@@ -335,7 +335,7 @@ async function checkNodeSpeedAndRedirect() {
     if (window.location.hash && window.location.hash.length > 2) return;
 
     const nodes = [
-        { host: '127.0.0.1:8001', protocol: 'http:', name: '国内节点' }
+        { host: '127.0.0.1:8001', protocol: 'http:', name: t('main.node_cn') }
 
     ];
     
