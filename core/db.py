@@ -200,6 +200,8 @@ def init_db():
                 FOREIGN KEY (user_id) REFERENCES users(id)
             )
         """)
+        # P5-3：技能绑定按会话持久化（必须在建表之后）
+        _ensure_column(cur, "conversations", "skill_ids", "TEXT DEFAULT ''")
         _ensure_column(cur, "conversations", "mode", "TEXT DEFAULT 'normal'")
         _ensure_column(cur, "conversations", "unread_count", "INTEGER DEFAULT 0")
         _ensure_column(cur, "conversations", "is_pinned", "INTEGER DEFAULT 0")

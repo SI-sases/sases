@@ -30,15 +30,23 @@ def _tool_map() -> Dict[str, Any]:
         return {}
 
 
-def _skills() -> List[Dict[str, Any]]:
+def _skills() -> Dict[str, Any]:
+    """返回 {"items": [...], "invalid": [...], "dsh": {...}}。"""
+    out = {"items": [], "invalid": [], "dsh": {}}
     try:
         from . import skill_service
-        return [{"id": s["id"], "label": s.get("label") or s["id"], "type": "skill",
-                 "risk": "read", "desc": s.get("desc") or "DSH 兼容技能"}
-                for s in skill_service.list_skills()]
+        valid, invalid = skill_service.list_skills(with_errors=True)
+        out["items"] = [{"id": s["id"], "label": s.get("label") or s["id"], "type": "skill",
+                         "risk": "read", "desc": s.get("desc") or "DSH 兼容技能"}
+                        for s in valid]
+        out["invalid"] = [{"id": s.get("id") or "", "label": s.get("name") or s.get("id") or "",
+                           "path": s.get("path") or "", "errors": s.get("errors") or []}
+                          for s in invalid]
+        out["dsh"] = skill_service.dsh_status()
     except Exception as e:
         print("[capsule] 读取技能失败: " + str(e))
-        return []
+        out["dsh"] = {"configured": False, "message": "未配置：技能服务不可用（" + str(e) + "）"}
+    return out
 
 
 def list_capsules(user_id: int) -> Dict[str, Any]:
@@ -89,10 +97,13 @@ def list_capsules(user_id: int) -> Dict[str, Any]:
         groups.append({"id": "external", "label": "外部 API", "risk": "network",
                        "default_on": False, "items": api_items})
 
-    # 技能
-    skills = _skills()
-    if skills:
+    # 技能（P5-2：坏技能不进 items，单独放 invalid 供面板展示）
+    sk = _skills()
+    if sk["items"]:
         groups.append({"id": "skill", "label": "技能", "risk": "read",
-                       "default_on": False, "items": skills})
+                       "default_on": False, "items": sk["items"]})
 
-    return {"groups": groups, "count": sum(len(g["items"]) for g in groups)}
+    return {"groups": groups,
+            "count": sum(len(g["items"]) for g in groups),
+            "skill_invalid": sk["invalid"],
+            "dsh": sk["dsh"]}
