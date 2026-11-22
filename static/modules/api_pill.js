@@ -187,7 +187,7 @@
   function render() {
     if (!_panel) return;
     var tabs = [
-      ['api', '外部 API'], ['skill', '技能']
+      ['api', t('cp_external_api')], ['skill', t('cp_skill')]
     ];
     var html = '<div class="cp-tabs">';
     tabs.forEach(function (t) {
@@ -198,7 +198,7 @@
       html += '<div class="cp-notice" style="margin:6px 0;padding:6px 8px;background:#fff7e6;border:1px solid #ffd591;border-radius:6px;font-size:12px;color:#ad6800;">' + _notice + '</div>';
     }
     if (_tab === 'skill') {
-      html += '<div class="cp-search"><input id="cp-skill-search" placeholder="搜索 DSH 技能，如 doc / office / verify" value="' +
+      html += '<div class="cp-search"><input id="cp-skill-search" placeholder="' + t('cp_search_skill') + '" value="' +
         String(_skillQuery).replace(/"/g, '&quot;') + '"></div>';
     }
     html += '<div class="cp-body">';
@@ -209,8 +209,8 @@
 
     if (!shown.length) {
       html += '<div class="cp-empty">' + (_tab === 'skill'
-        ? '暂无技能<br><span style="font-size:11px;color:#aaa">放入 data/skills/&lt;名称&gt;/SKILL.md<br><a href="/static/skills_help.html" target="_blank">格式说明</a></span>'
-        : '暂无外部 API') + '</div>';
+        ? t('cp_no_skills') + '<br><span style="font-size:11px;color:#aaa">' + t('cp_skills_help') + '</span>'
+        : t('cp_no_external_api')) + '</div>';
     }
     shown.forEach(function (g) {
       var items = (g.items || []).filter(function (it) {
@@ -219,7 +219,7 @@
       });
       html += '<div class="cp-group"><div class="cp-ghead">' + g.label +
         '<span class="cp-risk ' + (g.risk || '') + '">' +
-        (g.risk === 'write' ? '写' : (g.risk === 'network' ? '网络' : '读')) + '</span></div>';
+        (g.risk === 'write' ? t('cp_risk_write') : (g.risk === 'network' ? t('cp_risk_network') : t('cp_risk_read'))) + '</span></div>';
       items.forEach(function (it) {
         var checked = inState(it.type).indexOf(it.id) !== -1 ? 'checked' : '';
         html += '<label class="cp-item"><input type="checkbox" ' + checked +
@@ -228,8 +228,8 @@
       });
       html += '</div>';
     });
-    html += '</div><div class="cp-foot"><span>已选 ' + total() + ' 项</span>' +
-      '<span style="margin-left:auto;cursor:pointer" id="cp-clear">清空</span></div>';
+    html += '</div><div class="cp-foot"><span>' + t('cp_selected') + ' ' + total() + ' ' + t('cp_items') + '</span>' +
+      '<span style="margin-left:auto;cursor:pointer" id="cp-clear">' + t('cp_clear') + '</span></div>';
     _panel.innerHTML = html;
 
     _panel.querySelectorAll('.cp-tab').forEach(function (el) {
@@ -266,7 +266,7 @@
     _panel.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 330)) + 'px';
     _panel.style.bottom = (window.innerHeight - r.top + 6) + 'px';
     _panel.classList.add('show');
-    _panel.innerHTML = '<div class="cp-empty">加载中...</div>';
+    _panel.innerHTML = '<div class="cp-empty">' + t('cp_loading') + '</div>';
     fetch('/tools/capsules', { headers: { Authorization: 'Bearer ' + token() } })
       .then(function (res) { return res.json(); })
       .then(function (data) {
@@ -276,9 +276,9 @@
           var _bad = data.skill_invalid.map(function (x) {
             return (x && (x.label || x.id)) || String(x);
           }).filter(Boolean).slice(0, 3).join(', ');
-          _notice = '⚠ 技能绑定无效：' + _bad;
+          _notice = '⚠ ' + t('cp_skill_invalid') + _bad;
         } else if (data.dsh && data.dsh.configured === false) {
-          _notice = '⚠ DSH 未配置，技能列表可能不完整（未同步）';
+          _notice = '⚠ ' + t('cp_dsh_missing');
         }
         if (!groups.some(function (g) { return g.id === 'external'; })) _tab = 'api';
         load();
@@ -286,7 +286,7 @@
         renderChips();
       })
       .catch(function (e) {
-        _panel.innerHTML = '<div class="cp-empty">加载失败：' + e.message + '</div>';
+        _panel.innerHTML = '<div class="cp-empty">' + t('cp_load_failed') + e.message + '</div>';
       });
   }
 
