@@ -303,7 +303,10 @@ async def send_message(
                 _ins_s(conversation_id, _reply_s, msg_type=msg_type, attachments=_att_str,
                        sync_agent=False)
                 try:
-                    _runs_s.finish_run(_rid_s, 'completed')
+                    _loop_status = str(_fr_s.get("status") or "")
+                    _run_status = "completed" if _loop_status == "ok" else (
+                        "failed" if _loop_status in ("max_steps", "verification_failed", "error") else _loop_status)
+                    _runs_s.finish_run(_rid_s, _run_status or "completed")
                 except Exception:
                     pass
                 return {

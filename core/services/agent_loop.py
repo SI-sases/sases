@@ -52,6 +52,8 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
         print("[context] runtime 注入失败: " + str(_e_rc))
     schemas = _tool_schemas(allowed_tool_ids)
     used = []
+    _dirty_files = set()
+    _verified_files = set()
 
     for step in range(1, max_steps + 1):
         if step > 1:
@@ -139,6 +141,17 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
                 return {"status": "awaiting_user", "content": content,
                         "question": _question, "question_id": qid, "run_id": run_id,
                         "steps": step, "history": used}
+            _unverified = _dirty_files - _verified_files
+            if mode == "strict" and _unverified:
+                _gate = ("[自检未通过] 以下文件已修改但没有通过 verify_syntax：\n- "
+                         + "\n- ".join(sorted(_unverified))
+                         + "\n请修复后重新运行 verify_syntax，修复前不要结束任务。")
+                messages.append({"role": "user", "content": _gate})
+                agent_memory.append(conversation_id, "user", _gate)
+                if step < max_steps:
+                    continue
+                return {"status": "verification_failed", "content": _gate,
+                        "steps": step, "history": used}
             review = ""
             _need_review = (mode == "strict"
                             and any(h.get("tool") in WRITE_TOOLS for h in used))
@@ -211,14 +224,26 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
                 except Exception:
                     pass
 
-            # A3: strict 写后确定性校验（不另起 prompt）
+            # A3: strict 写后确定性自检（Python / JS），结果必须回灌给模型
             if mode == "strict" and name in WRITE_TOOLS and isinstance(args, dict):
                 _fp = str(args.get("file_path") or "")
-                if _fp.endswith(".py"):
+                if _fp.lower().endswith((".py", ".js", ".mjs", ".cjs", ".jsx")):
+                    _dirty_files.add(_fp)
                     try:
                         _vr = await tool_gateway.invoke_tool_async("verify_syntax", {"file_path": _fp})
-                        used.append({"step": step, "tool": "verify_syntax", "ok": bool(getattr(_vr, "success", False))})
+                        _vok = bool(getattr(_vr, "success", False))
+                        _vres = getattr(_vr, "result", None) or getattr(_vr, "error", "")
+                        used.append({"step": step, "tool": "verify_syntax", "ok": _vok})
+                        if _vok:
+                            _verified_files.add(_fp)
+                            _vmsg = "[自检] verify_syntax 通过: " + _fp
+                        else:
+                            _verified_files.discard(_fp)
+                            _vmsg = "[自检] verify_syntax 失败: " + _fp + " -> " + str(_vres)[:800]
+                        messages.append({"role": "user", "content": _vmsg})
+                        agent_memory.append(conversation_id, "user", _vmsg)
                     except Exception as e:
+                        _verified_files.discard(_fp)
                         print("[strict] verify_syntax 失败: " + str(e))
 
     return {"status": "max_steps", "content": "达到步数上限，未完成任务。", "steps": max_steps, "history": used}
