@@ -87,6 +87,49 @@ async def approve_run(run_id: int, body: ApproveBody, user_id: int = Depends(get
     return {"status": "ok", "decision": body.decision, "scope": body.scope}
 
 
+@router.get("/runs")
+def list_active_runs(user_id: int = Depends(get_current_user)):
+    with db_cursor() as cur:
+        cur.execute(
+            "SELECT id, conversation_id, goal, status, supervisor_id, created_at "
+            "FROM supervisor_runs WHERE user_id=? AND status IN "
+            "('running','paused','awaiting_approval','awaiting_user') "
+            "ORDER BY id DESC LIMIT 30", (user_id,))
+        rows = cur.fetchall()
+    return {"runs": [dict(r) for r in rows]}
+
+
+@router.post("/runs/{run_id}/pause")
+async def pause_run(run_id: int, user_id: int = Depends(get_current_user)):
+    with db_cursor(commit=True) as cur:
+        cur.execute("SELECT conversation_id FROM supervisor_runs WHERE id=? AND user_id=?",
+                    (run_id, user_id))
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="run not found")
+        cur.execute("UPDATE supervisor_runs SET status='paused' WHERE id=? AND user_id=?",
+                    (run_id, user_id))
+    from ..services import run_control_service
+    run_control_service.pause(row["conversation_id"])
+    return {"ok": True, "run_id": run_id, "status": "paused"}
+
+
+@router.post("/runs/{run_id}/resume")
+async def resume_run(run_id: int, user_id: int = Depends(get_current_user)):
+    with db_cursor(commit=True) as cur:
+        cur.execute("SELECT conversation_id FROM supervisor_runs WHERE id=? AND user_id=?",
+                    (run_id, user_id))
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="run not found")
+        cur.execute("UPDATE supervisor_runs SET status='running' WHERE id=? AND user_id=?",
+                    (run_id, user_id))
+    from ..services import run_control_service, execution_gateway
+    run_control_service.resume(row["conversation_id"])
+    asyncio.create_task(execution_gateway.resume_run(run_id, "继续"))
+    return {"ok": True, "run_id": run_id, "status": "running"}
+
+
 @router.post("/propose")
 async def propose(body: ProposeBody, user_id: int = Depends(get_current_user)):
     rid = supervisor_service.create_proposed_run(user_id, body.conversation_id, body.supervisor_id, body.goal)
