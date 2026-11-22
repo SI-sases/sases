@@ -30,12 +30,12 @@ window.openGroupManage = async function(groupId) {
   // 渲染管理员列表
   let adminsHtml = '';
   admins.forEach(a => {
-    const roleLabel = a.role === 'owner' ? '群主' : '管理员';
+    const roleLabel = a.role === 'owner' ? t('gm_owner') : t('gm_admin');
     adminsHtml += '<div class="me-menu-item">';
-    adminsHtml += '<span class="menu-label">' + (a.username || '用户') + '</span>';
+    adminsHtml += '<span class="menu-label">' + (a.username || t('gm_user')) + '</span>';
     adminsHtml += '<span class="menu-value">' + roleLabel + '</span>';
     if (a.role === 'admin' && isOwner) {
-      adminsHtml += '<span class="remove-admin-btn" data-uid="' + a.user_id + '" style="color:#ff3b30;font-size:13px;margin-left:8px;cursor:pointer;">移除</span>';
+      adminsHtml += '<span class="remove-admin-btn" data-uid="' + a.user_id + '" style="color:#ff3b30;font-size:13px;margin-left:8px;cursor:pointer;">' + t('gm_remove') + '</span>';
     }
     adminsHtml += '</div>';
   });
