@@ -2,7 +2,7 @@
 import { api } from './api.js';
 import { t } from './me_i18n.js';
 
-// ==================== 积分中心 ====================
+// ==================== Wallet center ====================
 export async function openWallet() {
   let balance = 0;
   let computeBalance = 0;
@@ -100,7 +100,7 @@ function openExchangePage() {
 }
 
 
-// 挂载到全局
+// mount to global
 window.openWallet = openWallet;
 
 
@@ -129,7 +129,7 @@ let items=[];
 try {
 if (isSeed) {
 const raw=(await api.getCreditHistory(50)).history||[];
-items=raw.map(h=>({title:h.action||t('credit_change_short'),amount:h.points||0,time:h.created_at,cat:(h.action||'').includes('质押')?'stake':((h.points||0)>0?'income':'expense')}));
+items=raw.map(h=>({title:h.action||t('credit_change_short'),amount:h.points||0,time:h.created_at,cat:(h.action||'').includes(t('stake'))?'stake':((h.points||0)>0?'income':'expense')}));
 } else {
 const raw=(await api.getComputeTransactions(50)).transactions||[];
 items=raw.map(t=>({title:({recharge:t('tx_recharge'),exchange:t('exchange'),consume:t('tx_consume')}[t.tx_type]||t.tx_type)+(t.service_key?' · '+t.service_key:''),amount:t.amount||0,time:t.created_at,cat:(t.amount||0)>0?'income':'expense'}));
@@ -153,29 +153,29 @@ applyFilter('all');
 
 function openCreditRiskPage() {
   const html = '<div style="padding:12px 16px;font-size:14px;line-height:1.8;color:#333;">' +
-    '<h3 style="font-size:15px;margin:16px 0 8px;color:#007aff;">一、积分性质</h3>' +
-    '<p>1. 种子积分、算力积分均为 SASES 平台内的虚拟权益，不构成任何形式的法定货币、数字货币或金融资产。</p>' +
-    '<p>2. 积分不可兑换人民币、外币、贵金属或任何实物，亦不可通过任何第三方渠道变现。</p>' +
-    '<p>3. 积分不具备货币的储值、支付、流通功能，不得用于购买平台外商品或服务。</p>' +
-    '<h3 style="font-size:15px;margin:16px 0 8px;color:#007aff;">二、获取与消耗</h3>' +
-    '<p>4. 种子积分通过授粉回流、挑坏果子反馈、任务贡献等行为获取。</p>' +
-    '<p>5. 算力积分通过种子积分兑换获取，兑换后不可逆。</p>' +
-    '<p>6. 积分消耗途径包括：优先调度、定制种子、官方模型调用等。</p>' +
-    '<p>7. 所有积分的产出与消耗记录均在对应明细页可查。</p>' +
-    '<h3 style="font-size:15px;margin:16px 0 8px;color:#007aff;">三、限制与风险</h3>' +
-    '<p>8. 积分不设保底价值，平台有权调整获取/消耗规则。</p>' +
-    '<p>9. 积分不可转让、不可继承、不可跨账户合并。</p>' +
-    '<p>10. 以下行为将导致积分冻结或清零：作弊刷量、漏洞套利、洗钱赌博、扰乱生态。</p>' +
-    '<p>11. 平台如遇不可抗力，积分可能失效且不承担赔偿责任。</p>' +
-    '<p>12. 积分账户连续 12 个月无活动，平台有权归档或清零。</p>' +
-    '<h3 style="font-size:15px;margin:16px 0 8px;color:#007aff;">四、免责</h3>' +
-    '<p>13. 用户应自行判断积分使用风险，操作失误导致的损失平台不承担责任。</p>' +
-    '<p>14. 平台不对第三方声称的积分变现行为背书。</p>' +
-    '<p>15. 本提示最终解释权归 SASES 平台所有。</p>' +
-    '<h3 style="font-size:15px;margin:16px 0 8px;color:#007aff;">五、合规声明</h3>' +
-    '<p>16. 积分系统严格遵守相关法律法规，不涉及虚拟货币发行、交易或融资。</p>' +
-    '<p>17. 积分不可用于任何博彩、传销、非法集资活动。</p>' +
-    '<p>18. 如监管部门要求调整，平台将依法配合执行。</p>' +
+    '<h3 style="font-size:15px;margin:16px 0 8px;color:#007aff;">' + t('risk_01') + '</h3>' +
+    '<p>' + t('risk_02') + '</p>' +
+    '<p>' + t('risk_03') + '</p>' +
+    '<p>' + t('risk_04') + '</p>' +
+    '<h3 style="font-size:15px;margin:16px 0 8px;color:#007aff;">' + t('risk_05') + '</h3>' +
+    '<p>' + t('risk_06') + '</p>' +
+    '<p>' + t('risk_07') + '</p>' +
+    '<p>' + t('risk_08') + '</p>' +
+    '<p>' + t('risk_09') + '</p>' +
+    '<h3 style="font-size:15px;margin:16px 0 8px;color:#007aff;">' + t('risk_10') + '</h3>' +
+    '<p>' + t('risk_11') + '</p>' +
+    '<p>' + t('risk_12') + '</p>' +
+    '<p>' + t('risk_13') + '</p>' +
+    '<p>' + t('risk_14') + '</p>' +
+    '<p>' + t('risk_15') + '</p>' +
+    '<h3 style="font-size:15px;margin:16px 0 8px;color:#007aff;">' + t('risk_16') + '</h3>' +
+    '<p>' + t('risk_17') + '</p>' +
+    '<p>' + t('risk_18') + '</p>' +
+    '<p>' + t('risk_19') + '</p>' +
+    '<h3 style="font-size:15px;margin:16px 0 8px;color:#007aff;">' + t('risk_20') + '</h3>' +
+    '<p>' + t('risk_21') + '</p>' +
+    '<p>' + t('risk_22') + '</p>' +
+    '<p>' + t('risk_23') + '</p>' +
     '</div>';
   window.openSubpage(t('credit_risk_title'), html, { showMore: false, returnAction: () => openWallet() });
 }
