@@ -452,6 +452,7 @@ export const en = {
   'sw_no_agents': 'You have no agents. Add one in Me - Model Management',
   'sw_title': 'Swarm mode management',
   'sw_switch_failed': 'Switch failed: ',
+  'sw_network_error': 'Network error: ',
   'gc_report_wip': 'Group reports coming soon',
   'gc_member': 'Member',
   'gc_switch_swarm': 'Switched to Swarm Mode',

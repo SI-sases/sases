@@ -90,7 +90,7 @@ window.openSwarmConfig = async function(groupId) {
             if (sw) {
               if (newVal) sw.classList.add('on'); else sw.classList.remove('on');
             }
-          } catch (e) { alert('网络错误：' + e.message); }
+          } catch (e) { alert(t('sw_network_error') + e.message); }
         };
       }
 
