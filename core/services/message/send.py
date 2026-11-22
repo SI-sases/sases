@@ -800,6 +800,28 @@ async def send_message(
                     print("[supervisor] 已创建 run_id=" + str(_run_id) + " goal=" + content[:50])
                     _force_swarm = True
                     _supervisor_run_id = _run_id
+                    if os.getenv("SASES_SWARM_PLAN", "0") != "1":
+                        from .. import run_service
+                        _rr = await run_service.run_once(
+                            user_id, _cid_auto, content, source="auto",
+                            supervisor_id=sender_agent_id or agent_id,
+                            max_steps=(max_steps if (max_steps and max_steps > 0) else 8),
+                            run_id=_run_id, finish=True,
+                            skill_ids=enabled_skill_ids,
+                        )
+                        _loop = _rr.get("loop") or {}
+                        _txt = (_loop.get("content") or "").strip()
+                        if _txt:
+                            from .reply import insert_message as _ins_auto
+                            _ins_auto(_cid_auto, _txt, msg_type=msg_type,
+                                      attachments=_att_str, sync_agent=False)
+                        return {
+                            "conversation_id": _cid_auto, "user_message": content,
+                            "assistant_reply": _txt or "执行完成",
+                            "agent_id": agent_id, "sender_agent_id": sender_agent_id,
+                            "mode": mode, "strict_mode": True,
+                            "steps": _loop.get("steps"),
+                        }
                     from .. import swarm_service
                     try:
                         _plan_result = await swarm_service.plan_task(
