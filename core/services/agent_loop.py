@@ -618,7 +618,9 @@ async def _run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=
                 except Exception:
                     pass
 
-            # A3: strict 写后确定性自检（Python / JS），结果必须回灌给模型
+# A3: strict 写后确定性自检（Python / JS），结果必须回灌给模型
+            # 语义：每个文件独立提交/回滚——成功即提交（删备份），失败只回滚当前文件，
+            # 不影响同批次其它已提交文件；partial 只统计 verified 文件。
             if mode == "strict" and name in WRITE_TOOLS and isinstance(args, dict):
                 _fp = str(args.get("file_path") or "")
                 if _fp.lower().endswith((".py", ".js", ".mjs", ".cjs", ".jsx")):
@@ -626,6 +628,8 @@ async def _run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=
                     if ("/static/" in _fp.replace("\\", "/") or _fp.replace("\\", "/").startswith("static/")) and _fp.lower().endswith((".js", ".html", ".css")):
                         _ui_dirty.add(_fp)
                         _ui_ok = False
+                    _vok = False
+                    _vres = ""
                     try:
                         _vr = await tool_gateway.invoke_tool_async("verify_syntax", {"file_path": _fp})
                         _vok = bool(getattr(_vr, "success", False))
@@ -640,36 +644,45 @@ async def _run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=
                                     _vres = _fg.get("error") or "frontend semantic error"
                             except Exception as _e_fg:
                                 print("[gate] frontend 检查失败: " + str(_e_fg))
-                        if _vok:
-                            _verified_files.add(_fp)
-                            _vmsg = "[自检] verify_syntax 通过: " + _fp
-                            if _bak:
+                    except Exception as e:
+                        _vok = False
+                        _vres = "verify_syntax 异常: " + str(e)
+                        print("[strict] verify_syntax 失败: " + str(e))
+
+                    if _vok:
+                        # 提交：该文件已验证，删除它自己的备份，其它文件不受影响
+                        _verified_files.add(_fp)
+                        _vmsg = "[自检] verify_syntax 通过: " + _fp + "（已提交）"
+                        if _bak:
+                            try:
+                                os.remove(_bak)
+                            except Exception:
+                                pass
+                    else:
+                        # 回滚：只回滚当前文件，其它已提交文件保持不动
+                        _verified_files.discard(_fp)
+                        _vmsg = "[自检] verify_syntax 失败: " + _fp + " -> " + str(_vres)[:800]
+                        if _bak:
+                            try:
+                                shutil.copy2(_bak, _fp)
+                                _vmsg += "（已回滚该文件）"
                                 try:
                                     os.remove(_bak)
                                 except Exception:
                                     pass
+                            except Exception as _e_rb:
+                                _vmsg += "（回滚失败: " + str(_e_rb) + "）"
                         else:
-                            _verified_files.discard(_fp)
-                            _vmsg = "[自检] verify_syntax 失败: " + _fp + " -> " + str(_vres)[:800]
-                            if _bak:
-                                try:
-                                    shutil.copy2(_bak, _fp)
-                                    _vmsg += "（已回滚该文件）"
-                                except Exception:
-                                    pass
-                        messages.append({"role": "user", "content": _vmsg})
-                        _mem_append("user", _vmsg)
-                    except Exception as e:
-                        _verified_files.discard(_fp)
-                        print("[strict] verify_syntax 失败: " + str(e))
+                            _vmsg += "（无备份，未回滚）"
+                    messages.append({"role": "user", "content": _vmsg})
+                    _mem_append("user", _vmsg)
 
-        _audit_tick(calls)
-        if (_is_investigation(goal) and step >= max_steps - 1 and _dirty_files):
-            _force_final = True
-
-    if _dirty_files and _verified_files:
+# partial 语义：只统计 verified（已提交）文件；已回滚/未验证文件不计入
+    _committed = sorted(f for f in _verified_files if f in _dirty_files)
+    if _committed:
         return {"status": "partial",
-                "content": "已部分完成：已验证 " + str(len(_verified_files)) + " 个文件，未完成部分可继续。",
+                "content": "已部分完成：已验证 " + str(len(_committed)) + " 个文件，未完成部分可继续。",
+                "verified_files": _committed,
                 "steps": max_steps, "history": used}
     return {"status": "max_steps", "content": "达到步数上限，未完成任务。", "steps": max_steps, "history": used}
 
