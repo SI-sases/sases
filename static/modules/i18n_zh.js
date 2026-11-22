@@ -356,6 +356,8 @@ export const zh = {
   'gc_rank_contribution': '贡献榜',
   'gc_rank_task': '任务榜',
   'gc_rank_rp': '红包榜',
+  'gc_no_data': '暂无数据',
+  'gc_rank_title': '群排行榜',
 
   // 设置
   'account_security': '账号与安全',

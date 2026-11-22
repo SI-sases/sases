@@ -1449,14 +1449,14 @@ async function openGroupLeaderboard() {
 
   const renderList = (items) => {
     if (!items || items.length === 0) {
-      return '<div style="text-align:center;color:#999;padding:40px 0;">暂无数据</div>';
+      return '<div style="text-align:center;color:#999;padding:40px 0;">' + t('gc_no_data') + '</div>';
     }
     let html = '<div style="padding:8px 12px;">';
     items.forEach((it, idx) => {
       const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : (idx + 1) + '';
       html += '<div style="display:flex;align-items:center;padding:10px 0;border-bottom:1px solid #f5f5f5;">';
       html += '<div style="width:36px;text-align:center;font-size:' + (idx < 3 ? '20px' : '14px') + ';color:' + (idx < 3 ? '#333' : '#999') + ';">' + medal + '</div>';
-      html += '<div style="flex:1;margin-left:12px;font-size:14px;color:#333;">' + (it.username || '匿名') + '</div>';
+      html += '<div style="flex:1;margin-left:12px;font-size:14px;color:#333;">' + (it.username || t('gc_anonymous')) + '</div>';
       html += '<div style="font-size:14px;color:#f59e0b;font-weight:600;">' + (it.score || 0) + '</div>';
       html += '</div>';
     });
@@ -1492,7 +1492,7 @@ async function openGroupLeaderboard() {
         <div id="lb-list">${renderList(items)}</div>
       </div>
     `;
-    window.openSubpage('群排行榜', contentHtml, { showMore: false, returnAction: () => openGroupSettings() });
+    window.openSubpage(t('gc_rank_title'), contentHtml, { showMore: false, returnAction: () => openGroupSettings() });
     setTimeout(() => {
       document.querySelectorAll('.lb-tab').forEach(el => {
         const t = el.dataset.type;
