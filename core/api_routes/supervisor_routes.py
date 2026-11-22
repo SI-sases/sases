@@ -94,9 +94,12 @@ def list_active_runs(user_id: int = Depends(get_current_user)):
             "SELECT r.id, r.conversation_id, r.goal, r.status, r.supervisor_id, r.created_at, r.parent_run_id, "
             "(SELECT content FROM agent_messages am WHERE am.run_id=r.id AND am.role='assistant' "
             " ORDER BY am.id DESC LIMIT 1) AS last_result "
-            "FROM supervisor_runs r WHERE r.user_id=? AND r.status IN "
-            "('running','paused','awaiting_approval','awaiting_user') "
-            "ORDER BY id DESC LIMIT 30", (user_id,))
+            "FROM supervisor_runs r WHERE r.user_id=? AND ("
+            "r.status IN ('running','paused','awaiting_approval','awaiting_user') "
+            "OR (r.status='failed' AND r.parent_run_id IS NOT NULL AND EXISTS ("
+            "SELECT 1 FROM supervisor_runs p WHERE p.id=r.parent_run_id "
+            "AND p.status IN ('running','paused','awaiting_approval','awaiting_user')))) "
+            "ORDER BY r.id DESC LIMIT 30", (user_id,))
         rows = cur.fetchall()
     return {"runs": [dict(r) for r in rows]}
 

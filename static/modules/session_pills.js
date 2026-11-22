@@ -76,7 +76,8 @@
     panel.style.bottom = Math.max(8, innerHeight - r.top + 6) + 'px';
     panel.onclick = function (e) { e.stopPropagation(); };
     panel.addEventListener('click', function (e) {
-      const row = e.target && e.target.closest ? e.target.closest('.sp-child') : null;
+      if (e.target && e.target.closest && e.target.closest('button')) return;
+      const row = e.target && e.target.closest ? e.target.closest('.sp-row') : null;
       if (!row) return;
       const d = row.querySelector('.sp-detail');
       if (d) d.style.display = d.style.display === 'none' ? 'block' : 'none';
@@ -99,18 +100,31 @@
       const data = await api('/supervisor/runs');
       const runs = data.runs || [];
       if (!runs.length) { panel.innerHTML = '<div class="sp-title">后台任务</div><div class="sp-empty">暂无运行中的任务</div>'; return; }
-      panel.innerHTML = '<div class="sp-title">后台任务</div>' + runs.map(function (r) {
+      panel.innerHTML = '<div class="sp-title">后台任务' +
+        (runs.filter(function (x) { return x.status === 'queued'; }).length ? ' · 排队 ' +
+          runs.filter(function (x) { return x.status === 'queued'; }).length : '') + '</div>' + runs.map(function (r) {
         const paused = r.status === 'paused';
         const child = r.parent_run_id ? ' sp-child' : '';
         const label = r.parent_run_id ? '↳ ' : '';
         return '<div class="sp-row' + child + '"><div class="sp-main"><div class="sp-name">' + label + esc(r.goal || ('run #' + r.id)) +
           '</div><div class="sp-sub">run #' + r.id + ' · ' + esc(r.status) + '</div>' +
-          (child && r.last_result ? '<div class="sp-detail" style="display:none;white-space:pre-wrap;margin-top:6px;font-size:11px;color:#555;max-height:160px;overflow:auto;">' +
+          (r.last_result ? '<div class="sp-detail" style="display:none;white-space:pre-wrap;margin-top:6px;font-size:11px;color:#555;max-height:160px;overflow:auto;">' +
             esc(String(r.last_result).slice(0, 1200)) + '</div>' : '') +
           '</div>' +
-          (r.parent_run_id ? '' : '<button class="sp-btn ' + (paused ? 'warn' : '') + '" data-run="' + r.id + '" data-paused="' + (paused ? '1' : '0') + '">' +
-          (paused ? '继续' : '暂停') + '</button>') + '</div>';
+          (r.parent_run_id ? (r.status === 'failed' ? '<button class="sp-btn warn" data-retry="' + r.id + '">重试</button>' : '') :
+            '<button class="sp-btn ' + (paused ? 'warn' : '') + '" data-run="' + r.id + '" data-paused="' + (paused ? '1' : '0') + '">' +
+            (paused ? '继续' : '暂停') + '</button>') + '</div>';
       }).join('');
+      panel.querySelectorAll('[data-retry]').forEach(function (b) {
+        b.onclick = async function (ev) {
+          ev.stopPropagation();
+          const id = b.getAttribute('data-retry');
+          b.disabled = true;
+          b.textContent = '重试中...';
+          try { await api('/supervisor/runs/' + id + '/resume', { method: 'POST' }); await render(); }
+          catch (e) { b.textContent = '失败'; b.disabled = false; }
+        };
+      });
       panel.querySelectorAll('[data-run]').forEach(function (b) {
         b.onclick = async function () {
           const id = b.getAttribute('data-run');

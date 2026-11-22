@@ -223,6 +223,7 @@ async def send_message(body: SendMessageRequest, user_id: int = Depends(get_curr
                     _resume_id = _rt.get("run_id")
         except Exception:
             pass
+    print("[resume] route cid=" + str(body.conversation_id) + " text=" + repr(body.content[:20]) + " resume_id=" + str(_resume_id), flush=True)
     result = await message_service.send_message(
         user_id=user_id,
         conversation_id=body.conversation_id,
