@@ -1,6 +1,20 @@
 // static/modules/api_pill.js
-// 胶囊面板：外部 API / 工具 / 技能，按权限域分组；右侧 ⋯ 可设置显示哪些组
 (function () {
+  // i18n：本文件是 IIFE，动态引入 t()；未加载完成时回退中文原文
+  var _t = null;
+  var _tFallback = {
+    cp_web: '联网', cp_web_desc: '允许读取网页 / 调用外部 API',
+    cp_write: '改文件', cp_write_desc: '允许修改项目文件（需确认）',
+    cp_schedule: '定时', cp_schedule_desc: '允许创建定时任务'
+  };
+  function t(key) {
+    if (_t) {
+      var v = _t(key);
+      if (v && v !== key) return v;
+    }
+    return _tFallback[key] || key;
+  }
+  import('./i18n.js').then(function (m) { _t = m.t; }).catch(function () {});
   var STORE = 'sases_capsules_v1';
   var PERM_KEY = 'sases_perms_v1';
   var state = { apis: [], tools: [], skills: [], hidden: [] };
@@ -24,9 +38,9 @@
 
   function permsHtml() {
     var rows = [
-      ['web', '联网', '允许读取网页 / 调用外部 API'],
-      ['write', '改文件', '允许修改项目文件（需确认）'],
-      ['schedule', '定时', '允许创建定时任务']
+      ['web', t('cp_web'), t('cp_web_desc')],
+      ['write', t('cp_write'), t('cp_write_desc')],
+      ['schedule', t('cp_schedule'), t('cp_schedule_desc')]
     ];
     var h = '<div class="cp-perms"><div class="cp-ptitle">能力开关</div>';
     rows.forEach(function (r) {

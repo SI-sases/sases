@@ -1,5 +1,12 @@
 // static/modules/i18n_zh.js
 export const zh = {
+  // 能力开关（api_pill）
+  'cp_web': '联网',
+  'cp_web_desc': '允许读取网页 / 调用外部 API',
+  'cp_write': '改文件',
+  'cp_write_desc': '允许修改项目文件（需确认）',
+  'cp_schedule': '定时',
+  'cp_schedule_desc': '允许创建定时任务',
   // 登录与通用
   'login_title': 'SASES',
   'login_subtitle': '登录你的账号',

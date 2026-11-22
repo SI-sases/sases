@@ -1,5 +1,12 @@
 // static/modules/i18n_en.js
 export const en = {
+  // Capability switches (api_pill)
+  'cp_web': 'Web',
+  'cp_web_desc': 'Allow reading web pages / calling external APIs',
+  'cp_write': 'Write files',
+  'cp_write_desc': 'Allow modifying project files (needs confirmation)',
+  'cp_schedule': 'Schedule',
+  'cp_schedule_desc': 'Allow creating scheduled tasks',
   // Login & General
   'login_title': 'SASES',
   'login_subtitle': 'Login to your account',
