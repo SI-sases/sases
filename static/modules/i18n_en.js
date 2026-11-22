@@ -786,4 +786,11 @@ export const en = {
   'gt_in_progress': 'In progress',
   'gt_no_desc': '(No description)',
   'gt_detail_title': 'Task details',
+  // Group report Q&A (group_report_ui)
+  'gr_answer_title': 'Add answer',
+  'gr_answer_required': 'Please enter an answer first',
+  'gr_save_failed': 'Save failed: ',
+  'gr_saved': 'Saved and added to group knowledge base',
+  'gr_network_error': 'Network error: ',
+  'gr_load_failed': 'Load failed: ',
 };

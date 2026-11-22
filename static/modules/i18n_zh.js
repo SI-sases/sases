@@ -786,4 +786,11 @@ export const zh = {
   'gt_in_progress': '进行中',
   'gt_no_desc': '（无描述）',
   'gt_detail_title': '任务详情',
+  // 群报告问答（group_report_ui）
+  'gr_answer_title': '补充答案',
+  'gr_answer_required': '请先输入答案',
+  'gr_save_failed': '保存失败：',
+  'gr_saved': '已保存并加入群知识库',
+  'gr_network_error': '网络错误：',
+  'gr_load_failed': '加载失败：',
 };

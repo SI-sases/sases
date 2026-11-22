@@ -44,10 +44,10 @@ window.openReportResolveDialog = async function(groupId, queueId) {
         });
         const data = await resp.json();
         if (data.error || data.detail) { alert(t('gr_save_failed') + (data.error || data.detail)); return; }
-        alert('已保存并加入群知识库');
+        alert(t('gr_saved'));
         window.closeSubpage();
         window.openGroupReportQueue(groupId);
-      } catch (e) { alert('网络错误：' + e.message); }
+      } catch (e) { alert(t('gr_network_error') + e.message); }
     };
   }, 300);
 };
@@ -60,7 +60,7 @@ window.openGroupReportQueue = async function(groupId) {
       headers: { 'Authorization': 'Bearer ' + localStorage.getItem('sases_token') }
     });
     const data = await resp.json();
-    if (data.error || data.detail) { alert('加载失败：' + (data.error || data.detail)); return; }
+    if (data.error || data.detail) { alert(t('gr_load_failed') + (data.error || data.detail)); return; }
     items = data.items || [];
   } catch (e) { alert('网络错误：' + e.message); return; }
 
