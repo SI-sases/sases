@@ -160,12 +160,12 @@ window.openSwarmUsage = async function(groupId) {
 
     let trendHtml = '';
     if (trend.length === 0) {
-      trendHtml = '<div style="text-align:center;color:#999;padding:20px 0;font-size:13px;">暂无趋势数据</div>';
+      trendHtml = '<div style="text-align:center;color:#999;padding:20px 0;font-size:13px;">' + t('sw_no_trend') + '</div>';
     } else {
       trend.forEach(t => {
         trendHtml += '<div class="me-menu-item">';
         trendHtml += '<span class="menu-label">' + t.day + '</span>';
-        trendHtml += '<span class="menu-value">' + (t.calls || 0) + ' 次</span>';
+        trendHtml += '<span class="menu-value">' + (t.calls || 0) + ' ' + t('sw_times') + '</span>';
         trendHtml += '</div>';
       });
     }
@@ -185,7 +185,7 @@ window.openSwarmUsage = async function(groupId) {
         ${trendHtml}
       </div>
     `;
-    window.openSubpage('使用统计', html, {
+    window.openSubpage(t('sw_usage_title'), html, {
       showMore: false,
       returnAction: () => openSwarmConfig(groupId)
     });
