@@ -1,4 +1,5 @@
-// static/modules/group_file_ui.js
+// 群文件（从 group_chat.js 迁出）
+import { t } from './i18n.js';
 // 群文件（从 group_chat.js 迁出）
 
 export async function openGroupFiles(groupId) {
@@ -8,9 +9,9 @@ export async function openGroupFiles(groupId) {
       headers: { 'Authorization': 'Bearer ' + localStorage.getItem('sases_token') }
     });
     const data = await resp.json();
-    if (data.error || data.detail) { alert('加载失败：' + (data.error || data.detail)); return; }
+    if (data.error || data.detail) { alert(t('gf_load_failed') + '：' + (data.error || data.detail)); return; }
     files = data.files || [];
-  } catch (e) { alert('网络错误：' + e.message); return; }
+  } catch (e) { alert(t('gf_network_error') + '：' + e.message); return; }
 
   const fmtSize = (s) => {
     const n = parseInt(s) || 0;
@@ -21,7 +22,7 @@ export async function openGroupFiles(groupId) {
 
   let listHtml = '';
   if (files.length === 0) {
-    listHtml = '<div class="subpage-placeholder">暂无群文件</div>';
+    listHtml = '<div class="subpage-placeholder">' + t('gf_empty') + '</div>';
   } else {
     files.forEach(f => {
       listHtml += '<div class="me-menu-item group-file-item" data-url="' + f.url + '" style="cursor:pointer;">';
