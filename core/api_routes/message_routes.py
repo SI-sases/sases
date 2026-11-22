@@ -212,6 +212,17 @@ async def send_message(body: SendMessageRequest, user_id: int = Depends(get_curr
                                      supervisor_id=body.agent_id or "sases_assistant")
         await run_queue_service.enqueue(rid)
         return {"conversation_id": cid, "run_id": rid, "status": "queued", "background": True}
+    _resume_id = None
+    if body.conversation_id:
+        try:
+            from ..services.continuation_service import is_continue
+            if is_continue(body.content):
+                from ..services.run_control_service import find_paused_run
+                _rt = find_paused_run(body.conversation_id)
+                if _rt:
+                    _resume_id = _rt.get("run_id")
+        except Exception:
+            pass
     result = await message_service.send_message(
         user_id=user_id,
         conversation_id=body.conversation_id,
@@ -229,6 +240,7 @@ async def send_message(body: SendMessageRequest, user_id: int = Depends(get_curr
         attachments=body.attachments,
         permissions=body.permissions,
         force_strict=(str(body.agent_mode or "").lower() == "strict"),
+        resume_run_id=_resume_id,
     )
     try:
         from .ws_routes import broadcast_to_user

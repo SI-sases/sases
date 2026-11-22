@@ -84,17 +84,17 @@ async def send_message(
     max_steps: int = None,
     attachments: list = None
 , enabled_api_ids=None, enabled_tool_ids=None, enabled_skill_ids=None, agent_mode=None,
-      quote_content=None, permissions=None, force_strict=False):
+      quote_content=None, permissions=None, force_strict=False, resume_run_id=None):
     print(f"[MSG_DEBUG] content={content!r} | mode={mode!r} | agent_id={agent_id!r} | msg_type={msg_type}")
     try:
         from .continuation_service import is_continue as _is_cont, rewrite as _cont_rewrite
         _was_continue = _is_cont(content)
         content = _cont_rewrite(content)
-        _resume_run_id = None
+        _resume_run_id = resume_run_id
         if conversation_id:
             from .run_control_service import resume as _run_resume, find_paused_run as _find_paused
             _run_resume(conversation_id)
-            if _was_continue:
+            if _was_continue and not _resume_run_id:
                 _rt = _find_paused(conversation_id)
                 if _rt:
                     _resume_run_id = _rt.get("run_id")
