@@ -71,7 +71,7 @@ def _tool_schemas(allowed_tool_ids=None, mode="fast"):
     return [tool_schema(t) for t in tools if getattr(t, "module_id", "")]
 
 
-async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8, run_id=None, mode="fast", resume=False, supervisor_id=None, on_event=None, skill_ids=None, permissions=None):
+async def _run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8, run_id=None, mode="fast", resume=False, supervisor_id=None, on_event=None, skill_ids=None, permissions=None):
     if not conversation_id:
         return {"status": "error", "content": "缺少会话", "steps": 0, "history": []}
 
@@ -81,11 +81,16 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
     except Exception as _e_cp:
         print("[compact] 跳过: " + str(_e_cp))
     agent_memory.backfill(conversation_id)
-    hist = agent_memory.history(conversation_id)
+    hist = agent_memory.history(conversation_id, run_id=(run_id if resume else None))
+
+    def _mem_append(role, content, **kw):
+        kw.setdefault("run_id", run_id)
+        return agent_memory.append(conversation_id, role, content, **kw)
+
     if not resume:
         if not hist or str(hist[-1].get("content") or "") != str(goal):
-            agent_memory.append(conversation_id, "user", goal)
-            hist = agent_memory.history(conversation_id)
+            _mem_append("user", goal)
+            hist = agent_memory.history(conversation_id, run_id=(run_id if resume else None))
     else:
         # P1-7: 恢复时沿用已有 history；不要把“继续”指令再写成新目标
         pass
@@ -138,12 +143,12 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
             _gate = ("[调查够了] 已经查看 3 轮。现在开始按低风险默认修复并验证，"
                      "只读工具已收起；不要继续读文件，也不要问用户是否需要修改。")
             messages.append({"role": "user", "content": _gate})
-            agent_memory.append(conversation_id, "user", _gate)
+            _mem_append("user", _gate)
         if (_is_investigation(goal) or _is_write_task(goal)) and _audit_steps >= 5 and schemas:
             _gate = ("[调查截止] 已经查看 5 轮，不要再读文件。现在只允许写文件/验证，"
                      "直接执行修复。")
             messages.append({"role": "user", "content": _gate})
-            agent_memory.append(conversation_id, "user", _gate)
+            _mem_append("user", _gate)
     try:
         _plan_ctx = todo_service.format_for_prompt(conversation_id, run_id)
         if not _plan_ctx and "继续执行上一条" in str(goal):
@@ -185,7 +190,7 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
                     extra_body={"thinking": {"type": "disabled"}},
                 )
                 _txt = (_fr.choices[0].message.content or "").strip()
-                agent_memory.append(conversation_id, "assistant", _txt)
+                _mem_append("assistant", _txt)
                 return {"status": "ok", "content": _txt, "steps": step, "history": used}
             except Exception as _e_ff:
                 return {"status": "error", "content": "总结失败: " + str(_e_ff),
@@ -193,7 +198,8 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
         if step > 1:
             try:
                 if await maybe_compact(conversation_id, user_id):
-                    messages = [{"role": "system", "content": BASE_SYSTEM}] + agent_memory.history(conversation_id)
+                    messages = [{"role": "system", "content": BASE_SYSTEM}] + agent_memory.history(
+                        conversation_id, run_id=(run_id if resume else None))
                     print("[ctx] compacted mid-run, rebuilt messages")
             except Exception as _e_mid:
                 print("[ctx] mid-run compact 失败: " + str(_e_mid))
@@ -246,7 +252,7 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
             except Exception:
                 content, _question = raw, None
             content = content or raw
-            agent_memory.append(conversation_id, "assistant", content)
+            _mem_append("assistant", content)
             messages.append({"role": "assistant", "content": content})
             if _question:
                 if _is_investigation(goal) and not _ask_suppressed:
@@ -254,7 +260,7 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
                     _noask = ("[不要提问] 用户只给了现象。按低风险默认值继续定位/修复，"
                               "产品偏好按现有设计保留；不要要求用户选文件、选方案或确认低风险修改。")
                     messages.append({"role": "user", "content": _noask})
-                    agent_memory.append(conversation_id, "user", _noask)
+                    _mem_append("user", _noask)
                     if step < max_steps:
                         continue
                 if not run_id:
@@ -314,7 +320,7 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
                     _ui_ok = bool(getattr(_uir, "success", False))
                     _uimsg = "[自检] verify_ui 截图" + ("通过" if _ui_ok else "失败") + ": " + ", ".join(sorted(_ui_dirty))
                     messages.append({"role": "user", "content": _uimsg})
-                    agent_memory.append(conversation_id, "user", _uimsg)
+                    _mem_append("user", _uimsg)
                 except Exception as _e_ui:
                     _ui_ok = False
                     print("[ui] verify_ui 失败: " + str(_e_ui))
@@ -325,7 +331,7 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
                 _act = ("[不要总结] 你已经定位到问题。现在直接修改低风险文件并验证，"
                         "不要问用户是否需要修改，也不要继续只给方案。")
                 messages.append({"role": "user", "content": _act})
-                agent_memory.append(conversation_id, "user", _act)
+                _mem_append("user", _act)
                 continue
             # 计划门禁：多步骤任务必须有 todo；todo 还有未完成项不允许结束
             try:
@@ -337,7 +343,7 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
                 _pgate = ("[计划缺失] 这个任务需要 todo_write。先列出步骤并标 in_progress，"
                           "再继续执行；不能没有计划就结束。")
                 messages.append({"role": "user", "content": _pgate})
-                agent_memory.append(conversation_id, "user", _pgate)
+                _mem_append("user", _pgate)
                 if step < max_steps:
                     continue
                 return {"status": "plan_required", "content": _pgate,
@@ -347,7 +353,7 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
                 _pgate = ("[计划未完成] 还有未完成 todo：\n" + _plines
                           + "\n请继续执行并更新 todo，完成前不要结束。")
                 messages.append({"role": "user", "content": _pgate})
-                agent_memory.append(conversation_id, "user", _pgate)
+                _mem_append("user", _pgate)
                 if step < max_steps:
                     continue
                 return {"status": "plan_incomplete", "content": _pgate,
@@ -360,7 +366,7 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
                 _gate = ("[自检未通过] 以下检查未通过：\n- " + "\n- ".join(_lines)
                          + "\n请修复并重新验证，修复前不要结束任务。")
                 messages.append({"role": "user", "content": _gate})
-                agent_memory.append(conversation_id, "user", _gate)
+                _mem_append("user", _gate)
                 if step < max_steps:
                     continue
                 return {"status": "verification_failed", "content": _gate,
@@ -382,13 +388,13 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
                         extra_body={"thinking": {"type": "disabled"}},
                     )
                     review = (rr.choices[0].message.content or "").strip()
-                    agent_memory.append(conversation_id, "assistant", review)
+                    _mem_append("assistant", review)
                 except Exception as e:
                     print("[strict] 审核失败: " + str(e))
             return {"status": "ok", "content": content, "steps": step,
                     "history": used, "review": review}
 
-        agent_memory.append(conversation_id, "assistant", msg.content or "",
+        _mem_append("assistant", msg.content or "",
                             tool_calls=assistant_tool_calls or None)
         messages.append({"role": "assistant", "content": msg.content or "",
                          "tool_calls": assistant_tool_calls})
@@ -429,7 +435,7 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
                         tool_usage_service.record(user_id, name, ok)
                     except Exception:
                         pass
-                    agent_memory.append(conversation_id, "tool", text, tool_call_id=c.id)
+                    _mem_append("tool", text, tool_call_id=c.id)
                     messages.append({"role": "tool", "tool_call_id": c.id, "content": text})
                     await after_tool(user_id, conversation_id, run_id, step, name, _args, ok, text)
                     if on_event:
@@ -454,7 +460,7 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
                     _deny = "当前会话已关闭联网权限"
             if _deny:
                 text = "DENIED: " + _deny
-                agent_memory.append(conversation_id, "tool", text, tool_call_id=c.id)
+                _mem_append("tool", text, tool_call_id=c.id)
                 messages.append({"role": "tool", "tool_call_id": c.id, "content": text})
                 used.append({"step": step, "tool": name, "ok": False})
                 continue
@@ -468,7 +474,7 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
                     tool_usage_service.record(user_id, name, ok)
                 except Exception:
                     pass
-                agent_memory.append(conversation_id, "tool", text, tool_call_id=c.id)
+                _mem_append("tool", text, tool_call_id=c.id)
                 messages.append({"role": "tool", "tool_call_id": c.id, "content": text})
                 if on_event:
                     try:
@@ -489,7 +495,7 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
                     try:
                         from . import approval_service
                         approval_service.save_pending(run_id, _ar.step, c.id, name, args)
-                        agent_memory.append(conversation_id, "tool", "等待审批", tool_call_id=c.id)
+                        _mem_append("tool", "等待审批", tool_call_id=c.id)
                     except Exception as _e_pend:
                         print("[approval] 保存待审批失败: " + str(_e_pend))
                 return {"status": "awaiting_approval", "content": "等待审批：" + str(_ar.tool),
@@ -506,7 +512,7 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
                 tool_usage_service.record(user_id, name, ok)
             except Exception:
                 pass
-            agent_memory.append(conversation_id, "tool", text, tool_call_id=c.id)
+            _mem_append("tool", text, tool_call_id=c.id)
             messages.append({"role": "tool", "tool_call_id": c.id, "content": text})
             await after_tool(user_id, conversation_id, run_id, step, name, args, ok, text)
             if on_event:
@@ -535,7 +541,7 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
                             _verified_files.discard(_fp)
                             _vmsg = "[自检] verify_syntax 失败: " + _fp + " -> " + str(_vres)[:800]
                         messages.append({"role": "user", "content": _vmsg})
-                        agent_memory.append(conversation_id, "user", _vmsg)
+                        _mem_append("user", _vmsg)
                     except Exception as e:
                         _verified_files.discard(_fp)
                         print("[strict] verify_syntax 失败: " + str(e))
@@ -545,3 +551,18 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
             _force_final = True
 
     return {"status": "max_steps", "content": "达到步数上限，未完成任务。", "steps": max_steps, "history": used}
+
+
+# 写任务串行：避免多个写 run 并发改同一批文件；只读/聊天仍可并行
+_WRITE_LOCK = asyncio.Lock()
+
+
+async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8,
+              run_id=None, mode="fast", resume=False, supervisor_id=None,
+              on_event=None, skill_ids=None, permissions=None):
+    if mode == "strict" and _is_write_task(goal):
+        async with _WRITE_LOCK:
+            return await _run(user_id, conversation_id, goal, allowed_tool_ids, max_steps,
+                              run_id, mode, resume, supervisor_id, on_event, skill_ids, permissions)
+    return await _run(user_id, conversation_id, goal, allowed_tool_ids, max_steps,
+                      run_id, mode, resume, supervisor_id, on_event, skill_ids, permissions)

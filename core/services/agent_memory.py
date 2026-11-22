@@ -32,8 +32,22 @@ def append(conversation_id, role, content, run_id=None, tool_calls=None, tool_ca
         return seq
 
 
-def history(conversation_id, limit=400):
+def history(conversation_id, limit=400, run_id=None):
     with db_cursor() as cur:
+        # 恢复同一个 run：只取这个 run 的消息，避免其他任务/旧上下文污染
+        if run_id:
+            cur.execute(
+                "SELECT role, content, tool_calls, tool_call_id FROM agent_messages "
+                "WHERE conversation_id=? AND run_id=? AND COALESCE(compacted,0)=0 "
+                "ORDER BY seq DESC LIMIT ?",
+                (int(conversation_id), int(run_id), int(limit)),
+            )
+            rows = [dict(r) for r in cur.fetchall()]
+            rows.reverse()
+            return [{"role": r["role"], "content": r["content"] or "",
+                     **({"tool_calls": json.loads(r["tool_calls"])} if r.get("tool_calls") else {}),
+                     **({"tool_call_id": r["tool_call_id"]} if r.get("tool_call_id") else {})}
+                    for r in rows]
         cur.execute("SELECT * FROM agent_summary WHERE conversation_id=?", (int(conversation_id),))
         srow = cur.fetchone()
         summary_msg_id = None

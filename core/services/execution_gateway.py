@@ -226,6 +226,16 @@ async def resume_after_approval(run_id):
             r = await tool_gateway.invoke_tool_async(pending["tool_id"], pending.get("args") or {})
             ok = bool(getattr(r, "success", False))
             text = str(getattr(r, "result", "") or getattr(r, "error", ""))[:4000]
+            _fp = str((pending.get("args") or {}).get("file_path") or "")
+            if ok and _fp.lower().endswith((".py", ".js", ".mjs", ".cjs", ".jsx")):
+                try:
+                    from .syntax_service import check as _scheck
+                    _sok, _smsg = _scheck(_fp)
+                    if not _sok:
+                        ok = False
+                        text = "[自检失败] " + _fp + " -> " + str(_smsg)[:800]
+                except Exception as _e_syn:
+                    print("[approval] syntax check 失败: " + str(_e_syn))
         except Exception as e:
             ok, text = False, "工具执行失败：" + str(e)
         try:
