@@ -862,6 +862,11 @@ export const en = {
   'gr_no_items': 'No questions to answer',
   'gr_anonymous': 'Anonymous',
   'gr_member': 'Group member',
+  'gr_from_suffix': '',
+  // Base
+  'bs_title': 'My Base',
+  'bs_collect_failed': 'Collect failed: ',
+  'bs_upgrade_failed': 'Upgrade failed: ',
   'gr_title': 'Group reports',
   'gr_from_prefix': 'From ',
   'gr_from_suffix': '',

@@ -35,8 +35,8 @@ export async function openBaseOverview(returnAction) {
     let facilitiesHtml = '<div class="base-facilities">';
     facilities.forEach(f => {
       const facilityIcon = getFacilityIcon(f.facility_type);
-      const rateText = f.output_per_hour > 0 ? `${f.output_per_hour}/小时` : '未建造';
-      const captainText = f.captain_pet_id ? '已任命队长' : '无队长';
+      const rateText = f.output_per_hour > 0 ? `${f.output_per_hour}/${t('bs_hour')}` : t('bs_not_built');
+      const captainText = f.captain_pet_id ? t('bs_captain_assigned') : t('bs_no_captain');
       const memberCount = (f.member_pet_ids || []).length;
 
       facilitiesHtml += `
@@ -127,7 +127,7 @@ export async function openFacilityDetail(facilityType, returnAction) {
     const petsResp = await api.getPetList();
     petsData = petsResp.pets || [];
   } catch (e) {
-    alert('加载失败：' + e.message);
+    alert(t('bs_load_failed') + e.message);
     return;
   }
 
