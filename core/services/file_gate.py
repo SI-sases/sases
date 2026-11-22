@@ -76,6 +76,10 @@ def check_structure(old_path, new_path):
     lost = [t for t in critical if old.count(t) > new.count(t)]
     if lost:
         return {"ok": False, "error": "关键控制流被删除: " + ", ".join(lost)}
+    # 模板字符串截断：闭合 tag 数量不能少
+    for tag in ("</div", "</span", "</button"):
+        if old.count(tag) > new.count(tag):
+            return {"ok": False, "error": "HTML 闭合标签被删除: " + tag}
     return {"ok": True}
 
 
