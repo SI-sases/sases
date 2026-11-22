@@ -62,7 +62,7 @@ async def run_once(user_id, conversation_id, goal, source="chat",
         mapped = "completed" if status == "ok" else (
             "failed" if status in ("max_steps", "verification_failed", "plan_incomplete",
                                    "plan_required", "error", "budget_exceeded") else status)
-        if mapped in ("completed", "failed") and finish:
+        if mapped in ("completed", "failed", "partial") and finish:
             try:
                 execution_gateway._finish(int(rid), int(conversation_id), supervisor_id,
                                           mapped, r.get("content") or "", source)

@@ -63,6 +63,9 @@ async def _worker():
                 max_steps=16, run_id=run_id, finish=True,
             )
             await _notify(run["user_id"], run_id, "completed")
+            latest = _get_run(run_id)
+            if latest and latest.get("status"):
+                await _notify(run["user_id"], run_id, latest["status"])
         except Exception as e:
             print("[queue] run 失败: " + str(e))
             try:
