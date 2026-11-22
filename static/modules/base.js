@@ -1,5 +1,6 @@
 // static/modules/base.js
 import { api } from './api.js';
+import { t } from './i18n.js';
 
 // ========== 基地总览页 ==========
 export async function openBaseOverview(returnAction) {
@@ -61,7 +62,7 @@ export async function openBaseOverview(returnAction) {
   }
 
   const contentHtml = `<div id="base-overview-container">${overviewHtml}</div>`;
-  window.openSubpage('我的基地', contentHtml, {
+  window.openSubpage(t('bs_title'), contentHtml, {
     showMore: false,
     returnAction: returnAction
   });
@@ -84,7 +85,7 @@ export async function openBaseOverview(returnAction) {
           alert(`收取成功：${res.resource} × ${res.amount}`);
           openBaseOverview(returnAction);
         } catch (err) {
-          alert('收取失败：' + err.message);
+          alert(t('bs_collect_failed') + err.message);
         }
       };
     });
@@ -108,7 +109,7 @@ export async function openBaseOverview(returnAction) {
           }
           openBaseOverview(returnAction);
         } catch (err) {
-          alert('升级失败：' + err.message);
+          alert(t('bs_upgrade_failed') + err.message);
         }
       };
     });

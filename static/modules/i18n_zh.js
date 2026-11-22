@@ -863,4 +863,9 @@ export const zh = {
   'gr_title': '群汇报',
   'gr_from_prefix': '来自 ',
   'gr_from_suffix': '',
+  'gr_from_suffix': '',
+  // 基地（base）
+  'bs_title': '我的基地',
+  'bs_collect_failed': '收取失败：',
+  'bs_upgrade_failed': '升级失败：',
 };
