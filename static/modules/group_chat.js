@@ -1420,13 +1420,13 @@ function openRedPacketConfig() {
   }, 300);
 }
 function sendRedPacketNow() {
-  if (!confirm('确定立即发放群红包？群池可用余额将均分给符合受众的成员。')) return;
+  if (!confirm(t('gc_rp_confirm'))) return;
   fetch('/group/' + currentGroupId + '/red-packet/send', {
     method: 'POST',
     headers: { 'Authorization': 'Bearer ' + localStorage.getItem('sases_token') }
   }).then(r => r.json()).then(data => {
-    if (data.error || data.detail) { alert('发放失败：' + (data.error || data.detail)); return; }
-    alert('已发放 ' + data.total + ' 积分给 ' + data.recipients + ' 人');
+    if (data.error || data.detail) { alert(t('gc_rp_send_failed') + (data.error || data.detail)); return; }
+    alert(t('gc_rp_sent') + data.total + ' 积分给 ' + data.recipients + ' 人');
     window.closeSubpage();
     openGroupCreditsDetail();
   }).catch(e => alert('网络错误：' + e.message));
