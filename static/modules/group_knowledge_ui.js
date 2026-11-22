@@ -148,7 +148,7 @@ window.openGroupKnowledgeAdd = function(groupId) {
         });
         const data = await resp.json();
         if (data.error || data.detail) { alert(t('gk_save_failed') + (data.error || data.detail)); return; }
-        alert('已保存');
+        alert(t('gk_saved'));
         window.openGroupKnowledge(groupId);
       } catch (e) { alert('网络错误：' + e.message); }
     };
