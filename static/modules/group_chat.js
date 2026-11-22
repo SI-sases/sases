@@ -377,7 +377,7 @@ window.openGroupAgentPickerForReply = async function(quotedText, groupId) {
       ${myAgents.length === 0 ? '<div class="subpage-placeholder" style="padding:20px 0;font-size:13px;">' + t('gc_none') + '</div>' : ''}
       ${myAgents.map(a => '<div class="me-menu-item reply-agent-option" data-agent-id="' + a.agent_id + '" data-source="self"><span class="menu-label">' + (a.name || a.agent_id) + '</span><span class="menu-arrow">›</span></div>').join('')}
       ${sharedAgents.length > 0 ? '<div class="section-title">' + t('gc_shared_agents') + '</div>' : ''}
-      ${sharedAgents.map(p => '<div class="me-menu-item reply-agent-option" data-agent-id="' + p.agent_id + '" data-source="group"><span class="menu-label">' + (p.model_name || p.agent_id) + '</span><span class="menu-value" style="font-size:12px;color:#999;">群共享</span></div>').join('')}
+      ${sharedAgents.map(p => '<div class="me-menu-item reply-agent-option" data-agent-id="' + p.agent_id + '" data-source="group"><span class="menu-label">' + (p.model_name || p.agent_id) + '</span><span class="menu-value" style="font-size:12px;color:#999;">' + t('gc_shared') + '</span></div>').join('')}
     </div>
   `;
 
@@ -1671,7 +1671,7 @@ function clearGroupHistory() {
 }
 function leaveGroup() {
   if (!confirm(t('gc_leave_confirm'))) return;
-  api.removeGroupMember(currentGroupId, 'self').then(() => { window.closeSubpage(); location.reload(); }).catch(e => alert('失败: ' + e.message));
+  api.removeGroupMember(currentGroupId, 'self').then(() => { window.closeSubpage(); location.reload(); }).catch(e => alert(t('gc_failed') + e.message));
 }
 
 // 群汇报 UI 已迁移到 group_report_ui.js

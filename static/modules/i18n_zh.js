@@ -349,6 +349,7 @@ export const zh = {
   'gc_network_error': '网络错误：',
   'gc_none': '无',
   'gc_shared_agents': '群共享智能体',
+  'gc_shared': '群共享',
   'gc_no_shared': '群主未共享智能体',
   'gc_agent': '智能体',
   'gc_kb_wip': '群知识库开发中',

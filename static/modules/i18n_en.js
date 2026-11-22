@@ -348,6 +348,7 @@ export const en = {
   'gc_network_error': 'Network error: ',
   'gc_none': 'None',
   'gc_shared_agents': 'Shared group agents',
+  'gc_shared': 'Shared',
   'gc_no_shared': 'Group owner has not shared any agents',
   'gc_agent': 'Agent',
   'gc_kb_wip': 'Group knowledge base is under development',
