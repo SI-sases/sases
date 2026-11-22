@@ -1,11 +1,11 @@
 {
   "id": "verify_ui",
   "name": "UI 验证",
-  "description": "用 Playwright 访问本地页面并验证。支持 action：screenshot（截图存 static/_ui_shots/）、check_element（检查元素是否存在）、get_text（获取元素文本）、click（点击元素）。仅允许 http://127.0.0.1:8001/ 与 http://localhost:8001/。",
-  "version": "1.0.0",
+  "description": "用 Chrome headless 访问本地页面做轻量验证。支持 action：screenshot（截图存 static/_ui_shots/）、check_element（检查 #id/.class/tag）、check_text（检查 DOM 文本）。仅允许 http://127.0.0.1:8001/ 与 http://localhost:8001/；无 Chrome 时明确报错。",
+  "version": "1.1.0",
   "capabilities": [
     "verify_ui",
-    "playwright"
+    "chrome-headless"
   ],
   "permissions": [
     "restricted_file_write"
@@ -14,27 +14,27 @@
   "node_type": "harness",
   "params": {
     "action": {
-      "type": "any",
-      "desc": "必填"
+      "type": "string",
+      "desc": "screenshot / check_element / check_text"
     },
     "url": {
       "type": "string",
-      "default": "http://127.0.0.1:8001/static/index.html",
-      "desc": "可选"
-    },
-    "timeout": {
-      "type": "int",
-      "default": 10000,
+      "default": "http://127.0.0.1:8001/",
       "desc": "可选"
     },
     "filename": {
-      "type": "any",
-      "desc": "可选"
+      "type": "string",
+      "desc": "screenshot 文件名，可选"
     },
     "selector": {
       "type": "string",
       "default": "",
-      "desc": "可选"
+      "desc": "check_element 用，支持 #id/.class/tag"
+    },
+    "text": {
+      "type": "string",
+      "default": "",
+      "desc": "check_text 用"
     }
   }
 }

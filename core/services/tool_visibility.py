@@ -32,16 +32,36 @@ HIDDEN_DEFAULT = {
     "split_block", "split-block",
     "verify_patch", "verify-patch",
     "verify_claim", "verify-claim",
-    # verify_ui：Playwright driver 缺失（WinError 2），当前不可用；实现保留不删
-    "verify_ui", "verify-ui",
     "smart_edit", "smart-edit",
 }
+
+CHROME_CANDIDATES = [
+    os.getenv("SASES_CHROME", ""),
+    r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+    r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+    "/usr/bin/google-chrome",
+    "/usr/bin/chromium",
+    "/usr/bin/chromium-browser",
+]
+
+
+def _chrome_available():
+    for p in CHROME_CANDIDATES:
+        if p and os.path.isfile(p):
+            return True
+    import shutil
+    return any(shutil.which(x) for x in ("google-chrome", "chromium", "chromium-browser", "chrome"))
+
 
 def hidden_ids():
     """当前生效的隐藏集合；SASES_TOOL_HIDE=off 时返回空集。"""
     if str(os.getenv("SASES_TOOL_HIDE", "")).strip().lower() in ("off", "0", "false", "no"):
         return set()
-    return set(HIDDEN_DEFAULT)
+    hide = set(HIDDEN_DEFAULT)
+    # verify_ui 需要 Chrome；没有 Chrome 的节点不暴露这个入口
+    if not _chrome_available():
+        hide.add("verify_ui")
+    return hide
 
 
 def is_visible(module_id):

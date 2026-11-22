@@ -69,6 +69,8 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
     used = []
     _dirty_files = set()
     _verified_files = set()
+    _ui_dirty = set()
+    _ui_ok = True
 
     for step in range(1, max_steps + 1):
         if step > 1:
@@ -171,11 +173,33 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
                             _verified_files.discard(_fp)
                     except Exception:
                         _verified_files.discard(_fp)
+            # 前端改动：本机有 Chrome 时做一次真实页面 smoke
+            _ui_required = False
+            if _ui_dirty and os.getenv("SASES_UI_GATE", "1") == "1":
+                try:
+                    from .tool_visibility import _chrome_available
+                    _ui_required = bool(_chrome_available())
+                except Exception:
+                    _ui_required = False
+            if _ui_required:
+                try:
+                    _uir = await tool_gateway.invoke_tool_async(
+                        "verify_ui", {"action": "screenshot", "filename": "agent_selfcheck.png",
+                                      "url": "http://127.0.0.1:8001/"})
+                    _ui_ok = bool(getattr(_uir, "success", False))
+                    _uimsg = "[自检] verify_ui 截图" + ("通过" if _ui_ok else "失败") + ": " + ", ".join(sorted(_ui_dirty))
+                    messages.append({"role": "user", "content": _uimsg})
+                    agent_memory.append(conversation_id, "user", _uimsg)
+                except Exception as _e_ui:
+                    _ui_ok = False
+                    print("[ui] verify_ui 失败: " + str(_e_ui))
             _unverified = _dirty_files - _verified_files
-            if mode == "strict" and _unverified:
-                _gate = ("[自检未通过] 以下文件已修改但没有通过 verify_syntax：\n- "
-                         + "\n- ".join(sorted(_unverified))
-                         + "\n请修复后重新运行 verify_syntax，修复前不要结束任务。")
+            if mode == "strict" and (_unverified or (_ui_required and not _ui_ok)):
+                _lines = sorted(_unverified)
+                if _ui_required and not _ui_ok:
+                    _lines.append("前端 UI 截图未通过")
+                _gate = ("[自检未通过] 以下检查未通过：\n- " + "\n- ".join(_lines)
+                         + "\n请修复并重新验证，修复前不要结束任务。")
                 messages.append({"role": "user", "content": _gate})
                 agent_memory.append(conversation_id, "user", _gate)
                 if step < max_steps:
@@ -259,6 +283,9 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
                 _fp = str(args.get("file_path") or "")
                 if _fp.lower().endswith((".py", ".js", ".mjs", ".cjs", ".jsx")):
                     _dirty_files.add(_fp)
+                    if ("/static/" in _fp.replace("\\", "/") or _fp.replace("\\", "/").startswith("static/")) and _fp.lower().endswith((".js", ".html", ".css")):
+                        _ui_dirty.add(_fp)
+                        _ui_ok = False
                     try:
                         _vr = await tool_gateway.invoke_tool_async("verify_syntax", {"file_path": _fp})
                         _vok = bool(getattr(_vr, "success", False))
