@@ -348,7 +348,7 @@ async function refreshChatMeta(agentId, isFriendChat) {
   parts.push('#' + String(agentId).slice(-6));
   el.textContent = '';
   el.style.display = 'none';
-  el.title = '智能体信息';
+  el.title = t('chat.agent_info');
 }
 
 function openAgentSwitch(currentId) {
@@ -362,7 +362,7 @@ function openAgentSwitch(currentId) {
   const r = meta ? meta.getBoundingClientRect() : { left: 100, bottom: 80 };
   menu.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 250)) + 'px';
   menu.style.top = (r.bottom + 6) + 'px';
-  menu.innerHTML = '<div style="padding:4px 6px;color:#999">切换智能体</div><div id="agent-switch-list" style="padding:6px;color:#999">加载中...</div>';
+  menu.innerHTML = '<div style="padding:4px 6px;color:#999">' + t('chat.switch_agent') + '</div><div id="agent-switch-list" style="padding:6px;color:#999">' + t('chat.loading') + '</div>';
   document.body.appendChild(menu);
   api.listModels().then(function (d) {
     const list = document.getElementById('agent-switch-list');
