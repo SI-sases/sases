@@ -191,6 +191,7 @@ from .api_routes import (
     work_routes,
     pollination_routes,
     commander_routes,
+    goal_routes,
     quality_routes,
     rescue_routes,
     pet_routes,
@@ -872,6 +873,7 @@ def create_app() -> FastAPI:
     # P2-1: commander 旧路由默认不注册；仅显式回退时启用
     if os.getenv("SASES_LEGACY_COMMANDER", "0") == "1":
         app.include_router(commander_routes.router)
+    app.include_router(goal_routes.router)
     app.include_router(quality_routes.router)
     app.include_router(rescue_routes.router)
     app.include_router(pet_routes.router)
