@@ -288,19 +288,19 @@ async function openKnowledgeBase() {
     const _d = await _r.json();
     const _docs = _d.documents || [];
     if (_docs.length === 0) {
-      myDocsHtml = '<div class="subpage-placeholder">暂无个人文档。在会话里发 *1：标题：内容如下\\n正文 即可投喂。</div>';
+      myDocsHtml = '<div class="subpage-placeholder">' + t('kb_no_docs') + '</div>';
     } else {
       myDocsHtml = '<div class="me-menu">';
       _docs.forEach(function(d, idx) {
-        myDocsHtml += '<div class="me-menu-item" data-doc-index="' + idx + '" style="cursor:pointer;"><span class="menu-icon">📄</span><div class="menu-text"><div class="menu-title">' + (d.source_file || '未命名') + '</div><div class="menu-desc">' + (d.chunk_count || 0) + ' 个分片</div></div><span class="menu-arrow">›</span></div>';
+        myDocsHtml += '<div class="me-menu-item" data-doc-index="' + idx + '" style="cursor:pointer;"><span class="menu-icon">📄</span><div class="menu-text"><div class="menu-title">' + (d.source_file || t('kb_untitled')) + '</div><div class="menu-desc">' + (d.chunk_count || 0) + ' 个分片</div></div><span class="menu-arrow">›</span></div>';
       });
       myDocsHtml += '</div>';
       window._myDocsCache = _docs;
     }
   } catch (_e) {
-    myDocsHtml = '<div class="subpage-placeholder">加载失败</div>';
+    myDocsHtml = '<div class="subpage-placeholder">' + t('load_failed') + '</div>';
   }
-  window.openSubpage('个人知识库', myDocsHtml);
+  window.openSubpage(t('kb_title'), myDocsHtml);
 
   setTimeout(function() {
     const _rows = document.querySelectorAll('#subpage-content [data-doc-index]');
@@ -347,11 +347,11 @@ async function openMyDoc(sourceFile) {
     const r = await fetch(url, { headers: { 'Authorization': 'Bearer ' + token } });
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const d = await r.json();
-    const content = d.content || '(空)';
+    const content = d.content || t('kb_empty_content');
     const html = '<div style="padding:12px;"><div style="font-size:13px;color:#888;margin-bottom:12px;">' + (d.source_file || '') + ' · ' + (d.chunk_count || 0) + ' 分片</div><pre style="white-space:pre-wrap;word-break:break-word;font-size:14px;line-height:1.6;font-family:inherit;">' + content.replace(/</g, '&lt;') + '</pre></div>';
     window.openSubpage(sourceFile, html);
   } catch (e) {
-    alert('打开失败：' + e.message);
+    alert(t('open_failed') + e.message);
   }
 }
 
@@ -442,10 +442,10 @@ document.addEventListener('click', function(e) {
             '<p style="color: #888; font-size: 14px; margin-bottom: 30px;">v1.0.0-Release</p>' +
             '<div style="text-align: left; background: #fff; padding: 15px; border-radius: 8px; line-height: 1.8; font-size: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">' +
                 '<p><strong>' + t('open_source_license') + '：</strong>MIT License</p>' +
-                '<p><strong>项目地址：</strong><a href="https://github.com/SI-sases/sases" target="_blank" style="color: #007aff; text-decoration: none;">github.com/SI-sases/sases</a></p>' +
-                '<p><strong>商业化说明：</strong>个人学习、研究及企业内部使用完全免费。如需作为商业产品对外提供服务，必须获得官方商业授权。</p>' +
+                '<p><strong>' + t('about_project_url') + '</strong><a href="https://github.com/SI-sases/sases" target="_blank" style="color: #007aff; text-decoration: none;">github.com/SI-sases/sases</a></p>' +
+                '<p><strong>' + t('about_commercial_title') + '</strong>' + t('about_commercial_body') + '</p>' +
             '</div>' +
         '</div>';
-        window.openSubpage('关于 SASES', html);
+        window.openSubpage(t('about_sases'), html);
     }
 }, true);
