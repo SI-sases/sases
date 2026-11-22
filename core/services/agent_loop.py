@@ -183,11 +183,14 @@ async def _run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=
     if multi_agent:
         _multi_gate = ("[多子智能体] 这是父任务。只要目标能拆成 2 个以上独立调查，"
                        "必须先调用 subagent 并行处理（最多 3 个），不要自己逐个读文件；"
-                       "收齐子结果后统一汇总、再写文件；子任务只读，写由父任务串行完成。")
+                       "收齐子结果后统一汇总、再写文件；子任务只读，写由父任务串行完成。"
+                       "最终回答必须包含“## 子任务汇总”表：子 run / 目标 / 结论 / 失败原因。")
         messages.append({"role": "user", "content": _multi_gate})
         agent_memory.append(conversation_id, "user", _multi_gate, run_id=run_id)
 
     _budget = int(budget_tokens or 0)
+    _subagent_calls = 0
+    _agg_nudged = False
     if not _budget and run_id:
         try:
             from core.db import db_cursor as _dc_budget
@@ -279,7 +282,9 @@ async def _run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=
             resp = await asyncio.to_thread(
                 _client.chat.completions.create,
                 model=_model, messages=req_messages, tools=schemas or None,
-                tool_choice="auto" if schemas else None,
+                tool_choice=({"type": "function", "function": {"name": "subagent"}}
+                             if (multi_agent and _subagent_calls < 2 and step <= 2 and schemas)
+                             else ("auto" if schemas else None)),
                 temperature=0.3, max_tokens=2000,
                 extra_body={"thinking": {"type": "disabled"}},
             )
@@ -563,6 +568,8 @@ async def _run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=
             except Exception as e:
                 ok, text = False, "ERROR: " + str(e)
             used.append({"step": step, "tool": name, "args": args, "ok": ok})
+            if name == "subagent":
+                _subagent_calls += 1
             try:
                 from . import tool_usage_service
                 tool_usage_service.record(user_id, name, ok)
