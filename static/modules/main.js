@@ -185,7 +185,7 @@ function initLoginUI() {
       const res = await fetch('/auth/reset-password', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ username: u, email: em, new_password: p }) });
       const data = await res.json();
       if (!res.ok) { const msg = data.error || data.message || (Array.isArray(data.detail) ? data.detail[0]?.msg : data.detail) || t('main.reset_failed'); alert(msg); return; }
-      alert(data.message || '密码已重置，请用新密码登录');
+      alert(data.message || t('main.pwd_reset_ok'));
       showLoginForm('login');
     } catch (err) { alert('网络错误: ' + err.message); }
   });
@@ -218,13 +218,13 @@ function initLoginUI() {
 
   loginBtn.addEventListener('click', async () => {
     if (!agreeCheckbox.checked) {
-      alert('请先阅读并同意用户协议和隐私政策');
+      alert(t('main.agree_required'));
       return;
     }
     const username = usernameInput.value.trim();
     const password = passwordInput.value;
     if (!username || !password) {
-      alert('请输入用户名和密码');
+      alert(t('main.login_required'));
       return;
     }
     try {
