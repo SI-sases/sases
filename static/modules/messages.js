@@ -4,6 +4,7 @@ import { openChatWindow } from './chat.js';
 import { openGroupChat } from './group_chat.js';
 import { initPullToRefresh } from './utils.js';
 import { t } from './i18n.js';
+import { stripSummaryPrefix } from './chat_ui.js';
 
 let initialized = false;
 
@@ -65,7 +66,7 @@ async function loadConversations(container) {
     // ================= 渲染单聊会话 =================
     conversations.forEach(conv => {
       const agentName = escapeHtml(conv.title || '会话');
-      const lastMessage = escapeHtml(conv.last_message || '');
+      const lastMessage = escapeHtml(stripSummaryPrefix(conv.last_message || ''));
       const unread = conv.unread_count || 0;
       const pinned = conv.is_pinned ? 'pinned' : '';
       const pinnedVal = conv.is_pinned ? 1 : 0;
@@ -97,7 +98,7 @@ async function loadConversations(container) {
 
     groups.forEach(group => {
       const groupName = escapeHtml(group.name || '群聊');
-      const lastMessage = escapeHtml(group.last_message || '');
+      const lastMessage = escapeHtml(stripSummaryPrefix(group.last_message || ''));
       const lastSenderName = escapeHtml(group.last_sender_name || '');
       const displayLast = lastSenderName ? `${lastSenderName}: ${lastMessage}` : lastMessage;
       const groupId = group.id;

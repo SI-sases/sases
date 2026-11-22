@@ -172,11 +172,13 @@ async function renderContacts(container) {
     });
     friendAgentsHtml += '</div>';
 
-    letterIndexHtml = '<div class="letter-index">';
-    sortedInitials.forEach(initial => {
-      letterIndexHtml += `<div class="letter-index-item" data-letter="${initial}">${initial}</div>`;
-    });
-    letterIndexHtml += '</div>';
+    if (sortedInitials.length > 1) {
+      letterIndexHtml = '<div class="letter-index">';
+      sortedInitials.forEach(initial => {
+        letterIndexHtml += `<div class="letter-index-item" data-letter="${initial}">${initial}</div>`;
+      });
+      letterIndexHtml += '</div>';
+    }
   }
 
   // 移除多余的单独加好友按钮,保持微信风格
