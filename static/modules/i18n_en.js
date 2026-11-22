@@ -462,6 +462,7 @@ export const en = {
   'sw_times': 'times',
   'sw_usage_title': 'Usage statistics',
   'gk_empty': 'No knowledge entries',
+  'gk_title': 'Group knowledge base',
   'gc_report_wip': 'Group reports coming soon',
   'gc_member': 'Member',
   'gc_switch_swarm': 'Switched to Swarm Mode',

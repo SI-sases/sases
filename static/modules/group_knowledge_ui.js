@@ -48,7 +48,7 @@ window.openGroupKnowledge = async function(groupId) {
     </div>
     <div id="gk-list">${renderList(items)}</div>
   `;
-  window.openSubpage('群知识库', html, {
+  window.openSubpage(t('gk_title'), html, {
     showMore: false,
     returnAction: () => openGroupSettings(),
     rightBtn: {

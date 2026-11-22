@@ -463,6 +463,7 @@ export const zh = {
   'sw_times': '次',
   'sw_usage_title': '使用统计',
   'gk_empty': '暂无知识条目',
+  'gk_title': '群知识库',
   'gc_report_wip': '群汇报开发中',
   'gc_member': '成员',
   'gc_switch_swarm': '已切换到蜂群模式',
