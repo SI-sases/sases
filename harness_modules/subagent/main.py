@@ -7,12 +7,12 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 
 def run(params):
     goal = str((params or {}).get("goal") or "").strip()
-    agent_id = str((params or {}).get("agent_id") or "").strip() or None
     if not goal:
         return {"success": False, "error": "goal 不能为空"}
     from core.services.run_context import get_current
     from core.services.capacity_service import acquire_subagent_slot, release_subagent_slot
     ctx = get_current()
+    agent_id = str((params or {}).get("agent_id") or "").strip() or str(ctx.get("subagent_agent_id") or "").strip() or None
     if not ctx.get("user_id") or not ctx.get("conversation_id"):
         return {"success": False, "error": "缺少父 run 上下文"}
     if not acquire_subagent_slot(30):

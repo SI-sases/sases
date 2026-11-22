@@ -6,12 +6,13 @@ import contextvars
 _CURRENT = contextvars.ContextVar("sases_run_context", default={})
 
 
-def set_current(user_id=None, conversation_id=None, run_id=None, parent_run_id=None):
+def set_current(user_id=None, conversation_id=None, run_id=None, parent_run_id=None, subagent_agent_id=None):
     _CURRENT.set({
         "user_id": int(user_id) if user_id else None,
         "conversation_id": int(conversation_id) if conversation_id else None,
         "run_id": int(run_id) if run_id else None,
         "parent_run_id": int(parent_run_id) if parent_run_id else None,
+        "subagent_agent_id": str(subagent_agent_id or ""),
     })
 
 

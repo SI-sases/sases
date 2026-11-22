@@ -157,11 +157,21 @@
       const data = await api('/agents/list');
       const list = data.agents || [];
       if (!list.length) { panel.innerHTML = '<div class="sp-title">子智能体</div><div class="sp-empty">暂无智能体，请到模型管理添加</div>'; return; }
-      panel.innerHTML = '<div class="sp-title">子智能体 <span style="font-weight:400;color:#999;font-size:11px">与模型管理同步</span></div>' +
+      const chosen = localStorage.getItem('sases_subagent_agent_id') || '';
+      panel.innerHTML = '<div class="sp-title">子智能体 <span style="font-weight:400;color:#999;font-size:11px">点一行设为默认模型</span></div>' +
         list.map(function (a) {
-          return '<div class="sp-row"><div class="sp-main"><div class="sp-name">' + esc(a.name || a.agent_id) +
+          const active = String(a.agent_id) === chosen;
+          return '<div class="sp-row" data-agent="' + esc(a.agent_id || '') + '" style="cursor:pointer;' +
+            (active ? 'background:#eef5ff;' : '') + '"><div class="sp-main"><div class="sp-name">' +
+            (active ? '✓ ' : '') + esc(a.name || a.agent_id) +
             '</div><div class="sp-sub">' + esc(a.type || '') + ' · ' + esc(a.agent_id || '') + '</div></div></div>';
         }).join('');
+      panel.querySelectorAll('[data-agent]').forEach(function (row) {
+        row.onclick = function () {
+          localStorage.setItem('sases_subagent_agent_id', row.getAttribute('data-agent'));
+          renderAgents();
+        };
+      });
     } catch (e) { panel.innerHTML = '<div class="sp-title">子智能体</div><div class="sp-empty">加载失败</div>'; }
   }
 

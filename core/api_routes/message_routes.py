@@ -69,6 +69,7 @@ class SendMessageRequest(BaseModel):
     max_steps: Optional[int] = None  # -1=不限，None=默认8
     permissions: Optional[dict] = None
     background: Optional[bool] = False
+    subagent_agent_id: Optional[str] = None
 
 
 class ConversationCreateRequest(BaseModel):
@@ -242,6 +243,7 @@ async def send_message(body: SendMessageRequest, user_id: int = Depends(get_curr
         permissions=body.permissions,
         force_strict=(str(body.agent_mode or "").lower() == "strict"),
         resume_run_id=_resume_id,
+        subagent_agent_id=body.subagent_agent_id,
     )
     try:
         from .ws_routes import broadcast_to_user

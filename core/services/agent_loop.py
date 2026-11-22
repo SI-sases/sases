@@ -72,7 +72,7 @@ def _tool_schemas(allowed_tool_ids=None, mode="fast"):
     return [tool_schema(t) for t in tools if getattr(t, "module_id", "")]
 
 
-async def _run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8, run_id=None, mode="fast", resume=False, supervisor_id=None, on_event=None, skill_ids=None, permissions=None, agent_id=None):
+async def _run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8, run_id=None, mode="fast", resume=False, supervisor_id=None, on_event=None, skill_ids=None, permissions=None, agent_id=None, subagent_agent_id=None):
     if not conversation_id:
         return {"status": "error", "content": "缺少会话", "steps": 0, "history": []}
 
@@ -97,7 +97,7 @@ async def _run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=
     hist = agent_memory.history(conversation_id, run_id=(run_id if resume else None))
     try:
         from .run_context import set_current, get_current
-        set_current(user_id, conversation_id, run_id, (get_current() or {}).get("run_id"))
+        set_current(user_id, conversation_id, run_id, (get_current() or {}).get("run_id"), subagent_agent_id)
     except Exception as _e_ctx:
         print("[run] context 设置失败: " + str(_e_ctx))
 
@@ -588,10 +588,11 @@ _WRITE_LOCK = asyncio.Lock()
 
 async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8,
               run_id=None, mode="fast", resume=False, supervisor_id=None,
-              on_event=None, skill_ids=None, permissions=None, agent_id=None):
+              on_event=None, skill_ids=None, permissions=None, agent_id=None,
+              subagent_agent_id=None):
     if mode == "strict" and _is_write_task(goal):
         async with _WRITE_LOCK:
             return await _run(user_id, conversation_id, goal, allowed_tool_ids, max_steps,
-                              run_id, mode, resume, supervisor_id, on_event, skill_ids, permissions, agent_id)
+                              run_id, mode, resume, supervisor_id, on_event, skill_ids, permissions, agent_id, subagent_agent_id)
     return await _run(user_id, conversation_id, goal, allowed_tool_ids, max_steps,
-                      run_id, mode, resume, supervisor_id, on_event, skill_ids, permissions, agent_id)
+                      run_id, mode, resume, supervisor_id, on_event, skill_ids, permissions, agent_id, subagent_agent_id)
