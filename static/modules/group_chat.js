@@ -283,7 +283,7 @@ window.openGroupRedPacket = async function(packetId) {
     } else if (detail.status === 'expired') {
       bodyHtml = '<div style="font-size:36px;color:#999;margin:20px 0;">' + t('gc_rp_expired') + '</div>';
     } else {
-      bodyHtml = '<button id="grp-rp-claim-btn" style="width:180px;height:180px;border-radius:50%;background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#fff;font-size:24px;font-weight:700;border:none;cursor:pointer;margin:20px auto;display:block;box-shadow:0 8px 24px rgba(245,158,11,0.3);">開</button>';
+      bodyHtml = '<button id="grp-rp-claim-btn" style="width:180px;height:180px;border-radius:50%;background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#fff;font-size:24px;font-weight:700;border:none;cursor:pointer;margin:20px auto;display:block;box-shadow:0 8px 24px rgba(245,158,11,0.3);">' + t('gc_open') + '</button>';
     }
     const html = '<div style="text-align:center;padding:30px 20px;">'
       + '<div style="font-size:18px;font-weight:600;margin-bottom:8px;">' + (detail.message || t('gc_rp_default_msg')) + '</div>'
@@ -432,7 +432,7 @@ async function loadGroupMessages() {
       setTimeout(() => { container.scrollTop = container.scrollHeight; }, t);
     });
   } catch (e) {
-    appendGroupMessage('系统', t('gc_load_msgs_failed') + e.message, false);
+    appendGroupMessage(t('gc_system'), t('gc_load_msgs_failed') + e.message, false);
   }
 }
 
@@ -1188,7 +1188,7 @@ window.openGroupNameEditor = function() {
   var v = currentGroupName || '';
   var h = document.getElementById('gne-page');
   if (!h) { h = document.createElement('div'); h.id = 'gne-page'; h.className = 'page-secondary'; document.body.appendChild(h); }
-  h.innerHTML = '<div class="sp-bar"><span id="gne-back">' + t('gc_back') + '</span><b>' + t('gc_group_name') + '</b></div><input id="gne-in" value="' + v + '"' + (canEdit ? '' : ' readonly') + '><button id="gne-save"' + (canEdit ? '' : ' style=display:none') + '>保存</button>';
+  h.innerHTML = '<div class="sp-bar"><span id="gne-back">' + t('gc_back') + '</span><b>' + t('gc_group_name') + '</b></div><input id="gne-in" value="' + v + '"' + (canEdit ? '' : ' readonly') + '><button id="gne-save"' + (canEdit ? '' : ' style=display:none') + '>' + t('gc_save') + '</button>';
   h.style.display = 'block';
   document.getElementById('gne-back').onclick = function(){ h.style.display = 'none'; };
   document.getElementById('gne-save').onclick = function(){ currentGroupName = document.getElementById('gne-in').value.trim(); h.style.display = 'none'; if (window.renderGroupSettings) window.renderGroupSettings(); };
