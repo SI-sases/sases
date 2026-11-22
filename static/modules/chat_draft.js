@@ -128,7 +128,7 @@ export function showTaskDraftEditor(taskId, steps) {
       topLine.appendChild(numLabel);
 
       const delBtn = document.createElement('button');
-      delBtn.textContent = '✕ 删除';
+      delBtn.textContent = t('cd_delete');
       delBtn.style.marginLeft = 'auto';
       delBtn.style.fontSize = '12px';
       delBtn.style.border = '1px solid #ff3b30';
@@ -147,7 +147,7 @@ export function showTaskDraftEditor(taskId, steps) {
       const descInput = document.createElement('input');
       descInput.type = 'text';
       descInput.value = s.description || '';
-      descInput.placeholder = '描述';
+      descInput.placeholder = t('cd_desc_ph');
       descInput.style.fontSize = '12px';
       descInput.style.padding = '4px 8px';
       descInput.style.border = '1px solid #ddd';
@@ -159,7 +159,7 @@ export function showTaskDraftEditor(taskId, steps) {
       const cmdInput = document.createElement('input');
       cmdInput.type = 'text';
       cmdInput.value = s.command || '';
-      cmdInput.placeholder = '命令';
+      cmdInput.placeholder = t('cd_cmd_ph');
       cmdInput.style.fontSize = '13px';
       cmdInput.style.padding = '4px 8px';
       cmdInput.style.border = '1px solid #ddd';
