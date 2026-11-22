@@ -311,6 +311,8 @@ export const en = {
   'gc_open': 'Open',
   'gc_system': 'System',
   'gc_save': 'Save',
+  'gc_points_to': ' credits to ',
+  'gc_people': ' people',
   'gc_rp_config': 'Red packet settings',
   'gc_rp_confirm': 'Send the group red packet now? The available group pool balance will be split evenly among eligible members.',
   'gc_mode_normal': 'Normal Chat',

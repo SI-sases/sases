@@ -312,6 +312,8 @@ export const zh = {
   'gc_open': '開',
   'gc_system': '系统',
   'gc_save': '保存',
+  'gc_points_to': ' 积分给 ',
+  'gc_people': ' 人',
   'gc_rp_config': '红包配置',
   'gc_rp_confirm': '确定立即发放群红包？群池可用余额将均分给符合受众的成员。',
   'gc_rp_send_failed': '发放失败：',

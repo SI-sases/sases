@@ -1415,7 +1415,7 @@ function openRedPacketConfig() {
         showGroupToast(t('gc_saved'));
         window.closeSubpage();
         openGroupCreditsDetail();
-      } catch (e) { alert('网络错误：' + e.message); }
+      } catch (e) { alert(t('gc_network_error') + e.message); }
     };
   }, 300);
 }
@@ -1426,7 +1426,7 @@ function sendRedPacketNow() {
     headers: { 'Authorization': 'Bearer ' + localStorage.getItem('sases_token') }
   }).then(r => r.json()).then(data => {
     if (data.error || data.detail) { alert(t('gc_rp_send_failed') + (data.error || data.detail)); return; }
-    alert(t('gc_rp_sent') + data.total + ' 积分给 ' + data.recipients + ' 人');
+    alert(t('gc_rp_sent') + data.total + t('gc_points_to') + data.recipients + t('gc_people'));
     window.closeSubpage();
     openGroupCreditsDetail();
   }).catch(e => alert(t('gc_network_error') + e.message));
