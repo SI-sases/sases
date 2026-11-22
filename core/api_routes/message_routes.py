@@ -13,6 +13,26 @@ from ..services import message_service
 router = APIRouter(prefix="/messages", tags=["messages"])
 security = HTTPBearer()
 
+_WRITE_ACTIONS = ("改", "修改", "修复", "创建", "新建", "写入", "删除", "移除",
+                  "重命名", "移动", "复制", "替换", "重构", "实现", "添加",
+                  "加一个", "部署", "安装", "更新", "保存", "生成", "导出", "导入")
+_READ_ACTIONS = ("读取", "查看", "看一下", "查一下", "查找", "搜索", "统计",
+                 "汇总", "分析", "检查", "测试", "运行", "执行")
+_OBJECT_WORDS = ("文件", "目录", "路径", "代码", "脚本", "页面", "样式", "配置",
+                 "接口", "函数", "模块", "bug", "报错", "html", "js", "py", "css", "json", "md")
+
+
+def _looks_like_task(text):
+    s = str(text or "").strip()
+    if not s:
+        return False
+    if any(v in s for v in _WRITE_ACTIONS):
+        return True
+    if any(v in s for v in _READ_ACTIONS):
+        return len(s) >= 12 or any(o in s.lower() for o in _OBJECT_WORDS)
+    return False
+
+
 
 class SendMessageRequest(BaseModel):
     enabled_api_ids: list = None
@@ -114,6 +134,7 @@ async def stream_message(body: StreamMessageRequest, user_id: int = Depends(get_
                 _conv = cur.fetchone()
             _agent_id = _conv["agent_id"] if _conv else body.sender_agent_id
             _strict = (_explicit_exec
+                       or _looks_like_task(_text)
                        or _text.startswith("#")
                        or (body.msg_type and body.msg_type != "standard"))
             if _strict:
