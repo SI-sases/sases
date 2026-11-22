@@ -771,4 +771,7 @@ export const en = {
   'discover_battle': 'Battle',
   'discover_bag_wip': 'Bag is under development',
   'discover_battle_wip': 'Battle is under development',
+  'gt_no_submissions': 'No submissions yet',
+  'gt_anonymous': 'Anonymous',
+  'gt_pick': 'Pick this one',
 };

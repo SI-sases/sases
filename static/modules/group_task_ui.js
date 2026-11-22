@@ -68,14 +68,14 @@ window.openTaskDetail = function(taskId) {
     const isOpen = task.status === 'open';
     let subHtml = '';
     if (subs.length === 0) {
-      subHtml = '<div style="text-align:center;color:#999;padding:30px 0;">暂无提交</div>';
+      subHtml = '<div style="text-align:center;color:#999;padding:30px 0;">' + t('gt_no_submissions') + '</div>';
     } else {
       subs.forEach(s => {
         subHtml += '<div style="border:1px solid #eee;border-radius:8px;padding:12px;margin-bottom:10px;">';
-        subHtml += '<div style="font-size:13px;color:#666;margin-bottom:6px;">' + (s.submitter_name || '匿名') + '</div>';
+        subHtml += '<div style="font-size:13px;color:#666;margin-bottom:6px;">' + (s.submitter_name || t('gt_anonymous')) + '</div>';
         subHtml += '<div style="font-size:14px;color:#333;word-break:break-all;white-space:pre-wrap;margin-bottom:8px;">' + (s.content || '') + '</div>';
         if (isOwner && isOpen) {
-          subHtml += '<button class="pick-sub-btn" data-sid="' + s.id + '" style="padding:6px 14px;background:#07c160;color:#fff;border:none;border-radius:4px;font-size:13px;cursor:pointer;">选择此方案</button>';
+          subHtml += '<button class="pick-sub-btn" data-sid="' + s.id + '" style="padding:6px 14px;background:#07c160;color:#fff;border:none;border-radius:4px;font-size:13px;cursor:pointer;">' + t('gt_pick') + '</button>';
         }
         subHtml += '</div>';
       });

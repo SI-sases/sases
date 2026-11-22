@@ -771,4 +771,7 @@ export const zh = {
   'discover_battle': '对战',
   'discover_bag_wip': '背包功能开发中',
   'discover_battle_wip': '对战功能开发中',
+  'gt_no_submissions': '暂无提交',
+  'gt_anonymous': '匿名',
+  'gt_pick': '选择此方案',
 };
