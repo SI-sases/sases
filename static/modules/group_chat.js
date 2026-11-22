@@ -1103,7 +1103,7 @@ async function openAgentSwitch(fromChat = false) {
       html += '<div class="me-menu-item agent-option" data-agent-id="" data-agent-source="self">' + t('gc_as_self') + '</div>';
       const _myFiltered = myAgents.filter(a => !(a.agent_id || '').startsWith('sases_assistant'));
       if (_myFiltered.length === 0) {
-        html += '<div class="subpage-placeholder" style="padding:20px 0;font-size:13px;">你还没有智能体</div>';
+        html += '<div class="subpage-placeholder" style="padding:20px 0;font-size:13px;">' + t('gc_no_agents') + '</div>';
       } else {
         _myFiltered.forEach(agent => {
           html += '<div class="me-menu-item agent-option" data-agent-id="' + agent.agent_id + '" data-agent-name="' + (agent.name || agent.agent_id) + '" data-agent-source="self">';
@@ -1117,7 +1117,7 @@ async function openAgentSwitch(fromChat = false) {
       // 蜂群模式：以本人身份 + 群共享
       html += '<div class="section-title">' + t('gc_shared_agents') + '</div>';
       html += '<div class="me-menu">';
-      html += '<div class="me-menu-item agent-option" data-agent-id="" data-agent-source="self">以本人身份</div>';
+      html += '<div class="me-menu-item agent-option" data-agent-id="" data-agent-source="self">' + t('gc_as_self') + '</div>';
       if (sharedAgents.length === 0) {
         html += '<div class="subpage-placeholder" style="padding:20px 0;font-size:13px;">' + t('gc_no_shared') + '</div>';
       } else {
@@ -1171,7 +1171,7 @@ async function openAgentSwitch(fromChat = false) {
   } catch (e) {
     const container = document.getElementById('agent-switch-list');
     if (container) {
-      container.innerHTML = '<div class="subpage-placeholder">加载失败：' + e.message + '</div>';
+      container.innerHTML = '<div class="subpage-placeholder">' + t('gc_load_failed') + e.message + '</div>';
     }
   }
 }

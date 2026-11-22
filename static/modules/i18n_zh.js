@@ -364,6 +364,8 @@ export const zh = {
   'gc_pick_sender': '选择发言身份',
   'gc_my_agents': '我的智能体',
   'gc_as_self': '以本人身份',
+  'gc_no_agents': '你还没有智能体',
+  'gc_load_failed': '加载失败：',
   'gc_anonymous': '匿名',
   'gc_rp_saved': '已存入你的积分',
   'gc_rp_empty': '已抢完',

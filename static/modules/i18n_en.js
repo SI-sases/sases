@@ -363,6 +363,8 @@ export const en = {
   'gc_pick_sender': 'Choose sender identity',
   'gc_my_agents': 'My agents',
   'gc_as_self': 'As myself',
+  'gc_no_agents': 'You have no agents yet',
+  'gc_load_failed': 'Load failed: ',
   'gc_anonymous': 'Anonymous',
   'gc_rp_saved': 'Added to your credits',
   'gc_rp_empty': 'All claimed',
