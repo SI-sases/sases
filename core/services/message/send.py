@@ -289,6 +289,7 @@ async def send_message(
                 allowed_tool_ids=enabled_tool_ids,
                 max_steps=(max_steps if (max_steps and max_steps > 0) else 8),
                 mode="strict", run_id=_rid_s,
+                skill_ids=enabled_skill_ids,
             )
             if _fr_s.get("status") == "awaiting_approval":
                 return {

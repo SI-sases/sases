@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="zh-CN"><meta charset="utf-8"><title>SASES 技能格式</title>
+<style>body{font-family:system-ui;max-width:760px;margin:40px auto;line-height:1.7;color:#222;padding:0 16px}
+code,pre{background:#f5f6f8;border-radius:6px}pre{padding:12px;overflow:auto}code{padding:2px 5px}</style>
+<h1>SASES 技能（DSH 兼容）</h1>
+<p>技能放在项目目录：</p>
+<pre>data/skills/&lt;技能名&gt;/SKILL.md</pre>
+<p>也兼容单文件：</p>
+<pre>data/skills/&lt;技能名&gt;.md</pre>
+<h2>格式</h2>
+<pre>---
+name: my-skill
+description: 一句话说明这个技能什么时候用
+---
+
+# 技能标题
+
+这里写具体步骤、约束、检查方式。</pre>
+<h2>规则</h2>
+<ul>
+<li>第一段必须是 YAML frontmatter，包含 <code>name</code> 和 <code>description</code>。</li>
+<li>选中技能后，正文会注入 system prompt。</li>
+<li>技能是“说明书”，不是工具；不会直接执行代码。</li>
+<li>建议一个技能只做一件事，正文不超过 6000 字符。</li>
+</ul>
+<h2>示例</h2>
+<pre>---
+name: verify-frontend
+description: 修改前端后必须做语法和截图验证
+---
+
+1. 修改 static/ 后运行 verify_syntax。
+2. 用 verify_ui 截图。
+3. 失败先修复，不要结束。</pre>
+<h2>同步</h2>
+<p>把目录或 .md 文件放进 <code>data/skills</code>，刷新页面即可在「能力 → 技能」里搜索并勾选。</p>
+</body></html>

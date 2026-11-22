@@ -62,6 +62,7 @@ class StreamMessageRequest(BaseModel):
     msg_type: Optional[str] = "standard"
     attachments: Optional[list] = None
     quote_content: Optional[str] = None
+    enabled_skill_ids: Optional[list] = None
 
 
 class PinRequest(BaseModel):
@@ -144,12 +145,14 @@ async def stream_message(body: StreamMessageRequest, user_id: int = Depends(get_
                     agent_id=_agent_id,
                     content=_text, sender_agent_id=body.sender_agent_id,
                     quote_content=body.quote_content,
+                    enabled_skill_ids=body.enabled_skill_ids,
                     agent_mode="strict")
                 yield _sse({"type": "final", "data": res})
                 return
 
             from ..services.chat_stream import stream_chat
-            async for ev in stream_chat(user_id, body.conversation_id, body.content, body.quote_content):
+            async for ev in stream_chat(user_id, body.conversation_id, body.content, body.quote_content,
+                                        skill_ids=body.enabled_skill_ids):
                 yield _sse(ev)
         except Exception as e:
             yield _sse({"type": "error", "error": str(e)})

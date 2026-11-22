@@ -7,7 +7,7 @@ import threading
 from ..db import db_cursor
 
 
-async def stream_chat(user_id: int, conversation_id: int, content: str, quote_content=None, max_tokens: int = 1200):
+async def stream_chat(user_id: int, conversation_id: int, content: str, quote_content=None, max_tokens: int = 1200, skill_ids=None):
     from .agent_memory import backfill as _am_backfill, history as _am_history
     from .agent_compact import maybe_compact as _maybe_compact
     from .swarm.prompts import BASE_SYSTEM
@@ -27,6 +27,13 @@ async def stream_chat(user_id: int, conversation_id: int, content: str, quote_co
         "role": "system",
         "content": BASE_SYSTEM + "\n【角色：聊天】简洁中文直接回答；不要输出计划、JSON 或工具调用。",
     }] + hist
+    try:
+        from . import skill_service
+        _sp = skill_service.prompt_for(skill_ids)
+        if _sp:
+            messages[0]["content"] += "\n\n" + _sp
+    except Exception as _e_sk:
+        print("[stream] 技能注入失败: " + str(_e_sk))
     if quote_content:
         messages.append({"role": "user", "content": "【引用消息】\n" + str(quote_content)[:1000]})
     messages.append({"role": "user", "content": content})

@@ -190,7 +190,9 @@
     });
 
     if (!shown.length) {
-      html += '<div class="cp-empty">' + (_tab === 'skill' ? '暂无适配 DSH 的技能（放入 data/skills/*.md）' : '暂无外部 API') + '</div>';
+      html += '<div class="cp-empty">' + (_tab === 'skill'
+        ? '暂无技能<br><span style="font-size:11px;color:#aaa">放入 data/skills/&lt;名称&gt;/SKILL.md<br><a href="/static/skills_help.html" target="_blank">格式说明</a></span>'
+        : '暂无外部 API') + '</div>';
     }
     shown.forEach(function (g) {
       var items = (g.items || []).filter(function (it) {

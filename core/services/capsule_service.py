@@ -31,28 +31,14 @@ def _tool_map() -> Dict[str, Any]:
 
 
 def _skills() -> List[Dict[str, Any]]:
-    out = []
     try:
-        if os.path.isdir(SKILL_DIR):
-            for name in sorted(os.listdir(SKILL_DIR)):
-                if not name.endswith(".md"):
-                    continue
-                sid = name[:-3]
-                title = sid
-                try:
-                    with open(os.path.join(SKILL_DIR, name), "r", encoding="utf-8") as f:
-                        for line in f:
-                            line = line.strip()
-                            if line.startswith("#"):
-                                title = line.lstrip("#").strip() or sid
-                                break
-                except Exception:
-                    pass
-                out.append({"id": sid, "label": title, "type": "skill",
-                            "risk": "read", "desc": "技能：注入指令，不直接执行代码"})
+        from . import skill_service
+        return [{"id": s["id"], "label": s.get("label") or s["id"], "type": "skill",
+                 "risk": "read", "desc": s.get("desc") or "DSH 兼容技能"}
+                for s in skill_service.list_skills()]
     except Exception as e:
         print("[capsule] 读取技能失败: " + str(e))
-    return out
+        return []
 
 
 def list_capsules(user_id: int) -> Dict[str, Any]:

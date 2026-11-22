@@ -52,7 +52,7 @@ def _tool_schemas(allowed_tool_ids=None, mode="fast"):
     return [tool_schema(t) for t in tools if getattr(t, "module_id", "")]
 
 
-async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8, run_id=None, mode="fast", resume=False, supervisor_id=None, on_event=None):
+async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8, run_id=None, mode="fast", resume=False, supervisor_id=None, on_event=None, skill_ids=None):
     if not conversation_id:
         return {"status": "error", "content": "缺少会话", "steps": 0, "history": []}
 
@@ -69,6 +69,13 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
             hist = agent_memory.history(conversation_id)
 
     messages = [{"role": "system", "content": BASE_SYSTEM}] + hist
+    try:
+        from . import skill_service
+        _sp = skill_service.prompt_for(skill_ids)
+        if _sp:
+            messages[0]["content"] += "\n\n" + _sp
+    except Exception as _e_sk:
+        print("[skill] 注入失败: " + str(_e_sk))
     try:
         from .agent_context import build_runtime_context
         _runtime = build_runtime_context(user_id, conversation_id, goal, mode)
