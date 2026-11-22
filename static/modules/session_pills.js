@@ -103,7 +103,7 @@
       panel.innerHTML = '<div class="sp-title">后台任务' +
         (runs.filter(function (x) { return x.status === 'queued'; }).length ? ' · 排队 ' +
           runs.filter(function (x) { return x.status === 'queued'; }).length : '') + '</div>' + runs.map(function (r) {
-        const paused = r.status === 'paused';
+        const paused = r.status === 'paused' || r.status === 'partial';
         const child = r.parent_run_id ? ' sp-child' : '';
         const label = r.parent_run_id ? '↳ ' : '';
         return '<div class="sp-row' + child + '"><div class="sp-main"><div class="sp-name">' + label + esc(r.goal || ('run #' + r.id)) +

@@ -95,7 +95,7 @@ def list_active_runs(user_id: int = Depends(get_current_user)):
             "(SELECT content FROM agent_messages am WHERE am.run_id=r.id AND am.role='assistant' "
             " ORDER BY am.id DESC LIMIT 1) AS last_result "
             "FROM supervisor_runs r WHERE r.user_id=? AND ("
-            "r.status IN ('running','paused','awaiting_approval','awaiting_user') "
+            "r.status IN ('running','paused','partial','awaiting_approval','awaiting_user') "
             "OR (r.status='failed' AND r.parent_run_id IS NOT NULL AND EXISTS ("
             "SELECT 1 FROM supervisor_runs p WHERE p.id=r.parent_run_id "
             "AND p.status IN ('running','paused','awaiting_approval','awaiting_user')))) "

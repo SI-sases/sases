@@ -658,6 +658,10 @@ async def _run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=
         if (_is_investigation(goal) and step >= max_steps - 1 and _dirty_files):
             _force_final = True
 
+    if _dirty_files and _verified_files:
+        return {"status": "partial",
+                "content": "已部分完成：已验证 " + str(len(_verified_files)) + " 个文件，未完成部分可继续。",
+                "steps": max_steps, "history": used}
     return {"status": "max_steps", "content": "达到步数上限，未完成任务。", "steps": max_steps, "history": used}
 
 
