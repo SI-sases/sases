@@ -453,6 +453,8 @@ export const zh = {
   'sw_no_agents': '你还没有智能体，请先在"我的-模型管理"添加',
   'sw_title': '蜂群模式管理',
   'sw_switch_failed': '切换失败：',
+  'sw_share_failed': '共享失败：',
+  'sw_unshare_failed': '取消共享失败：',
   'sw_network_error': '网络错误：',
   'gc_report_wip': '群汇报开发中',
   'gc_member': '成员',

@@ -106,7 +106,7 @@ window.openSwarmConfig = async function(groupId) {
                 body: JSON.stringify({ agent_id: agentId })
               });
               const data = await resp.json();
-              if (data.error || data.detail) { alert('取消共享失败：' + (data.error || data.detail)); return; }
+              if (data.error || data.detail) { alert(t('sw_unshare_failed') + (data.error || data.detail)); return; }
               sharedIds.delete(agentId);
             } else {
               const resp = await fetch('/group/' + groupId + '/resource-pool/bind', {
@@ -115,14 +115,14 @@ window.openSwarmConfig = async function(groupId) {
                 body: JSON.stringify({ agent_id: agentId, model_id: agentId, daily_limit: 100 })
               });
               const data = await resp.json();
-              if (data.error || data.detail) { alert('共享失败：' + (data.error || data.detail)); return; }
+              if (data.error || data.detail) { alert(t('sw_share_failed') + (data.error || data.detail)); return; }
               sharedIds.add(agentId);
             }
             const sw = row.querySelector('.switch');
             if (sw) {
               if (sharedIds.has(agentId)) sw.classList.add('on'); else sw.classList.remove('on');
             }
-          } catch (e) { alert('网络错误：' + e.message); }
+          } catch (e) { alert(t('sw_network_error') + e.message); }
         };
       });
 
