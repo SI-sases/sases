@@ -128,7 +128,7 @@ window.openGroupKnowledgeAdd = function(groupId) {
     </div>
     <button class="save-btn" id="gk-submit">保存</button>
   `;
-  window.openSubpage('添加知识', html, {
+  window.openSubpage(t('gk_add_title'), html, {
     returnAction: () => window.openGroupKnowledge(groupId)
   });
   setTimeout(() => {

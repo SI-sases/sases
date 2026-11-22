@@ -467,6 +467,7 @@ export const en = {
   'gk_policy': 'Policy',
   'gk_title': 'Group knowledge base',
   'gk_add': 'Add',
+  'gk_add_title': 'Add knowledge',
   'gk_load_failed': 'Load failed: ',
   'gk_untitled': '(Untitled)',
   'gk_detail_title': 'Knowledge details',
