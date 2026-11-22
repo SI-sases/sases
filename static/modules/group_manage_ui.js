@@ -140,7 +140,7 @@ window.openGroupManage = async function(groupId) {
       btn.onclick = async (e) => {
         e.stopPropagation();
         const uid = btn.dataset.uid;
-        if (!confirm('确定移除该管理员？')) return;
+        if (!confirm(t('gm_remove_confirm'))) return;
         try {
           const resp = await fetch('/group/' + groupId + '/members/role', {
             method: 'POST',
@@ -148,8 +148,8 @@ window.openGroupManage = async function(groupId) {
             body: JSON.stringify({ username_or_id: String(uid), role: 'member' })
           });
           const data = await resp.json();
-          if (data.error || data.detail) { alert('移除失败：' + (data.error || data.detail)); return; }
-          alert('已移除');
+          if (data.error || data.detail) { alert(t('gm_remove_failed') + '：' + (data.error || data.detail)); return; }
+          alert(t('gm_removed'));
           window.openGroupManage(groupId);
         } catch (err) { alert('网络错误：' + err.message); }
       };
