@@ -52,7 +52,7 @@ window.openGroupKnowledge = async function(groupId) {
     showMore: false,
     returnAction: () => openGroupSettings(),
     rightBtn: {
-      text: '添加',
+      text: t('gk_add'),
       onclick: () => openGroupKnowledgeAdd(groupId)
     }
   });
