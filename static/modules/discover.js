@@ -20,7 +20,7 @@ export function initDiscover() {
 
 function renderDiscoverEntries(container) {
   const entries = [
-    { icon: '🌌', title: t('wisdom_space'), desc: '进入你的智维空间', action: 'wisdom' },
+    { icon: '🌌', title: t('wisdom_space'), desc: t('discover_wisdom_desc'), action: 'wisdom' },
     { icon: '🌐', title: t('ai_circle'), desc: t('ai_moments'), action: 'ai-circle' },
     { icon: '📷', title: t('scan'), desc: t('scan_qr_or_seed'), action: 'scan' },
     { icon: '🏆', title: t('leaderboard'), desc: t('contribution_rank'), action: 'leaderboard' },
@@ -71,11 +71,11 @@ async function openWisdomMap() {
     <div class="wisdom-map">
       <div class="map-header">
         <div class="map-stat">
-          <span class="map-stat-label">积分</span>
+          <span class="map-stat-label">${t('discover_points')}</span>
           <span class="map-stat-value" id="map-credits">${mapData.credits}</span>
         </div>
         <div class="map-stat">
-          <span class="map-stat-label">刷新</span>
+          <span class="map-stat-label">${t('discover_refresh')}</span>
           <span class="map-stat-value" id="map-refresh-timer">--:--</span>
         </div>
       </div>
@@ -88,7 +88,7 @@ async function openWisdomMap() {
         
         <div class="map-yunchong-node" id="map-yunchong-node">
           <div class="map-yunchong-icon">🎮</div>
-          <div class="map-yunchong-label">云宠战役</div>
+          <div class="map-yunchong-label">${t('discover_yunchong_battle')}</div>
         </div>
         
         <div class="map-user">
@@ -107,7 +107,7 @@ async function openWisdomMap() {
     </div>
   `;
 
-  window.openSubpage('智维空间', html, { showMore: false });
+  window.openSubpage(t('wisdom_space'), html, { showMore: false });
 
   renderMapNodes(mapData);
   startRefreshCountdown(mapData.next_refresh_seconds);
@@ -167,7 +167,7 @@ function renderMapNodes(mapData) {
   if (mapData.tasks.length === 0) {
     const empty = document.createElement('div');
     empty.className = 'map-empty-hint';
-    empty.textContent = '暂无任务，系统正在生成';
+    empty.textContent = t('discover_no_tasks');
     container.appendChild(empty);
     return;
   }
@@ -216,8 +216,8 @@ function renderMapNodes(mapData) {
 
 function openTaskPreview(task) {
   const rarityColor = getRarityColor(task.pet_level);
-  const diffLabel = { low: '简单', medium: '中等', high: '困难' }[task.difficulty] || task.difficulty;
-  const energyText = task.energy_cost > 0 ? `消耗 ${task.energy_cost} 积分` : '免费';
+  const diffLabel = { low: t('difficulty_low'), medium: t('difficulty_medium'), high: t('difficulty_high') }[task.difficulty] || task.difficulty;
+  const energyText = task.energy_cost > 0 ? t('discover_energy_cost').replace('{n}', task.energy_cost) : t('discover_free');
 
   const html = `
     <div class="task-preview">
@@ -228,35 +228,35 @@ function openTaskPreview(task) {
       
       <div class="task-preview-info">
         <div class="task-preview-row">
-          <span class="task-preview-label">距离</span>
-          <span class="task-preview-value">${task.distance_meters} 米</span>
+          <span class="task-preview-label">${t('discover_distance')}</span>
+          <span class="task-preview-value">${task.distance_meters} ${t('unit_meter')}</span>
         </div>
         <div class="task-preview-row">
-          <span class="task-preview-label">难度</span>
+          <span class="task-preview-label">${t('discover_difficulty')}</span>
           <span class="task-preview-value">${diffLabel}</span>
         </div>
         <div class="task-preview-row">
-          <span class="task-preview-label">可解救</span>
-          <span class="task-preview-value" style="color:${rarityColor};">${task.pet_level} 级宠物</span>
+          <span class="task-preview-label">${t('discover_rescuable')}</span>
+          <span class="task-preview-value" style="color:${rarityColor};">${t('discover_pet_level').replace('{n}', task.pet_level)}</span>
         </div>
         <div class="task-preview-row">
-          <span class="task-preview-label">消耗</span>
+          <span class="task-preview-label">${t('discover_cost')}</span>
           <span class="task-preview-value">${energyText}</span>
         </div>
       </div>
       
       <div class="task-preview-desc">
-        ${task.detail || '（无详细描述）'}
+        ${task.detail || t('discover_no_detail')}
       </div>
       
       <div class="task-preview-actions">
-        <button class="task-preview-btn-cancel" id="task-preview-cancel">取消</button>
-        <button class="task-preview-btn-start" id="task-preview-start">开始解救</button>
+        <button class="task-preview-btn-cancel" id="task-preview-cancel">${t('cancel')}</button>
+        <button class="task-preview-btn-start" id="task-preview-start">${t('discover_start_rescue')}</button>
       </div>
     </div>
   `;
 
-  window.openSubpage('任务详情', html, {
+  window.openSubpage(t('discover_task_detail'), html, {
     showMore: false,
     returnAction: () => openWisdomMap()
   });
@@ -268,14 +268,14 @@ function openTaskPreview(task) {
   document.getElementById('task-preview-start').onclick = async () => {
     const startBtn = document.getElementById('task-preview-start');
     startBtn.disabled = true;
-    startBtn.textContent = '处理中...';
+    startBtn.textContent = t('discover_processing');
 
     try {
       const result = await api.acceptYunchongTask(task.id);
       if (!result.success) {
-        alert(result.message || '无法接取任务');
+        alert(result.message || t('discover_cannot_accept'));
         startBtn.disabled = false;
-        startBtn.textContent = '开始解救';
+        startBtn.textContent = t('discover_start_rescue');
         return;
       }
 

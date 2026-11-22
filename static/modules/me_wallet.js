@@ -32,7 +32,7 @@ export async function openWallet() {
       historyHtml += '</div>';
     }
   } catch (e) {
-    historyHtml = `<div class="subpage-placeholder">${t('loading_failed') || '加载失败'}</div>`;
+    historyHtml = `<div class="subpage-placeholder">${t('loading_failed')}</div>`;
   }
 
   const contentHtml = `
@@ -43,10 +43,10 @@ export async function openWallet() {
     <div class="wallet-card" style="background: linear-gradient(135deg, #667eea, #764ba2);cursor:pointer;" id="wallet-compute-entry">
       <div class="wallet-label">${t('compute_power')}</div>
       <div class="wallet-balance">${computeBalance}</div>
-      <div style="font-size:12px;color:rgba(255,255,255,0.8);margin-top:4px;">点击进入算力钱包 ›</div>
+      <div style="font-size:12px;color:rgba(255,255,255,0.8);margin-top:4px;">${t('wallet_enter_compute')}</div>
     </div>
     <div class="me-menu">
-      <div class="me-menu-item" id="credit-risk-entry"><span class="menu-icon">⚠️</span><span class="menu-label">积分风险与使用说明</span><span class="menu-arrow">></span></div>
+      <div class="me-menu-item" id="credit-risk-entry"><span class="menu-icon">⚠️</span><span class="menu-label">${t('credit_risk_title')}</span><span class="menu-arrow">></span></div>
     </div>
     <div class="me-menu">
       <div class="me-menu-item" id="menu-exchange"><span class="menu-label">${t('exchange')}</span><span class="menu-arrow">›</span></div>
@@ -79,7 +79,7 @@ function openExchangePage() {
     <button class="save-btn" id="save-exchange">${t('confirm')}</button>
   `;
   window.openSubpage(t('exchange'), contentHtml, {
-    rightBtn: { text: '记录', onclick: () => showActionHistory('exchange') }
+    rightBtn: { text: t('records'), onclick: () => showActionHistory('exchange') }
   });
   setTimeout(() => {
     document.getElementById('save-exchange').onclick = async () => {
@@ -105,14 +105,14 @@ window.openWallet = openWallet;
 
 
 async function showActionHistory(kind) {
-  const title = kind === 'exchange' ? '兑换记录' : '质押记录';
-  const kw = kind === 'exchange' ? '兑换' : '质押';
+  const title = kind === 'exchange' ? t('exchange_records') : t('stake_records');
+  const kw = kind === 'exchange' ? t('exchange') : t('stake');
   let history = [];
   try {
     const data = await api.getCreditHistory(50);
     history = (data.history || []).filter(h => (h.action || '').includes(kw));
   } catch (e) {}
-  const html = history.length === 0 ? '<div class="subpage-placeholder">暂无' + title + '</div>' : '<div class="me-menu">' + history.map(h => {
+  const html = history.length === 0 ? '<div class="subpage-placeholder">' + t('no_history') + '</div>' : '<div class="me-menu">' + history.map(h => {
     const date = h.created_at ? new Date(h.created_at).toLocaleString('zh-CN') : '';
     const sign = h.points > 0 ? '+' : '';
     const color = h.points > 0 ? '#34c759' : '#ff3b30';
@@ -124,20 +124,20 @@ async function showActionHistory(kind) {
 
 async function openCreditDetail(kind) {
 const isSeed=kind==='seed';
-const title=isSeed?'种子积分明细':'算力积分明细';
+const title=isSeed?t('seed_credit_detail'):t('compute_credit_detail');
 let items=[];
 try {
 if (isSeed) {
 const raw=(await api.getCreditHistory(50)).history||[];
-items=raw.map(h=>({title:h.action||'积分变动',amount:h.points||0,time:h.created_at,cat:(h.action||'').includes('质押')?'stake':((h.points||0)>0?'income':'expense')}));
+items=raw.map(h=>({title:h.action||t('credit_change_short'),amount:h.points||0,time:h.created_at,cat:(h.action||'').includes('质押')?'stake':((h.points||0)>0?'income':'expense')}));
 } else {
 const raw=(await api.getComputeTransactions(50)).transactions||[];
-items=raw.map(t=>({title:({recharge:'充值',exchange:'积分兑换',consume:'算力消费'}[t.tx_type]||t.tx_type)+(t.service_key?' · '+t.service_key:''),amount:t.amount||0,time:t.created_at,cat:(t.amount||0)>0?'income':'expense'}));
+items=raw.map(t=>({title:({recharge:t('tx_recharge'),exchange:t('exchange'),consume:t('tx_consume')}[t.tx_type]||t.tx_type)+(t.service_key?' · '+t.service_key:''),amount:t.amount||0,time:t.created_at,cat:(t.amount||0)>0?'income':'expense'}));
 }
 } catch (e) {}
-const fmt=iso=>{if(!iso)return '';const d=new Date(iso),n=new Date(),pad=x=>(x<10?'0'+x:x);const hm=pad(d.getHours())+':'+pad(d.getMinutes());if(d.toDateString()===n.toDateString())return hm;if(d.toDateString()===new Date(n.getTime()-86400000).toDateString())return '昨天 '+hm;return (d.getMonth()+1)+'-'+pad(d.getDate())+' '+hm;};
-const render=arr=>arr.length===0?'<div class="subpage-placeholder" style="padding:40px 0;text-align:center;color:#999;">暂无记录</div>':arr.map(it=>'<div class="me-menu-item"><div class="menu-text"><div class="menu-title">'+it.title+'</div><div class="menu-desc" style="color:#999;font-size:12px;">'+fmt(it.time)+'</div></div><span class="menu-value" style="color:'+(it.amount>0?'#34c759':'#ff3b30')+';">'+(it.amount>0?'+':'')+it.amount+'</span></div>').join('');
-const cats=isSeed?[{k:'all',l:'全部'},{k:'income',l:'获取'},{k:'expense',l:'消耗'},{k:'stake',l:'质押'}]:[{k:'all',l:'全部'},{k:'income',l:'获取'},{k:'expense',l:'消耗'}];
+const fmt=iso=>{if(!iso)return '';const d=new Date(iso),n=new Date(),pad=x=>(x<10?'0'+x:x);const hm=pad(d.getHours())+':'+pad(d.getMinutes());if(d.toDateString()===n.toDateString())return hm;if(d.toDateString()===new Date(n.getTime()-86400000).toDateString())return t('yesterday')+' '+hm;return (d.getMonth()+1)+'-'+pad(d.getDate())+' '+hm;};
+const render=arr=>arr.length===0?'<div class="subpage-placeholder" style="padding:40px 0;text-align:center;color:#999;">' + t('no_history') + '</div>':arr.map(it=>'<div class="me-menu-item"><div class="menu-text"><div class="menu-title">'+it.title+'</div><div class="menu-desc" style="color:#999;font-size:12px;">'+fmt(it.time)+'</div></div><span class="menu-value" style="color:'+(it.amount>0?'#34c759':'#ff3b30')+';">'+(it.amount>0?'+':'')+it.amount+'</span></div>').join('');
+const cats=isSeed?[{k:'all',l:t('cat_all')},{k:'income',l:t('cat_income')},{k:'expense',l:t('cat_expense')},{k:'stake',l:t('stake')}]:[{k:'all',l:t('cat_all')},{k:'income',l:t('cat_income')},{k:'expense',l:t('cat_expense')}];
 const tabs=cats.map(c=>'<div class="credit-tab credit-tab-'+c.k+'" style="flex:1;text-align:center;padding:8px 0;font-size:14px;color:#666;cursor:pointer;">'+c.l+'</div>').join('');
 let html='<div style="display:flex;border-bottom:1px solid #eee;">'+tabs+'</div><div id="credit-list" style="padding:8px 12px;"></div>';
 window.openSubpage(title,html,{showMore:false,returnAction:()=>openWallet()});
@@ -177,5 +177,5 @@ function openCreditRiskPage() {
     '<p>17. 积分不可用于任何博彩、传销、非法集资活动。</p>' +
     '<p>18. 如监管部门要求调整，平台将依法配合执行。</p>' +
     '</div>';
-  window.openSubpage('积分风险与使用说明', html, { showMore: false, returnAction: () => openWallet() });
+  window.openSubpage(t('credit_risk_title'), html, { showMore: false, returnAction: () => openWallet() });
 }
