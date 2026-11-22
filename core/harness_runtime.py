@@ -76,8 +76,8 @@ class HarnessRuntime:
         self.user_grants = set()
         # v0.19: 熔断器
         self._circuit_state = {}
-        self._circuit_fail_threshold = 5
-        self._circuit_cooldown_sec = 300
+        self._circuit_fail_threshold = 10
+        self._circuit_cooldown_sec = 60
 
     def _detect_conflicts(self, modules):
         """v0.19: 只检测不同工具之间 id 重复（忽略别名）"""
