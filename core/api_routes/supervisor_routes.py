@@ -91,8 +91,10 @@ async def approve_run(run_id: int, body: ApproveBody, user_id: int = Depends(get
 def list_active_runs(user_id: int = Depends(get_current_user)):
     with db_cursor() as cur:
         cur.execute(
-            "SELECT id, conversation_id, goal, status, supervisor_id, created_at, parent_run_id "
-            "FROM supervisor_runs WHERE user_id=? AND status IN "
+            "SELECT r.id, r.conversation_id, r.goal, r.status, r.supervisor_id, r.created_at, r.parent_run_id, "
+            "(SELECT content FROM agent_messages am WHERE am.run_id=r.id AND am.role='assistant' "
+            " ORDER BY am.id DESC LIMIT 1) AS last_result "
+            "FROM supervisor_runs r WHERE r.user_id=? AND r.status IN "
             "('running','paused','awaiting_approval','awaiting_user') "
             "ORDER BY id DESC LIMIT 30", (user_id,))
         rows = cur.fetchall()

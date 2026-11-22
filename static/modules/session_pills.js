@@ -75,6 +75,12 @@
     panel.style.top = 'auto';
     panel.style.bottom = Math.max(8, innerHeight - r.top + 6) + 'px';
     panel.onclick = function (e) { e.stopPropagation(); };
+    panel.addEventListener('click', function (e) {
+      const row = e.target && e.target.closest ? e.target.closest('.sp-child') : null;
+      if (!row) return;
+      const d = row.querySelector('.sp-detail');
+      if (d) d.style.display = d.style.display === 'none' ? 'block' : 'none';
+    });
     document.body.appendChild(panel);
     render();
     if (type === 'task-pill') timer = setInterval(render, 5000);
@@ -98,7 +104,10 @@
         const child = r.parent_run_id ? ' sp-child' : '';
         const label = r.parent_run_id ? '↳ ' : '';
         return '<div class="sp-row' + child + '"><div class="sp-main"><div class="sp-name">' + label + esc(r.goal || ('run #' + r.id)) +
-          '</div><div class="sp-sub">run #' + r.id + ' · ' + esc(r.status) + '</div></div>' +
+          '</div><div class="sp-sub">run #' + r.id + ' · ' + esc(r.status) + '</div>' +
+          (child && r.last_result ? '<div class="sp-detail" style="display:none;white-space:pre-wrap;margin-top:6px;font-size:11px;color:#555;max-height:160px;overflow:auto;">' +
+            esc(String(r.last_result).slice(0, 1200)) + '</div>' : '') +
+          '</div>' +
           (r.parent_run_id ? '' : '<button class="sp-btn ' + (paused ? 'warn' : '') + '" data-run="' + r.id + '" data-paused="' + (paused ? '1' : '0') + '">' +
           (paused ? '继续' : '暂停') + '</button>') + '</div>';
       }).join('');
