@@ -60,7 +60,7 @@ async def _worker():
                 run["user_id"], run["conversation_id"], run["goal"],
                 source=run.get("task_type") or "chat",
                 supervisor_id=run.get("supervisor_id") or "sases_assistant",
-                max_steps=16, run_id=run_id, finish=True,
+                max_steps=20, run_id=run_id, finish=True,
             )
             await _notify(run["user_id"], run_id, "completed")
             latest = _get_run(run_id)

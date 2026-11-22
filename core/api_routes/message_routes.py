@@ -71,7 +71,7 @@ class SendMessageRequest(BaseModel):
     background: Optional[bool] = False
     subagent_agent_id: Optional[str] = None
     multi_agent: Optional[bool] = False
-    priority: Optional[int] = 5
+    priority: Optional[int] = 0
     budget_tokens: Optional[int] = 0
     timeout_seconds: Optional[int] = 0
 
@@ -230,7 +230,7 @@ async def send_message(body: SendMessageRequest, user_id: int = Depends(get_curr
                                      supervisor_id=body.agent_id or "sases_assistant",
                                      budget_tokens=body.budget_tokens or 0,
                                      timeout_seconds=body.timeout_seconds or 0)
-        await run_queue_service.enqueue(rid, body.priority or 5)
+        await run_queue_service.enqueue(rid, 0 if body.priority is None else body.priority)
         _persist_skills(cid, body.enabled_skill_ids)
         return {"conversation_id": cid, "run_id": rid, "status": "queued", "background": True}
     _resume_id = None
