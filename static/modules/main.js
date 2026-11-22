@@ -172,7 +172,7 @@ function initLoginUI() {
       localStorage.setItem('sases_user_id', data.user_id);
       localStorage.setItem('sases_sas_id', data.sases_id || '');
       window.location.reload();
-    } catch (err) { alert('网络错误: ' + err.message); }
+    } catch (err) { alert(t('main.network_error') + ': ' + err.message); }
   });
 
   const resetSubmit = document.getElementById('reset-submit');
@@ -180,11 +180,11 @@ function initLoginUI() {
     const u = document.getElementById('reset-username').value.trim();
     const em = document.getElementById('reset-email').value.trim();
     const p = document.getElementById('reset-password').value;
-    if (!u || !em || !p) { alert('所有字段都必须填写'); return; }
+    if (!u || !em || !p) { alert(t('main.all_fields_required')); return; }
     try {
       const res = await fetch('/auth/reset-password', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ username: u, email: em, new_password: p }) });
       const data = await res.json();
-      if (!res.ok) { const msg = data.error || data.message || (Array.isArray(data.detail) ? data.detail[0]?.msg : data.detail) || '重置失败'; alert(msg); return; }
+      if (!res.ok) { const msg = data.error || data.message || (Array.isArray(data.detail) ? data.detail[0]?.msg : data.detail) || t('main.reset_failed'); alert(msg); return; }
       alert(data.message || '密码已重置，请用新密码登录');
       showLoginForm('login');
     } catch (err) { alert('网络错误: ' + err.message); }
