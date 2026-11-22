@@ -294,6 +294,8 @@ export const en = {
   'gc_announcement': 'Group Announcement',
   'gc_save_failed': 'Save failed: ',
   'gc_saved': 'Saved',
+  'gc_rp_config': 'Red packet settings',
+  'gc_hour_range': 'Hour must be 0-23',
   'gc_mode_swarm': 'Swarm Mode',
   'gc_files_wip': 'Group files coming soon',
   'gc_report_wip': 'Group reports coming soon',

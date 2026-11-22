@@ -294,6 +294,8 @@ export const zh = {
   'gc_announcement': '群公告',
   'gc_save_failed': '保存失败：',
   'gc_saved': '已保存',
+  'gc_rp_config': '红包配置',
+  'gc_hour_range': '小时必须 0-23',
   'gc_mode_swarm': '蜂群模式',
   'gc_files_wip': '群文件开发中',
   'gc_report_wip': '群汇报开发中',

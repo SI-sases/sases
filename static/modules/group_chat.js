@@ -1384,7 +1384,7 @@ function openRedPacketConfig() {
     </div>
     <button class='save-btn' id='gc-rp-save'>保存配置</button>
   `;
-  window.openSubpage('红包配置', html, { returnAction: () => openGroupCreditsDetail() });
+  window.openSubpage(t('gc_rp_config'), html, { returnAction: () => openGroupCreditsDetail() });
   setTimeout(async () => {
     let uh = 20, au = 'all';
     try {
@@ -1402,7 +1402,7 @@ function openRedPacketConfig() {
     btn.onclick = async () => {
       const lh = parseInt(document.getElementById('gc-rp-hour').value);
       const aud = document.getElementById('gc-rp-audience').value;
-      if (isNaN(lh) || lh < 0 || lh > 23) { alert('小时必须 0-23'); return; }
+      if (isNaN(lh) || lh < 0 || lh > 23) { alert(t('gc_hour_range')); return; }
       const u = _localHourToUtc(lh);
       try {
         const resp = await fetch('/group/' + currentGroupId + '/red-packet/config', {
@@ -1411,7 +1411,7 @@ function openRedPacketConfig() {
           body: JSON.stringify({ hour: u, audience: aud })
         });
         const data = await resp.json();
-        if (data.error || data.detail) { alert('保存失败：' + (data.error || data.detail)); return; }
+        if (data.error || data.detail) { alert(t('gc_save_failed') + (data.error || data.detail)); return; }
         alert('已保存');
         window.closeSubpage();
         openGroupCreditsDetail();
