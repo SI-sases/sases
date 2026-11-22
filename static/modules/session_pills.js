@@ -121,9 +121,9 @@
           ev.stopPropagation();
           const id = b.getAttribute('data-cancel');
           b.disabled = true;
-          b.textContent = '取消中...';
+          b.textContent = t('sp_canceling');
           try { await api('/supervisor/runs/' + id + '/cancel', { method: 'POST' }); await render(); }
-          catch (e) { b.textContent = '失败'; b.disabled = false; }
+          catch (e) { b.textContent = t('sp_failed'); b.disabled = false; }
         };
       });
       panel.querySelectorAll('[data-retry]').forEach(function (b) {
@@ -131,9 +131,9 @@
           ev.stopPropagation();
           const id = b.getAttribute('data-retry');
           b.disabled = true;
-          b.textContent = '重试中...';
+          b.textContent = t('sp_retrying');
           try { await api('/supervisor/runs/' + id + '/resume', { method: 'POST' }); await render(); }
-          catch (e) { b.textContent = '失败'; b.disabled = false; }
+          catch (e) { b.textContent = t('sp_failed'); b.disabled = false; }
         };
       });
       panel.querySelectorAll('[data-run]').forEach(function (b) {
@@ -142,24 +142,24 @@
           const paused = b.getAttribute('data-paused') === '1';
           const action = paused ? 'resume' : 'pause';
           b.disabled = true;
-          b.textContent = paused ? '继续中...' : '暂停中...';
+          b.textContent = paused ? t('sp_resuming') : t('sp_pausing');
           try {
             // 真实调用后端接口：POST /supervisor/runs/{id}/pause|resume
             const res = await api('/supervisor/runs/' + id + '/' + action, { method: 'POST' });
             if (res && res.ok === false) throw new Error('接口返回失败');
             if (action === 'resume' && res && res.resumed === false) {
-              b.textContent = '已解除暂停';
+              b.textContent = t('sp_unpaused');
             }
             await render();
           } catch (e) {
-            b.textContent = '失败';
+            b.textContent = t('sp_failed');
             b.disabled = false;
             b.setAttribute('data-error', '1');
             console.warn('[task-pill] ' + action + ' 失败 run#' + id, e);
           }
         };
       });
-    } catch (e) { panel.innerHTML = '<div class="sp-title">后台任务</div><div class="sp-empty">加载失败</div>'; }
+    } catch (e) { panel.innerHTML = '<div class="sp-title">' + t('sp_tasks') + '</div><div class="sp-empty">' + t('sp_load_failed') + '</div>'; }
   }
 
   async function renderAgents() {
@@ -167,9 +167,9 @@
     try {
       const data = await api('/agents/list');
       const list = data.agents || [];
-      if (!list.length) { panel.innerHTML = '<div class="sp-title">子智能体</div><div class="sp-empty">暂无智能体，请到模型管理添加</div>'; return; }
+      if (!list.length) { panel.innerHTML = '<div class="sp-title">' + t('sp_agents') + '</div><div class="sp-empty">' + t('sp_no_agents') + '</div>'; return; }
       const chosen = localStorage.getItem('sases_subagent_agent_id') || '';
-      panel.innerHTML = '<div class="sp-title">子智能体 <span style="font-weight:400;color:#999;font-size:11px">点一行设为默认模型</span></div>' +
+      panel.innerHTML = '<div class="sp-title">' + t('sp_agents') + ' <span style="font-weight:400;color:#999;font-size:11px">' + t('sp_default_hint') + '</span></div>' +
         list.map(function (a) {
           const active = String(a.agent_id) === chosen;
           return '<div class="sp-row" data-agent="' + esc(a.agent_id || '') + '" style="cursor:pointer;' +
@@ -183,7 +183,7 @@
           renderAgents();
         };
       });
-    } catch (e) { panel.innerHTML = '<div class="sp-title">子智能体</div><div class="sp-empty">加载失败</div>'; }
+    } catch (e) { panel.innerHTML = '<div class="sp-title">' + t('sp_agents') + '</div><div class="sp-empty">' + t('sp_load_failed') + '</div>'; }
   }
 
   function renderPerms() {
@@ -191,10 +191,10 @@
     try { p = Object.assign(p, JSON.parse(localStorage.getItem('sases_perms_v1') || '{}')); } catch (e) {}
     const row = (k, label, desc) => '<div class="sp-perm"><div><div class="sp-name">' + label +
       '</div><div class="sp-sub">' + desc + '</div></div><input type="checkbox" data-perm="' + k + '" ' + (p[k] ? 'checked' : '') + '></div>';
-    panel.innerHTML = '<div class="sp-title">权限</div>' +
-      row('web', '联网', '允许读取网页 / 外部 API') +
-      row('write', '写文件', '允许修改项目文件') +
-      row('schedule', '定时', '允许创建定时任务');
+    panel.innerHTML = '<div class="sp-title">' + t('sp_perms') + '</div>' +
+      row('web', t('sp_web'), t('sp_web_desc')) +
+      row('write', t('sp_write'), t('sp_write_desc')) +
+      row('schedule', t('sp_schedule'), t('sp_schedule_desc'));
     panel.querySelectorAll('[data-perm]').forEach(function (el) {
       el.onchange = function () {
         p[el.getAttribute('data-perm')] = el.checked;
