@@ -14,15 +14,15 @@ from core.services.swarm.prompts import BASE_SYSTEM, BASE_PREFIX_HASH
 
 
 def _direct_syntax_error(path):
-    """独立于 verify_syntax 的 Python 语法回读校验。"""
-    if not str(path).lower().endswith(".py"):
-        return None
+    """独立于 verify_syntax 的语法回读校验（Python compile + tree-sitter JS）。"""
     try:
-        with open(path, encoding="utf-8") as f:
-            compile(f.read(), path, "exec")
-        return None
+        from .syntax_service import check
+        r = check(path)
+        if r.get("ok"):
+            return None
+        return str(r.get("error") or "syntax error")
     except Exception as e:
-        return str(e)
+        return "syntax checker unavailable: " + str(e)
 
 
 
