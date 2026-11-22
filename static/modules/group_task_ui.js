@@ -47,11 +47,11 @@ window.openPublishTaskDialog = function(groupId) {
         headers: { 'Authorization': 'Bearer ' + localStorage.getItem('sases_token'), 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: title.trim(), description: desc, category: category, reward: reward })
       }).then(r => r.json()).then(data => {
-        if (data.error || data.detail) { alert('发布失败：' + (data.error || data.detail)); return; }
+        if (data.error || data.detail) { alert(t('gt_publish_failed') + '：' + (data.error || data.detail)); return; }
         alert(t('groupTask.published'));
         if (typeof window.closeSubpage === 'function') window.closeSubpage();
         if (typeof loadGroupMessages === 'function') loadGroupMessages();
-      }).catch(e => alert('网络错误：' + e.message));
+      }).catch(e => alert(t('gt_network_error') + '：' + e.message));
     };
   }, 300);
 };
@@ -61,7 +61,7 @@ window.openTaskDetail = function(taskId) {
   fetch('/group/tasks/' + taskId, {
     headers: { 'Authorization': 'Bearer ' + localStorage.getItem('sases_token') }
   }).then(r => r.json()).then(task => {
-    if (task.error || task.detail) { alert('加载失败：' + (task.error || task.detail)); return; }
+    if (task.error || task.detail) { alert(t('gt_load_failed') + '：' + (task.error || task.detail)); return; }
     const subs = task.submissions || [];
     const myId = parseInt(localStorage.getItem('sases_user_id') || '0');
     const isOwner = task.created_by === myId;
