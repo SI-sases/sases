@@ -83,6 +83,11 @@ async def _run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=
         print("[compact] 跳过: " + str(_e_cp))
     agent_memory.backfill(conversation_id)
     hist = agent_memory.history(conversation_id, run_id=(run_id if resume else None))
+    try:
+        from .run_context import set_current, get_current
+        set_current(user_id, conversation_id, run_id, (get_current() or {}).get("run_id"))
+    except Exception as _e_ctx:
+        print("[run] context 设置失败: " + str(_e_ctx))
 
     def _mem_append(role, content, **kw):
         kw.setdefault("run_id", run_id)

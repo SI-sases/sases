@@ -1,0 +1,14 @@
+{
+  "id": "subagent",
+  "name": "子智能体",
+  "description": "把一个只读调查子任务交给独立子 run 执行，返回摘要；子任务不能写文件。",
+  "version": "1.0.0",
+  "capabilities": ["subagent", "read_only_child"],
+  "permissions": ["restricted_file_read"],
+  "entrypoint": "main.py",
+  "node_type": "harness",
+  "params": {
+    "goal": {"type": "string", "required": true, "desc": "子任务目标"},
+    "max_steps": {"type": "int", "default": 4, "desc": "最多 6 步"}
+  }
+}
