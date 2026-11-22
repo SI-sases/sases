@@ -44,7 +44,7 @@
         var s = JSON.parse(raw);
         state.apis = s.apis || [];
         state.tools = [];
-        state.skills = [];
+        state.skills = s.skills || [];
         state.hidden = s.hidden || [];
         return true;
       }
@@ -62,10 +62,10 @@
     window.currentSessionAPIs = state.apis.slice();
     // 工具由系统按任务自动选择，不再由胶囊勾选限制
     window.currentSessionTools = null;
-    window.currentSessionSkills = [];
+    window.currentSessionSkills = state.skills.slice();
   }
 
-  function total() { return state.apis.length; }
+  function total() { return state.apis.length + state.skills.length; }
 
   function updatePill() {
     var p = document.getElementById('api-pill');
@@ -88,6 +88,7 @@
     bar.querySelectorAll('.param-chip').forEach(function (x) { x.remove(); });
     var items = [];
     state.apis.forEach(function (id) { items.push({ id: id, type: 'api' }); });
+    state.skills.forEach(function (id) { items.push({ id: id, type: 'skill' }); });
     var settings = document.getElementById('capsule-settings-btn');
     items.forEach(function (it) {
       var chip = document.createElement('span');
@@ -123,6 +124,8 @@
       '#capsule-panel .cp-tab{flex:1;text-align:center;padding:8px 0;cursor:pointer;color:#666}',
       '#capsule-panel .cp-tab.active{color:#007aff;font-weight:600;box-shadow:inset 0 -2px 0 #007aff}',
       '#capsule-panel .cp-body{flex:1;overflow-y:auto;padding:6px 8px}',
+      '#capsule-panel .cp-search{padding:6px 8px;border-bottom:1px solid #eee}',
+      '#capsule-panel .cp-search input{width:100%;box-sizing:border-box;padding:6px 8px;border:1px solid #ddd;border-radius:7px;font-size:12px}',
       '#capsule-panel .cp-group{margin-bottom:8px}',
       '#capsule-panel .cp-ghead{display:flex;align-items:center;gap:6px;padding:4px 2px;color:#333;font-weight:600;font-size:12px}',
       '#capsule-panel .cp-risk{margin-left:auto;font-size:10px;padding:1px 5px;border-radius:7px;background:#eef4ff;color:#1a73e8}',
@@ -149,6 +152,7 @@
   }
 
   var _tab = 'api';
+  var _skillQuery = '';
   var _panel = null;
 
   function inState(type) {
@@ -168,26 +172,35 @@
   function render() {
     if (!_panel) return;
     var tabs = [
-      ['api', '外部 API']
+      ['api', '外部 API'], ['skill', '技能']
     ];
     var html = '<div class="cp-tabs">';
     tabs.forEach(function (t) {
       html += '<div class="cp-tab ' + (_tab === t[0] ? 'active' : '') + '" data-tab="' + t[0] + '">' + t[1] + '</div>';
     });
-    html += '</div><div class="cp-body">';
+    html += '</div>';
+    if (_tab === 'skill') {
+      html += '<div class="cp-search"><input id="cp-skill-search" placeholder="搜索 DSH 技能，如 doc / office / verify" value="' +
+        String(_skillQuery).replace(/"/g, '&quot;') + '"></div>';
+    }
+    html += '<div class="cp-body">';
 
     var shown = groups.filter(function (g) {
-      return g.id === 'external';
+      return _tab === 'api' ? g.id === 'external' : g.id === 'skill';
     });
 
     if (!shown.length) {
-      html += '<div class="cp-empty">暂无外部 API</div>';
+      html += '<div class="cp-empty">' + (_tab === 'skill' ? '暂无适配 DSH 的技能（放入 data/skills/*.md）' : '暂无外部 API') + '</div>';
     }
     shown.forEach(function (g) {
+      var items = (g.items || []).filter(function (it) {
+        if (_tab !== 'skill' || !_skillQuery) return true;
+        return (String(it.label) + ' ' + String(it.desc || '')).toLowerCase().indexOf(_skillQuery.toLowerCase()) !== -1;
+      });
       html += '<div class="cp-group"><div class="cp-ghead">' + g.label +
         '<span class="cp-risk ' + (g.risk || '') + '">' +
         (g.risk === 'write' ? '写' : (g.risk === 'network' ? '网络' : '读')) + '</span></div>';
-      g.items.forEach(function (it) {
+      items.forEach(function (it) {
         var checked = inState(it.type).indexOf(it.id) !== -1 ? 'checked' : '';
         html += '<label class="cp-item"><input type="checkbox" ' + checked +
           ' data-type="' + it.type + '" data-id="' + it.id + '">' +
@@ -202,6 +215,8 @@
     _panel.querySelectorAll('.cp-tab').forEach(function (el) {
       el.onclick = function () { _tab = el.dataset.tab; render(); };
     });
+    var _si = document.getElementById('cp-skill-search');
+    if (_si) _si.onchange = function () { _skillQuery = _si.value || ''; render(); };
     _panel.querySelectorAll('.cp-perm input').forEach(function (el) {
       el.onchange = function () {
         perms[el.dataset.perm] = el.checked;

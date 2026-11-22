@@ -336,7 +336,8 @@ async function refreshChatMeta(agentId, isFriendChat) {
     if (m.model_name) parts.push(m.model_name);
   }
   parts.push('#' + String(agentId).slice(-6));
-  el.textContent = parts.join(' · ');
+  el.textContent = '';
+  el.style.display = 'none';
   el.title = '智能体信息';
 }
 

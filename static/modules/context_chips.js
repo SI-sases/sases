@@ -44,10 +44,7 @@
       items.push({ id: 'att' + i, text: '附件：' + (a.name || '文件'), kind: 'att', index: i });
     });
     var aid = st.senderAgentId || st.agentId;
-    if (aid) {
-      var mn = modelOf(aid);
-      items.push({ id: 'agent', text: '🤖 ' + (mn || String(aid).slice(-6)), kind: 'agent' });
-    }
+    // 智能体信息统一放在输入区切换按钮/标题，输入区不再重复渲染 🤖 provider
     var perms = {};
     try { perms = JSON.parse(localStorage.getItem('sases_perms_v1') || '{}'); } catch (e) {}
     var plist = [];
