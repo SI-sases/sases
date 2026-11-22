@@ -1,0 +1,18 @@
+{
+  "id": "todo_write",
+  "name": "写入计划",
+  "description": "多步骤任务先列出 todo 计划；每次调用整表替换。每项 content + status（pending/in_progress/completed），最多一个 in_progress。",
+  "version": "1.0.0",
+  "capabilities": ["plan", "todo"],
+  "entrypoint": "main.py",
+  "node_type": "harness",
+  "tier": "core",
+  "category": "plan",
+  "params": {
+    "todos": {
+      "type": "array",
+      "required": true,
+      "desc": "完整 todo 列表，每项 {content, status}"
+    }
+  }
+}

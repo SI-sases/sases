@@ -1263,6 +1263,16 @@ def init_db():
         """)
         cur.execute("CREATE INDEX IF NOT EXISTS idx_agent_messages_conv ON agent_messages(conversation_id, seq)")
         cur.execute("""
+            CREATE TABLE IF NOT EXISTS agent_todos (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                conversation_id INTEGER NOT NULL,
+                run_id INTEGER NOT NULL DEFAULT 0,
+                items_json TEXT NOT NULL,
+                updated_at TEXT,
+                UNIQUE (conversation_id, run_id)
+            )
+        """)
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS tool_usage_daily (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER NOT NULL,

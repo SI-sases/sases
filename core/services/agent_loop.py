@@ -8,6 +8,7 @@ import os
 from core import tool_gateway
 from core.services import agent_memory
 from core.services import token_meter, tool_pruner
+from core.services import todo_service
 from core.services.agent_policy import before_tool, after_tool, WRITE_TOOLS, ApprovalRequired
 from core.services.swarm.llm_parser import client, MODEL
 from core.services.swarm.prompts import BASE_SYSTEM, BASE_PREFIX_HASH
@@ -71,6 +72,12 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
     _verified_files = set()
     _ui_dirty = set()
     _ui_ok = True
+    try:
+        _plan_ctx = todo_service.format_for_prompt(conversation_id, run_id)
+        if _plan_ctx and messages and messages[-1].get("role") == "user":
+            messages.insert(len(messages) - 1, {"role": "user", "content": _plan_ctx})
+    except Exception as _e_plan:
+        print("[todo] 注入计划失败: " + str(_e_plan))
 
     for step in range(1, max_steps + 1):
         if step > 1:
@@ -193,6 +200,21 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
                 except Exception as _e_ui:
                     _ui_ok = False
                     print("[ui] verify_ui 失败: " + str(_e_ui))
+            # 计划门禁：todo 还有 pending/in_progress 不允许结束
+            try:
+                _pending_todos = todo_service.pending(conversation_id, run_id)
+            except Exception:
+                _pending_todos = []
+            if mode == "strict" and _pending_todos:
+                _plines = "\n".join("- " + t.get("content", "") for t in _pending_todos)
+                _pgate = ("[计划未完成] 还有未完成 todo：\n" + _plines
+                          + "\n请继续执行并更新 todo，完成前不要结束。")
+                messages.append({"role": "user", "content": _pgate})
+                agent_memory.append(conversation_id, "user", _pgate)
+                if step < max_steps:
+                    continue
+                return {"status": "plan_incomplete", "content": _pgate,
+                        "steps": step, "history": used}
             _unverified = _dirty_files - _verified_files
             if mode == "strict" and (_unverified or (_ui_required and not _ui_ok)):
                 _lines = sorted(_unverified)
@@ -239,6 +261,24 @@ async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8
                 args = json.loads(c.function.arguments or "{}")
             except Exception:
                 args = {}
+            if name == "todo_write":
+                _tr = todo_service.write(user_id, conversation_id, run_id, args.get("todos"))
+                ok = bool(_tr.get("success"))
+                text = json.dumps(_tr, ensure_ascii=False)[:4000]
+                used.append({"step": step, "tool": name, "args": args, "ok": ok})
+                try:
+                    from . import tool_usage_service
+                    tool_usage_service.record(user_id, name, ok)
+                except Exception:
+                    pass
+                agent_memory.append(conversation_id, "tool", text, tool_call_id=c.id)
+                messages.append({"role": "tool", "tool_call_id": c.id, "content": text})
+                if on_event:
+                    try:
+                        await on_event({"tool": name, "ok": ok, "step": step})
+                    except Exception:
+                        pass
+                continue
             try:
                 await before_tool(user_id, conversation_id, run_id, step, name, args)
             except ApprovalRequired as _ar:
