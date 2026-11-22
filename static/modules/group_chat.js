@@ -643,7 +643,7 @@ export async function sendGroupMessage() {  const input = document.getElementByI
 
   // 乐观渲染：立刻显示用户消息
   if (text) {
-    appendGroupMessage('我', text, true);
+    appendGroupMessage(t('gc_me'), text, true);
   }
   input.value = '';
   if (window.chatState) window.chatState.pendingAttachments = [];
@@ -661,7 +661,7 @@ export async function sendGroupMessage() {  const input = document.getElementByI
       }
       if (content) {
         await api.sendGroupMessage(currentGroupId, content, currentAgentId);
-        appendGroupMessage('我', content, true);
+        appendGroupMessage(t('gc_me'), content, true);
       }
     }
     if (text) {
@@ -675,7 +675,7 @@ export async function sendGroupMessage() {  const input = document.getElementByI
       _lastMsg.style.background = '#ffebee';
       _lastMsg.style.color = '#c62828';
     }
-    alert('发送失败：' + (e.message || '未知错误'));
+    alert(t('gc_send_failed') + (e.message || t('gc_unknown_error')));
   }
 }
 
