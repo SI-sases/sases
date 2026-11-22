@@ -281,9 +281,9 @@ function openTaskPreview(task) {
 
       openYunchongRescue(task.id);
     } catch (e) {
-      alert('操作失败：' + e.message);
+      alert(t('discover_op_failed') + e.message);
       startBtn.disabled = false;
-      startBtn.textContent = '开始解救';
+      startBtn.textContent = t('discover_start_rescue');
     }
   };
 }
@@ -297,7 +297,7 @@ async function openYunchongRescue(taskId) {
   try {
     task = await api.getYunchongTask(taskId);
   } catch (e) {
-    alert('加载任务失败：' + e.message);
+    alert(t('discover_load_task_failed') + e.message);
     return;
   }
 
@@ -379,7 +379,7 @@ async function openYunchongRescue(taskId) {
 
     <div style="padding:12px;display:flex;gap:8px;">
       <button class="save-btn" id="rescue-start-btn" style="flex:2;padding:14px;font-size:15px;">🐾 开始解救</button>
-      <button id="rescue-abandon-btn" style="flex:1;padding:14px;font-size:14px;background:#f5f5f5;color:#ff3b30;border:none;border-radius:8px;">放弃</button>
+      <button id="rescue-abandon-btn" style="flex:1;padding:14px;font-size:14px;background:#f5f5f5;color:#ff3b30;border:none;border-radius:8px;">${t('discover_abandon')}</button>
     </div>
   `;
 
@@ -499,13 +499,13 @@ async function openYunchongRescue(taskId) {
   };
 
   document.getElementById('rescue-abandon-btn').onclick = async () => {
-    if (!confirm('确定放弃该任务吗？')) return;
+    if (!confirm(t('discover_confirm_abandon'))) return;
     try {
       await api.abandonYunchongTask(taskId);
-      alert('已放弃任务');
+      alert(t('discover_abandoned'));
       openWisdomMap();
     } catch (e) {
-      alert('放弃失败：' + e.message);
+      alert(t('discover_abandon_failed') + e.message);
     }
   };
 }
@@ -556,7 +556,7 @@ function openYunchongCamp() {
   const html = `
     <div class="yunchong-hub">
       <div class="yunchong-banner">
-        <div class="yunchong-title">☁️ 云宠战役 ☁️</div>
+        <div class="yunchong-title">${t('discover_yunchong_title')}</div>
         <div class="yunchong-subtitle">培养你的宠物，探索智维宇宙</div>
       </div>
       
@@ -581,7 +581,7 @@ function openYunchongCamp() {
     </div>
   `;
 
-  window.openSubpage('云宠战役', html, {
+  window.openSubpage(t('discover_yunchong_title'), html, {
     showMore: false,
     returnAction: () => openWisdomMap()
   });
@@ -596,9 +596,9 @@ function openYunchongCamp() {
       } else if (action === 'base') {
         if (typeof window.openBaseOverview === 'function') window.openBaseOverview(returnToYunchong);
       } else if (action === 'bag') {
-        window.openSubpage('背包', '<div class="subpage-placeholder">背包功能开发中</div>', { returnAction: returnToYunchong });
+        window.openSubpage(t('discover_bag'), `<div class="subpage-placeholder">${t('discover_bag_wip')}</div>`, { returnAction: returnToYunchong });
       } else if (action === 'battle') {
-        window.openSubpage('对战', '<div class="subpage-placeholder">对战功能开发中</div>', { returnAction: returnToYunchong });
+        window.openSubpage(t('discover_battle'), `<div class="subpage-placeholder">${t('discover_battle_wip')}</div>`, { returnAction: returnToYunchong });
       }
     };
   });

@@ -532,4 +532,17 @@ export const zh = {
   'risk_21': '16. 积分系统严格遵守相关法律法规，不涉及虚拟货币发行、交易或融资。',
   'risk_22': '17. 积分不可用于任何博彩、传销、非法集资活动。',
   'risk_23': '18. 如监管部门要求调整，平台将依法配合执行。',
+  // 发现页 / 云宠战役（discover.js）
+  'discover_op_failed': '操作失败：',
+  'discover_start_rescue': '开始解救',
+  'discover_load_task_failed': '加载任务失败：',
+  'discover_abandon': '放弃',
+  'discover_abandoned': '已放弃任务',
+  'discover_abandon_failed': '放弃失败：',
+  'discover_yunchong_title': '☁️ 云宠战役 ☁️',
+  'discover_confirm_abandon': '确定放弃该任务吗？',
+  'discover_bag': '背包',
+  'discover_battle': '对战',
+  'discover_bag_wip': '背包功能开发中',
+  'discover_battle_wip': '对战功能开发中',
 };

@@ -532,4 +532,17 @@ export const en = {
   'risk_21': '16. The credit system strictly complies with applicable laws and regulations and does not involve virtual currency issuance, trading, or financing.',
   'risk_22': '17. Credits may not be used for gambling, pyramid schemes, illegal fundraising, or similar activities.',
   'risk_23': '18. If regulators require adjustments, the platform will cooperate in accordance with the law.',
+  // Discover / Yunchong (discover.js)
+  'discover_op_failed': 'Operation failed: ',
+  'discover_start_rescue': 'Start Rescue',
+  'discover_load_task_failed': 'Failed to load task: ',
+  'discover_abandon': 'Abandon',
+  'discover_abandoned': 'Task abandoned',
+  'discover_abandon_failed': 'Failed to abandon: ',
+  'discover_yunchong_title': '☁️ Yunchong Battle ☁️',
+  'discover_confirm_abandon': 'Abandon this task?',
+  'discover_bag': 'Bag',
+  'discover_battle': 'Battle',
+  'discover_bag_wip': 'Bag is under development',
+  'discover_battle_wip': 'Battle is under development',
 };
