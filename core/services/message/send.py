@@ -1234,6 +1234,30 @@ async def send_message(
                     print('[supervisor] 对话模式失败: ' + str(_che))
 
             if is_task:
+                # 新主链：普通 send 的任务意图也走 RunService；旧四角色仅 SASES_SWARM_PLAN=1 回退
+                if os.getenv("SASES_SWARM_PLAN", "0") != "1" and conversation_id:
+                    from .. import run_service
+                    _rr = await run_service.run_once(
+                        user_id, conversation_id, content, source="chat",
+                        supervisor_id=sender_agent_id or agent_id or "sases_assistant",
+                        max_steps=(max_steps if (max_steps and max_steps > 0) else 8),
+                        skill_ids=enabled_skill_ids, finish=True,
+                    )
+                    _loop = _rr.get("loop") or {}
+                    _txt = (_loop.get("content") or "").strip() or "执行完成"
+                    try:
+                        from .reply import insert_message as _ins_new
+                        _ins_new(conversation_id, _txt, msg_type=msg_type,
+                                 attachments=_att_str, sync_agent=False)
+                    except Exception:
+                        pass
+                    return {
+                        "conversation_id": conversation_id, "user_message": content,
+                        "assistant_reply": _txt, "agent_id": agent_id,
+                        "sender_agent_id": sender_agent_id, "mode": mode,
+                        "strict_mode": True, "steps": _loop.get("steps"),
+                        "awaiting_approval": _loop.get("status") == "awaiting_approval",
+                    }
                 # [P1-0c-a] 积分拦截：派单前检查，避免消耗 API 后才报积分不足
                 try:
                     from .. import credit_service as _cs_gate
