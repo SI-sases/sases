@@ -743,7 +743,7 @@ async def _run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=
                         if _vok:
                             try:
                                 from .file_gate import check_frontend as _check_front
-                                _fg = _check_front(_fp)
+                                _fg = _check_front(_fp, _bak)
                                 if not _fg.get("ok"):
                                     _vok = False
                                     _vres = _fg.get("error") or "frontend semantic error"

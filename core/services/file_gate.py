@@ -83,7 +83,7 @@ def check_structure(old_path, new_path):
     return {"ok": True}
 
 
-def check_frontend(path):
+def check_frontend(path, old_path=None):
     """前端写后语义门。返回 {ok, error, checks}。"""
     low = str(path or "").lower().replace("\\", "/")
     if not low.endswith(_FE_EXT):
@@ -103,6 +103,12 @@ def check_frontend(path):
                     "checks": checks}
     # 2) 重复 id：同一文件内重复通常就是坏改动
     bad = check_duplicate_ids(raw)
+    if bad and old_path:
+        try:
+            old_bad = set(check_duplicate_ids(open(old_path, encoding="utf-8", errors="ignore").read()))
+            bad = [x for x in bad if x not in old_bad]
+        except Exception:
+            pass
     checks.append({"name": "duplicate_id", "ok": not bad})
     if bad:
         return {"ok": False, "error": "重复 id: " + ", ".join(bad[:8]), "checks": checks}
