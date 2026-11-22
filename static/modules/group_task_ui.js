@@ -39,7 +39,7 @@ window.openPublishTaskDialog = function(groupId) {
       const desc = (document.getElementById('pt-desc') || {}).value || '';
       const category = (document.getElementById('pt-category') || {}).value || 'text';
       const rewardStr = (document.getElementById('pt-reward') || {}).value || '0';
-      if (!title.trim()) { alert('请输入标题'); return; }
+      if (!title.trim()) { alert(t('groupTask.titleRequired')); return; }
       const reward = parseFloat(rewardStr);
       if (isNaN(reward) || reward < 10) { alert(t('groupTask.rewardMin')); return; }
       fetch('/group/' + groupId + '/tasks/publish', {
