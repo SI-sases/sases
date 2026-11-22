@@ -1412,7 +1412,7 @@ function openRedPacketConfig() {
         });
         const data = await resp.json();
         if (data.error || data.detail) { alert(t('gc_save_failed') + (data.error || data.detail)); return; }
-        alert('已保存');
+        showGroupToast(t('gc_saved'));
         window.closeSubpage();
         openGroupCreditsDetail();
       } catch (e) { alert('网络错误：' + e.message); }
