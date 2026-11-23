@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from core import node_identity as ni
 
 MODE = os.getenv("SASES_NODE_AUTH_MODE", "shadow").strip().lower()
+ENFORCE_PRESENT = os.getenv("SASES_NODE_AUTH_ENFORCE_PRESENT", "true").strip().lower() not in ("0", "false", "no")
 MANIFEST_HEADER = "X-SASES-Node-Manifest"
 
 
@@ -78,6 +79,20 @@ def check_request(path: str, method: str, manifest: str | None) -> NodeCheck:
         profile=node.get("profile"),
         capability=capability,
     )
+
+
+def should_block(check: NodeCheck, manifest: str | None) -> bool:
+    """Enforce only for clients that actually present a manifest.
+
+    Legacy clients without a manifest remain in shadow mode until the rollout
+    is complete. A client that presents an invalid/insufficient manifest is
+    always rejected, otherwise it could bypass enforcement by sending garbage.
+    """
+    if check.ok:
+        return False
+    if MODE == "enforce":
+        return True
+    return bool(ENFORCE_PRESENT and manifest)
 
 
 def audit_check(path: str, method: str, check: NodeCheck, wg_peer_ip: str | None = None) -> None:

@@ -122,6 +122,24 @@ def test_node_auth_requires_manifest_for_tools(temp_db):
     assert check.ok
 
 
+def test_node_auth_blocks_present_but_insufficient(temp_db):
+    import core.node_auth as na
+
+    _priv, pub = ni.generate_node_keypair()
+    edge = ni.create_node(7, "edge", ed25519_pubkey=pub)
+    edge_manifest = ni.issue_manifest(edge["node_id"])
+
+    no_manifest = na.check_request("/tools/install", "POST", None)
+    assert not na.should_block(no_manifest, None)
+
+    present = na.check_request("/tools/install", "POST", edge_manifest)
+    assert not present.ok
+    assert na.should_block(present, edge_manifest)
+
+    bad = na.check_request("/tools/install", "POST", "not-a-manifest")
+    assert not bad.ok
+    assert na.should_block(bad, "not-a-manifest")
+
 def test_node_auth_allows_plain_chat_without_manifest(temp_db):
     import core.node_auth as na
 
