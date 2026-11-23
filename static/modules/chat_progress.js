@@ -42,7 +42,7 @@
     if (!card || !card.parentNode) {
       card = document.createElement('div');
       card.id = 'run-progress-card';
-      card.innerHTML = '<div class="rp-head"><span class="rp-dot"></span><span class="rp-title">执行中</span></div><div class="rp-lines"></div>';
+      card.innerHTML = '<div class="rp-head"><span class="rp-dot"></span><span class="rp-title">' + t('cpr_running') + '</span></div><div class="rp-lines"></div>';
       msgs.appendChild(card);
     }
     return card;
@@ -80,14 +80,14 @@
   }
 
   function revertRun(runId, btn) {
-    if (!confirm('恢复本次运行修改/创建的文件？')) return;
+    if (!confirm(t('cpr_restore_confirm'))) return;
     btn.disabled = true;
     fetch('/supervisor/runs/' + runId + '/revert', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('sases_token') || '') },
       body: JSON.stringify({ confirm: true })
     }).then(function (r) { return r.json(); }).then(function (j) {
-      btn.textContent = '已撤销：恢复 ' + ((j.restored || []).length) + '，删除 ' + ((j.deleted || []).length);
+      btn.textContent = t('cpr_undone') + ' ' + ((j.restored || []).length) + '，' + t('cpr_undone_deleted') + ' ' + ((j.deleted || []).length);
     }).catch(function () { btn.disabled = false; btn.textContent = '撤销失败'; });
   }
 

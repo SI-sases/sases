@@ -967,6 +967,10 @@ export const en = {
   'save_success_signature': 'Signature saved',
   'total': 'Total',
   'unit_meter': 'm',
+  'cpr_running': 'Running',
+  'cpr_restore_confirm': 'Restore files modified/created by this run?',
+  'cpr_undone': 'Undone: restored',
+  'cpr_undone_deleted': 'deleted',
   'cd_cancel': 'Cancel',
   'cd_rejected_notified': 'Rejected, the other party has been notified',
 };

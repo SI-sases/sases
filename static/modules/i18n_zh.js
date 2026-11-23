@@ -965,6 +965,10 @@ export const zh = {
   'save_success_signature': '签名保存成功',
   'total': '总计',
   'unit_meter': '米',
+  'cpr_running': '执行中',
+  'cpr_restore_confirm': '恢复本次运行修改/创建的文件？',
+  'cpr_undone': '已撤销：恢复',
+  'cpr_undone_deleted': '删除',
   'cd_cancel': '取消',
   'cd_rejected_notified': '已拒绝，已通知对方',
 };
