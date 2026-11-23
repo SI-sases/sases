@@ -1433,6 +1433,7 @@ export const zh = {
   'node_apply_creator': '申请成为共创玩家',
   'node_apply_sent': '申请已提交，等待管理员审核',
   'node_apply_failed': '申请失败',
+  'node_apply_portfolio': '作品链接（可选）',
   'ci_loading': '加载智能体...',
   'ci_load_failed': '加载失败：',
   'md_copy': '复制',

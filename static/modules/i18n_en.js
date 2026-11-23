@@ -1434,6 +1434,7 @@ export const en = {
   'node_apply_creator': 'Apply to become a creator',
   'node_apply_sent': 'Application submitted; waiting for admin review',
   'node_apply_failed': 'Application failed',
+  'node_apply_portfolio': 'Portfolio URL (optional)',
   'ci_loading': 'Loading agents...',
   'ci_load_failed': 'Load failed: ',
   'md_copy': 'Copy',

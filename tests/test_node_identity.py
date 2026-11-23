@@ -7,7 +7,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 import core.db as db
 import core.node_identity as ni
-from core.migrations import _migrate_v13_node_identity, _migrate_v15_creator_review
+from core.migrations import _migrate_v13_node_identity, _migrate_v15_creator_review, _migrate_v16_creator_portfolio
 
 
 def _b64(raw: bytes) -> str:
@@ -20,6 +20,7 @@ def temp_db(tmp_path, monkeypatch):
     with db.db_cursor(commit=True) as cur:
         _migrate_v13_node_identity(cur)
         _migrate_v15_creator_review(cur)
+        _migrate_v16_creator_portfolio(cur)
 
     issuer = Ed25519PrivateKey.generate()
     raw = issuer.private_bytes(
@@ -98,11 +99,10 @@ def test_official_capabilities(temp_db):
 def test_creator_application_review_flow(temp_db):
     _priv, pub = ni.generate_node_keypair()
     node = ni.create_node(9, "edge", ed25519_pubkey=pub)
-    applied = ni.apply_creator_grant(9, node["node_id"], ["publish_tool"], note="please review")
+    applied = ni.apply_creator_grant(9, node["node_id"], ["publish_tool"], note="please review", portfolio_url="https://example.com/me")
     assert applied["status"] == "pending"
-
     pending = ni.list_creator_applications("pending")
-    assert any(item["grant_id"] == applied["grant_id"] for item in pending)
+    assert any(item["grant_id"] == applied["grant_id"] and item["portfolio_url"] == "https://example.com/me" for item in pending)
 
     grant = ni.approve_creator_application(applied["grant_id"], approved_by=3, review_note="ok")
     assert grant["status"] == "approved"

@@ -365,6 +365,7 @@ def apply_creator_grant(
     node_id: str,
     scopes: Iterable[str] | None = None,
     note: str = "",
+    portfolio_url: str = "",
 ) -> dict[str, Any]:
     node = get_node(node_id)
     if not node or int(node.get("user_id") or 0) != int(user_id):
@@ -390,8 +391,8 @@ def apply_creator_grant(
     with db_cursor(commit=True) as cur:
         cur.execute(
             "INSERT INTO identity_creator_grants(grant_id, user_id, node_id, status, scopes, "
-            "application_note, created_at) VALUES (?,?,?, 'pending', ?, ?, ?)",
-            (grant_id, int(user_id), node_id, json.dumps(selected), note, now),
+            "application_note, portfolio_url, created_at) VALUES (?,?,?, 'pending', ?, ?, ?, ?)",
+            (grant_id, int(user_id), node_id, json.dumps(selected), note, portfolio_url, now),
         )
     audit_event(
         node_id=node_id,

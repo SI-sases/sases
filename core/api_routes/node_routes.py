@@ -29,6 +29,7 @@ class CreatorApplyBody(BaseModel):
     node_id: str
     scopes: list[str] | None = None
     note: str = ""
+    portfolio_url: str = ""
 
 
 class CreatorGrantBody(BaseModel):
@@ -127,7 +128,7 @@ def whoami(x_sases_node_manifest: str | None = Header(default=None, alias="X-SAS
 @router.post("/creator/apply")
 def creator_apply(body: CreatorApplyBody, user: dict = Depends(get_current_user)):
     try:
-        result = ni.apply_creator_grant(user["id"], body.node_id, body.scopes, body.note)
+        result = ni.apply_creator_grant(user["id"], body.node_id, body.scopes, body.note, body.portfolio_url)
     except ni.NodeIdentityError as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
     return result

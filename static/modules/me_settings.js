@@ -214,8 +214,9 @@ function openNodeIdentity() {
         applyBtn.textContent = t('node_apply_creator');
         applyBtn.onclick = async () => {
           const note = prompt(t('node_apply_creator')) || '';
+          const portfolio = prompt(t('node_apply_portfolio')) || '';
           try {
-            await applyCreator(nodeId, note);
+            await applyCreator(nodeId, note, portfolio);
             alert(t('node_apply_sent'));
           } catch (e) {
             alert(t('node_apply_failed') + ': ' + e.message);
