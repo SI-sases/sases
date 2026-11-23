@@ -7,7 +7,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 import core.db as db
 import core.node_identity as ni
-from core.migrations import _migrate_v13_node_identity
+from core.migrations import _migrate_v13_node_identity, _migrate_v15_creator_review
 
 
 def _b64(raw: bytes) -> str:
@@ -19,6 +19,7 @@ def temp_db(tmp_path, monkeypatch):
     monkeypatch.setattr(db, "DB_PATH", str(tmp_path / "users.db"))
     with db.db_cursor(commit=True) as cur:
         _migrate_v13_node_identity(cur)
+        _migrate_v15_creator_review(cur)
 
     issuer = Ed25519PrivateKey.generate()
     raw = issuer.private_bytes(
@@ -92,6 +93,26 @@ def test_official_capabilities(temp_db):
     assert ni.CAP_PUBLISH_TOOL in caps
     assert ni.bind_node_wg(node["node_id"], "wg-public-key", "device-fp")
     assert ni.get_node(node["node_id"])["wg_pubkey"] == "wg-public-key"
+
+
+def test_creator_application_review_flow(temp_db):
+    _priv, pub = ni.generate_node_keypair()
+    node = ni.create_node(9, "edge", ed25519_pubkey=pub)
+    applied = ni.apply_creator_grant(9, node["node_id"], ["publish_tool"], note="please review")
+    assert applied["status"] == "pending"
+
+    pending = ni.list_creator_applications("pending")
+    assert any(item["grant_id"] == applied["grant_id"] for item in pending)
+
+    grant = ni.approve_creator_application(applied["grant_id"], approved_by=3, review_note="ok")
+    assert grant["status"] == "approved"
+    assert ni.get_node(node["node_id"])["profile"] == "creator"
+    manifest = ni.decode_manifest(ni.issue_manifest(node["node_id"]))
+    assert ni.CAP_PUBLISH_TOOL in manifest["capabilities"]
+
+    applied2 = ni.apply_creator_grant(9, node["node_id"], ["provide_api"], note="second")
+    assert ni.reject_creator_application(applied2["grant_id"], reviewed_by=3, reason="no")
+    assert all(item["grant_id"] != applied2["grant_id"] for item in ni.list_creator_applications("pending"))
 
 
 def test_revoked_node_cannot_get_manifest(temp_db):

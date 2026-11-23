@@ -58,3 +58,18 @@ export async function refreshNodeManifest(token) {
   }
   return data;
 }
+
+export async function applyCreator(nodeId, note) {
+  const token = localStorage.getItem('sases_token') || '';
+  const resp = await fetch('/node/creator/apply', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({ node_id: nodeId, note: note || '' })
+  });
+  const data = await resp.json().catch(() => ({}));
+  if (!resp.ok) throw new Error(data.detail || `HTTP ${resp.status}`);
+  return data;
+}

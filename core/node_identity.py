@@ -364,23 +364,34 @@ def apply_creator_grant(
     user_id: int,
     node_id: str,
     scopes: Iterable[str] | None = None,
+    note: str = "",
 ) -> dict[str, Any]:
     node = get_node(node_id)
     if not node or int(node.get("user_id") or 0) != int(user_id):
         raise NodeIdentityError("node not found")
-    if node.get("profile") != PROFILE_CREATOR:
-        raise NodeIdentityError("creator profile required")
+    if node.get("profile") not in (PROFILE_CREATOR, PROFILE_EDGE):
+        raise NodeIdentityError("only edge/creator nodes can apply")
+    if node.get("status") != "active":
+        raise NodeIdentityError("node not active")
     selected = list(scopes or CREATOR_SCOPES.keys())
     for scope in selected:
         if scope not in CREATOR_SCOPES:
             raise NodeIdentityError(f"invalid creator scope: {scope}")
+    with db_cursor() as cur:
+        existing = cur.execute(
+            "SELECT grant_id FROM identity_creator_grants WHERE node_id=? AND status='pending' "
+            "ORDER BY created_at DESC LIMIT 1",
+            (node_id,),
+        ).fetchone()
+    if existing:
+        return {"grant_id": existing["grant_id"], "status": "pending", "scopes": selected, "existing": True}
     grant_id = f"grant_{secrets.token_hex(8)}"
     now = _now()
     with db_cursor(commit=True) as cur:
         cur.execute(
-            "INSERT INTO identity_creator_grants(grant_id, user_id, node_id, status, scopes, created_at) "
-            "VALUES (?,?,?, 'pending', ?, ?)",
-            (grant_id, int(user_id), node_id, json.dumps(selected), now),
+            "INSERT INTO identity_creator_grants(grant_id, user_id, node_id, status, scopes, "
+            "application_note, created_at) VALUES (?,?,?, 'pending', ?, ?, ?)",
+            (grant_id, int(user_id), node_id, json.dumps(selected), note, now),
         )
     audit_event(
         node_id=node_id,
@@ -389,9 +400,90 @@ def apply_creator_grant(
         grant_id=grant_id,
         action="creator.apply",
         result="pending",
-        detail=",".join(selected),
+        detail=note or ",".join(selected),
     )
     return {"grant_id": grant_id, "status": "pending", "scopes": selected}
+
+
+def list_creator_applications(status: str = "pending") -> list[dict[str, Any]]:
+    sql = (
+        "SELECT g.*, n.user_id AS node_user_id, n.profile, n.device_fingerprint, n.status AS node_status "
+        "FROM identity_creator_grants g LEFT JOIN identity_nodes n ON n.node_id=g.node_id "
+        "WHERE g.status=? ORDER BY g.created_at DESC"
+    )
+    with db_cursor() as cur:
+        rows = cur.execute(sql, (status,)).fetchall()
+    result = []
+    for row in rows:
+        item = dict(row)
+        try:
+            item["scopes"] = json.loads(item.get("scopes") or "[]")
+        except (TypeError, ValueError):
+            item["scopes"] = []
+        result.append(item)
+    return result
+
+
+def approve_creator_application(grant_id: str, approved_by: int, review_note: str = "") -> dict[str, Any]:
+    with db_cursor(commit=True) as cur:
+        row = cur.execute(
+            "SELECT * FROM identity_creator_grants WHERE grant_id=? AND status='pending'",
+            (grant_id,),
+        ).fetchone()
+        if not row:
+            raise NodeIdentityError("pending application not found")
+        node = cur.execute("SELECT * FROM identity_nodes WHERE node_id=?", (row["node_id"],)).fetchone()
+        if not node or node["status"] != "active":
+            raise NodeIdentityError("node not active")
+        now = _now()
+        cur.execute(
+            "UPDATE identity_nodes SET profile=? WHERE node_id=?",
+            (PROFILE_CREATOR, row["node_id"]),
+        )
+        cur.execute(
+            "UPDATE identity_creator_grants SET status='approved', approved_by=?, approved_at=?, "
+            "reviewed_at=?, review_note=? WHERE grant_id=?",
+            (approved_by, now, now, review_note, grant_id),
+        )
+        cur.execute(
+            "UPDATE identity_creator_grants SET status='revoked', revoke_reason='superseded' "
+            "WHERE node_id=? AND status='approved' AND grant_id<>?",
+            (row["node_id"], grant_id),
+        )
+    audit_event(
+        node_id=row["node_id"],
+        user_id=row["user_id"],
+        profile=PROFILE_CREATOR,
+        grant_id=grant_id,
+        action="creator.approve",
+        result="ok",
+        detail=review_note,
+    )
+    return get_active_grant(row["node_id"]) or {}
+
+
+def reject_creator_application(grant_id: str, reviewed_by: int, reason: str = "") -> bool:
+    with db_cursor(commit=True) as cur:
+        row = cur.execute(
+            "SELECT * FROM identity_creator_grants WHERE grant_id=? AND status='pending'",
+            (grant_id,),
+        ).fetchone()
+        if not row:
+            raise NodeIdentityError("pending application not found")
+        cur.execute(
+            "UPDATE identity_creator_grants SET status='rejected', approved_by=?, reviewed_at=?, "
+            "review_note=? WHERE grant_id=?",
+            (reviewed_by, _now(), reason, grant_id),
+        )
+    audit_event(
+        node_id=row["node_id"],
+        user_id=row["user_id"],
+        grant_id=grant_id,
+        action="creator.reject",
+        result="ok",
+        detail=reason,
+    )
+    return True
 
 
 def get_active_grant(node_id: str) -> dict[str, Any] | None:

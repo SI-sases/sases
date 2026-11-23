@@ -28,6 +28,7 @@ class NodeRegisterBody(BaseModel):
 class CreatorApplyBody(BaseModel):
     node_id: str
     scopes: list[str] | None = None
+    note: str = ""
 
 
 class CreatorGrantBody(BaseModel):
@@ -126,10 +127,53 @@ def whoami(x_sases_node_manifest: str | None = Header(default=None, alias="X-SAS
 @router.post("/creator/apply")
 def creator_apply(body: CreatorApplyBody, user: dict = Depends(get_current_user)):
     try:
-        result = ni.apply_creator_grant(user["id"], body.node_id, body.scopes)
+        result = ni.apply_creator_grant(user["id"], body.node_id, body.scopes, body.note)
     except ni.NodeIdentityError as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
     return result
+
+
+@router.get("/admin/creator/applications")
+def admin_creator_applications(
+    status: str = "pending",
+    x_sases_node_manifest: str | None = Header(default=None, alias="X-SASES-Node-Manifest"),
+):
+    _require_cap(x_sases_node_manifest, ni.CAP_APPROVE_CREATOR)
+    return {"applications": ni.list_creator_applications(status)}
+
+
+@router.post("/admin/creator/approve")
+def admin_creator_approve(
+    body: dict,
+    x_sases_node_manifest: str | None = Header(default=None, alias="X-SASES-Node-Manifest"),
+):
+    _payload, admin = _require_cap(x_sases_node_manifest, ni.CAP_APPROVE_CREATOR)
+    try:
+        grant = ni.approve_creator_application(
+            str(body.get("grant_id", "")),
+            int(admin["user_id"]),
+            str(body.get("review_note", "")),
+        )
+    except ni.NodeIdentityError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return grant
+
+
+@router.post("/admin/creator/reject")
+def admin_creator_reject(
+    body: dict,
+    x_sases_node_manifest: str | None = Header(default=None, alias="X-SASES-Node-Manifest"),
+):
+    _payload, admin = _require_cap(x_sases_node_manifest, ni.CAP_APPROVE_CREATOR)
+    try:
+        ni.reject_creator_application(
+            str(body.get("grant_id", "")),
+            int(admin["user_id"]),
+            str(body.get("reason", "")),
+        )
+    except ni.NodeIdentityError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"ok": True}
 
 
 @router.post("/creator/check")

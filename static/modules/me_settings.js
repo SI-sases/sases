@@ -1,7 +1,7 @@
 // static/modules/me_settings.js
 import { api } from './api.js';
 import { t, setLang, getLang } from './i18n.js';
-import { setNodeBundle, clearNodeIdentity, getNodeId, getNodeProfile, refreshNodeManifest } from './node_identity_client.js';
+import { setNodeBundle, clearNodeIdentity, getNodeId, getNodeProfile, refreshNodeManifest, applyCreator } from './node_identity_client.js';
 
 // 语言选择用全局函数 + 内联 onclick，避免子页面重绘后事件监听丢失
 // 注意：不要在这里 location.reload()。整页刷新会打断 openSettings 的 setTimeout 绑定、
@@ -206,6 +206,23 @@ function openNodeIdentity() {
         openSettings();
       };
       importBtn.parentNode.appendChild(clearBtn);
+
+      if (profile === 'edge') {
+        const applyBtn = document.createElement('button');
+        applyBtn.className = 'save-btn';
+        applyBtn.style.cssText = 'width:100%;margin-top:8px;background:#34c759;';
+        applyBtn.textContent = t('node_apply_creator');
+        applyBtn.onclick = async () => {
+          const note = prompt(t('node_apply_creator')) || '';
+          try {
+            await applyCreator(nodeId, note);
+            alert(t('node_apply_sent'));
+          } catch (e) {
+            alert(t('node_apply_failed') + ': ' + e.message);
+          }
+        };
+        importBtn.parentNode.appendChild(applyBtn);
+      }
     }
   }, 100);
 }

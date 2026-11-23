@@ -92,6 +92,22 @@ def main() -> int:
     p.add_argument("--reason", default="revoked by admin")
     p.set_defaults(func=lambda a: _print({"ok": ni.revoke_creator_grant(a.node_id, a.reason)}))
 
+    p = sub.add_parser("list-applications", help="list creator applications")
+    p.add_argument("--status", default="pending")
+    p.set_defaults(func=lambda a: _print(ni.list_creator_applications(a.status)))
+
+    p = sub.add_parser("approve-creator", help="approve a creator application")
+    p.add_argument("--grant-id", required=True)
+    p.add_argument("--reviewed-by", type=int, default=3)
+    p.add_argument("--note", default="")
+    p.set_defaults(func=lambda a: _print(ni.approve_creator_application(a.grant_id, a.reviewed_by, a.note)))
+
+    p = sub.add_parser("reject-creator", help="reject a creator application")
+    p.add_argument("--grant-id", required=True)
+    p.add_argument("--reviewed-by", type=int, default=3)
+    p.add_argument("--reason", default="")
+    p.set_defaults(func=lambda a: _print({"ok": ni.reject_creator_application(a.grant_id, a.reviewed_by, a.reason)}))
+
     p = sub.add_parser("revoke-node", help="revoke a node")
     p.add_argument("--node-id", required=True)
     p.add_argument("--reason", default="revoked by admin")
