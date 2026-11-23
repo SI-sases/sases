@@ -16,7 +16,7 @@ import zipfile
 
 ROOT_FILES = ("app_full.py", "requirements.txt", "boot_launcher.py")
 ROOT_DIRS = ("core", "static", "scripts", "launcher")
-EXCLUDE_DIRS = {"__pycache__", ".git", "build", "dist", "node_modules", ".pytest_cache"}
+EXCLUDE_DIRS = {"__pycache__", ".git", "build", "dist", "node_modules", ".pytest_cache", "downloads", "_ui_shots"}
 
 
 def _sha256(path: str) -> str:
