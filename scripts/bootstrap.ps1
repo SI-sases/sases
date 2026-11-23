@@ -1,18 +1,54 @@
 param(
     [string]$BaseUrl = "http://120.77.136.90:8001",
     [string]$InstallDir = "D:\sases",
-    [string]$ZipPath = "D:\sases-portable.zip",
+    [string]$ZipPath = "D:\sases-portable.tar.xz",
     [switch]$SkipAutostart,
     [switch]$SkipStart
 )
 
 $ErrorActionPreference = "Stop"
 $base = $BaseUrl.TrimEnd("/")
-$portableUrl = "$base/static/downloads/sases-portable.zip"
-$hashUrl = "$base/static/downloads/sases-portable.sha256"
+$portableUrl = "$base/static/downloads/sases-portable.tar.xz"
+$hashUrl = "$base/static/downloads/sases-portable.tar.xz.sha256"
 
 Write-Host "[bootstrap] downloading portable package..."
-curl.exe -L --fail -o $ZipPath $portableUrl
+$downloaded = $false
+try {
+    $head = curl.exe -sI $portableUrl
+    $lengthLine = ($head | Select-String -Pattern "^content-length:" -CaseSensitive:$false | Select-Object -First 1).Line
+    $total = [int64](($lengthLine -split ":")[1].Trim())
+    if ($total -gt 0) {
+        $parts = 4
+        $chunk = [math]::Ceiling($total / $parts)
+        $jobs = @()
+        Remove-Item "$ZipPath.part*" -Force -ErrorAction SilentlyContinue
+        for ($i = 0; $i -lt $parts; $i++) {
+            $start = $i * $chunk
+            $end = [math]::Min($total - 1, ($i + 1) * $chunk - 1)
+            $part = "$ZipPath.part$i"
+            $jobs += Start-Job -ScriptBlock {
+                param($url, $start, $end, $out)
+                curl.exe -s --fail -r "$start-$end" -o $out $url
+            } -ArgumentList $portableUrl, $start, $end, $part
+        }
+        $jobs | Wait-Job | Out-Null
+        $jobs | Receive-Job | Out-Null
+        $jobs | Remove-Job -Force
+        $partFiles = @()
+        for ($i = 0; $i -lt $parts; $i++) { $partFiles += "$ZipPath.part$i" }
+        if (($partFiles | Where-Object { -not (Test-Path $_) }).Count -eq 0) {
+            Remove-Item $ZipPath -Force -ErrorAction SilentlyContinue
+            cmd.exe /c ("copy /b " + ($partFiles -join "+") + " `"$ZipPath`"") | Out-Null
+            Remove-Item "$ZipPath.part*" -Force -ErrorAction SilentlyContinue
+            $downloaded = ((Get-Item $ZipPath).Length -eq $total)
+        }
+    }
+} catch {
+    Write-Host "[bootstrap] parallel download failed, falling back to curl"
+}
+if (-not $downloaded) {
+    curl.exe -L --fail --retry 5 --retry-delay 2 -C - -o $ZipPath $portableUrl
+}
 $actual = (Get-FileHash $ZipPath -Algorithm SHA256).Hash.ToLower()
 try {
     $expected = (curl.exe -s $hashUrl).Trim().Split(" ")[0].ToLower()

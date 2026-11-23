@@ -7,10 +7,12 @@ including old packages from static/downloads.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import os
 import shutil
 import stat
 import sys
+import tarfile
 import zipfile
 
 ROOT_DEFAULT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -58,6 +60,29 @@ EXCLUDE_FILES = {
     "node_identity.json",
     "license.json",
 }
+# Optional heavy dependencies are not needed by the desktop client runtime.
+EXCLUDE_PACKAGES = {
+    "scipy",
+    "scipy.libs",
+    "sklearn",
+    "chromadb",
+    "chromadb_rust_bindings",
+    "kubernetes",
+    "grpc",
+    "hf_xet",
+    "tokenizers",
+    "transformers",
+    "huggingface_hub",
+    "torch",
+    "pandas",
+    "pyarrow",
+    "matplotlib",
+    "playwright",
+    "PyInstaller",
+    "pytest",
+    "_pytest",
+    "pip",
+}
 
 BAT = """@echo off
 cd /d %~dp0
@@ -73,11 +98,16 @@ if exist "python-embed\\pythonw.exe" (
 
 def _ignore(directory, names):
     ignored = []
+    site_packages = os.path.basename(directory).lower() == "site-packages"
     for name in names:
         if name in EXCLUDE_DIRS or name in EXCLUDE_FILES:
             ignored.append(name)
         elif name.endswith(".pyc") or name.endswith(".pyo"):
             ignored.append(name)
+        elif site_packages:
+            stem = name.split("-")[0].split(".")[0]
+            if name in EXCLUDE_PACKAGES or stem in EXCLUDE_PACKAGES:
+                ignored.append(name)
     return ignored
 
 
@@ -145,11 +175,18 @@ def build(root: str, out: str, stage: str, embed: str) -> None:
         os.remove(out)
     shutil.make_archive(out[:-4], "zip", stage)
     _verify(out)
-    import hashlib
+    xz_path = out[:-4] + ".tar.xz"
+    with tarfile.open(xz_path, "w:xz", preset=6) as archive:
+        for name in os.listdir(stage):
+            archive.add(os.path.join(stage, name), arcname=name)
     digest = hashlib.sha256(open(out, "rb").read()).hexdigest()
     with open(out + ".sha256", "w", encoding="utf-8") as handle:
         handle.write(digest + "  " + os.path.basename(out) + "\n")
+    xz_digest = hashlib.sha256(open(xz_path, "rb").read()).hexdigest()
+    with open(xz_path + ".sha256", "w", encoding="utf-8") as handle:
+        handle.write(xz_digest + "  " + os.path.basename(xz_path) + "\n")
     print(f"[portable] {out} {os.path.getsize(out) / 1024 / 1024:.1f} MB")
+    print(f"[portable] {xz_path} {os.path.getsize(xz_path) / 1024 / 1024:.1f} MB")
 
 
 def main() -> int:

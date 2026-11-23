@@ -1,0 +1,15 @@
+{
+  "id": "screen_agent",
+  "name": "屏幕操作助手",
+  "description": "截图、视觉识别目标控件并点击；默认 dry-run，confirm=true 才执行。",
+  "version": "1.0.0",
+  "capabilities": ["computer_use", "vision", "input"],
+  "permissions": ["screen", "input", "network"],
+  "entrypoint": "main.py",
+  "node_type": "harness",
+  "params": {
+    "goal": {"type": "string", "desc": "必填，例如：点击登录按钮"},
+    "confirm": {"type": "boolean", "desc": "默认 false；true 才真正点击"},
+    "verify": {"type": "boolean", "desc": "点击后再截图验证"}
+  }
+}

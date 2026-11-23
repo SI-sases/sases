@@ -6,6 +6,17 @@ import time
 from PIL import ImageGrab
 
 
+def enable_dpi_awareness():
+    import ctypes
+    try:
+        ctypes.windll.shcore.SetProcessDpiAwareness(2)
+    except Exception:
+        try:
+            ctypes.windll.user32.SetProcessDPIAware()
+        except Exception:
+            pass
+
+
 def _bbox(value):
     if not value:
         return None
@@ -22,6 +33,7 @@ def _bbox(value):
 
 
 def run(params):
+    enable_dpi_awareness()
     image = ImageGrab.grab(bbox=_bbox(params.get("region")), all_screens=True)
     original_width, original_height = image.width, image.height
     scale = float(params.get("scale") or 1.0)

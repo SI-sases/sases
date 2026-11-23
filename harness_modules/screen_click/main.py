@@ -3,6 +3,16 @@ import time
 
 user32 = ctypes.windll.user32
 
+
+def enable_dpi_awareness():
+    try:
+        ctypes.windll.shcore.SetProcessDpiAwareness(2)
+    except Exception:
+        try:
+            ctypes.windll.user32.SetProcessDPIAware()
+        except Exception:
+            pass
+
 _DOWN = {"left": 0x0002, "right": 0x0008, "middle": 0x0020}
 _UP = {"left": 0x0004, "right": 0x0010, "middle": 0x0040}
 
@@ -12,6 +22,7 @@ def _screen_size():
 
 
 def run(params):
+    enable_dpi_awareness()
     x = int(params.get("x"))
     y = int(params.get("y"))
     width, height = _screen_size()

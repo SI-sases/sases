@@ -6,8 +6,6 @@ import time
 from collections import defaultdict
 
 import openai
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
 
 from core import config
 from core import similarity

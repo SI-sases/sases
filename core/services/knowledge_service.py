@@ -6,8 +6,6 @@ import numpy as np
 import openai
 from datetime import datetime
 from typing import Optional, List, Dict, Any
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
 from ..db import db_cursor
 from .. import config
 from .local_embedding import LocalEmbedding
@@ -129,11 +127,8 @@ def _tfidf_similarity(target: str, candidates: List[str]) -> List[float]:
     if not candidates:
         return []
     try:
-        vectorizer = TfidfVectorizer(tokenizer=_tokenize, token_pattern=None)
-        all_texts = candidates + [target]
-        vectors = vectorizer.fit_transform(all_texts)
-        sims = cosine_similarity(vectors[-1], vectors[:-1]).flatten()
-        return [float(s) for s in sims]
+        from core.text_similarity import similarities
+        return similarities(target, candidates)
     except Exception as e:
         print(f"[TF-IDF] 计算失败: {e}")
         return [0.0] * len(candidates)
