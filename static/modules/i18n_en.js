@@ -10,6 +10,9 @@ export const en = {
   'cw_exec_failed': 'Execution failed: ',
   'cw_commander_splitting': 'Commander is breaking down the task...',
   'cw_remaining': 'remaining',
+  'cw_no_cmd': 'Could not generate an executable command',
+  'cw_commander': 'Commander',
+  'cw_commander_failed': 'Commander task failed: ',
   // Capability switches (api_pill)
   'cp_web': 'Web',
   'cp_web_desc': 'Allow reading web pages / calling external APIs',

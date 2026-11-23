@@ -109,7 +109,7 @@ export async function sendCommanderTask(taskText, chatState, api) {
     }
 
     if (!data.results || data.results.length === 0) {
-      appendWorkMessage('assistant', data.message || '未能生成可执行命令', '指挥官');
+      appendWorkMessage('assistant', data.message || t('cw_no_cmd'), t('cw_commander'));
       return;
     }
 
@@ -122,7 +122,7 @@ export async function sendCommanderTask(taskText, chatState, api) {
       } else {
         stepText += `\n${r.output}`;
       }
-      appendWorkMessage('assistant', stepText, '指挥官');
+      appendWorkMessage('assistant', stepText, t('cw_commander'));
     });
 
     const summaryText = `✅ 任务完成，共执行 ${data.commands_executed} 条命令，成功 ${data.success_count} 条`;
@@ -134,7 +134,7 @@ export async function sendCommanderTask(taskText, chatState, api) {
     }
 
   } catch (err) {
-    appendWorkMessage('assistant', `指挥官任务失败：${err.message}`, '指挥官');
+    appendWorkMessage('assistant', `${t('cw_commander_failed')}${err.message}`, t('cw_commander'));
   }
 }
 
