@@ -61,16 +61,16 @@ function _cron(freq, time, weekday, interval) {
 }
 
 function _listHtml(tasks) {
-  if (!tasks.length) return '<div class="sched-empty">还没有定时任务</div>';
+  if (!tasks.length) return `<div class="sched-empty">${t('sch_empty')}</div>`;
   let html = '';
   tasks.forEach(t => {
     const on = t.enabled ? '' : 'off';
     html += `<div class="sched-item" data-id="${t.id}">
       <div class="sched-main">
-        <div class="sched-name">${_esc(t.name || t.task_template)}<span class="sched-badge ${on}">${t.enabled ? '运行中' : '已暂停'}</span></div>
+        <div class="sched-name">${_esc(t.name || t.task_template)}<span class="sched-badge ${on}">${t.enabled ? t('sch_running') : t('sch_paused')}</span></div>
         <div class="sched-sub">${_esc(t.task_template)} · ${_esc(t.cron_expr)} · 下次 ${_esc((t.next_run_at || '').replace('T', ' ').slice(0, 16))}</div>
       </div>
-      <button class="sched-btn" data-act="toggle">${t.enabled ? '暂停' : '启用'}</button>
+      <button class="sched-btn" data-act="toggle">${t.enabled ? t('sch_pause') : t('sch_enable')}</button>
       <button class="sched-btn" data-act="delete" style="color:#d93025">删除</button>
     </div>`;
   });
