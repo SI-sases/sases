@@ -1,6 +1,11 @@
 // static/modules/i18n_en.js
 export const en = {
-  // Recent conversations rail (chat_history_rail)
+  'chr_recent': 'Recent chats',
+  // Approval card (chat_approval)
+  'ca_allowed': 'Allowed',
+  'ca_denied': 'Denied',
+  'ca_decision_desc': 'The task will continue / stop accordingly',
+  'ca_submit_failed': 'Submit failed',
   'chr_recent': 'Recent chats',
   'chr_collapse': 'Collapse',
   'chr_history': 'History',

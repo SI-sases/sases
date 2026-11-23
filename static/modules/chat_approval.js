@@ -1,4 +1,5 @@
-// static/modules/chat_approval.js
+// P2-1: 写/网络/命令审批卡
+import { t } from './i18n.js';
 // P2-1: 写/网络/命令审批卡
 (function () {
   function css() {
@@ -27,11 +28,11 @@
       body: JSON.stringify({ step_id: String(stepId), decision: decision, scope: scope })
     }).then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
-      card.innerHTML = '<div class="ap-title">' + (decision === 'allow' ? '✅ 已允许' : '⛔ 已拒绝') + '</div>' +
-        '<div class="ap-desc">任务将继续/停止执行</div>';
+      card.innerHTML = '<div class="ap-title">' + (decision === 'allow' ? '✅ ' + t('ca_allowed') : '⛔ ' + t('ca_denied')) + '</div>' +
+        '<div class="ap-desc">' + t('ca_decision_desc') + '</div>';
       setTimeout(function () { card.remove(); }, 4000);
     }).catch(function (e) {
-      card.querySelector('.ap-desc').textContent = '提交失败：' + e.message;
+      card.querySelector('.ap-desc').textContent = t('ca_submit_failed') + '：' + e.message;
     });
   }
 
