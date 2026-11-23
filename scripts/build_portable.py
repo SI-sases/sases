@@ -144,6 +144,10 @@ def build(root: str, out: str, stage: str, embed: str) -> None:
         os.remove(out)
     shutil.make_archive(out[:-4], "zip", stage)
     _verify(out)
+    import hashlib
+    digest = hashlib.sha256(open(out, "rb").read()).hexdigest()
+    with open(out + ".sha256", "w", encoding="utf-8") as handle:
+        handle.write(digest + "  " + os.path.basename(out) + "\n")
     print(f"[portable] {out} {os.path.getsize(out) / 1024 / 1024:.1f} MB")
 
 

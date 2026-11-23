@@ -77,6 +77,15 @@ def _wireguard_installed() -> bool:
     return os.path.isfile(os.path.join(os.environ.get("ProgramFiles", r"C:\Program Files"), "WireGuard", "wireguard.exe"))
 
 
+def _refresh_identity() -> bool:
+    try:
+        from launcher.node_identity_store import refresh_manifest
+        return refresh_manifest(ROOT, BASE_URL)
+    except Exception as exc:
+        print(f"[ops] manifest refresh failed: {exc}", flush=True)
+        return False
+
+
 def _wait_version(seconds: int = 25) -> dict:
     deadline = time.time() + seconds
     while time.time() < deadline:
@@ -193,6 +202,9 @@ def main() -> int:
                     ).raise_for_status()
                     print(f"[ops] {operation['id']} {operation['action']} -> {status}", flush=True)
             except Exception as exc:
+                text = str(exc)
+                if "401" in text or "manifest" in text.lower() or "unauthorized" in text.lower():
+                    _refresh_identity()
                 print(f"[ops] poll failed: {exc}", flush=True)
             if ONCE:
                 return 0

@@ -130,6 +130,15 @@ def public_key_from_private(private_b64: str) -> str:
     return _b64e(public_raw)
 
 
+def verify_node_signature(public_b64: str, message: str, signature_b64: str) -> bool:
+    try:
+        public = Ed25519PublicKey.from_public_bytes(_b64d(public_b64))
+        public.verify(_b64d(signature_b64), message.encode("utf-8"))
+        return True
+    except Exception:
+        return False
+
+
 def _issuer_key_path() -> str:
     return os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "node_signing.key")
 

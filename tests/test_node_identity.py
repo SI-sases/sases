@@ -96,6 +96,20 @@ def test_official_capabilities(temp_db):
     assert ni.get_node(node["node_id"])["wg_pubkey"] == "wg-public-key"
 
 
+def test_node_signature_refresh_roundtrip(temp_db):
+    import base64
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+    from cryptography.hazmat.primitives import serialization
+
+    private_b64, public_b64 = ni.generate_node_keypair()
+    raw = base64.urlsafe_b64decode(private_b64 + "=" * (-len(private_b64) % 4))
+    private = Ed25519PrivateKey.from_private_bytes(raw)
+    message = "refresh|node_x|123|nonce"
+    sig = base64.urlsafe_b64encode(private.sign(message.encode())).decode().rstrip("=")
+    assert ni.verify_node_signature(public_b64, message, sig)
+    assert not ni.verify_node_signature(public_b64, message + "x", sig)
+
+
 def test_creator_application_review_flow(temp_db):
     _priv, pub = ni.generate_node_keypair()
     node = ni.create_node(9, "edge", ed25519_pubkey=pub)

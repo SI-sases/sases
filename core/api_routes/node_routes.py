@@ -43,6 +43,13 @@ class RevokeBody(BaseModel):
     reason: str = ""
 
 
+class ManifestRefreshBody(BaseModel):
+    node_id: str
+    timestamp: int
+    nonce: str
+    signature: str
+
+
 def _manifest_node(token: str | None) -> tuple[dict[str, Any], dict[str, Any]]:
     if not token:
         raise HTTPException(status_code=401, detail="node manifest required")
@@ -108,6 +115,25 @@ def get_manifest(node_id: str, user: dict = Depends(get_current_user)):
     if node.get("status") != "active":
         raise HTTPException(status_code=403, detail="node revoked")
     token = ni.issue_manifest(node_id)
+    payload = ni.decode_manifest(token)
+    return {"manifest": token, "manifest_payload": payload, "issuer_public_key": ni.issuer_public_key()}
+
+
+@router.post("/manifest/refresh")
+def refresh_manifest(body: ManifestRefreshBody):
+    import time as _time
+
+    if abs(int(_time.time()) - int(body.timestamp)) > 300:
+        raise HTTPException(status_code=400, detail="timestamp expired")
+    node = ni.get_node(body.node_id)
+    if not node:
+        raise HTTPException(status_code=404, detail="node not found")
+    if node.get("status") != "active":
+        raise HTTPException(status_code=403, detail="node revoked")
+    message = f"refresh|{body.node_id}|{body.timestamp}|{body.nonce}"
+    if not ni.verify_node_signature(node.get("ed25519_pubkey", ""), message, body.signature):
+        raise HTTPException(status_code=401, detail="signature invalid")
+    token = ni.issue_manifest(body.node_id)
     payload = ni.decode_manifest(token)
     return {"manifest": token, "manifest_payload": payload, "issuer_public_key": ni.issuer_public_key()}
 

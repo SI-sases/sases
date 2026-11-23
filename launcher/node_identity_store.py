@@ -4,6 +4,8 @@ from __future__ import annotations
 import base64
 import json
 import os
+import secrets
+import time
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -89,3 +91,33 @@ def _write(path: str, data: dict) -> None:
         os.chmod(path, 0o600)
     except OSError:
         pass
+
+
+def refresh_manifest(root: str | None = None, base_url: str = "http://120.77.136.90:8001") -> bool:
+    """Refresh an expired manifest using the node's own Ed25519 key."""
+    import httpx
+
+    root = root or os.getcwd()
+    identity = load_or_create(root)
+    node_id = identity.get("node_id")
+    private_b64 = identity.get("ed25519_private_key")
+    if not node_id or not private_b64:
+        return False
+    timestamp = int(time.time())
+    nonce = secrets.token_hex(8)
+    message = f"refresh|{node_id}|{timestamp}|{nonce}"
+    private = Ed25519PrivateKey.from_private_bytes(_unb64(private_b64))
+    signature = _b64(private.sign(message.encode("utf-8")))
+    response = httpx.post(
+        base_url.rstrip("/") + "/node/manifest/refresh",
+        json={"node_id": node_id, "timestamp": timestamp, "nonce": nonce, "signature": signature},
+        timeout=15,
+    )
+    response.raise_for_status()
+    data = response.json()
+    identity["manifest"] = data["manifest"]
+    identity["issuer_public_key"] = data.get("issuer_public_key", "")
+    if data.get("manifest_payload", {}).get("profile"):
+        identity["profile"] = data["manifest_payload"]["profile"]
+    _write(os.path.join(root, IDENTITY_FILE), identity)
+    return True
