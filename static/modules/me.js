@@ -48,7 +48,7 @@ import { t } from './me_i18n.js';
 let initialized = false;
 
 window.openMyCard = function() {
-  var cardUrl = 'http://127.0.0.1:8001/static/u.html?id=' + (sasesId || '');
+  var cardUrl = 'http://120.77.136.90:8001/static/u.html?id=' + (sasesId || '');
   var name = (displayName || username || '');
   var handle = (username || '');
   var html = '<div style="padding:24px;text-align:center;">' +

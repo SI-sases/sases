@@ -84,7 +84,7 @@ async def deliver_to_linked_accounts(user_id, conversation_id, content, sender_a
         if _is_remote and _payload_to_send:
             import httpx, os
             from ..broadcast.node_relay import hive_headers
-            _master_url = os.environ.get("HIVE_MASTER", "http://127.0.0.1:8001")
+            _master_url = os.environ.get("HIVE_MASTER", "http://120.77.136.90:8001")
             print(f"[跨网投递] 准备发往云端: {_master_url}, 目标: {_payload_to_send['target_sases_id']}")
 
             _send_ok = False

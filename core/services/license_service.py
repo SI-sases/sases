@@ -51,7 +51,7 @@ def _load_pub():
 
 # ---------- 云端 URL ----------
 def _cloud_url():
-    return os.environ.get("SASES_CLOUD_URL", "http://127.0.0.1:8001").rstrip("/")
+    return os.environ.get("SASES_CLOUD_URL", "http://120.77.136.90:8001").rstrip("/")
 
 
 # ---------- 进程内 token 缓存 ----------

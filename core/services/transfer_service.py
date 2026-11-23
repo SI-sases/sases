@@ -114,7 +114,7 @@ def create_transfer(sender_id: int, receiver_id: int, amount: float, message: st
             import httpx, os
             from ..broadcast.node_relay import hive_headers
             from .outbox.outbox_service import enqueue
-            _mx = os.environ.get("HIVE_MASTER", "http://127.0.0.1:8001")
+            _mx = os.environ.get("HIVE_MASTER", "http://120.77.136.90:8001")
             _pl = {
                 "idempotency_key": idempotency_key or ("tx-" + str(tx_id)),
                 "sender_sases_id": _sender_sases,

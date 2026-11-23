@@ -91,7 +91,7 @@ async def send_friend_request(body: FriendRequest, user_id: int = Depends(get_cu
                 if _target_username.startswith("remote_") or "shadow" in str(_target_username):
                     import httpx, os
                     from ..broadcast.node_relay import hive_headers
-                    _master_url = os.environ.get("HIVE_MASTER", "http://127.0.0.1:8001")
+                    _master_url = os.environ.get("HIVE_MASTER", "http://120.77.136.90:8001")
                     
                     cur.execute("SELECT sases_id FROM users WHERE id=?", (user_id,))
                     _sender_sases = cur.fetchone()["sases_id"]
@@ -174,7 +174,7 @@ async def accept_friend_request(body: AcceptRequest, user_id: int = Depends(get_
             _sender = cur.fetchone()
             if _sender:
                 import httpx, os
-                _master_url = os.environ.get("HIVE_MASTER", "http://127.0.0.1:8001")
+                _master_url = os.environ.get("HIVE_MASTER", "http://120.77.136.90:8001")
                 cur.execute("SELECT sases_id FROM users WHERE id=?", (user_id,))
                 _my_sases = cur.fetchone()["sases_id"]
                 try:

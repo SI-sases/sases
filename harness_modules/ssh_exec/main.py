@@ -1,8 +1,8 @@
 import subprocess
 
 NODES = {
-    "node-A": ("root@127.0.0.1", None),
-    "node-B": ("root@10.0.0.2", "root@127.0.0.1"), 
+    "node-A": ("root@120.77.136.90", None),
+    "node-B": ("root@10.0.0.2", "root@120.77.136.90"), 
 }
 
 def run(params):

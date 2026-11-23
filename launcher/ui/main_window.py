@@ -445,7 +445,7 @@ class MainWindow(QMainWindow):
             fp = get_hardware_fingerprint()
         except: pass
             
-        api_url = "http://127.0.0.1:8001/auth/license/activate"
+        api_url = "http://120.77.136.90:8001/auth/license/activate"
         payload = json.dumps({"key_code": key, "device_fingerprint": fp, "user_id": 1}).encode('utf-8')
         req = urllib.request.Request(api_url, data=payload, headers={'Content-Type': 'application/json'})
         
@@ -612,7 +612,7 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "失败", f"生成失败: {e}")
 
     def _check_update(self):
-        url = "http://127.0.0.1:8001/static/downloads/version.json"
+        url = "http://120.77.136.90:8001/static/downloads/version.json"
         try:
             proxy_handler = urllib.request.ProxyHandler({})
             opener = urllib.request.build_opener(proxy_handler)
@@ -660,7 +660,7 @@ class MainWindow(QMainWindow):
 
     def _bg_download_update(self):
         try:
-            url = "http://127.0.0.1:8001/static/downloads/code_update.zip"
+            url = "http://120.77.136.90:8001/static/downloads/code_update.zip"
             proxy_handler = urllib.request.ProxyHandler({})
             opener = urllib.request.build_opener(proxy_handler)
             req = urllib.request.Request(url)

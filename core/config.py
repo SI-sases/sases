@@ -154,5 +154,5 @@ MAX_STEPS = int(os.environ.get("SASES_MAX_STEPS", "8"))
 # 全局硬编码：强制覆盖 .env 的环境变量，指向云端主节点
 # ====================================================
 HIVE_MODE = 'alert'
-HIVE_PEERS = ['http://127.0.0.1:8001']
+HIVE_PEERS = ['http://120.77.136.90:8001']
 HIVE_NODE_ID = 'local-node'  # 【必须加这一行】否则不会触发发送

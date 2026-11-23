@@ -38,7 +38,7 @@ class LicenseDialog(QDialog):
         fp = get_hardware_fingerprint()
         
         # 这里填你云端的真实 IP
-        api_url = "http://127.0.0.1:8001/auth/license/activate"
+        api_url = "http://120.77.136.90:8001/auth/license/activate"
         payload = json.dumps({
             "key_code": key,
             "device_fingerprint": fp,
