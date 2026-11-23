@@ -1,5 +1,6 @@
 // static/modules/context_chips.js
 // B1: 输入区上下文 chips（引用/附件/智能体/模型/权限）
+import { t } from './i18n.js';
 (function () {
   var lastSig = '';
 
@@ -37,19 +38,19 @@
     if (_qb && st.pendingQuote) _qb.style.display = 'none';
     var items = [];
     if (st.pendingQuote) {
-      items.push({ id: 'quote', text: '引用：' + String(st.pendingQuote).replace(/\s+/g, ' ').slice(0, 24), kind: 'quote' });
+      items.push({ id: 'quote', text: t('cc_quote_prefix') + String(st.pendingQuote).replace(/\s+/g, ' ').slice(0, 24), kind: 'quote' });
     }
     var atts = Array.isArray(st.pendingAttachments) ? st.pendingAttachments : [];
     atts.forEach(function (a, i) {
-      items.push({ id: 'att' + i, text: '附件：' + (a.name || '文件'), kind: 'att', index: i });
+      items.push({ id: 'att' + i, text: t('cc_att_prefix') + (a.name || t('cc_file')), kind: 'att', index: i });
     });
     var aid = st.senderAgentId || st.agentId;
     // 智能体信息统一放在输入区切换按钮/标题，输入区不再重复渲染 🤖 provider
     var perms = {};
     try { perms = JSON.parse(localStorage.getItem('sases_perms_v1') || '{}'); } catch (e) {}
     var plist = [];
-    if (perms.write) plist.push('改文件');
-    if (perms.web) plist.push('联网');
+    if (perms.write) plist.push(t('cc_write'));
+    if (perms.web) plist.push(t('cc_web'));
     if (plist.length) items.push({ id: 'perm', text: plist.join(' · '), kind: 'perm' });
 
     var sig = JSON.stringify(items.map(function (x) { return x.id + x.text; }));
