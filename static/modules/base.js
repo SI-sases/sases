@@ -44,12 +44,12 @@ export async function openBaseOverview(returnAction) {
           <div class="facility-icon">${facilityIcon}</div>
           <div class="facility-info">
             <div class="facility-name">${f.facility_type} <span class="facility-level">Lv.${f.level}</span></div>
-            <div class="facility-output">产出：${f.output_resource} ${rateText}</div>
-            <div class="facility-crew">${captainText} · 队员 ${memberCount}/3</div>
+            <div class="facility-output">${t('bs_output_label')}${f.output_resource} ${rateText}</div>
+            <div class="facility-crew">${captainText} · ${t('bs_crew')} ${memberCount}/3</div>
           </div>
           <div class="facility-actions">
-            <button class="facility-btn collect-btn" data-facility-type="${f.facility_type}">收取</button>
-            <button class="facility-btn upgrade-btn" data-facility-type="${f.facility_type}">升级</button>
+            <button class="facility-btn collect-btn" data-facility-type="${f.facility_type}">${t('bs_collect')}</button>
+            <button class="facility-btn upgrade-btn" data-facility-type="${f.facility_type}">${t('bs_upgrade')}</button>
           </div>
         </div>
       `;
@@ -58,7 +58,7 @@ export async function openBaseOverview(returnAction) {
 
     overviewHtml = resourcesHtml + facilitiesHtml;
   } catch (e) {
-    overviewHtml = `<div class="subpage-placeholder">加载失败：${e.message}</div>`;
+    overviewHtml = `<div class="subpage-placeholder">${t('bs_load_failed')}${e.message}</div>`;
   }
 
   const contentHtml = `<div id="base-overview-container">${overviewHtml}</div>`;
@@ -82,7 +82,7 @@ export async function openBaseOverview(returnAction) {
         const ftype = btn.dataset.facilityType;
         try {
           const res = await api.collectBaseOutput(ftype);
-          alert(`收取成功：${res.resource} × ${res.amount}`);
+          alert(`${t('bs_collect_ok')}${res.resource} × ${res.amount}`);
           openBaseOverview(returnAction);
         } catch (err) {
           alert(t('bs_collect_failed') + err.message);
@@ -100,7 +100,7 @@ export async function openBaseOverview(returnAction) {
             alert(costInfo.message);
             return;
           }
-          if (!confirm(`升级消耗：${costInfo.cost_resource} × ${costInfo.cost_amount}\n是否继续？`)) return;
+          if (!confirm(`${t('bs_upgrade_confirm')}${costInfo.cost_resource} × ${costInfo.cost_amount}\n${t('bs_continue')}`)) return;
           const res = await api.upgradeBaseFacility(ftype);
           alert(res.message);
           // 上报新手引导动作：升级设施（Day 7）
@@ -163,7 +163,7 @@ export async function openFacilityDetail(facilityType, returnAction) {
       <div class="me-menu-item"><span class="menu-label">${t('bs_captain_label')}</span><span class="menu-value">${captainId ? t('bs_assigned') : t('bs_unassigned')}</span></div>
       <div class="me-menu-item"><span class="menu-label">${t('bs_members_label')}</span><span class="menu-value">${members.length}/3</span></div>
     </div>
-    <div class="section-title">宠物任职</div>
+    <div class="section-title">${t('bs_pets_title')}</div>
     <div id="facility-pet-list" class="me-menu">
       ${petOptionsHtml || '<div class="subpage-placeholder">' + t('bs_no_pets') + '</div>'}
     </div>
@@ -178,7 +178,7 @@ export async function openFacilityDetail(facilityType, returnAction) {
       item.onclick = () => {
         const petId = parseInt(item.dataset.petId);
         let action = prompt(
-          `选择操作：\n1. 任命为队长\n2. 添加为队员\n3. 移除\n0. 取消`
+          `${t('bs_action_choose')}\n1. ${t('bs_action_captain')}\n2. ${t('bs_action_member')}\n3. ${t('bs_action_remove')}\n0. ${t('bs_action_cancel')}`
         );
         if (action === '1') {
           api.assignBaseCaptain(facilityType, petId).then(res => {
