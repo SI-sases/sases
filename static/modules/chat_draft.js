@@ -281,7 +281,7 @@ export function showSwarmActionButtons(taskId, originalInput, swarmStatus) {
   wrap.id = `swarm-actions-${taskId}`;
 
   const cancelBtn = document.createElement('button');
-  cancelBtn.textContent = '⏹ 取消执行';
+  cancelBtn.textContent = '⏹ ' + t('cd_cancel_exec');
   cancelBtn.style.padding = '6px 16px';
   cancelBtn.style.fontSize = '13px';
   cancelBtn.style.border = '1px solid #ff3b30';
@@ -295,7 +295,7 @@ export function showSwarmActionButtons(taskId, originalInput, swarmStatus) {
 
   cancelBtn.onclick = async () => {
     cancelBtn.disabled = true;
-    cancelBtn.textContent = '已取消';
+    cancelBtn.textContent = t('cd_cancelled');
     cancelBtn.style.color = '#999';
     cancelBtn.style.borderColor = '#999';
     cancelBtn.style.cursor = 'default';
@@ -318,7 +318,7 @@ export function showSwarmActionButtons(taskId, originalInput, swarmStatus) {
   };
 
   const feedbackBtn = document.createElement('button');
-  feedbackBtn.textContent = '❌ 这不是任务';
+  feedbackBtn.textContent = '❌ ' + t('cd_not_task');
   feedbackBtn.style.padding = '6px 16px';
   feedbackBtn.style.fontSize = '13px';
   feedbackBtn.style.border = '1px solid #888';
