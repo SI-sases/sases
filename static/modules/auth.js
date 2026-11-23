@@ -1,11 +1,12 @@
 // static/modules/auth.js
 import { api } from './api.js';
+import { t } from './i18n.js';
 
 export async function login(username, password) {
   const data = await api.login(username, password);
   const token = data.access_token || data.token;
   if (!token) {
-    throw new Error('登录响应缺少 token');
+    throw new Error(t('auth_missing_token_login'));
   }
   const _dlBtn = document.getElementById('download-client-btn'); if(_dlBtn) _dlBtn.style.display='none';
   localStorage.setItem('sases_token', token);
@@ -19,7 +20,7 @@ export async function register(username, password) {
   const data = await api.register(username, password);
   const token = data.access_token || data.token;
   if (!token) {
-    throw new Error('注册响应缺少 token');
+    throw new Error(t('auth_missing_token_register'));
   }
   const _dlBtn = document.getElementById('download-client-btn'); if(_dlBtn) _dlBtn.style.display='none';
   localStorage.setItem('sases_token', token);

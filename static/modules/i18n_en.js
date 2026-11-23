@@ -44,6 +44,8 @@ export const en = {
   'mea_async_spec': 'Async spec JSON (see async integration guide)',
   'me_chunks': 'chunks',
   'me_chunks_short': 'chunks',
+  'auth_missing_token_login': 'Login response is missing token',
+  'auth_missing_token_register': 'Registration response is missing token',
   'chr_collapse': 'Collapse',
   'chr_history': 'History',
   'chr_expand_recent': 'Expand recent conversations',
