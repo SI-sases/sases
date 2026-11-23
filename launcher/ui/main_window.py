@@ -612,32 +612,23 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "失败", f"生成失败: {e}")
 
     def _check_update(self):
-        url = "http://120.77.136.90:8001/static/downloads/version.json"
         try:
-            proxy_handler = urllib.request.ProxyHandler({})
-            opener = urllib.request.build_opener(proxy_handler)
-            req = urllib.request.Request(url)
-            with opener.open(req, timeout=5) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
-                remote_build = data.get("build_time", "未知")
-        except Exception:
-            QMessageBox.information(self, "提示", "无法连接更新服务器或已是最新。")
-            return
-
-        local_file = os.path.join(self.work_dir, "version.json")
-        local_build = "未知"
-        if os.path.exists(local_file):
-            try:
-                with open(local_file, "r", encoding="utf-8") as f: local_build = json.load(f).get("build_time", "未知")
-            except: pass
-
-        if remote_build != local_build:
-            reply = QMessageBox.question(self, "发现新版本", f"云端：{remote_build}\n本地：{local_build}\n\n是否立即更新？", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+            from scripts.client_updater import fetch_manifest, local_version, is_newer
+            manifest, _url = fetch_manifest()
+            local = local_version(self.work_dir)
+            if not is_newer(manifest, local):
+                QMessageBox.information(self, "已是最新", f"当前版本：{local.get('version') or '未知'}")
+                return
+            reply = QMessageBox.question(
+                self, "发现新版本",
+                f"云端：{manifest.get('version')}\n本地：{local.get('version') or '未知'}\n\n是否立即更新？",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            )
             if reply == QMessageBox.StandardButton.Yes:
                 self.stop()
                 QTimer.singleShot(1000, self.start)
-        else:
-            QMessageBox.information(self, "已是最新", "当前系统已是最新版本。")
+        except Exception:
+            QMessageBox.information(self, "提示", "无法连接更新服务器或已是最新。")
 
     def _check_existing(self):
         try:
@@ -660,29 +651,17 @@ class MainWindow(QMainWindow):
 
     def _bg_download_update(self):
         try:
-            url = "http://120.77.136.90:8001/static/downloads/code_update.zip"
-            proxy_handler = urllib.request.ProxyHandler({})
-            opener = urllib.request.build_opener(proxy_handler)
-            req = urllib.request.Request(url)
-            with opener.open(req, timeout=10) as resp:
-                data = resp.read()
-            core_dir = os.path.join(self.work_dir, "core")
-            static_dir = os.path.join(self.work_dir, "static")
-            core_bak = os.path.join(self.work_dir, "core.bak")
-            static_bak = os.path.join(self.work_dir, "static.bak")
-            
-            if os.path.exists(core_dir):
-                if os.path.exists(core_bak): shutil.rmtree(core_bak, ignore_errors=True)
-                shutil.copytree(core_dir, core_bak)
-            if os.path.exists(static_dir):
-                if os.path.exists(static_bak): shutil.rmtree(static_bak, ignore_errors=True)
-                shutil.copytree(static_dir, static_bak)
-
-            with zipfile.ZipFile(io.BytesIO(data)) as z:
-                for info in z.infolist():
-                    if "users.db" in info.filename or ".env" in info.filename or "hive-nodes" in info.filename: continue
-                    z.extract(info, self.work_dir)
-            QTimer.singleShot(0, lambda: self._log("[启动器] ✅ 更新包已静默下载并解压完成（下次启动生效）。"))
+            import sys
+            if self.work_dir not in sys.path:
+                sys.path.insert(0, self.work_dir)
+            from scripts.client_updater import check_and_apply
+            result = check_and_apply(self.work_dir)
+            if result.get("updated"):
+                QTimer.singleShot(0, lambda: self._log(
+                    f"[启动器] ✅ 客户端已热更新到 {result.get('version')}（下次启动生效）"))
+            else:
+                QTimer.singleShot(0, lambda: self._log(
+                    f"[启动器] 客户端已是最新：{result.get('local') or '未知'}"))
         except Exception as e:
             QTimer.singleShot(0, lambda: self._log(f"[启动器] 更新检查跳过或失败: {e}"))
 
