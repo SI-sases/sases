@@ -29,8 +29,8 @@ export async function openModelManagement(returnAction = null) {
               <div class="model-share-info" style="font-size:12px;color:#007aff;">${shareText} · ${m.visibility} · ${m.price}${t('price_unit')}</div>
             </div>
             <button class="edit-share-btn" data-model-id="${m.id}">${t('share_settings')}</button>
-            <button class="edit-model-btn" data-model-id="${m.id}" style="margin-left:4px;">编辑</button>
-            <button class="delete-model-btn" data-model-id="${m.id}" style="margin-left:4px;color:#d93025;">删除</button>
+            <button class="edit-model-btn" data-model-id="${m.id}" style="margin-left:4px;">${t('mm2_edit')}</button>
+            <button class="delete-model-btn" data-model-id="${m.id}" style="margin-left:4px;color:#d93025;">${t('mm2_delete')}</button>
           </div>
         `;
       });
@@ -117,9 +117,9 @@ function openAddApiKeyForm() {
           <option value="openai">OpenAI (openai)</option>
           <option value="moonshot">Moonshot/Kimi (moonshot)</option>
           <option value="claude">Claude/Anthropic (claude)</option>
-          <option value="zhipu">智谱 GLM (zhipu)</option>
-          <option value="qwen">阿里通义千问 (qwen)</option>
-          <option value="custom">自定义 (custom)</option>
+          <option value="zhipu">${t('mm2_zhipu')}</option>
+          <option value="qwen">${t('mm2_qwen')}</option>
+          <option value="custom">${t('mm2_custom')}</option>
         </select>
         <input type="text" id="api-provider-custom-input" class="inline-input" placeholder="custom provider" style="display:none;">
 
@@ -210,21 +210,21 @@ function openModelEditForm(modelId, m) {
   const isLocal = m.model_type === 'local';
   const contentHtml = `
     <div class="me-menu">
-      <div class="me-menu-item"><span class="menu-label">名称</span>
+      <div class="me-menu-item"><span class="menu-label">${t('mm2_name')}</span>
         <input type="text" id="edit-model-name" class="inline-input" value="${String(m.name || '').replace(/"/g, '&quot;')}"></div>
       ${isLocal ? `
-      <div class="me-menu-item"><span class="menu-label">节点地址</span>
+      <div class="me-menu-item"><span class="menu-label">${t('mm2_endpoint')}</span>
         <input type="text" id="edit-node-url" class="inline-input" value="${String(m.node_url || '').replace(/"/g, '&quot;')}"></div>
-      <div class="me-menu-item"><span class="menu-label">模型名</span>
+      <div class="me-menu-item"><span class="menu-label">${t('mm2_model_name')}</span>
         <input type="text" id="edit-model-name-field" class="inline-input" value="${String(m.model_name || '').replace(/"/g, '&quot;')}"></div>
       ` : `
       <div class="me-menu-item"><span class="menu-label">Provider</span>
         <input type="text" id="edit-provider" class="inline-input" value="${String(m.provider || '').replace(/"/g, '&quot;')}"></div>
       <div class="me-menu-item"><span class="menu-label">API Key</span>
-        <input type="password" id="edit-api-key" class="inline-input" placeholder="留空表示不修改"></div>
+        <input type="password" id="edit-api-key" class="inline-input" placeholder="${t('mm2_key_ph')}"></div>
       `}
     </div>
-    <button class="save-btn" id="save-model-edit">保存</button>
+    <button class="save-btn" id="save-model-edit">${t('mm2_save')}</button>
   `;
   window.openSubpage(t('mm_edit_title'), contentHtml);
   setTimeout(() => {
