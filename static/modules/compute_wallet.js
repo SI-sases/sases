@@ -82,7 +82,7 @@ export async function openComputeWallet(returnAction) {
       <div class="me-menu-item" id="compute-exchange-entry">
         <span class="menu-icon">🔄</span>
         <span class="menu-label">积分兑换算力</span>
-        <span class="menu-value">${pricing ? pricing.exchange_rate : '5 积分 = 1 算力'}</span>
+        <span class="menu-value">${pricing ? pricing.exchange_rate : t('cwal_rate_fallback')}</span>
         <span class="menu-arrow">›</span>
       </div>
     </div>
@@ -110,13 +110,13 @@ export async function openComputeWallet(returnAction) {
   document.querySelectorAll('.compute-service-item').forEach(item => {
     item.onclick = async () => {
       const key = item.dataset.serviceKey;
-      if (!confirm('是否模拟消费一次该服务？')) return;
+      if (!confirm(t('cwal_simulate_confirm'))) return;
       try {
         const res = await api.consumeCompute(key);
         alert(`消费成功，剩余 ${res.balance} 算力`);
         openComputeWallet(returnAction);
       } catch (e) {
-        alert('消费失败：' + e.message);
+        alert(t('cwal_consume_failed') + e.message);
       }
     };
   });
@@ -145,7 +145,7 @@ function openExchangePage(returnAction) {
     </div>
     <button class="save-btn" id="compute-exchange-confirm">确认兑换</button>
   `;
-  window.openSubpage('积分兑换算力', contentHtml, {
+  window.openSubpage(t('cwal_exchange_title'), contentHtml, {
     showMore: false,
     returnAction: () => openComputeWallet(returnAction)
   });
@@ -162,11 +162,11 @@ function openExchangePage(returnAction) {
   document.getElementById('compute-exchange-confirm').onclick = async () => {
     const credits = parseInt(input.value) || 0;
     if (credits <= 0) {
-      alert('请输入有效积分数量');
+      alert(t('cwal_points_required'));
       return;
     }
     if (credits % 5 !== 0) {
-      alert('积分必须是 5 的倍数');
+      alert(t('cwal_points_multiple'));
       return;
     }
     try {
@@ -174,7 +174,7 @@ function openExchangePage(returnAction) {
       alert(`兑换成功！消耗 ${res.credits_consumed} 积分，获得 ${res.compute_gained} 算力`);
       openComputeWallet(returnAction);
     } catch (e) {
-      alert('兑换失败：' + e.message);
+      alert(t('cwal_exchange_failed') + e.message);
     }
   };
 }
