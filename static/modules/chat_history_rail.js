@@ -96,9 +96,9 @@ function _ensure() {
   _listEl = _el('div', 'chr-list');
   _rail.appendChild(_listEl);
 
-  _openBtn = _el('div', null, '历史');
+  _openBtn = _el('div', null, t('chr_history'));
   _openBtn.id = 'chat-rail-open';
-  _openBtn.title = '展开最近会话';
+  _openBtn.title = t('chr_expand_recent');
   _openBtn.onclick = () => _applyCollapsed(false, true);
 
   win.appendChild(_rail);
@@ -125,7 +125,7 @@ function _relTime(iso) {
   if (isNaN(d.getTime())) return '';
   const diff = Math.max(0, Date.now() - d.getTime());
   const m = Math.floor(diff / 60000);
-  if (m < 1) return '刚刚';
+  if (m < 1) return t('chr_just_now');
   if (m < 60) return m + '分';
   const h = Math.floor(m / 60);
   if (h < 24) return h + '时';

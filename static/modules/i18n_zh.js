@@ -3,6 +3,9 @@ export const zh = {
   // 右侧最近会话栏（chat_history_rail）
   'chr_recent': '最近会话',
   'chr_collapse': '折叠',
+  'chr_history': '历史',
+  'chr_expand_recent': '展开最近会话',
+  'chr_just_now': '刚刚',
   // 指令执行（chat_work）
   'cw_agent': '智能体',
   'cw_me': '我',
