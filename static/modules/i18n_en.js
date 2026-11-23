@@ -1041,6 +1041,8 @@ export const en = {
   'gc_nick_ph': 'Up to 20 characters',
   'gc_search_ph': 'Enter keywords',
   'gc_search_btn': 'Search',
+  'gc_announcement_ph': 'Enter the group announcement, up to 2000 characters',
+  'gc_my_agents': 'My agents',
   'bs_appoint_failed': 'Appointment failed: ',
   'bs_add_ok': 'Added',
   'bs_add_failed': 'Add failed: ',

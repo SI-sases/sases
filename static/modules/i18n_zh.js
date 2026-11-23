@@ -1042,6 +1042,8 @@ export const zh = {
   'gc_nick_ph': '最多 20 字',
   'gc_search_ph': '输入关键词',
   'gc_search_btn': '搜索',
+  'gc_announcement_ph': '点击输入群公告，最多 2000 字',
+  'gc_my_agents': '我的智能体',
   'bs_appoint_failed': '任命失败：',
   'bs_add_ok': '添加成功',
   'bs_add_failed': '添加失败：',

@@ -373,7 +373,7 @@ window.openGroupAgentPickerForReply = async function(quotedText, groupId) {
 
   const html = `
     <div class="me-menu" id="reply-agent-list">
-      <div class="section-title">我的智能体</div>
+      <div class="section-title">${t('gc_my_agents')}</div>
       ${myAgents.length === 0 ? '<div class="subpage-placeholder" style="padding:20px 0;font-size:13px;">' + t('gc_none') + '</div>' : ''}
       ${myAgents.map(a => '<div class="me-menu-item reply-agent-option" data-agent-id="' + a.agent_id + '" data-source="self"><span class="menu-label">' + (a.name || a.agent_id) + '</span><span class="menu-arrow">›</span></div>').join('')}
       ${sharedAgents.length > 0 ? '<div class="section-title">' + t('gc_shared_agents') + '</div>' : ''}
@@ -1226,10 +1226,10 @@ window.openGroupNameEditor = function() {
     const html = `
       <div class="me-menu">
         <div class="me-menu-item" style="display:block;padding:12px;">
-          <textarea id="announcement-input" rows="10" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;resize:vertical;" placeholder="点击输入群公告，最多 2000 字">${content}</textarea>
+          <textarea id="announcement-input" rows="10" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;resize:vertical;" placeholder="${t('gc_announcement_ph')}">${content}</textarea>
         </div>
       </div>
-      <button class="save-btn" id="announcement-save">保存</button>
+      <button class="save-btn" id="announcement-save">${t('gc_save')}</button>
     `;
     window.openSubpage(t('gc_announcement'), html, {
       returnAction: () => openGroupSettings()
