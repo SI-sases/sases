@@ -32,7 +32,7 @@ export async function openComputeWallet(returnAction) {
             <div class="menu-title">${s.service_name}</div>
             <div class="menu-desc">${s.description || ''}</div>
           </div>
-          <span class="menu-value">${s.unit_cost} 算力</span>
+          <span class="menu-value">${s.unit_cost} ${t('cwx_compute')}</span>
         </div>
       `;
     });
@@ -70,10 +70,10 @@ export async function openComputeWallet(returnAction) {
 
   const contentHtml = `
     <div class="wallet-card" style="background: linear-gradient(135deg, #667eea, #764ba2);">
-      <div class="wallet-label">算力余额</div>
+      <div class="wallet-label">${t('cwx_balance')}</div>
       <div class="wallet-balance">${balanceData.balance}</div>
       <div style="font-size:12px;color:rgba(255,255,255,0.8);margin-top:4px;">
-        累计充值 ${balanceData.total_purchased} · 累计消费 ${balanceData.total_consumed}
+        ${t('cwx_total_purchased')} ${balanceData.total_purchased} · ${t('cwx_total_consumed')} ${balanceData.total_consumed}
       </div>
     </div>
 
@@ -81,16 +81,16 @@ export async function openComputeWallet(returnAction) {
     <div class="me-menu">
       <div class="me-menu-item" id="compute-exchange-entry">
         <span class="menu-icon">🔄</span>
-        <span class="menu-label">积分兑换算力</span>
+        <span class="menu-label">${t('cwx_exchange')}</span>
         <span class="menu-value">${pricing ? pricing.exchange_rate : t('cwal_rate_fallback')}</span>
         <span class="menu-arrow">›</span>
       </div>
     </div>
 
-    <div class="section-title">官方算力服务</div>
+    <div class="section-title">${t('cwx_official_services')}</div>
     ${servicesHtml}
 
-    <div class="section-title">交易记录</div>
+    <div class="section-title">${t('cwx_tx_history')}</div>
     ${txHtml}
   `;
 
@@ -113,7 +113,7 @@ export async function openComputeWallet(returnAction) {
       if (!confirm(t('cwal_simulate_confirm'))) return;
       try {
         const res = await api.consumeCompute(key);
-        alert(`消费成功，剩余 ${res.balance} 算力`);
+        alert(`${t('cwx_consume_ok')} ${res.balance} ${t('cwx_compute')}`);
         openComputeWallet(returnAction);
       } catch (e) {
         alert(t('cwal_consume_failed') + e.message);
@@ -127,23 +127,23 @@ function openExchangePage(returnAction) {
   const contentHtml = `
     <div class="me-menu">
       <div class="me-menu-item">
-        <span class="menu-label">消耗积分</span>
-        <input type="number" id="exchange-credits-input" class="inline-input" placeholder="必须为 5 的倍数" min="5" step="5">
+        <span class="menu-label">${t('cwx_credits_spend')}</span>
+        <input type="number" id="exchange-credits-input" class="inline-input" placeholder="${t('cwx_multiple_ph')}" min="5" step="5">
       </div>
       <div class="me-menu-item">
-        <span class="menu-label">预计获得</span>
-        <span class="menu-value" id="exchange-preview">0 算力</span>
+        <span class="menu-label">${t('cwx_expected')}</span>
+        <span class="menu-value" id="exchange-preview">${t('cwx_zero_compute')}</span>
       </div>
       <div class="me-menu-item">
-        <span class="menu-label">汇率</span>
-        <span class="menu-value">5 积分 = 1 算力</span>
+        <span class="menu-label">${t('cwx_rate')}</span>
+        <span class="menu-value">${t('cwx_rate_value')}</span>
       </div>
       <div class="me-menu-item">
-        <span class="menu-label">每日上限</span>
-        <span class="menu-value">500 积分</span>
+        <span class="menu-label">${t('cwx_daily_limit')}</span>
+        <span class="menu-value">${t('cwx_daily_limit_value')}</span>
       </div>
     </div>
-    <button class="save-btn" id="compute-exchange-confirm">确认兑换</button>
+    <button class="save-btn" id="compute-exchange-confirm">${t('cwx_confirm_exchange')}</button>
   `;
   window.openSubpage(t('cwal_exchange_title'), contentHtml, {
     showMore: false,
@@ -156,7 +156,7 @@ function openExchangePage(returnAction) {
   input.addEventListener('input', () => {
     const val = parseInt(input.value) || 0;
     const compute = Math.floor(val / 5);
-    preview.textContent = `${compute} 算力`;
+    preview.textContent = `${compute} ${t('cwx_compute')}`;
   });
 
   document.getElementById('compute-exchange-confirm').onclick = async () => {
@@ -171,7 +171,7 @@ function openExchangePage(returnAction) {
     }
     try {
       const res = await api.exchangeCompute(credits);
-      alert(`兑换成功！消耗 ${res.credits_consumed} 积分，获得 ${res.compute_gained} 算力`);
+      alert(`${t('cwx_exchange_ok')} ${res.credits_consumed} · ${res.compute_gained} ${t('cwx_compute')}`);
       openComputeWallet(returnAction);
     } catch (e) {
       alert(t('cwal_exchange_failed') + e.message);
