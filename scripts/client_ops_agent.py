@@ -45,7 +45,7 @@ def _release_lock() -> None:
 
 
 def _identity() -> dict:
-    with open(IDENTITY, encoding="utf-8") as handle:
+    with open(IDENTITY, encoding="utf-8-sig") as handle:
         return json.load(handle)
 
 
