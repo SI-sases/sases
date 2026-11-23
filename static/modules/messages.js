@@ -219,8 +219,8 @@ function showSingleSessionActions(conversationId, pinned, btn) {
   if (btn && typeof showSessionMenu === 'function') {
     showSessionMenu(btn, [
       { label: pinned ? t('msg_unpin') : t('msg_pin'), action: 'pin' },
-      { label: '标记已读', action: 'read' },
-      { label: '删除会话', action: 'delete', danger: true }
+      { label: t('msg_mark_read'), action: 'read' },
+      { label: t('msg_delete'), action: 'delete', danger: true }
     ], function (a) {
       if (a === 'pin') togglePin(conversationId, !pinned);
       else if (a === 'read') markRead(conversationId);
@@ -244,7 +244,7 @@ function showGroupSessionActions(groupId, btn) {
   const pinned = btn && btn.dataset && btn.dataset.pinned === '1';
   if (btn && typeof showSessionMenu === 'function') {
     showSessionMenu(btn, [
-      { label: pinned ? '取消置顶' : '置顶群聊', action: 'pin' },
+      { label: pinned ? t('msg_unpin') : t('msg_pin_group'), action: 'pin' },
       { label: '标记已读', action: 'read' },
       { label: '删除（本地隐藏）', action: 'delete', danger: true }
     ], function (a) {

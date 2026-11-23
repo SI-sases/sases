@@ -989,6 +989,9 @@ export const en = {
   'msg_group': 'Group chat',
   'msg_pin': 'Pin',
   'msg_unpin': 'Unpin',
+  'msg_mark_read': 'Mark as read',
+  'msg_delete': 'Delete conversation',
+  'msg_pin_group': 'Pin group chat',
   'cd_cancel': 'Cancel',
   'cd_rejected_notified': 'Rejected, the other party has been notified',
 };
