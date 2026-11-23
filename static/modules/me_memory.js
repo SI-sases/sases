@@ -40,7 +40,7 @@ async function loadMemories(memoryType) {
     const memories = data.memories || [];
     renderMemories(memories, container);
   } catch (e) {
-    container.innerHTML = `<div class="subpage-placeholder">${t('loading_failed') || '加载失败'}: ${e.message}</div>`;
+    container.innerHTML = `<div class="subpage-placeholder">${t('mm_load_failed')}: ${e.message}</div>`;
   }
 }
 
@@ -53,7 +53,7 @@ async function searchMemories(query) {
     const memories = data.memories || [];
     renderMemories(memories, container);
   } catch (e) {
-    container.innerHTML = `<div class="subpage-placeholder">${t('loading_failed') || '加载失败'}: ${e.message}</div>`;
+    container.innerHTML = `<div class="subpage-placeholder">${t('mm_load_failed')}: ${e.message}</div>`;
   }
 }
 
