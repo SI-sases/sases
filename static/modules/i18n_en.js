@@ -46,6 +46,7 @@ export const en = {
   'me_chunks_short': 'chunks',
   'auth_missing_token_login': 'Login response is missing token',
   'auth_missing_token_register': 'Registration response is missing token',
+  'search_loading': 'Searching...',
   'chr_collapse': 'Collapse',
   'chr_history': 'History',
   'chr_expand_recent': 'Expand recent conversations',

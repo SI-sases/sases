@@ -46,6 +46,7 @@ export const zh = {
   'me_chunks_short': '分片',
   'auth_missing_token_login': '登录响应缺少 token',
   'auth_missing_token_register': '注册响应缺少 token',
+  'search_loading': '搜索中...',
   'chr_collapse': '折叠',
   'chr_history': '历史',
   'chr_expand_recent': '展开最近会话',

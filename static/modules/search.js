@@ -33,7 +33,7 @@ export async function openGlobalSearch() {
 async function performGlobalSearch(q) {
   const resultsContainer = document.getElementById('global-search-results');
   if (!resultsContainer) return;
-  resultsContainer.innerHTML = '<div class="subpage-placeholder">搜索中...</div>';
+  resultsContainer.innerHTML = '<div class="subpage-placeholder">' + t('search_loading') + '</div>';
   try {
     const data = await api.globalSearch(q);
     renderSearchResults(data);
