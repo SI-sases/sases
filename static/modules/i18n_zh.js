@@ -1101,4 +1101,7 @@ export const zh = {
   'cwal_no_services': '暂无可用服务',
   'cwal_no_tx': '暂无交易记录',
   'cwal_title': '算力钱包',
+  'cwal_tx_recharge': '充值（旧记录）',
+  'cwal_tx_exchange': '积分兑换',
+  'cwal_tx_consume': '消费',
 };

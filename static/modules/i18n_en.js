@@ -1102,4 +1102,7 @@ export const en = {
   'cwal_no_services': 'No services available',
   'cwal_no_tx': 'No transactions yet',
   'cwal_title': 'Compute wallet',
+  'cwal_tx_recharge': 'Recharge (legacy record)',
+  'cwal_tx_exchange': 'Points exchange',
+  'cwal_tx_consume': 'Spending',
 };

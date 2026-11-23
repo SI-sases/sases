@@ -50,9 +50,9 @@ export async function openComputeWallet(returnAction) {
       const sign = isIncome ? '+' : '';
       const color = isIncome ? '#34c759' : '#ff3b30';
       const typeText = {
-        'recharge': '充值（旧记录）',
-        'exchange': '积分兑换',
-        'consume': '消费'
+        'recharge': t('cwal_tx_recharge'),
+        'exchange': t('cwal_tx_exchange'),
+        'consume': t('cwal_tx_consume')
       }[tx.tx_type] || tx.tx_type;
       txHtml += `
         <div class="me-menu-item">
