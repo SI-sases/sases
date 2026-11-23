@@ -977,6 +977,11 @@ export const zh = {
   'cpr_undo_this': '撤销本次修改',
   'cpr_detail': '查看详情',
   'cpr_trace_hint': '过程详情可在右侧 trace 抽屉查看',
+  'cpr_step': '步骤',
+  'cpr_done': '完成',
+  'cpr_failed': '失败',
+  'cpr_interrupted': '已中断',
+  'cpr_completed': '已完成',
   'cd_cancel': '取消',
   'cd_rejected_notified': '已拒绝，已通知对方',
 };

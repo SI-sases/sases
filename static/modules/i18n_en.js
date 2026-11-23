@@ -979,6 +979,11 @@ export const en = {
   'cpr_undo_this': 'Undo this change',
   'cpr_detail': 'View details',
   'cpr_trace_hint': 'Process details are available in the trace drawer on the right',
+  'cpr_step': 'Step',
+  'cpr_done': 'Done',
+  'cpr_failed': 'Failed',
+  'cpr_interrupted': 'Interrupted',
+  'cpr_completed': 'Completed',
   'cd_cancel': 'Cancel',
   'cd_rejected_notified': 'Rejected, the other party has been notified',
 };

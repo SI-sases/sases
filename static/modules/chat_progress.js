@@ -179,15 +179,15 @@
     var tool = d.tool ? ' · ' + d.tool : '';
     if (et === 'step_start') {
       steps += 1;
-      addLine('⏳', '步骤 ' + steps + tool, '');
+      addLine('⏳', t('cpr_step') + ' ' + steps + tool, '');
     } else if (et === 'step_done' || et === 'tool_result') {
       var ok = (d.status || '') === 'success';
       var preview = (d.output_preview || d.content || '').replace(/\s+/g, ' ').slice(0, 80);
-      addLine(ok ? '✓' : '✗', (ok ? '完成' : '失败') + tool + (preview ? ' · ' + preview : ''),
+      addLine(ok ? '✓' : '✗', (ok ? t('cpr_done') : t('cpr_failed')) + tool + (preview ? ' · ' + preview : ''),
               ok ? 'done' : 'fail', d.output_detail || '');
       if (!ok) showError(d.run_id, d.tool, preview);
     } else if (et === 'run_end') {
-      finish(d.status === 'interrupted' ? '已中断' : (d.status === 'failed' ? '失败' : '已完成'));
+      finish(d.status === 'interrupted' ? t('cpr_interrupted') : (d.status === 'failed' ? t('cpr_failed') : t('cpr_completed')));
     } else if (et === 'async_done') {
       addLine('⏱', '异步任务完成', 'done');
     }
