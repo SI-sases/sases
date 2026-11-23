@@ -984,6 +984,7 @@ export const en = {
   'cpr_failed': 'Failed',
   'cpr_interrupted': 'Interrupted',
   'cpr_completed': 'Completed',
+  'cpr_async_done': 'Async task completed',
   'cd_cancel': 'Cancel',
   'cd_rejected_notified': 'Rejected, the other party has been notified',
 };

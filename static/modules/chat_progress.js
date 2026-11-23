@@ -141,7 +141,7 @@
       btn.className = 'rp-revert';
       btn.textContent = t('cpr_undo_this');
       btn.onclick = function () {
-        if (!confirm('恢复本次运行修改/创建的文件？')) return;
+        if (!confirm(t('cpr_restore_confirm'))) return;
         btn.disabled = true;
         fetch('/supervisor/runs/' + runId + '/revert', {
           method: 'POST',
@@ -154,7 +154,7 @@
           btn.textContent = t('cpr_undone') + ' ' + ((j.restored || []).length) + '，' + t('cpr_undone_deleted') + ' ' + ((j.deleted || []).length);
         }).catch(function (e) {
           btn.disabled = false;
-          btn.textContent = '撤销失败';
+          btn.textContent = t('cpr_undo_failed');
         });
       };
       c.appendChild(btn);
@@ -189,7 +189,7 @@
     } else if (et === 'run_end') {
       finish(d.status === 'interrupted' ? t('cpr_interrupted') : (d.status === 'failed' ? t('cpr_failed') : t('cpr_completed')));
     } else if (et === 'async_done') {
-      addLine('⏱', '异步任务完成', 'done');
+      addLine('⏱', t('cpr_async_done'), 'done');
     }
   });
 

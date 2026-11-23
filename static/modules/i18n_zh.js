@@ -982,6 +982,7 @@ export const zh = {
   'cpr_failed': '失败',
   'cpr_interrupted': '已中断',
   'cpr_completed': '已完成',
+  'cpr_async_done': '异步任务完成',
   'cd_cancel': '取消',
   'cd_rejected_notified': '已拒绝，已通知对方',
 };
