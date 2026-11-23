@@ -1278,4 +1278,8 @@ export const zh = {
   'cwk_status': '状态',
   'cwk_duration': '耗时',
   'cwk_output': '输出',
+  'chat.mode.normal': '普通模式',
+  'chat.mode.normal_desc': '纯聊天，不触发任何功能',
+  'chat.mode.free': '自由模式',
+  'chat.mode.free_desc': '可执行指令、任务协作、分析图片',
 };

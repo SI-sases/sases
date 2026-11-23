@@ -1279,4 +1279,8 @@ export const en = {
   'cwk_status': 'Status',
   'cwk_duration': 'Duration',
   'cwk_output': 'Output',
+  'chat.mode.normal': 'Normal mode',
+  'chat.mode.normal_desc': 'Chat only; no tools are triggered',
+  'chat.mode.free': 'Free mode',
+  'chat.mode.free_desc': 'Run commands, collaborate on tasks, and analyze images',
 };

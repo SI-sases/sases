@@ -838,12 +838,12 @@ function openModeMenu() {
 
   content.innerHTML = `
     <div class="plus-menu-item mode-item ${chatState.mode === 'normal' ? 'active-mode' : ''}" data-mode="normal">
-      <span class="plus-menu-label">普通模式</span>
-      <span class="plus-menu-desc" style="font-size:12px;color:#888;">纯聊天，不触发任何功能</span>
+      <span class="plus-menu-label">${t('chat.mode.normal')}</span>
+      <span class="plus-menu-desc" style="font-size:12px;color:#888;">${t('chat.mode.normal_desc')}</span>
     </div>
     <div class="plus-menu-item mode-item ${chatState.mode === 'free' ? 'active-mode' : ''}" data-mode="free">
-      <span class="plus-menu-label">自由模式</span>
-      <span class="plus-menu-desc" style="font-size:12px;color:#888;">可执行指令、任务协作、分析图片</span>
+      <span class="plus-menu-label">${t('chat.mode.free')}</span>
+      <span class="plus-menu-desc" style="font-size:12px;color:#888;">${t('chat.mode.free_desc')}</span>
     </div>
   `;
 
