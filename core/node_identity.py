@@ -265,6 +265,35 @@ def revoke_node(node_id: str, reason: str = "") -> bool:
     return bool(changed)
 
 
+def get_node_by_pubkey(ed25519_pubkey: str) -> dict[str, Any] | None:
+    with db_cursor() as cur:
+        row = cur.execute(
+            "SELECT * FROM identity_nodes WHERE ed25519_pubkey=?", (ed25519_pubkey,)
+        ).fetchone()
+    return dict(row) if row else None
+
+
+def get_node_by_device(user_id: int, device_fingerprint: str) -> dict[str, Any] | None:
+    with db_cursor() as cur:
+        row = cur.execute(
+            "SELECT * FROM identity_nodes WHERE user_id=? AND device_fingerprint=? "
+            "ORDER BY created_at DESC LIMIT 1",
+            (int(user_id), device_fingerprint),
+        ).fetchone()
+    return dict(row) if row else None
+
+
+def update_node_pubkey(node_id: str, ed25519_pubkey: str) -> bool:
+    with db_cursor(commit=True) as cur:
+        cur.execute(
+            "UPDATE identity_nodes SET ed25519_pubkey=? WHERE node_id=?",
+            (ed25519_pubkey, node_id),
+        )
+        changed = cur.rowcount
+    audit_event(node_id=node_id, action="node.rotate_key", result="ok" if changed else "missing")
+    return bool(changed)
+
+
 def bind_node_wg(node_id: str, wg_pubkey: str, device_fingerprint: str | None = None) -> bool:
     with db_cursor(commit=True) as cur:
         cur.execute(

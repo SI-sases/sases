@@ -11,6 +11,7 @@ from pydantic import BaseModel
 from datetime import datetime, timedelta
 
 from ..db import db_cursor
+from .. import node_identity as ni
 
 router = APIRouter(prefix="/auth/license", tags=["License"])
 
@@ -30,6 +31,8 @@ class ActivateRequest(BaseModel):
     key_code: str
     device_fingerprint: str
     user_id: int
+    ed25519_pubkey: str | None = None
+    wg_pubkey: str | None = None
 
 
 @router.post("/activate")
@@ -98,7 +101,41 @@ async def activate(req: ActivateRequest):
         "sig": sig,
     }
 
-    return {"status": "ok", "license_json": license_json}
+    node_identity = None
+    if req.ed25519_pubkey:
+        try:
+            node = ni.get_node_by_pubkey(req.ed25519_pubkey)
+            if node and int(node["user_id"]) != int(req.user_id):
+                raise HTTPException(status_code=409, detail="节点公钥已绑定其他账号")
+            if not node:
+                node = ni.get_node_by_device(req.user_id, req.device_fingerprint)
+                if node:
+                    if node.get("status") != "active":
+                        raise HTTPException(status_code=403, detail="设备节点已被吊销")
+                    ni.update_node_pubkey(node["node_id"], req.ed25519_pubkey)
+                else:
+                    node = ni.create_node(
+                        user_id=req.user_id,
+                        profile=ni.PROFILE_EDGE,
+                        ed25519_pubkey=req.ed25519_pubkey,
+                        wg_pubkey=req.wg_pubkey,
+                        device_fingerprint=req.device_fingerprint,
+                    )
+            if req.wg_pubkey:
+                ni.bind_node_wg(node["node_id"], req.wg_pubkey, req.device_fingerprint)
+            manifest = ni.issue_manifest(node["node_id"], ttl_minutes=10080)
+            node_identity = {
+                "node_id": node["node_id"],
+                "profile": node["profile"],
+                "manifest": manifest,
+                "issuer_public_key": ni.issuer_public_key(),
+            }
+        except HTTPException:
+            raise
+        except Exception as exc:
+            raise HTTPException(status_code=400, detail=f"节点身份创建失败: {exc}") from exc
+
+    return {"status": "ok", "license_json": license_json, "node_identity": node_identity}
 
 
 @router.get("/heartbeat")
