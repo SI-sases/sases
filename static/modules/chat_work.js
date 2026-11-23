@@ -58,7 +58,7 @@ export async function sendWorkCommand(command, chatState, api) {
   const input = document.getElementById('chat-input');
   if (!command) return;
 
-  appendWorkMessage('user', command, chatState.senderAgentId ? '智能体' : '我');
+  appendWorkMessage('user', command, chatState.senderAgentId ? t('cw_agent') : t('cw_me'));
   input.value = '';
   if (typeof window.updateSendButtonVisibility === 'function') {
     window.updateSendButtonVisibility();
@@ -69,9 +69,9 @@ export async function sendWorkCommand(command, chatState, api) {
     if (data.conversation_id) {
       chatState.conversationId = data.conversation_id;
     }
-    let resultText = data.output || '(无输出)';
+    let resultText = data.output || t('cw_no_output');
     if (data.credit_deducted) {
-      resultText += `\n\n⚠️ 已扣除 2 积分，剩余 ${data.credit_remaining ?? '未知'}`;
+      resultText += `\n\n⚠️ ${t('cw_credits_deducted')} ${t('cw_remaining')} ${data.credit_remaining ?? t('cw_unknown')}`;
     }
     appendWorkMessage('assistant', resultText, '指令执行');
 

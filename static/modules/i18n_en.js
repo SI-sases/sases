@@ -1,5 +1,12 @@
 // static/modules/i18n_en.js
 export const en = {
+  // Work command (chat_work)
+  'cw_agent': 'Agent',
+  'cw_me': 'Me',
+  'cw_no_output': '(no output)',
+  'cw_credits_deducted': '2 credits deducted,',
+  'cw_remaining': 'remaining',
+  'cw_unknown': 'unknown',
   // Capability switches (api_pill)
   'cp_web': 'Web',
   'cp_web_desc': 'Allow reading web pages / calling external APIs',

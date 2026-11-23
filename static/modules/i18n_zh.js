@@ -1,5 +1,12 @@
 // static/modules/i18n_zh.js
 export const zh = {
+  // 指令执行（chat_work）
+  'cw_agent': '智能体',
+  'cw_me': '我',
+  'cw_no_output': '(无输出)',
+  'cw_credits_deducted': '已扣除 2 积分，',
+  'cw_remaining': '剩余',
+  'cw_unknown': '未知',
   // 能力开关（api_pill）
   'cp_web': '联网',
   'cp_web_desc': '允许读取网页 / 调用外部 API',
