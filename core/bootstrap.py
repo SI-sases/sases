@@ -720,7 +720,9 @@ async def lifespan(app: FastAPI):
 
 
 def create_app() -> FastAPI:
+    from core.db import init_db
     from core.migrations import ensure_schema
+    init_db()
     ensure_schema()
 
     app = FastAPI(title="SASES", version="0.15.4", lifespan=lifespan)

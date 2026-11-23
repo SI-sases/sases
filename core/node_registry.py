@@ -9,7 +9,30 @@ class NodeRegistry:
     """节点注册与持久化（SQLite）"""
 
     def __init__(self):
+        self._ensure_table()
         self._register_self()
+
+    def _ensure_table(self):
+        """Fresh/partial databases may not have run init_db yet at import time."""
+        with get_db() as conn:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS space_nodes (
+                    node_id TEXT PRIMARY KEY,
+                    name TEXT,
+                    description TEXT,
+                    node_type TEXT DEFAULT 'harness',
+                    capabilities TEXT,
+                    endpoint TEXT,
+                    icon TEXT,
+                    owner_id TEXT DEFAULT 'system',
+                    registered_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    reputation REAL DEFAULT 1.0,
+                    success_count INTEGER DEFAULT 0,
+                    total_count INTEGER DEFAULT 0,
+                    status TEXT DEFAULT 'unknown'
+                )
+            """)
+            conn.commit()
 
     def _register_self(self):
         if config.NODE_ID and config.NODE_NAME:
