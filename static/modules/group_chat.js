@@ -988,8 +988,8 @@ async function loadGroupMembers() {
       `;
     });
     html += `
-      <div class="member-grid-item member-grid-action" id="invite-member-btn"><div class="member-grid-avatar action">＋</div><div class="member-grid-name">邀请</div></div>
-      <div class="member-grid-item member-grid-action" id="remove-member-btn"><div class="member-grid-avatar action">－</div><div class="member-grid-name">移除</div></div>
+      <div class="member-grid-item member-grid-action" id="invite-member-btn"><div class="member-grid-avatar action">＋</div><div class="member-grid-name">${t('gcm_invite')}</div></div>
+      <div class="member-grid-item member-grid-action" id="remove-member-btn"><div class="member-grid-avatar action">－</div><div class="member-grid-name">${t('gcm_remove')}</div></div>
     `;
     container.innerHTML = html;
     const inviteBtn = document.getElementById('invite-member-btn');
@@ -997,7 +997,7 @@ async function loadGroupMembers() {
     const removeBtn = document.getElementById('remove-member-btn');
     if (removeBtn) removeBtn.addEventListener('click', openRemoveDialog);
   } catch (e) {
-    document.getElementById('group-members-container').innerHTML = `<div class="subpage-placeholder">加载失败：${e.message}</div>`;
+    document.getElementById('group-members-container').innerHTML = `<div class="subpage-placeholder">${t('gcm_load_failed')}${e.message}</div>`;
   }
 }
 
@@ -1009,11 +1009,11 @@ function openInviteDialog() {
   const contentHtml = `
     <div class="me-menu">
       <div class="me-menu-item">
-        <span class="menu-label">用户名 / SASES ID / 智能体 ID</span>
-        <input type="text" id="invite-input" class="inline-input" placeholder="输入用户名、SASES ID 或智能体 ID">
+        <span class="menu-label">${t('gcm_invite_label')}</span>
+        <input type="text" id="invite-input" class="inline-input" placeholder="${t('gcm_invite_ph')}">
       </div>
     </div>
-    <button class="save-btn" id="confirm-invite-btn">邀请</button>
+    <button class="save-btn" id="confirm-invite-btn">${t('gcm_invite_btn')}</button>
   `;
   window.openSubpage(t('gc_invite_members'), contentHtml);
 
@@ -1037,11 +1037,11 @@ function openRemoveDialog() {
   const contentHtml = `
     <div class="me-menu">
       <div class="me-menu-item">
-        <span class="menu-label">输入要移除的成员 ID 或名称</span>
-        <input type="text" id="remove-input" class="inline-input" placeholder="输入用户 ID 或智能体 ID">
+        <span class="menu-label">${t('gcm_remove_label')}</span>
+        <input type="text" id="remove-input" class="inline-input" placeholder="${t('gcm_remove_ph')}">
       </div>
     </div>
-    <button class="save-btn" id="confirm-remove-btn" style="background:#ff3b30;">移除</button>
+    <button class="save-btn" id="confirm-remove-btn" style="background:#ff3b30;">${t('gcm_remove_btn')}</button>
   `;
   window.openSubpage(t('gc_remove_member'), contentHtml);
 
@@ -1068,7 +1068,7 @@ function openRemoveDialog() {
 async function openAgentSwitch(fromChat = false) {
   const contentHtml = `
     <div class="me-menu" id="agent-switch-list">
-      <div class="subpage-placeholder">加载中...</div>
+      <div class="subpage-placeholder">${t('gcm_loading')}</div>
     </div>
   `;
   window.openSubpage(t('gc_pick_sender'), contentHtml, {
