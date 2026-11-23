@@ -292,7 +292,7 @@ async function openKnowledgeBase() {
     } else {
       myDocsHtml = '<div class="me-menu">';
       _docs.forEach(function(d, idx) {
-        myDocsHtml += '<div class="me-menu-item" data-doc-index="' + idx + '" style="cursor:pointer;"><span class="menu-icon">📄</span><div class="menu-text"><div class="menu-title">' + (d.source_file || t('me_kb_untitled')) + '</div><div class="menu-desc">' + (d.chunk_count || 0) + ' 个分片</div></div><span class="menu-arrow">›</span></div>';
+        myDocsHtml += '<div class="me-menu-item" data-doc-index="' + idx + '" style="cursor:pointer;"><span class="menu-icon">📄</span><div class="menu-text"><div class="menu-title">' + (d.source_file || t('me_kb_untitled')) + '</div><div class="menu-desc">' + (d.chunk_count || 0) + ' ' + t('me_chunks') + '</div></div><span class="menu-arrow">›</span></div>';
       });
       myDocsHtml += '</div>';
       window._myDocsCache = _docs;
@@ -348,7 +348,7 @@ async function openMyDoc(sourceFile) {
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const d = await r.json();
     const content = d.content || t('me_kb_empty_content');
-    const html = '<div style="padding:12px;"><div style="font-size:13px;color:#888;margin-bottom:12px;">' + (d.source_file || '') + ' · ' + (d.chunk_count || 0) + ' 分片</div><pre style="white-space:pre-wrap;word-break:break-word;font-size:14px;line-height:1.6;font-family:inherit;">' + content.replace(/</g, '&lt;') + '</pre></div>';
+    const html = '<div style="padding:12px;"><div style="font-size:13px;color:#888;margin-bottom:12px;">' + (d.source_file || '') + ' · ' + (d.chunk_count || 0) + ' ' + t('me_chunks_short') + '</div><pre style="white-space:pre-wrap;word-break:break-word;font-size:14px;line-height:1.6;font-family:inherit;">' + content.replace(/</g, '&lt;') + '</pre></div>';
     window.openSubpage(sourceFile, html);
   } catch (e) {
     alert(t('me_open_failed') + e.message);

@@ -42,6 +42,8 @@ export const en = {
   'mea_add_title': 'Add external API',
   'mea_name_url_required': 'Name and URL are required',
   'mea_async_spec': 'Async spec JSON (see async integration guide)',
+  'me_chunks': 'chunks',
+  'me_chunks_short': 'chunks',
   'chr_collapse': 'Collapse',
   'chr_history': 'History',
   'chr_expand_recent': 'Expand recent conversations',

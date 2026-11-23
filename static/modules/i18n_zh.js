@@ -42,6 +42,8 @@ export const zh = {
   'mea_add_title': '添加外部 API',
   'mea_name_url_required': '名称和地址不能为空',
   'mea_async_spec': '异步规范 JSON (参考异步接入方案)',
+  'me_chunks': '个分片',
+  'me_chunks_short': '分片',
   'chr_collapse': '折叠',
   'chr_history': '历史',
   'chr_expand_recent': '展开最近会话',
