@@ -1043,4 +1043,13 @@ export const zh = {
   'mm_delete_failed': '删除失败：',
   'mm_edit_title': '编辑智能体',
   'mm_save_failed': '保存失败：',
+  'pb_auto': '自动',
+  'pb_fast': '快速',
+  'pb_strict': '严格',
+  'pb_steps': '步',
+  'pb_quick_task': '快速任务',
+  'pb_default': '默认',
+  'pb_complex_task': '复杂任务',
+  'pb_unlimited': '不限',
+  'pb_caution': '谨慎使用',
 };

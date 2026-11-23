@@ -1,21 +1,23 @@
 // 参数胶囊栏（v0.37.0）
 // 用法：initParamBar() 初始化；getParamMaxSteps() 读取当前值
 
+import { t } from './i18n.js';
+
 const STORAGE_KEY = 'sases_max_steps';
 const DEFAULT_STEPS = 8;
 const MODE_KEY = 'sases_agent_mode';
 const MODE_PRESETS = [
-  { value: 'auto', label: '⚡ 自动' },
-  { value: 'fast', label: '⚡ 快速' },
-  { value: 'strict', label: '🎯 严格' },
+  { value: 'auto', label: '⚡ ' + t('pb_auto') },
+  { value: 'fast', label: '⚡ ' + t('pb_fast') },
+  { value: 'strict', label: '🎯 ' + t('pb_strict') },
 ];
 let _mode = null;
 
 const PRESETS = [
-  { value: 5, label: '5步', desc: '快速任务' },
-  { value: 8, label: '8步', desc: '默认' },
-  { value: 15, label: '15步', desc: '复杂任务' },
-  { value: -1, label: '不限', desc: '谨慎使用' },
+  { value: 5, label: '5' + t('pb_steps'), desc: t('pb_quick_task') },
+  { value: 8, label: '8' + t('pb_steps'), desc: t('pb_default') },
+  { value: 15, label: '15' + t('pb_steps'), desc: t('pb_complex_task') },
+  { value: -1, label: t('pb_unlimited'), desc: t('pb_caution') },
 ];
 
 let _currentValue = null;
@@ -34,8 +36,8 @@ function _write(v) {
 }
 
 function _labelOf(v) {
-  if (v === -1) return '不限';
-  return v + '步';
+  if (v === -1) return t('pb_unlimited');
+  return v + t('pb_steps');
 }
 
 function _updatePill() {

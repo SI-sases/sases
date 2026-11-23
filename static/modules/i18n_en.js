@@ -1045,4 +1045,13 @@ export const en = {
   'mm_delete_failed': 'Delete failed: ',
   'mm_edit_title': 'Edit agent',
   'mm_save_failed': 'Save failed: ',
+  'pb_auto': 'Auto',
+  'pb_fast': 'Fast',
+  'pb_strict': 'Strict',
+  'pb_steps': ' steps',
+  'pb_quick_task': 'Quick task',
+  'pb_default': 'Default',
+  'pb_complex_task': 'Complex task',
+  'pb_unlimited': 'Unlimited',
+  'pb_caution': 'Use with caution',
 };
