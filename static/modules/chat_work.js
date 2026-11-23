@@ -24,14 +24,14 @@ export function showWorkWarning(command, chatState, api) {
   dialog.style.width = '360px';
   dialog.style.boxSizing = 'border-box';
   dialog.innerHTML = `
-    <div style="font-size:16px; font-weight:600; margin-bottom:10px;">⚠️ 指令执行风险提示</div>
-    <div style="font-size:14px; color:#666; margin-bottom:16px;">即将在本地执行命令：<br><strong>${command}</strong><br><br>请确认该命令来自可信来源。危险命令已被白名单拦截，但请谨慎使用。</div>
+    <div style="font-size:16px; font-weight:600; margin-bottom:10px;">⚠️ ${t('cwk_risk_title')}</div>
+    <div style="font-size:14px; color:#666; margin-bottom:16px;">${t('cwk_risk_desc_prefix')}<br><strong>${command}</strong><br><br>${t('cwk_risk_desc_suffix')}</div>
     <div style="font-size:14px; margin-bottom:16px;">
-      <label><input type="checkbox" id="work-warning-disable-check"> 今后不再提醒</label>
+      <label><input type="checkbox" id="work-warning-disable-check"> ${t('cwk_dont_remind')}</label>
     </div>
     <div style="display:flex; gap:8px;">
-      <button id="work-warning-cancel" style="flex:1; padding:10px; border:1px solid #ddd; border-radius:8px; background:#f5f5f5;">取消</button>
-      <button id="work-warning-confirm" style="flex:1; padding:10px; border:none; border-radius:8px; background:#007aff; color:#fff;">继续执行</button>
+      <button id="work-warning-cancel" style="flex:1; padding:10px; border:1px solid #ddd; border-radius:8px; background:#f5f5f5;">${t('cwk_cancel')}</button>
+      <button id="work-warning-confirm" style="flex:1; padding:10px; border:none; border-radius:8px; background:#007aff; color:#fff;">${t('cwk_continue_exec')}</button>
     </div>
   `;
 
@@ -89,7 +89,7 @@ export async function sendCommanderTask(taskText, chatState, api) {
   const input = document.getElementById('chat-input');
   if (!taskText) return;
 
-  appendWorkMessage('user', taskText, chatState.senderAgentId ? '智能体' : '我');
+  appendWorkMessage('user', taskText, chatState.senderAgentId ? t('cw_agent') : t('cw_me'));
   input.value = '';
   if (typeof window.updateSendButtonVisibility === 'function') {
     window.updateSendButtonVisibility();
@@ -114,9 +114,9 @@ export async function sendCommanderTask(taskText, chatState, api) {
     }
 
     data.results.forEach((r, idx) => {
-      let stepText = `[步骤 ${idx + 1}] ${r.command}\n状态: ${r.status}\n耗时: ${r.duration_ms} ms`;
+      let stepText = `[${t('cwk_step')} ${idx + 1}] ${r.command}\n${t('cwk_status')}: ${r.status}\n${t('cwk_duration')}: ${r.duration_ms} ms`;
       if (r.status === 'success') {
-        stepText += `\n输出:\n${r.output}`;
+        stepText += `\n${t('cwk_output')}:\n${r.output}`;
       } else if (r.status === 'blocked') {
         stepText += `\n⚠️ ${t('cw_blocked')}${r.output}`;
       } else {
