@@ -1,5 +1,6 @@
 // static/modules/markdown.js
 // 轻量 Markdown 渲染：代码块/行内代码/粗体/标题/列表/链接。先转义，再生成固定标签。
+import { t } from './i18n.js';
 function esc(s) {
   return String(s == null ? '' : s)
     .replace(/&/g, '&amp;')
@@ -44,7 +45,7 @@ export function renderMarkdown(text) {
     if (!b) return '';
     const lang = esc(b.lang);
     return '<div class="code-block"><div class="code-head"><span class="code-lang">' + lang +
-      '</span><button class="code-copy" type="button">复制</button></div>' +
+      '</span><button class="code-copy" type="button">' + t('md_copy') + '</button></div>' +
       '<pre><code>' + esc(b.code) + '</code></pre></div>';
   });
 
@@ -70,8 +71,8 @@ if (typeof document !== 'undefined' && !window.__sasesMdCopyBound) {
         document.execCommand('copy');
         ta.remove();
       }
-      btn.textContent = '已复制';
-      setTimeout(function () { btn.textContent = '复制'; }, 1200);
+      btn.textContent = t('md_copied');
+      setTimeout(function () { btn.textContent = t('md_copy'); }, 1200);
     } catch (err) {
       console.warn('[markdown] copy failed', err);
     }

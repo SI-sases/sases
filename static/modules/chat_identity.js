@@ -42,8 +42,8 @@ export function updateIdentityButton(chatState) {
 export async function openIdentitySwitch(chatState, api) {
   const contentHtml = `
     <div class="me-menu" id="identity-switch-list">
-      <div class="me-menu-item identity-option" data-agent-id="">👤 以本人身份</div>
-      <div class="subpage-placeholder">加载智能体...</div>
+      <div class="me-menu-item identity-option" data-agent-id="">👤 ${t('ci_self')}</div>
+      <div class="subpage-placeholder">${t('ci_loading')}</div>
     </div>
   `;
   window.openSubpage(t('ci_title'), contentHtml);
@@ -97,6 +97,6 @@ export async function openIdentitySwitch(chatState, api) {
       });
     });
   } catch (e) {
-    document.getElementById('identity-switch-list').innerHTML = `<div class="subpage-placeholder">加载失败：${e.message}</div>`;
+    document.getElementById('identity-switch-list').innerHTML = `<div class="subpage-placeholder">${t('ci_load_failed')}${e.message}</div>`;
   }
 }

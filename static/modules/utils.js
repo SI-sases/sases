@@ -14,7 +14,7 @@ export function initPullToRefresh(container, reloadFn) {
   // 创建提示元素
   const indicator = document.createElement('div');
   indicator.className = 'pull-indicator';
-  indicator.textContent = '下拉刷新';
+  indicator.textContent = t('pull_refresh');
   container.parentElement.insertBefore(indicator, container);
   indicator.style.display = 'none';
 
@@ -31,7 +31,7 @@ export function initPullToRefresh(container, reloadFn) {
     pullDistance = currentY - startY;
     if (pullDistance > 0 && container.scrollTop <= 0) {
       indicator.style.display = 'block';
-      indicator.textContent = pullDistance >= threshold ? '松开刷新' : '下拉刷新';
+      indicator.textContent = pullDistance >= threshold ? t('release_refresh') : t('pull_refresh');
       if (pullDistance < threshold) {
         // 阻止默认滚动，显示指示器
         e.preventDefault();
@@ -43,7 +43,7 @@ export function initPullToRefresh(container, reloadFn) {
     if (!pulling) return;
     pulling = false;
     if (pullDistance >= threshold) {
-      indicator.textContent = '刷新中...';
+      indicator.textContent = t('refreshing');
       try {
         await reloadFn();
       } catch (e) {
