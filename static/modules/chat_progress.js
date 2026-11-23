@@ -99,9 +99,9 @@
     d.id = 'run-error-card';
     d.innerHTML = '<div class="er-title">⚠️ ' + t('cpr_failed_title') + '</div>' +
       '<div class="er-desc">' + (tool ? t('cpr_tool') + '：' + tool + ' · ' : '') + (preview || t('cpr_no_step')) + '</div>' +
-      '<button data-e="retry">重试</button>' +
-      '<button data-e="undo">撤销本次修改</button>' +
-      '<button data-e="detail">查看详情</button>';
+      '<button data-e="retry">' + t('cpr_retry') + '</button>' +
+      '<button data-e="undo">' + t('cpr_undo_this') + '</button>' +
+      '<button data-e="detail">' + t('cpr_detail') + '</button>';
     msgs.appendChild(d);
     msgs.scrollTop = msgs.scrollHeight;
     d.querySelector('[data-e="retry"]').onclick = function () {

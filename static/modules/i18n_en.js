@@ -975,6 +975,9 @@ export const en = {
   'cpr_failed_title': 'Execution failed',
   'cpr_tool': 'Tool: ',
   'cpr_no_step': 'Step did not succeed',
+  'cpr_retry': 'Retry',
+  'cpr_undo_this': 'Undo this change',
+  'cpr_detail': 'View details',
   'cd_cancel': 'Cancel',
   'cd_rejected_notified': 'Rejected, the other party has been notified',
 };
