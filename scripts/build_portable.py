@@ -23,6 +23,7 @@ ROOT_FILES = (
     "app_full.py",
     "requirements.txt",
     "client_version.json",
+    "SASES-start.bat",
     "LICENSE",
     "COMMERCIAL.md",
     "THIRD_PARTY_LICENSES.md",
