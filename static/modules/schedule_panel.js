@@ -68,10 +68,10 @@ function _listHtml(tasks) {
     html += `<div class="sched-item" data-id="${t.id}">
       <div class="sched-main">
         <div class="sched-name">${_esc(t.name || t.task_template)}<span class="sched-badge ${on}">${t.enabled ? t('sch_running') : t('sch_paused')}</span></div>
-        <div class="sched-sub">${_esc(t.task_template)} · ${_esc(t.cron_expr)} · 下次 ${_esc((t.next_run_at || '').replace('T', ' ').slice(0, 16))}</div>
+        <div class="sched-sub">${_esc(t.task_template)} · ${_esc(t.cron_expr)} · ${t('sch_next')} ${_esc((t.next_run_at || '').replace('T', ' ').slice(0, 16))}</div>
       </div>
       <button class="sched-btn" data-act="toggle">${t.enabled ? t('sch_pause') : t('sch_enable')}</button>
-      <button class="sched-btn" data-act="delete" style="color:#d93025">删除</button>
+      <button class="sched-btn" data-act="delete" style="color:#d93025">${t('sch_delete')}</button>
     </div>`;
   });
   return html;
@@ -92,7 +92,7 @@ async function _refresh() {
         const del = el.querySelector('[data-act="delete"]');
         const tog = el.querySelector('[data-act="toggle"]');
         if (del) del.onclick = async () => {
-          if (!confirm('删除该定时任务？')) return;
+          if (!confirm(t('sch_delete_confirm'))) return;
           await _json('/scheduled/' + id, { method: 'DELETE', headers: { Authorization: 'Bearer ' + _token() } });
           _refresh();
         };
