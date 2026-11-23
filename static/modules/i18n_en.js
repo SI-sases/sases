@@ -1024,4 +1024,7 @@ export const en = {
   'tm_configured': 'Configured',
   'tm_not_configured': 'Not configured',
   'tm_empty': 'No external tools installed yet',
+  'tm_git_allowlist': 'Git (allowlist required): ',
+  'tm_git_ref_ph': 'Branch/tag (optional)',
+  'tm_admin_token': 'Admin Token',
 };

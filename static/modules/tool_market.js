@@ -90,17 +90,17 @@ function _render(cat) {
       <button class="tm-btn primary" id="tm-install-zip">上传并安装</button>
     </div>
     <div style="margin-top:10px;border-top:1px dashed #eee;padding-top:8px">
-      <div class="tm-hint">Git（需白名单）：${allow.length ? _esc(allow.join(' , ')) : t('tm_no_allowlist')}</div>
+      <div class="tm-hint">${t('tm_git_allowlist')}${allow.length ? _esc(allow.join(' , ')) : t('tm_no_allowlist')}</div>
       <div class="tm-grid">
         <input class="tm-input" id="tm-git-repo" placeholder="https://github.com/org/sases-tools">
-        <input class="tm-input" id="tm-git-ref" placeholder="分支/标签（可空）">
+        <input class="tm-input" id="tm-git-ref" placeholder="${t('tm_git_ref_ph')}">
         <input class="tm-input" id="tm-git-sub" placeholder="子目录（可空）">
         <label class="tm-hint"><input type="checkbox" id="tm-git-force"> 覆盖旧版本</label>
       </div>
       <button class="tm-btn primary" id="tm-install-git">从 Git 安装</button>
     </div>
     <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
-      <button class="tm-btn" id="tm-admin">管理员 Token</button>
+      <button class="tm-btn" id="tm-admin">${t('tm_admin_token')}</button>
       <span class="tm-hint" id="tm-admin-state">${_adminToken() ? t('tm_configured') : t('tm_not_configured')}</span>
       <span class="tm-err" id="tm-err"></span>
     </div>
@@ -166,7 +166,7 @@ function _bind() {
     if (v === null) return;
     localStorage.setItem(TOKEN_KEY, v.trim());
     const st = document.getElementById('tm-admin-state');
-    if (st) st.textContent = v.trim() ? '已配置' : '未配置';
+    if (st) st.textContent = v.trim() ? t('tm_configured') : t('tm_not_configured');
   };
 
   _root.querySelectorAll('[data-action="toggle"]').forEach(el => {

@@ -1022,4 +1022,7 @@ export const zh = {
   'tm_configured': '已配置',
   'tm_not_configured': '未配置',
   'tm_empty': '还没有安装外部工具',
+  'tm_git_allowlist': 'Git（需白名单）：',
+  'tm_git_ref_ph': '分支/标签（可空）',
+  'tm_admin_token': '管理员 Token',
 };
