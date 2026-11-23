@@ -61,7 +61,7 @@ def fetch_manifest(urls=None) -> tuple[dict, str]:
         try:
             req = urllib.request.Request(url, headers={"User-Agent": "SASES-Updater"})
             opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
-            with opener.open(req, timeout=20) as resp:
+            with opener.open(req, timeout=6) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
             if not data.get("version") or not data.get("package_url"):
                 raise UpdateError("manifest missing version/package_url")
@@ -170,6 +170,8 @@ def apply_update(root: str, manifest: dict, manifest_url: str) -> dict:
 
 
 def check_and_apply(root: str, urls=None, apply: bool = True) -> dict:
+    if os.getenv("SASES_CLIENT_UPDATE_DISABLE", "").strip().lower() in ("1", "true", "yes"):
+        return {"updated": False, "disabled": True}
     local = local_version(root)
     manifest, manifest_url = fetch_manifest(urls)
     if not is_newer(manifest, local):
