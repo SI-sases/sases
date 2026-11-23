@@ -2,7 +2,9 @@ import uuid
 import json
 from datetime import datetime, timedelta
 
-from core.services.outbox.outbox_db import outbox_cursor
+from core.services.outbox.outbox_db import outbox_cursor, ensure_outbox_table
+
+ensure_outbox_table()
 
 
 def enqueue(target_url, payload, extra_headers=None):
