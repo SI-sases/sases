@@ -985,6 +985,10 @@ export const en = {
   'cpr_interrupted': 'Interrupted',
   'cpr_completed': 'Completed',
   'cpr_async_done': 'Async task completed',
+  'msg_session': 'Conversation',
+  'msg_group': 'Group chat',
+  'msg_pin': 'Pin',
+  'msg_unpin': 'Unpin',
   'cd_cancel': 'Cancel',
   'cd_rejected_notified': 'Rejected, the other party has been notified',
 };

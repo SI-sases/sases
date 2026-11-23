@@ -983,6 +983,10 @@ export const zh = {
   'cpr_interrupted': '已中断',
   'cpr_completed': '已完成',
   'cpr_async_done': '异步任务完成',
+  'msg_session': '会话',
+  'msg_group': '群聊',
+  'msg_pin': '置顶',
+  'msg_unpin': '取消置顶',
   'cd_cancel': '取消',
   'cd_rejected_notified': '已拒绝，已通知对方',
 };

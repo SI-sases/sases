@@ -65,7 +65,7 @@ async function loadConversations(container) {
 
     // ================= 渲染单聊会话 =================
     conversations.forEach(conv => {
-      const agentName = escapeHtml(conv.title || '会话');
+      const agentName = escapeHtml(conv.title || t('msg_session'));
       const lastMessage = escapeHtml(stripSummaryPrefix(conv.last_message || ''));
       const unread = conv.unread_count || 0;
       const pinned = conv.is_pinned ? 'pinned' : '';
@@ -97,7 +97,7 @@ async function loadConversations(container) {
     const _hiddenGroups = (() => { try { return JSON.parse(localStorage.getItem('sases_hidden_groups') || '[]'); } catch(e) { return []; } })();
 
     groups.forEach(group => {
-      const groupName = escapeHtml(group.name || '群聊');
+      const groupName = escapeHtml(group.name || t('msg_group'));
       const lastMessage = escapeHtml(stripSummaryPrefix(group.last_message || ''));
       const lastSenderName = escapeHtml(group.last_sender_name || '');
       const displayLast = lastSenderName ? `${lastSenderName}: ${lastMessage}` : lastMessage;
@@ -218,7 +218,7 @@ function showSessionMenu(btn, items, onSelect) {
 function showSingleSessionActions(conversationId, pinned, btn) {
   if (btn && typeof showSessionMenu === 'function') {
     showSessionMenu(btn, [
-      { label: pinned ? '取消置顶' : '置顶', action: 'pin' },
+      { label: pinned ? t('msg_unpin') : t('msg_pin'), action: 'pin' },
       { label: '标记已读', action: 'read' },
       { label: '删除会话', action: 'delete', danger: true }
     ], function (a) {
