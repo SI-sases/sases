@@ -1370,19 +1370,19 @@ function openRedPacketConfig() {
   const html = `
     <div class='me-menu'>
       <div class='me-menu-item'>
-        <span class='menu-label'>发放时间（本地时间）</span>
+        <span class='menu-label'>${t('grp_time')}</span>
         <input type='number' id='gc-rp-hour' class='inline-input' value='20' min='0' max='23'>
       </div>
       <div class='me-menu-item'>
-        <span class='menu-label'>谁可以抢</span>
+        <span class='menu-label'>${t('grp_audience')}</span>
         <select id='gc-rp-audience' class='inline-input'>
-          <option value='all'>所有群成员</option>
-          <option value='stakers'>仅质押成员</option>
+          <option value='all'>${t('grp_all')}</option>
+          <option value='stakers'>${t('grp_stakers')}</option>
         </select>
       </div>
-      <div style='padding:8px 12px;font-size:12px;color:#999;'>填本地时间，系统自动按 UTC 存储</div>
+      <div style='padding:8px 12px;font-size:12px;color:#999;'>${t('grp_time_note')}</div>
     </div>
-    <button class='save-btn' id='gc-rp-save'>保存配置</button>
+    <button class='save-btn' id='gc-rp-save'>${t('grp_save')}</button>
   `;
   window.openSubpage(t('gc_rp_config'), html, { returnAction: () => openGroupCreditsDetail() });
   setTimeout(async () => {
@@ -1526,11 +1526,11 @@ function openGroupNameEditor() {
   const html = `
     <div class="me-menu">
       <div class="me-menu-item">
-        <span class="menu-label">群名称</span>
+        <span class="menu-label">${t('gc_group_name')}</span>
         <input id="gn-input" type="text" class="inline-input" value="${currentGroupName}" maxlength="50">
       </div>
     </div>
-    <button class="save-btn" id="gn-save">保存</button>
+    <button class="save-btn" id="gn-save">${t('gc_save')}</button>
   `;
   window.openSubpage(t('gc_group_name'), html, {
     showMore: false,
@@ -1563,11 +1563,11 @@ function openNicknameEditor() {
   const html = `
     <div class="me-menu">
       <div class="me-menu-item">
-        <span class="menu-label">群昵称</span>
-        <input id="nick-input" type="text" class="inline-input" maxlength="20" placeholder="最多 20 字">
+        <span class="menu-label">${t('gc_nickname')}</span>
+        <input id="nick-input" type="text" class="inline-input" maxlength="20" placeholder="${t('gc_nick_ph')}">
       </div>
     </div>
-    <button class="save-btn" id="nick-save">保存</button>
+    <button class="save-btn" id="nick-save">${t('gc_save')}</button>
   `;
   window.openSubpage(t('gc_my_nickname'), html, {
     showMore: false,
@@ -1594,8 +1594,8 @@ function openNicknameEditor() {
 function openGroupSearch() {
   const html = `
     <div class="subpage-search-bar">
-      <input type="text" id="gs-input" class="search-input" placeholder="输入关键词">
-      <button class="search-btn" id="gs-btn">搜索</button>
+      <input type="text" id="gs-input" class="search-input" placeholder="${t('gc_search_ph')}">
+      <button class="search-btn" id="gs-btn">${t('gc_search_btn')}</button>
     </div>
     <div id="gs-results"></div>
   `;
