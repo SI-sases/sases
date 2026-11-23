@@ -1,0 +1,39 @@
+name: client-release
+
+on:
+  push:
+    tags:
+      - "client-v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Test updater
+        run: |
+          python -m pip install --quiet pytest
+          python -m pytest tests/test_client_updater.py -q
+      - name: Build update package
+        run: |
+          VERSION="${GITHUB_REF_NAME#client-v}"
+          python scripts/client_release.py \
+            --version "${VERSION}" \
+            --build "${GITHUB_SHA::8}" \
+            --out dist/client_update.zip \
+            --manifest dist/client_version.json \
+            --base-url "https://github.com/SI-sases/sases/releases/download/${GITHUB_REF_NAME}" \
+            --notes "client ${VERSION} (${GITHUB_SHA::8})"
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/client_update.zip
+            dist/client_version.json
+          generate_release_notes: true
