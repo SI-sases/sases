@@ -1,5 +1,7 @@
 // static/modules/i18n_en.js
 export const en = {
+  // Recent conversations rail (chat_history_rail)
+  'chr_recent': 'Recent chats',
   // Work command (chat_work)
   'cw_agent': 'Agent',
   'cw_me': 'Me',

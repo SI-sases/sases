@@ -87,7 +87,7 @@ function _ensure() {
 
   const head = _el('div', 'chr-head');
   head.appendChild(_el('span', 'chr-dot'));
-  head.appendChild(_el('span', null, '最近会话'));
+  head.appendChild(_el('span', null, t('chr_recent')));
   head.appendChild(_el('span', 'chr-count', ''));
   head.title = '折叠';
   head.onclick = () => _applyCollapsed(true, true);

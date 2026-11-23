@@ -1,5 +1,7 @@
 // static/modules/i18n_zh.js
 export const zh = {
+  // 右侧最近会话栏（chat_history_rail）
+  'chr_recent': '最近会话',
   // 指令执行（chat_work）
   'cw_agent': '智能体',
   'cw_me': '我',
