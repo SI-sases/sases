@@ -994,6 +994,10 @@ export const en = {
   'msg_pin_group': 'Pin group chat',
   'msg_delete_local': 'Delete (hide locally)',
   'msg_op_failed': 'Operation failed',
+  'msg_choose_action': 'Choose an action:',
+  'msg_delete_group_hide': 'Delete group chat (hide locally)',
+  'msg_cancel': 'Cancel',
+  'msg_leave_confirm': 'Leave this group chat?',
   'cd_cancel': 'Cancel',
   'cd_rejected_notified': 'Rejected, the other party has been notified',
 };

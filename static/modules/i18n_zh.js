@@ -992,6 +992,10 @@ export const zh = {
   'msg_pin_group': '置顶群聊',
   'msg_delete_local': '删除（本地隐藏）',
   'msg_op_failed': '操作失败',
+  'msg_choose_action': '选择操作：',
+  'msg_delete_group_hide': '删除群聊（本地隐藏）',
+  'msg_cancel': '取消',
+  'msg_leave_confirm': '确定退出该群聊吗？',
   'cd_cancel': '取消',
   'cd_rejected_notified': '已拒绝，已通知对方',
 };

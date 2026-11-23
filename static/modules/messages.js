@@ -253,7 +253,7 @@ function showGroupSessionActions(groupId, btn) {
         return;
       }
       if (a === 'pin') {
-        api.togglePinGroup(groupId, !pinned).then(() => location.reload()).catch(e => alert('操作失败: ' + (e.message || '')));
+        api.togglePinGroup(groupId, !pinned).then(() => location.reload()).catch(e => alert(t('msg_op_failed') + ': ' + (e.message || '')));
         return;
       }
       if (a === 'delete') {
@@ -268,7 +268,7 @@ function showGroupSessionActions(groupId, btn) {
     });
     return;
   }
-  const action = prompt('选择操作：\n1. 删除群聊（本地隐藏）\n0. 取消');
+  const action = prompt(t('msg_choose_action') + '\n1. ' + t('msg_delete_group_hide') + '\n0. ' + t('msg_cancel'));
   if (action === '1') {
     try {
       const list = JSON.parse(localStorage.getItem('sases_hidden_groups') || '[]').map(String);
@@ -309,7 +309,7 @@ async function deleteConversation(conversationId) {
 }
 
 async function quitGroup(groupId) {
-  if (!confirm('确定退出该群聊吗？')) return;
+  if (!confirm(t('msg_leave_confirm'))) return;
   try {
     await api.removeGroupMember(groupId, 'self');
     location.reload();
