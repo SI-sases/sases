@@ -45,7 +45,12 @@ export function t(key) {
   const dict = translations[currentLang] || translations.en;
   const val = dict[key];
   if (typeof val === 'string' && val !== '') return val;
-  // 当前语言缺 key：显示 key 本身，便于发现漏翻（不回退中文）
+  // 当前语言缺 key：先用中文兜底，避免界面直接暴露 key；并提示补词条
+  const zhVal = translations.zh[key];
+  if (typeof zhVal === 'string' && zhVal !== '') {
+    if (currentLang !== 'zh') console.warn('[i18n] missing en key:', key);
+    return zhVal;
+  }
   return key;
 }
 

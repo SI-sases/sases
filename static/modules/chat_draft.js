@@ -39,7 +39,7 @@ export function showProposedRunCard(runId) {
       wrap.style.borderColor = '#ddd';
       wrap.style.background = '#f5f5f5';
     } catch (e) {
-      alert(t('cd_cancel_failed') + (e.message || '未知错误'));
+      alert(t('cd_cancel_failed') + (e.message || t('cd_unknown_error')));
     }
   };
   const confirmBtn = document.createElement('button');
@@ -60,8 +60,8 @@ export function showProposedRunCard(runId) {
       title.textContent = '✅ ' + t('cd_confirmed');
     } catch (e) {
       confirmBtn.disabled = false;
-      confirmBtn.textContent = '▶ 执行';
-      alert(t('cd_confirm_failed') + '：' + (e.message || '未知错误'));
+      confirmBtn.textContent = '▶ ' + t('cd_execute');
+      alert(t('cd_confirm_failed') + '：' + (e.message || t('cd_unknown_error')));
     }
   };
   btnGroup.appendChild(rejectBtn);
@@ -252,12 +252,12 @@ export function showTaskDraftEditor(taskId, steps) {
       } else {
         confirmBtn.disabled = false;
         confirmBtn.textContent = '✓ ' + t('cd_confirm_exec');
-        alert(t('cd_confirm_failed') + (data.message || '未知错误'));
+        alert(t('cd_confirm_failed') + (data.message || t('cd_unknown_error')));
       }
     } catch (e) {
       confirmBtn.disabled = false;
-      confirmBtn.textContent = '✓ 确认执行';
-      alert('请求失败：' + e.message);
+      confirmBtn.textContent = '✓ ' + t('cd_confirm_exec');
+      alert(t('cd_request_failed') + e.message);
     }
   };
   btnGroup.appendChild(confirmBtn);
@@ -332,14 +332,14 @@ export function showSwarmActionButtons(taskId, originalInput, swarmStatus) {
 
   feedbackBtn.onclick = async () => {
     feedbackBtn.disabled = true;
-    feedbackBtn.textContent = '已记录';
+    feedbackBtn.textContent = t('cd_recorded');
     feedbackBtn.style.color = '#999';
     feedbackBtn.style.borderColor = '#ccc';
     feedbackBtn.style.cursor = 'default';
 
     if (cancelBtn.parentNode) {
       cancelBtn.disabled = true;
-      cancelBtn.textContent = '已取消';
+      cancelBtn.textContent = t('cd_cancelled');
       cancelBtn.style.color = '#ccc';
       cancelBtn.style.borderColor = '#ccc';
       cancelBtn.style.cursor = 'default';
