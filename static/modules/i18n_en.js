@@ -1038,4 +1038,11 @@ export const en = {
   'tm_repo_required': 'Please enter a repository URL',
   'tm_title': 'Tool market',
   'tm_loading': 'Loading...',
+  'mm_pollination_bonus': 'Pollination +2',
+  'mm_load_failed': 'Load failed',
+  'mm_delete_confirm_prefix': 'This will also delete ',
+  'mm_delete_confirm_suffix': ' conversations and cannot be undone. Delete?',
+  'mm_delete_failed': 'Delete failed: ',
+  'mm_edit_title': 'Edit agent',
+  'mm_save_failed': 'Save failed: ',
 };

@@ -17,7 +17,7 @@ export async function openModelManagement(returnAction = null) {
       models.forEach(m => {
         const icon = m.model_type === 'local' ? '🖥️' : '🔑';
         const detail = m.model_type === 'local' ? `${m.model_name} @ ${m.node_url}` : `${m.provider}`;
-        const bonusTag = m.model_type === 'local' ? ' <span style="color:green;font-size:12px;">授粉+2</span>' : '';
+        const bonusTag = m.model_type === 'local' ? ' <span style="color:green;font-size:12px;">' + t('mm_pollination_bonus') + '</span>' : '';
         const shareText = m.is_shared ? t('shared') : t('not_shared');
         modelsHtml += `
           <div class="me-menu-item model-item" data-model-id="${m.id}" data-is-shared="${m.is_shared}" data-visibility="${m.visibility}" data-price="${m.price}">
@@ -37,7 +37,7 @@ export async function openModelManagement(returnAction = null) {
       modelsHtml += '</div>';
     }
   } catch (e) {
-    modelsHtml = `<div class="subpage-placeholder">${t('loading_failed') || '加载失败'}: ${e.message}</div>`;
+    modelsHtml = `<div class="subpage-placeholder">${t('mm_load_failed')}: ${e.message}</div>`;
   }
 
   const contentHtml = `
@@ -92,11 +92,11 @@ export async function openModelManagement(returnAction = null) {
           const rr = await api.getModelRefs(id);
           const refs = (rr && rr.refs) || {};
           const n = refs.conversations || 0;
-          if (!confirm('删除后将同时删除 ' + n + ' 个会话，且不可恢复。确定删除？')) return;
+          if (!confirm(t('mm_delete_confirm_prefix') + n + t('mm_delete_confirm_suffix'))) return;
           await api.deleteModel(id);
           openModelManagement();
         } catch (err) {
-          alert('删除失败：' + (err.message || err));
+          alert(t('mm_delete_failed') + (err.message || err));
         }
       };
     });
@@ -226,7 +226,7 @@ function openModelEditForm(modelId, m) {
     </div>
     <button class="save-btn" id="save-model-edit">保存</button>
   `;
-  window.openSubpage('编辑智能体', contentHtml);
+  window.openSubpage(t('mm_edit_title'), contentHtml);
   setTimeout(() => {
     const btn = document.getElementById('save-model-edit');
     if (!btn) return;
@@ -245,7 +245,7 @@ function openModelEditForm(modelId, m) {
         window.closeSubpage();
         openModelManagement();
       } catch (e) {
-        alert('保存失败：' + (e.message || e));
+        alert(t('mm_save_failed') + (e.message || e));
       }
     };
   }, 100);

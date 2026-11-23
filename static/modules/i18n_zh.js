@@ -1036,4 +1036,11 @@ export const zh = {
   'tm_repo_required': '请填写仓库地址',
   'tm_title': '工具市场',
   'tm_loading': '加载中...',
+  'mm_pollination_bonus': '授粉+2',
+  'mm_load_failed': '加载失败',
+  'mm_delete_confirm_prefix': '删除后将同时删除 ',
+  'mm_delete_confirm_suffix': ' 个会话，且不可恢复。确定删除？',
+  'mm_delete_failed': '删除失败：',
+  'mm_edit_title': '编辑智能体',
+  'mm_save_failed': '保存失败：',
 };
