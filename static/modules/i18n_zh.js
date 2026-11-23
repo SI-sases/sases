@@ -1024,5 +1024,8 @@ export const zh = {
   'tm_empty': '还没有安装外部工具',
   'tm_git_allowlist': 'Git（需白名单）：',
   'tm_git_ref_ph': '分支/标签（可空）',
+  'tm_git_sub_ph': '子目录（可空）',
+  'tm_git_force': '覆盖旧版本',
+  'tm_git_install': '从 Git 安装',
   'tm_admin_token': '管理员 Token',
 };

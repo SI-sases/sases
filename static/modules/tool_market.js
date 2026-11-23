@@ -94,10 +94,10 @@ function _render(cat) {
       <div class="tm-grid">
         <input class="tm-input" id="tm-git-repo" placeholder="https://github.com/org/sases-tools">
         <input class="tm-input" id="tm-git-ref" placeholder="${t('tm_git_ref_ph')}">
-        <input class="tm-input" id="tm-git-sub" placeholder="子目录（可空）">
-        <label class="tm-hint"><input type="checkbox" id="tm-git-force"> 覆盖旧版本</label>
+        <input class="tm-input" id="tm-git-sub" placeholder="${t('tm_git_sub_ph')}">
+        <label class="tm-hint"><input type="checkbox" id="tm-git-force"> ${t('tm_git_force')}</label>
       </div>
-      <button class="tm-btn primary" id="tm-install-git">从 Git 安装</button>
+      <button class="tm-btn primary" id="tm-install-git">${t('tm_git_install')}</button>
     </div>
     <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
       <button class="tm-btn" id="tm-admin">${t('tm_admin_token')}</button>

@@ -1026,5 +1026,8 @@ export const en = {
   'tm_empty': 'No external tools installed yet',
   'tm_git_allowlist': 'Git (allowlist required): ',
   'tm_git_ref_ph': 'Branch/tag (optional)',
+  'tm_git_sub_ph': 'Subdirectory (optional)',
+  'tm_git_force': 'Overwrite old version',
+  'tm_git_install': 'Install from Git',
   'tm_admin_token': 'Admin Token',
 };
