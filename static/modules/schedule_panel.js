@@ -118,7 +118,7 @@ export async function openSchedule() {
   openSubpage(t('sch_title'), `
     <div id="sched-root">
       <div class="sched-card">
-        <h3>新建定时任务</h3>
+        <h3>${t('sch_new_task')}</h3>
         <div class="sched-row"><input class="sched-input" id="sched-template" placeholder="到点要做什么，例如：整理今天的邮件"></div>
         <div class="sched-row">
           <select class="sched-input" id="sched-freq" style="flex:0 0 110px">
@@ -163,9 +163,9 @@ export async function openSchedule() {
     const template = document.getElementById('sched-template').value.trim();
     const cid = _currentCid();
     const sid = (window.chatState && (window.chatState.senderAgentId || window.chatState.agentId)) || '';
-    if (!template) { err.textContent = '请填写任务内容'; return; }
-    if (!cid) { err.textContent = '请先打开一个会话'; return; }
-    if (!sid) { err.textContent = '请先在会话里选择接单智能体'; return; }
+    if (!template) { err.textContent = t('sch_task_required'); return; }
+    if (!cid) { err.textContent = t('sch_open_chat_required'); return; }
+    if (!sid) { err.textContent = t('sch_select_agent_required'); return; }
     const cron = _cron(freq.value, timeEl.value, weekday.value, parseInt(interval.value, 10));
     try {
       await _json('/scheduled/create', {
@@ -181,7 +181,7 @@ export async function openSchedule() {
           capsule_snapshot: _snapshot(),
         }),
       });
-      err.textContent = '已创建';
+      err.textContent = t('sch_created');
       document.getElementById('sched-template').value = '';
       _refresh();
     } catch (e) {
