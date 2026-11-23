@@ -1,4 +1,5 @@
 // static/modules/chat_identity.js
+import { t } from './i18n.js';
 
 // ========== 头像颜色哈希 ==========
 function hashColor(str) {
@@ -45,17 +46,17 @@ export async function openIdentitySwitch(chatState, api) {
       <div class="subpage-placeholder">加载智能体...</div>
     </div>
   `;
-  window.openSubpage('切换智能体', contentHtml);
+  window.openSubpage(t('ci_title'), contentHtml);
 
   try {
     const data = await api.listMyAgents();
     const agents = (data.agents || []).filter(a => !(a.agent_id || '').startsWith('sases_assistant'));
     const container = document.getElementById('identity-switch-list');
     if (agents.length === 0) {
-      container.innerHTML = '<div class="subpage-placeholder">暂无智能体</div>';
+      container.innerHTML = '<div class="subpage-placeholder">' + t('ci_empty') + '</div>';
       return;
     }
-    let html = '<div class="me-menu-item identity-option" data-agent-id="">👤 以本人身份</div>';
+    let html = '<div class="me-menu-item identity-option" data-agent-id="">👤 ' + t('ci_self') + '</div>';
     agents.forEach(agent => {
       html += `
         <div class="me-menu-item identity-option" data-agent-id="${agent.agent_id}">
@@ -91,7 +92,7 @@ export async function openIdentitySwitch(chatState, api) {
         
         window.closeSubpage();
         const baseTitle = document.getElementById('chat-window-title').textContent.split(' (')[0];
-        document.getElementById('chat-window-title').textContent = chatState.senderAgentId ? baseTitle + ' (智能体)' : baseTitle;
+        document.getElementById('chat-window-title').textContent = chatState.senderAgentId ? baseTitle + ' (' + t('ci_agent_suffix') + ')' : baseTitle;
         updateIdentityButton(chatState);
       });
     });
