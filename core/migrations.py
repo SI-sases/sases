@@ -1,7 +1,7 @@
 """数据库迁移框架：按版本号顺序应用 schema 变更。"""
 import datetime
 
-SCHEMA_VERSION = 16
+SCHEMA_VERSION = 17
 
 
 def _now_iso():
@@ -286,6 +286,24 @@ def _migrate_v16_creator_portfolio(cur):
         cur.execute("ALTER TABLE identity_creator_grants ADD COLUMN portfolio_url TEXT")
 
 
+def _migrate_v17_client_ops(cur):
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS client_operations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            node_id TEXT NOT NULL,
+            action TEXT NOT NULL,
+            payload TEXT,
+            status TEXT DEFAULT 'pending',
+            requested_by INTEGER,
+            created_at TEXT,
+            started_at TEXT,
+            finished_at TEXT,
+            result TEXT
+        )
+    """)
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_client_ops_node_status ON client_operations(node_id, status)")
+
+
 MIGRATIONS = {1: _migrate_v1_outbox, 2: _migrate_v2_hmac, 3: _migrate_v3_reconcile,
               4: _migrate_v4_transfer_fields, 5: _migrate_v5_credit_type,
               6: _migrate_v6_group_columns, 7: _migrate_v7_api_registry,
@@ -293,7 +311,7 @@ MIGRATIONS = {1: _migrate_v1_outbox, 2: _migrate_v2_hmac, 3: _migrate_v3_reconci
               10: _migrate_v10_agent_context, 11: _migrate_v11_agent_todos,
               12: _migrate_v12_agent_goals, 13: _migrate_v13_node_identity,
               14: _migrate_v14_missing_tables, 15: _migrate_v15_creator_review,
-              16: _migrate_v16_creator_portfolio}
+              16: _migrate_v16_creator_portfolio, 17: _migrate_v17_client_ops}
 
 
 def ensure_schema():

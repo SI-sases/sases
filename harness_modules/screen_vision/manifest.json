@@ -1,0 +1,17 @@
+{
+  "id": "screen_vision",
+  "name": "屏幕视觉识别",
+  "description": "把屏幕截图或指定图片发给视觉模型，返回画面描述、控件和坐标建议。",
+  "version": "1.0.0",
+  "capabilities": ["vision", "computer_use"],
+  "permissions": ["screen", "network"],
+  "entrypoint": "main.py",
+  "node_type": "harness",
+  "params": {
+    "prompt": {"type": "string", "desc": "识别要求，例如：找出登录按钮并给出坐标"},
+    "image_path": {"type": "string", "desc": "可选，不传则截取当前屏幕"},
+    "capture": {"type": "boolean", "desc": "可选，强制重新截图"},
+    "user_id": {"type": "integer", "desc": "可选，使用该用户配置的视觉 API Key"},
+    "model": {"type": "string", "desc": "可选，视觉模型名"}
+  }
+}

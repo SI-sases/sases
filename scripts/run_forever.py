@@ -1,9 +1,12 @@
 # scripts/run_forever.py
 import os
 import sys
+import json
 import logging
+import socket
 import subprocess
 import time
+import urllib.request
 
 if os.environ.get("SASES_ENABLE_LOCAL_EMBEDDING") != "1":
     os.environ["SASES_DISABLE_LOCAL_EMBEDDING"] = "1"
@@ -29,17 +32,54 @@ if not business_logger.handlers:
 PORT = int(os.environ.get("SASES_PORT", "8001"))
 HOST = os.environ.get("SASES_HOST", "0.0.0.0")
 RESTART_SIGNAL = os.path.join(ROOT, "restart_signal.txt")
+RUNTIME_PORT_FILE = os.path.join(ROOT, "runtime_port.json")
 
-# 端口守卫：避免重复启动两个 wrapper/uvicorn 抢 8001
-import socket as _socket
-_guard = _socket.socket(_socket.AF_INET, _socket.SOCK_STREAM)
-try:
-    _guard.bind(("127.0.0.1", PORT))
-except OSError:
-    print("[wrapper] port " + str(PORT) + " already in use, exit to avoid duplicate server", flush=True)
-    sys.exit(1)
-finally:
-    _guard.close()
+
+def _port_free(port: int) -> bool:
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        sock.bind(("127.0.0.1", port))
+        return True
+    except OSError:
+        return False
+    finally:
+        sock.close()
+
+
+def _is_sases(port: int) -> bool:
+    try:
+        req = urllib.request.Request("http://127.0.0.1:%d/version" % port)
+        opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+        with opener.open(req, timeout=2) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        return "schema_version" in data or "node_id" in data
+    except Exception:
+        return False
+
+
+def _write_runtime_port(port: int, requested: int) -> None:
+    with open(RUNTIME_PORT_FILE, "w", encoding="utf-8") as handle:
+        json.dump({"port": port, "requested_port": requested, "pid": os.getpid(),
+                   "started_at": time.strftime("%Y-%m-%dT%H:%M:%S")}, handle,
+                  ensure_ascii=False, indent=2)
+
+
+requested_port = PORT
+if not _port_free(PORT):
+    if _is_sases(PORT):
+        print("[wrapper] SASES already running on %d, reuse it" % PORT, flush=True)
+        _write_runtime_port(PORT, requested_port)
+        sys.exit(0)
+    for candidate in range(PORT + 1, PORT + 11):
+        if _port_free(candidate):
+            PORT = candidate
+            print("[wrapper] port %d busy, fallback to %d" % (requested_port, PORT), flush=True)
+            break
+    else:
+        print("[wrapper] no free port in fallback range", flush=True)
+        sys.exit(1)
+
+_write_runtime_port(PORT, requested_port)
 
 if __name__ == "__main__":
     restart_count = 0

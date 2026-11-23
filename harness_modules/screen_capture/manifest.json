@@ -1,0 +1,16 @@
+{
+  "id": "screen_capture",
+  "name": "屏幕截图",
+  "description": "截取当前 Windows 屏幕或指定区域，返回图片路径、尺寸和可选 base64。",
+  "version": "1.0.0",
+  "capabilities": ["screen_capture", "computer_use"],
+  "permissions": ["screen"],
+  "entrypoint": "main.py",
+  "node_type": "harness",
+  "params": {
+    "region": {"type": "any", "desc": "可选，[left, top, width, height] 或 {left,top,width,height}"},
+    "save_path": {"type": "string", "desc": "可选，图片保存路径"},
+    "scale": {"type": "number", "desc": "可选，0-1 缩放比例"},
+    "return_base64": {"type": "boolean", "desc": "可选，是否返回 base64"}
+  }
+}
