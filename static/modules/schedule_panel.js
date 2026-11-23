@@ -119,27 +119,27 @@ export async function openSchedule() {
     <div id="sched-root">
       <div class="sched-card">
         <h3>${t('sch_new_task')}</h3>
-        <div class="sched-row"><input class="sched-input" id="sched-template" placeholder="到点要做什么，例如：整理今天的邮件"></div>
+        <div class="sched-row"><input class="sched-input" id="sched-template" placeholder="${t('sch_template_ph')}"></div>
         <div class="sched-row">
           <select class="sched-input" id="sched-freq" style="flex:0 0 110px">
-            <option value="daily">每天</option>
-            <option value="weekly">每周</option>
-            <option value="interval">每 N 小时</option>
+            <option value="daily">${t('sch_daily')}</option>
+            <option value="weekly">${t('sch_weekly')}</option>
+            <option value="interval">${t('sch_interval')}</option>
           </select>
           <input class="sched-input" id="sched-time" type="time" value="05:00" style="flex:0 0 110px">
           <select class="sched-input" id="sched-weekday" style="flex:0 0 100px;display:none">
-            <option value="0">周一</option><option value="1">周二</option><option value="2">周三</option>
-            <option value="3">周四</option><option value="4">周五</option><option value="5">周六</option><option value="6">周日</option>
+            <option value="0">${t('sch_mon')}</option><option value="1">${t('sch_tue')}</option><option value="2">${t('sch_wed')}</option>
+            <option value="3">${t('sch_thu')}</option><option value="4">${t('sch_fri')}</option><option value="5">${t('sch_sat')}</option><option value="6">${t('sch_sun')}</option>
           </select>
           <input class="sched-input" id="sched-interval" type="number" min="1" max="23" value="6" style="flex:0 0 80px;display:none">
         </div>
         <div class="sched-row">
-          <button class="sched-btn primary" id="sched-create">创建</button>
+          <button class="sched-btn primary" id="sched-create">${t('sch_create')}</button>
           <span class="sched-err" id="sched-err"></span>
         </div>
         <div class="sched-sub" id="sched-snap"></div>
       </div>
-      <div class="sched-card"><h3>我的定时任务</h3><div id="sched-list"><div class="sched-empty">加载中...</div></div></div>
+      <div class="sched-card"><h3>${t('sch_my_tasks')}</h3><div id="sched-list"><div class="sched-empty">${t('sch_loading')}</div></div></div>
     </div>`);
   _root = document.getElementById('sched-root');
 
