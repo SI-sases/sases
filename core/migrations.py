@@ -1,7 +1,7 @@
 """数据库迁移框架：按版本号顺序应用 schema 变更。"""
 import datetime
 
-SCHEMA_VERSION = 13
+SCHEMA_VERSION = 14
 
 
 def _now_iso():
@@ -221,12 +221,59 @@ def _migrate_v13_node_identity(cur):
     cur.execute("CREATE INDEX IF NOT EXISTS idx_identity_audit_created ON identity_audit(created_at)")
 
 
+def _migrate_v14_missing_tables(cur):
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS scheduled_tasks (
+            id TEXT PRIMARY KEY,
+            user_id INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            cron_expr TEXT NOT NULL,
+            timezone TEXT DEFAULT 'Asia/Shanghai',
+            task_template TEXT NOT NULL,
+            task_params TEXT,
+            enabled INTEGER DEFAULT 1,
+            missed_policy TEXT DEFAULT 'catch_up',
+            failure_count INTEGER DEFAULT 0,
+            paused_reason TEXT,
+            last_run_at TEXT,
+            next_run_at TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT,
+            is_active INTEGER DEFAULT 1,
+            consecutive_failures INTEGER DEFAULT 0
+        )
+    """)
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_scheduled_tasks_user ON scheduled_tasks(user_id)")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_scheduled_tasks_next ON scheduled_tasks(next_run_at)")
+
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS user_api_configs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            api_name TEXT NOT NULL,
+            api_desc TEXT,
+            endpoint TEXT NOT NULL,
+            method TEXT DEFAULT 'GET',
+            auth_type TEXT DEFAULT 'none',
+            auth_key_encrypted TEXT,
+            auth_header_name TEXT DEFAULT 'Authorization',
+            params_example TEXT,
+            response_path TEXT,
+            capability_tags TEXT,
+            status TEXT DEFAULT 'active',
+            created_at TEXT NOT NULL
+        )
+    """)
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_user_api_configs_user ON user_api_configs(user_id)")
+
+
 MIGRATIONS = {1: _migrate_v1_outbox, 2: _migrate_v2_hmac, 3: _migrate_v3_reconcile,
               4: _migrate_v4_transfer_fields, 5: _migrate_v5_credit_type,
               6: _migrate_v6_group_columns, 7: _migrate_v7_api_registry,
               8: _migrate_v8_legacy_columns, 9: _migrate_v9_sync_received,
               10: _migrate_v10_agent_context, 11: _migrate_v11_agent_todos,
-              12: _migrate_v12_agent_goals, 13: _migrate_v13_node_identity}
+              12: _migrate_v12_agent_goals, 13: _migrate_v13_node_identity,
+              14: _migrate_v14_missing_tables}
 
 
 def ensure_schema():
