@@ -992,6 +992,8 @@ export const en = {
   'msg_mark_read': 'Mark as read',
   'msg_delete': 'Delete conversation',
   'msg_pin_group': 'Pin group chat',
+  'msg_delete_local': 'Delete (hide locally)',
+  'msg_op_failed': 'Operation failed',
   'cd_cancel': 'Cancel',
   'cd_rejected_notified': 'Rejected, the other party has been notified',
 };

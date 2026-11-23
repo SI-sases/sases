@@ -990,6 +990,8 @@ export const zh = {
   'msg_mark_read': '标记已读',
   'msg_delete': '删除会话',
   'msg_pin_group': '置顶群聊',
+  'msg_delete_local': '删除（本地隐藏）',
+  'msg_op_failed': '操作失败',
   'cd_cancel': '取消',
   'cd_rejected_notified': '已拒绝，已通知对方',
 };

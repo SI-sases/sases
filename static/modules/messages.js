@@ -245,11 +245,11 @@ function showGroupSessionActions(groupId, btn) {
   if (btn && typeof showSessionMenu === 'function') {
     showSessionMenu(btn, [
       { label: pinned ? t('msg_unpin') : t('msg_pin_group'), action: 'pin' },
-      { label: '标记已读', action: 'read' },
-      { label: '删除（本地隐藏）', action: 'delete', danger: true }
+      { label: t('msg_mark_read'), action: 'read' },
+      { label: t('msg_delete_local'), action: 'delete', danger: true }
     ], function (a) {
       if (a === 'read') {
-        api.markGroupRead(groupId).then(() => location.reload()).catch(e => alert('操作失败: ' + (e.message || '')));
+        api.markGroupRead(groupId).then(() => location.reload()).catch(e => alert(t('msg_op_failed') + ': ' + (e.message || '')));
         return;
       }
       if (a === 'pin') {
