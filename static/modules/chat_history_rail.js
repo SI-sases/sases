@@ -89,7 +89,7 @@ function _ensure() {
   head.appendChild(_el('span', 'chr-dot'));
   head.appendChild(_el('span', null, t('chr_recent')));
   head.appendChild(_el('span', 'chr-count', ''));
-  head.title = '折叠';
+  head.title = t('chr_collapse');
   head.onclick = () => _applyCollapsed(true, true);
   _rail.appendChild(head);
 
