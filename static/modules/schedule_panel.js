@@ -109,13 +109,13 @@ async function _refresh() {
     }
   } catch (e) {
     const box = document.getElementById('sched-list');
-    if (box) box.innerHTML = '<div class="sched-err">加载失败：' + _esc(e.message) + '</div>';
+    if (box) box.innerHTML = '<div class="sched-err">' + t('sch_load_failed') + '：' + _esc(e.message) + '</div>';
   }
 }
 
 export async function openSchedule() {
   _css();
-  openSubpage('定时任务', `
+  openSubpage(t('sch_title'), `
     <div id="sched-root">
       <div class="sched-card">
         <h3>新建定时任务</h3>
@@ -145,7 +145,7 @@ export async function openSchedule() {
 
   const snap = _snapshot();
   const snapEl = document.getElementById('sched-snap');
-  if (snapEl) snapEl.textContent = '胶囊快照：工具 ' + snap.tools.length + ' / API ' + snap.apis.length + ' / 技能 ' + snap.skills.length;
+  if (snapEl) snapEl.textContent = t('sch_snapshot') + '：' + t('sch_tools') + ' ' + snap.tools.length + ' / ' + t('sch_apis') + ' ' + snap.apis.length + ' / ' + t('sch_skills') + ' ' + snap.skills.length;
 
   const freq = document.getElementById('sched-freq');
   const weekday = document.getElementById('sched-weekday');
