@@ -1,11 +1,12 @@
 import { apiFetch } from './utils.js';
+import { t } from './i18n.js';
 
 let currentGroupId = null;
-let currentGroupName = '群聊';
+let currentGroupName = t('msg_group');
 
 export function initGroupTask(groupId, groupName) {
   currentGroupId = groupId;
-  currentGroupName = groupName || '群聊';
+  currentGroupName = groupName || t('msg_group');
   document.getElementById('top-title').textContent = currentGroupName;
   bindModeButtons();
   switchMode('chat');
@@ -27,7 +28,7 @@ export function switchMode(mode) {
     if (currentGroupId) {
       loadTaskPanel();
     } else {
-      taskPanel.innerHTML = '<div class="empty">请先进入一个群聊</div>';
+      taskPanel.innerHTML = '<div class="empty">' + t('gt2_enter_group') + '</div>';
     }
   }
 
@@ -48,19 +49,19 @@ function bindModeButtons() {
 
 async function loadTaskPanel() {
   const panel = document.getElementById('group-task-panel');
-  panel.innerHTML = '<div class="loading">加载任务中...</div>';
+  panel.innerHTML = '<div class="loading">' + t('gt2_loading') + '</div>';
   try {
     const data = await apiFetch(`/group/${currentGroupId}/tasks`);
     renderTaskPanel(data.tasks || []);
   } catch (e) {
-    panel.innerHTML = `<div class="error">加载失败：${e.message}</div>`;
+    panel.innerHTML = `<div class="error">${t('gt2_load_failed')}${e.message}</div>`;
   }
 }
 
 function renderTaskPanel(tasks) {
   const panel = document.getElementById('group-task-panel');
   if (!tasks.length) {
-    panel.innerHTML = '<div class="empty">暂无任务</div>';
+    panel.innerHTML = '<div class="empty">' + t('gt2_empty') + '</div>';
     return;
   }
   let html = '<div class="task-list">';
@@ -69,11 +70,11 @@ function renderTaskPanel(tasks) {
       <div class="task-card">
         <div class="task-title">${escapeHtml(task.description)}</div>
         <div class="task-meta">
-          <span>来源：${escapeHtml(task.source_mode)}</span>
-          <span>难度：${escapeHtml(task.difficulty)}</span>
-          <span>状态：${escapeHtml(task.status)}</span>
+          <span>${t('gt2_source')}${escapeHtml(task.source_mode)}</span>
+          <span>${t('gt2_difficulty')}${escapeHtml(task.difficulty)}</span>
+          <span>${t('gt2_status')}${escapeHtml(task.status)}</span>
         </div>
-        <button class="btn-small" onclick="joinTask(${task.id})">一键参与</button>
+        <button class="btn-small" onclick="joinTask(${task.id})">${t('gt2_join')}</button>
       </div>
     `;
   });
@@ -84,10 +85,10 @@ function renderTaskPanel(tasks) {
 async function joinTask(taskId) {
   try {
     await apiFetch(`/group/${currentGroupId}/task/${taskId}/join`, { method: 'POST' });
-    alert('参与成功，系统已自动分配');
+    alert(t('gt2_join_ok'));
     loadTaskPanel();
   } catch (e) {
-    alert('参与失败：' + e.message);
+    alert(t('gt2_join_failed') + e.message);
   }
 }
 
