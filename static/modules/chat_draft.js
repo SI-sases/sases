@@ -235,7 +235,7 @@ export function showTaskDraftEditor(taskId, steps) {
   confirmBtn.style.cursor = 'pointer';
   confirmBtn.onclick = async () => {
     confirmBtn.disabled = true;
-    confirmBtn.textContent = '已提交';
+    confirmBtn.textContent = t('cd_submitted');
     try {
       const token = localStorage.getItem('sases_token');
       const resp = await fetch('/swarm/confirm', {
@@ -251,8 +251,8 @@ export function showTaskDraftEditor(taskId, steps) {
         wrap.remove();
       } else {
         confirmBtn.disabled = false;
-        confirmBtn.textContent = '✓ 确认执行';
-        alert('确认失败：' + (data.message || '未知错误'));
+        confirmBtn.textContent = '✓ ' + t('cd_confirm_exec');
+        alert(t('cd_confirm_failed') + (data.message || '未知错误'));
       }
     } catch (e) {
       confirmBtn.disabled = false;
