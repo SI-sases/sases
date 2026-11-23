@@ -20,8 +20,12 @@ import zipfile
 from urllib.parse import urljoin
 
 DEFAULT_MANIFEST_URLS = [
-    os.getenv("SASES_CLIENT_UPDATE_URL", "http://120.77.136.90:8001/static/downloads/client_version.json"),
+    "https://github.com/SI-sases/sases/releases/latest/download/client_version.json",
+    "http://120.77.136.90:8001/static/downloads/client_version.json",
 ]
+_env_urls = os.getenv("SASES_CLIENT_UPDATE_URL", "").strip()
+if _env_urls:
+    DEFAULT_MANIFEST_URLS = [u.strip() for u in _env_urls.split(",") if u.strip()]
 ALLOWED_ROOTS = ("core", "static", "scripts", "launcher")
 EXCLUDED_PARTS = {"__pycache__", ".git", "build", "dist", "node_modules"}
 
