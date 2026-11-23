@@ -1275,40 +1275,40 @@ async function openGroupCreditsDetail() {
   } catch (e) {}
   const contentHtml = `
     <div class="wallet-card" style="background: linear-gradient(135deg, #007aff, #00c6ff);">
-      <div class="wallet-label">可用积分</div>
+      <div class="wallet-label">${t('gcw_available')}</div>
       <div class="wallet-balance">${pool.available || 0}</div>
-      <div style="font-size:12px;color:rgba(255,255,255,0.8);margin-top:4px;">用于发任务、发红包</div>
+      <div style="font-size:12px;color:rgba(255,255,255,0.8);margin-top:4px;">${t('gcw_for_tasks')}</div>
     </div>
     <div class="wallet-card" style="background: linear-gradient(135deg, #667eea, #764ba2);">
-      <div class="wallet-label">质押总额</div>
+      <div class="wallet-label">${t('gcw_staked')}</div>
       <div class="wallet-balance">${pool.staked || 0}</div>
-      <div style="font-size:12px;color:rgba(255,255,255,0.8);margin-top:4px;">锁定期 30 天，到期可提取</div>
+      <div style="font-size:12px;color:rgba(255,255,255,0.8);margin-top:4px;">${t('gcw_lock_note')}</div>
     </div>
     <div class="me-menu">
       <div class="me-menu-item" id="gc-stake-entry">
         <span class="menu-icon">💰</span>
-        <span class="menu-label">质押积分</span>
+        <span class="menu-label">${t('gcw_stake')}</span>
         <span class="menu-arrow">›</span>
       </div>
       <div class="me-menu-item">
         <span class="menu-icon">📊</span>
-        <span class="menu-label">总积分</span>
+        <span class="menu-label">${t('gcw_total')}</span>
         <span class="menu-value">${pool.total || 0}</span>
       </div>
     </div>
     <div class="me-menu">
       <div class="me-menu-item" id="gc-redpacket-config">
         <span class="menu-icon">🧧</span>
-        <span class="menu-label">红包配置</span>
+        <span class="menu-label">${t('gcw_rp_config')}</span>
         <span class="menu-value">${_utcHourToLocal(pool.red_packet_hour != null ? pool.red_packet_hour : 20)}:00</span>
         <span class="menu-arrow">›</span>
       </div>
     </div>
-    <div class="section-title">积分说明</div>
+    <div class="section-title">${t('gcw_credits_note')}</div>
     <div style="padding:12px;font-size:13px;color:#666;line-height:1.8;">
-      • 任务抽成 5% 进入群池<br>
-      • 每日空投按活跃度竞争（10000 分/天）<br>
-      • 可用余额满 1000 可发群红包
+      • ${t('gcw_note1')}<br>
+      • ${t('gcw_note2')}<br>
+      • ${t('gcw_note3')}
     </div>
   `;
   window.openSubpage(t('gc_group_credits'), contentHtml, { showMore: false, returnAction: () => openGroupSettings() });
@@ -1324,14 +1324,14 @@ function openGroupStakeDialog() {
   const contentHtml = `
     <div class="me-menu">
       <div class="me-menu-item">
-        <span class="menu-label">质押金额（最少 10）</span>
+        <span class="menu-label">${t('gcw_stake_amount')}</span>
         <input type="number" id="gc-stake-amount" class="inline-input" value="10" min="10">
       </div>
     </div>
     <div style="padding:12px;font-size:12px;color:#666;line-height:1.6;">
-      质押积分锁定 30 天，到期后可提取。质押后该群获得空投资格（需总积分≥100）。
+      ${t('gcw_stake_note')}
     </div>
-    <button class="save-btn" id="gc-stake-submit">质押</button>
+    <button class="save-btn" id="gc-stake-submit">${t('gcw_stake_btn')}</button>
   `;
   window.openSubpage(t('gc_stake_credits_title'), contentHtml, { returnAction: () => openGroupCreditsDetail() });
   setTimeout(() => {
