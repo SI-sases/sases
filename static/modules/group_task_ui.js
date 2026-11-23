@@ -5,29 +5,29 @@ window.openPublishTaskDialog = function(groupId) {
     <div style="padding:16px;">
       <div style="margin-bottom:16px;">
         <div style="font-size:13px;color:#666;margin-bottom:6px;">${t('groupTask.titleLabel')}</div>
-        <input id="pt-title" type="text" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;" placeholder="请输入标题">
+        <input id="pt-title" type="text" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;" placeholder="${t('pt_title_ph')}">
       </div>
       <div style="margin-bottom:16px;">
-        <div style="font-size:13px;color:#666;margin-bottom:6px;">任务描述</div>
-        <textarea id="pt-desc" rows="3" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;resize:vertical;" placeholder="可选"></textarea>
+        <div style="font-size:13px;color:#666;margin-bottom:6px;">${t('pt_desc')}</div>
+        <textarea id="pt-desc" rows="3" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;resize:vertical;" placeholder="${t('pt_optional')}"></textarea>
       </div>
       <div style="margin-bottom:16px;">
-        <div style="font-size:13px;color:#666;margin-bottom:6px;">任务类型</div>
+        <div style="font-size:13px;color:#666;margin-bottom:6px;">${t('pt_type')}</div>
         <select id="pt-category" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;background:#fff;">
-          <option value="text">文本</option>
-          <option value="image">图片</option>
-          <option value="code">代码</option>
-          <option value="creative">创意</option>
+          <option value="text">${t('pt_text')}</option>
+          <option value="image">${t('pt_image')}</option>
+          <option value="code">${t('pt_code')}</option>
+          <option value="creative">${t('pt_creative')}</option>
         </select>
       </div>
       <div style="margin-bottom:16px;">
-        <div style="font-size:13px;color:#666;margin-bottom:6px;">质押积分（最少 10）</div>
+        <div style="font-size:13px;color:#666;margin-bottom:6px;">${t('pt_reward')}</div>
         <input id="pt-reward" type="number" value="10" min="10" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;">
       </div>
       <div style="background:#fff7e6;border:1px solid #ffd591;border-radius:6px;padding:10px;margin-bottom:20px;font-size:12px;color:#874d00;line-height:1.6;">
-        ⚠️ 任务完成后，<b>95%</b> 给被选中的方案提交者，<b>5%</b> 进入群积分池。
+        ⚠️ ${t('pt_note')}
       </div>
-      <button id="pt-submit" style="width:100%;padding:12px;background:#07c160;color:#fff;border:none;border-radius:6px;font-size:16px;font-weight:600;cursor:pointer;">发布任务</button>
+      <button id="pt-submit" style="width:100%;padding:12px;background:#07c160;color:#fff;border:none;border-radius:6px;font-size:16px;font-weight:600;cursor:pointer;">${t('pt_publish')}</button>
     </div>
   `;
   window.openSubpage(t('groupTask.publishTitle'), html);
@@ -90,10 +90,10 @@ window.openTaskDetail = function(taskId) {
       <div style="padding:16px;">
         <div style="font-size:18px;font-weight:600;margin-bottom:8px;">${task.title || t('gt_untitled')}</div>
         <div style="font-size:13px;color:#666;margin-bottom:12px;">
-          质押 ${task.reward_credits || 0} 积分 · 状态：${isOpen ? t('gt_in_progress') : task.status}
+          ${t('pt_stake')} ${task.reward_credits || 0} ${t('rp_points')} · ${t('pt_status')}${isOpen ? t('gt_in_progress') : task.status}
         </div>
         <div style="background:#f8f8f8;border-radius:8px;padding:12px;margin-bottom:20px;font-size:14px;color:#333;white-space:pre-wrap;">${task.description || t('gt_no_desc')}</div>
-        <div style="font-size:15px;font-weight:600;margin-bottom:10px;">提交列表 (${subs.length})</div>
+        <div style="font-size:15px;font-weight:600;margin-bottom:10px;">${t('pt_submissions')} (${subs.length})</div>
         ${subHtml}
         ${actionHtml}
       </div>
