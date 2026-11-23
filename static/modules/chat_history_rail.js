@@ -137,7 +137,7 @@ function _relTime(iso) {
 function _renderItem(c) {
   const item = _el('div', 'chr-item');
   if (_lastCid != null && String(c.id) === String(_lastCid)) item.classList.add('active');
-  const title = c.title || '会话';
+  const title = c.title || t('msg_session');
   item.title = title + (c.last_message ? '\n' + String(c.last_message).slice(0, 120) : '');
 
   item.appendChild(_el('div', 'chr-avatar', title.slice(0, 1)));
@@ -163,15 +163,15 @@ function _renderItem(c) {
 
 function _renderGroup(g) {
   const item = _el('div', 'chr-item');
-  item.title = g.name || '群聊';
-  item.appendChild(_el('div', 'chr-avatar', (g.name || '群').slice(0, 1)));
+  item.title = g.name || t('msg_group');
+  item.appendChild(_el('div', 'chr-avatar', (g.name || t('chr_group_short')).slice(0, 1)));
   const main = _el('div', 'chr-main');
-  main.appendChild(_el('div', 'chr-title', g.name || '群聊'));
+  main.appendChild(_el('div', 'chr-title', g.name || t('msg_group')));
   main.appendChild(_el('div', 'chr-sub', String(g.last_message || '').slice(0, 60)));
   item.appendChild(main);
   if (g.unread_count > 0) item.appendChild(_el('div', 'chr-unread', String(g.unread_count)));
   item.onclick = () => {
-    try { openGroupChat(g.id, g.name || '群聊'); } catch (e) { console.error('[chat-rail] group open failed', e); }
+    try { openGroupChat(g.id, g.name || t('msg_group')); } catch (e) { console.error('[chat-rail] group open failed', e); }
   };
   return item;
 }
@@ -183,12 +183,12 @@ function _paint(convs, groups) {
   if (count) count.textContent = convs.length ? String(convs.length) : '';
 
   if (!convs.length && !groups.length) {
-    _listEl.appendChild(_el('div', 'chr-empty', '暂无历史会话'));
+    _listEl.appendChild(_el('div', 'chr-empty', t('chr_empty')));
     return;
   }
   convs.forEach(c => _listEl.appendChild(_renderItem(c)));
   if (groups.length) {
-    _listEl.appendChild(_el('div', 'chr-sec', '群聊'));
+    _listEl.appendChild(_el('div', 'chr-sec', t('msg_group')));
     groups.forEach(g => _listEl.appendChild(_renderGroup(g)));
   }
 }
