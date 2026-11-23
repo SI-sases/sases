@@ -322,16 +322,16 @@ async function openYunchongRescue(taskId) {
   const remainingFree = usage ? usage.remaining_free : 3;
   const needPay = usage ? usage.need_pay : false;
 
-  let officialDesc = `今日剩余免费：${remainingFree}/3 次`;
+  let officialDesc = `${t('dst_free_left')}${remainingFree}/3 ${t('dst_times')}`;
   if (needPay) {
-    officialDesc += ` · 超出后消耗 10 算力/次`;
+    officialDesc += ` · ${t('dst_extra_cost')}`;
   }
 
   let agentOptionsHtml = `
     <div class="agent-option-item selected" data-agent-id="" data-official="1">
       <div class="agent-option-icon">🎓</div>
       <div class="agent-option-info">
-        <div class="agent-option-name">官方助手</div>
+        <div class="agent-option-name">${t('dst_official')}</div>
         <div class="agent-option-desc">${officialDesc}</div>
       </div>
       <div class="agent-option-check">✓</div>
@@ -351,7 +351,7 @@ async function openYunchongRescue(taskId) {
   });
 
   const guaranteeHint = isGuaranteeNext
-    ? `<div style="background:#e8f5e9;color:#2e7d32;padding:10px 12px;border-radius:8px;margin:0 12px 12px;font-size:13px;">✨ 已尝试 ${attempts} 次，下次解救将触发保底机制，直接成功</div>`
+    ? `<div style="background:#e8f5e9;color:#2e7d32;padding:10px 12px;border-radius:8px;margin:0 12px 12px;font-size:13px;">✨ ${t('dst_tried')} ${attempts} ${t('dst_times')}, ${t('dst_guarantee')}</div>`
     : '';
 
   const html = `
@@ -359,18 +359,18 @@ async function openYunchongRescue(taskId) {
       <div class="rescue-pet-icon" style="border-color:${rarityColor};">🐾</div>
       <div class="rescue-pet-info">
         <div class="rescue-task-title">${task.title}</div>
-        <div class="rescue-task-meta">难度：${diffLabel} · 距离：${task.distance_meters}米 · 可解救：<span style="color:${rarityColor};">${task.pet_level} 级宠物</span></div>
+        <div class="rescue-task-meta">${t('dst_difficulty')}${diffLabel} · ${t('dst_distance')}${task.distance_meters}${t('unit_meter')} · ${t('dst_rescuable')}<span style="color:${rarityColor};">${task.pet_level} ${t('dst_level_pet')}</span></div>
       </div>
     </div>
 
     ${guaranteeHint}
 
-    <div class="section-title">任务描述</div>
+    <div class="section-title">${t('dst_task_desc')}</div>
     <div class="rescue-detail-desc">
       ${task.detail || t('ds_no_detail')}
     </div>
 
-    <div class="section-title">选择执行智能体</div>
+    <div class="section-title">${t('dst_choose_agent')}</div>
     <div class="agent-options" id="agent-options">
       ${agentOptionsHtml}
     </div>
@@ -378,7 +378,7 @@ async function openYunchongRescue(taskId) {
     <div id="rescue-process-container"></div>
 
     <div style="padding:12px;display:flex;gap:8px;">
-      <button class="save-btn" id="rescue-start-btn" style="flex:2;padding:14px;font-size:15px;">🐾 开始解救</button>
+      <button class="save-btn" id="rescue-start-btn" style="flex:2;padding:14px;font-size:15px;">🐾 ${t('dst_start')}</button>
       <button id="rescue-abandon-btn" style="flex:1;padding:14px;font-size:14px;background:#f5f5f5;color:#ff3b30;border:none;border-radius:8px;">${t('discover_abandon')}</button>
     </div>
   `;
