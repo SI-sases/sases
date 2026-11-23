@@ -133,13 +133,13 @@
     if (!meta) {
       meta = document.createElement('div');
       meta.className = 'rp-meta';
-      meta.textContent = '过程详情可在右侧 trace 抽屉查看';
+      meta.textContent = t('cpr_trace_hint');
       c.appendChild(meta);
     }
     if (runId) {
       var btn = document.createElement('button');
       btn.className = 'rp-revert';
-      btn.textContent = '撤销本次修改';
+      btn.textContent = t('cpr_undo_this');
       btn.onclick = function () {
         if (!confirm('恢复本次运行修改/创建的文件？')) return;
         btn.disabled = true;
@@ -151,7 +151,7 @@
           },
           body: JSON.stringify({ confirm: true })
         }).then(function (r) { return r.json(); }).then(function (j) {
-          btn.textContent = '已撤销：恢复 ' + ((j.restored || []).length) + '，删除 ' + ((j.deleted || []).length);
+          btn.textContent = t('cpr_undone') + ' ' + ((j.restored || []).length) + '，' + t('cpr_undone_deleted') + ' ' + ((j.deleted || []).length);
         }).catch(function (e) {
           btn.disabled = false;
           btn.textContent = '撤销失败';

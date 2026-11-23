@@ -978,6 +978,7 @@ export const en = {
   'cpr_retry': 'Retry',
   'cpr_undo_this': 'Undo this change',
   'cpr_detail': 'View details',
+  'cpr_trace_hint': 'Process details are available in the trace drawer on the right',
   'cd_cancel': 'Cancel',
   'cd_rejected_notified': 'Rejected, the other party has been notified',
 };
