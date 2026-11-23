@@ -14,6 +14,8 @@ export const zh = {
   'ask_need_more': '需要你补充',
   'ask_input_ph': '输入回答',
   'ask_send': '发送',
+  'ask_submitting': '提交中…',
+  'ask_answered': '已回答',
   'chr_collapse': '折叠',
   'chr_history': '历史',
   'chr_expand_recent': '展开最近会话',

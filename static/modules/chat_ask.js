@@ -32,14 +32,14 @@
       var text = (input.value || '').trim();
       if (!text) return;
       btn.disabled = true;
-      btn.textContent = '提交中…';
+      btn.textContent = t('ask_submitting');
       function fallbackSend() {
         var chatInput = document.getElementById('chat-input');
         var sendBtn = document.getElementById('send-btn');
-        if (!chatInput || !sendBtn) { btn.disabled = false; btn.textContent = '发送'; return; }
+        if (!chatInput || !sendBtn) { btn.disabled = false; btn.textContent = t('ask_send'); return; }
         chatInput.value = text;
         chatInput.dispatchEvent(new Event('input', { bubbles: true }));
-        btn.textContent = '已回答';
+        btn.textContent = t('ask_answered');
         card.style.opacity = '0.75';
         sendBtn.click();
       }
@@ -52,7 +52,7 @@
         body: JSON.stringify({ answer: text })
       }).then(function (r) { return r.json(); }).then(function (j) {
         if (j && j.resumed) {
-          btn.textContent = '已回答';
+          btn.textContent = t('ask_answered');
           card.style.opacity = '0.75';
         } else {
           fallbackSend();

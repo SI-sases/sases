@@ -14,6 +14,8 @@ export const en = {
   'ask_need_more': 'More information needed',
   'ask_input_ph': 'Enter your answer',
   'ask_send': 'Send',
+  'ask_submitting': 'Submitting...',
+  'ask_answered': 'Answered',
   'chr_collapse': 'Collapse',
   'chr_history': 'History',
   'chr_expand_recent': 'Expand recent conversations',
