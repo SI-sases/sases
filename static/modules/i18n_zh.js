@@ -2,7 +2,9 @@
 export const zh = {
   'chr_recent': '最近会话',
   // 审批卡（chat_approval）
-  'ca_allowed': '已允许',
+  'ca_confirm_needed': '需要确认',
+  'ca_tool': '工具',
+  'ca_allow_once': '允许一次',
   'ca_denied': '已拒绝',
   'ca_decision_desc': '任务将继续/停止执行',
   'ca_submit_failed': '提交失败',

@@ -45,10 +45,10 @@ import { t } from './i18n.js';
     if (!msgs) return;
     var card = document.createElement('div');
     card.id = 'approval-card';
-    card.innerHTML = '<div class="ap-title">⚠️ 需要确认</div>' +
-      '<div class="ap-desc">工具：' + (d.tool || '工具') +
+    card.innerHTML = '<div class="ap-title">⚠️ ' + t('ca_confirm_needed') + '</div>' +
+      '<div class="ap-desc">' + t('ca_tool') + '：' + (d.tool || t('ca_tool')) +
       (d.description ? ' · ' + d.description : '') + '</div>' +
-      '<button class="primary" data-a="once">允许一次</button>' +
+      '<button class="primary" data-a="once">' + t('ca_allow_once') + '</button>' +
       '<button data-a="session">总是允许</button>' +
       '<button class="danger" data-a="deny">拒绝</button>';
     msgs.appendChild(card);
