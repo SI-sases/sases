@@ -39,8 +39,17 @@ def main() -> int:
     with open(wg_path, encoding="utf-8") as handle:
         wg_conf = handle.read()
 
+    wg_pubkey = ""
+    for line in subprocess.check_output(["wg", "show", "wg1", "allowed-ips"], text=True).splitlines():
+        parts = line.split()
+        if len(parts) >= 2 and parts[1].startswith(args.ip + "/"):
+            wg_pubkey = parts[0]
+            break
+
     private, public = ni.generate_node_keypair()
     node = ni.create_node(args.user_id, ni.PROFILE_EDGE, ed25519_pubkey=public)
+    if wg_pubkey:
+        ni.bind_node_wg(node["node_id"], wg_pubkey, device_fingerprint=args.name)
     manifest = ni.issue_manifest(node["node_id"])
 
     os.makedirs(OUT_DIR, exist_ok=True)
@@ -51,6 +60,7 @@ def main() -> int:
         "profile": node["profile"],
         "ed25519_private_key": private,
         "ed25519_public_key": public,
+        "wg_pubkey": wg_pubkey,
         "issuer_public_key": ni.issuer_public_key(),
         "manifest": manifest,
         "wg_conf": wg_conf,
