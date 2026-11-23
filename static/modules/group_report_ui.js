@@ -12,17 +12,17 @@ window.openReportResolveDialog = async function(groupId, queueId) {
   const html = `
     <div class="me-menu">
       <div class="me-menu-item" style="display:block;padding:12px;">
-        <div style="font-size:13px;color:#666;margin-bottom:6px;">问题</div>
+        <div style="font-size:13px;color:#666;margin-bottom:6px;">${t('gr2_question')}</div>
         <div style="font-size:14px;color:#333;line-height:1.6;background:#f8f8f8;padding:10px;border-radius:6px;">${question}</div>
       </div>
     </div>
     <div class="me-menu">
       <div class="me-menu-item" style="display:block;padding:12px;">
-        <div style="font-size:13px;color:#666;margin-bottom:6px;">答案</div>
-        <textarea id="report-answer" rows="8" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;resize:vertical;" placeholder="输入答案，将自动加入群知识库"></textarea>
+        <div style="font-size:13px;color:#666;margin-bottom:6px;">${t('gr2_answer')}</div>
+        <textarea id="report-answer" rows="8" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;resize:vertical;" placeholder="${t('gr2_answer_ph')}"></textarea>
       </div>
     </div>
-    <button class="save-btn" id="report-save">保存答案</button>
+    <button class="save-btn" id="report-save">${t('gr2_save')}</button>
   `;
 
   window.openSubpage(t('gr_answer_title'), html, {
@@ -85,7 +85,7 @@ window.openGroupReportQueue = async function(groupId) {
       ${listHtml}
     </div>
     <div style="padding:12px;font-size:12px;color:#999;line-height:1.6;">
-      员工提问时，如果群知识库没有答案，会自动出现在这里。补充答案后，会自动进入群知识库。
+      ${t('gr2_note')}
     </div>
   `;
 

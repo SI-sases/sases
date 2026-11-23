@@ -1423,4 +1423,9 @@ export const en = {
   'mea2_sync': 'Sync task (returns result directly)',
   'mea2_async': 'Async task (requires polling)',
   'mea2_save': 'Save',
+  'gr2_question': 'Question',
+  'gr2_answer': 'Answer',
+  'gr2_answer_ph': 'Enter an answer; it will be added to the group knowledge base',
+  'gr2_save': 'Save answer',
+  'gr2_note': 'When a member asks a question that is not in the group knowledge base, it appears here. After you add an answer, it is added to the knowledge base automatically.',
 };
