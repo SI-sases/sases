@@ -1415,4 +1415,11 @@ export const zh = {
   'sch_create': '创建',
   'sch_my_tasks': '我的定时任务',
   'sch_loading': '加载中...',
+  'mea2_loading': '加载中...',
+  'mea2_delete': '删除',
+  'mea2_name_ph': 'API 名称 (如：ComfyUI出图)',
+  'mea2_url_ph': '接口地址 (https://...)',
+  'mea2_sync': '同步任务 (直接返回结果)',
+  'mea2_async': '异步任务 (需要轮询)',
+  'mea2_save': '保存',
 };

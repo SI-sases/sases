@@ -7,7 +7,7 @@ window.__openExternalApiPage = async function() {
             </div>
         </div>
         <div id="external-api-list">
-            <div style="text-align: center; color: #999; padding: 20px;">加载中...</div>
+            <div style="text-align: center; color: #999; padding: 20px;">${t('mea2_loading')}</div>
         </div>
     `;
     window.openSubpage('🔌 ' + t('mea_title'), html);
@@ -33,7 +33,7 @@ async function loadApiList() {
                         <div style="font-size: 15px; color: #333;">${a.api_name}</div>
                         <div style="font-size: 12px; color: #999;">${a.method} ${a.endpoint}</div>
                     </div>
-                    <button class="save-btn" style="background: #ff3b30; padding: 4px 8px; font-size: 12px;" onclick="window.__deleteApi(${a.id})">删除</button>
+                    <button class="save-btn" style="background: #ff3b30; padding: 4px 8px; font-size: 12px;" onclick="window.__deleteApi(${a.id})">${t('mea2_delete')}</button>
                 </div>
             `;
         }
@@ -54,20 +54,20 @@ window.__deleteApi = async function(id) {
 window.__openAddApiModal = function() {
     let html = `
         <div style="padding: 15px;">
-            <input type="text" id="api-name" placeholder="API 名称 (如：ComfyUI出图)" style="width:100%; margin-bottom:10px; padding:8px;">
-            <input type="text" id="api-url" placeholder="接口地址 (https://...)" style="width:100%; margin-bottom:10px; padding:8px;">
+            <input type="text" id="api-name" placeholder="${t('mea2_name_ph')}" style="width:100%; margin-bottom:10px; padding:8px;">
+            <input type="text" id="api-url" placeholder="${t('mea2_url_ph')}" style="width:100%; margin-bottom:10px; padding:8px;">
             <select id="api-method" style="width:100%; margin-bottom:10px; padding:8px;">
                 <option value="GET">GET</option>
                 <option value="POST">POST</option>
             </select>
             <select id="api-task-mode" style="width:100%; margin-bottom:10px; padding:8px;" onchange="document.getElementById('async-spec-div').style.display = this.value === 'async' ? 'block' : 'none';">
-                <option value="sync">同步任务 (直接返回结果)</option>
-                <option value="async">异步任务 (需要轮询)</option>
+                <option value="sync">${t('mea2_sync')}</option>
+                <option value="async">${t('mea2_async')}</option>
             </select>
             <div id="async-spec-div" style="display:none; margin-bottom:10px;">
                 <textarea id="api-async-spec" placeholder='${t('mea_async_spec')}:&#10;{&#10;  "submit": {"endpoint": "/gen", "method": "POST", "handle_path": "$.id"},&#10;  "poll": {"endpoint": "/status/{handle}", "done_values": ["done"]}&#10;}' style="width:100%; height:100px; padding:8px; font-family:monospace;"></textarea>
             </div>
-            <button class="save-btn" onclick="window.__saveApi()" style="width:100%;">保存</button>
+            <button class="save-btn" onclick="window.__saveApi()" style="width:100%;">${t('mea2_save')}</button>
         </div>
     `;
     window.openSubpage(t('mea_add_title'), html, { returnAction: () => window.__openExternalApiPage() });

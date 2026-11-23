@@ -1416,4 +1416,11 @@ export const en = {
   'sch_create': 'Create',
   'sch_my_tasks': 'My scheduled tasks',
   'sch_loading': 'Loading...',
+  'mea2_loading': 'Loading...',
+  'mea2_delete': 'Delete',
+  'mea2_name_ph': 'API name (e.g. ComfyUI image generation)',
+  'mea2_url_ph': 'Endpoint URL (https://...)',
+  'mea2_sync': 'Sync task (returns result directly)',
+  'mea2_async': 'Async task (requires polling)',
+  'mea2_save': 'Save',
 };
