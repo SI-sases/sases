@@ -757,9 +757,10 @@ def create_app() -> FastAPI:
         if path.startswith(("/node", "/auth", "/version", "/static", "/ws", "/docs", "/openapi")):
             return await call_next(request)
         manifest = request.headers.get("X-SASES-Node-Manifest")
-        check = node_auth.check_request(path, request.method, manifest)
+        peer = request.client.host if request.client else None
+        wg_client = bool(peer and peer.startswith("10.10."))
+        check = node_auth.check_request(path, request.method, manifest, require_manifest=wg_client)
         if not check.ok:
-            peer = request.client.host if request.client else None
             blocked = node_auth.should_block(check, manifest)
             node_auth.audit_check(path, request.method, check, peer, blocked=blocked)
             if blocked:

@@ -39,10 +39,12 @@ def required_capability(path: str, method: str) -> str | None:
     return None
 
 
-def check_request(path: str, method: str, manifest: str | None) -> NodeCheck:
+def check_request(path: str, method: str, manifest: str | None, require_manifest: bool = False) -> NodeCheck:
     capability = required_capability(path, method)
+    if require_manifest and not capability:
+        capability = ni.CAP_CALL_API
     if not manifest:
-        if capability:
+        if capability or require_manifest:
             return NodeCheck(False, "manifest required", 401, capability=capability)
         return NodeCheck(True)
 

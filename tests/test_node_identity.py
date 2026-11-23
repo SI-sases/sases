@@ -142,6 +142,20 @@ def test_node_auth_blocks_present_but_insufficient(temp_db):
     assert not bad.ok
     assert na.should_block(bad, "not-a-manifest")
 
+def test_wg_client_requires_manifest_for_business_route(temp_db):
+    import core.node_auth as na
+
+    check = na.check_request("/messages/send", "POST", None, require_manifest=True)
+    assert not check.ok
+    assert check.status_code == 401
+
+    _priv, pub = ni.generate_node_keypair()
+    edge = ni.create_node(8, "edge", ed25519_pubkey=pub)
+    edge_manifest = ni.issue_manifest(edge["node_id"])
+    check = na.check_request("/messages/send", "POST", edge_manifest, require_manifest=True)
+    assert check.ok
+
+
 def test_node_auth_allows_plain_chat_without_manifest(temp_db):
     import core.node_auth as na
 
