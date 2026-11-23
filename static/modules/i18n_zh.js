@@ -1098,4 +1098,7 @@ export const zh = {
   'ctr_running': '执行中',
   'ctr_completed': '完成',
   'ctr_title_run': '执行追踪 · run',
+  'cwal_no_services': '暂无可用服务',
+  'cwal_no_tx': '暂无交易记录',
+  'cwal_title': '算力钱包',
 };

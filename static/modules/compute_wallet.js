@@ -21,7 +21,7 @@ export async function openComputeWallet(returnAction) {
 
   let servicesHtml = '';
   if (services.length === 0) {
-    servicesHtml = '<div class="subpage-placeholder">暂无可用服务</div>';
+    servicesHtml = `<div class="subpage-placeholder">${t('cwal_no_services')}</div>`;
   } else {
     servicesHtml = '<div class="me-menu">';
     services.forEach(s => {
@@ -41,7 +41,7 @@ export async function openComputeWallet(returnAction) {
 
   let txHtml = '';
   if (transactions.length === 0) {
-    txHtml = '<div class="subpage-placeholder">暂无交易记录</div>';
+    txHtml = `<div class="subpage-placeholder">${t('cwal_no_tx')}</div>`;
   } else {
     txHtml = '<div class="me-menu">';
     transactions.forEach(tx => {
@@ -94,7 +94,7 @@ export async function openComputeWallet(returnAction) {
     ${txHtml}
   `;
 
-  window.openSubpage('算力钱包', contentHtml, {
+  window.openSubpage(t('cwal_title'), contentHtml, {
     showMore: false,
     returnAction: returnAction
   });

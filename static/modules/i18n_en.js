@@ -1099,4 +1099,7 @@ export const en = {
   'ctr_running': 'Running',
   'ctr_completed': 'Completed',
   'ctr_title_run': 'Execution trace · run',
+  'cwal_no_services': 'No services available',
+  'cwal_no_tx': 'No transactions yet',
+  'cwal_title': 'Compute wallet',
 };
