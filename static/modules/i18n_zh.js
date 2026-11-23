@@ -1028,4 +1028,12 @@ export const zh = {
   'tm_git_force': '覆盖旧版本',
   'tm_git_install': '从 Git 安装',
   'tm_admin_token': '管理员 Token',
+  'tm_enabled': '已启用',
+  'tm_disabled': '已禁用',
+  'tm_admin_prompt': '输入工具市场管理员 Token（保存在本机浏览器）',
+  'tm_uninstall_confirm': '确认卸载',
+  'tm_select_zip': '请选择 ZIP 文件',
+  'tm_repo_required': '请填写仓库地址',
+  'tm_title': '工具市场',
+  'tm_loading': '加载中...',
 };

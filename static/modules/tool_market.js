@@ -117,7 +117,7 @@ function _render(cat) {
         : (src.type === 'zip' ? `zip ${src.filename || ''}` : '');
       html += `<div class="tm-row" data-id="${_esc(t.id)}">
         <div class="tm-main">
-          <div class="tm-name">${_esc(t.name || t.id)}<span class="tm-badge ${t.enabled ? '' : 'off'}">${t.enabled ? '已启用' : '已禁用'}</span></div>
+          <div class="tm-name">${_esc(t.name || t.id)}<span class="tm-badge ${t.enabled ? '' : 'off'}">${t.enabled ? t('tm_enabled') : t('tm_disabled')}</span></div>
           <div class="tm-sub">${_esc(t.id)} · v${_esc(t.version || '?')}${srcText ? ' · ' + _esc(srcText) : ''}</div>
         </div>
         <div class="tm-toggle ${t.enabled ? 'on' : ''}" data-action="toggle" title="启用/禁用"></div>
@@ -162,7 +162,7 @@ function _bind() {
   if (gitBtn) gitBtn.onclick = () => _installGit();
   const adminBtn = document.getElementById('tm-admin');
   if (adminBtn) adminBtn.onclick = () => {
-    const v = prompt('输入工具市场管理员 Token（保存在本机浏览器）', _adminToken());
+    const v = prompt(t('tm_admin_prompt'), _adminToken());
     if (v === null) return;
     localStorage.setItem(TOKEN_KEY, v.trim());
     const st = document.getElementById('tm-admin-state');
@@ -182,7 +182,7 @@ function _bind() {
   _root.querySelectorAll('[data-action="delete"]').forEach(btn => {
     btn.onclick = async () => {
       const id = btn.closest('.tm-row').dataset.id;
-      if (!confirm('确认卸载 ' + id + '？')) return;
+      if (!confirm(t('tm_uninstall_confirm') + ' ' + id + '？')) return;
       try {
         await _json(`/tools/${id}`, { method: 'DELETE', headers: _headers(true) });
         await _refresh();
@@ -194,7 +194,7 @@ function _bind() {
 async function _installZip() {
   const input = document.getElementById('tm-zip');
   const file = input && input.files && input.files[0];
-  if (!file) { _err('请选择 ZIP 文件'); return; }
+  if (!file) { _err(t('tm_select_zip')); return; }
   const force = document.getElementById('tm-force').checked;
   const fd = new FormData();
   fd.append('file', file);
@@ -211,7 +211,7 @@ async function _installGit() {
   const ref = document.getElementById('tm-git-ref').value.trim();
   const subpath = document.getElementById('tm-git-sub').value.trim();
   const force = document.getElementById('tm-git-force').checked;
-  if (!repo) { _err('请填写仓库地址'); return; }
+  if (!repo) { _err(t('tm_repo_required')); return; }
   _err('');
   try {
     await _json('/tools/install/git', {
@@ -225,7 +225,7 @@ async function _installGit() {
 
 export async function openToolMarket() {
   _css();
-  openSubpage('工具市场', '<div id="tool-market-root"><div class="tm-empty">加载中...</div></div>');
+  openSubpage(t('tm_title'), '<div id="tool-market-root"><div class="tm-empty">' + t('tm_loading') + '</div></div>');
   _root = document.getElementById('tool-market-root');
   await _refresh();
 }

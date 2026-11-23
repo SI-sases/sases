@@ -1030,4 +1030,12 @@ export const en = {
   'tm_git_force': 'Overwrite old version',
   'tm_git_install': 'Install from Git',
   'tm_admin_token': 'Admin Token',
+  'tm_enabled': 'Enabled',
+  'tm_disabled': 'Disabled',
+  'tm_admin_prompt': 'Enter the tool market admin token (stored in this browser)',
+  'tm_uninstall_confirm': 'Uninstall',
+  'tm_select_zip': 'Please select a ZIP file',
+  'tm_repo_required': 'Please enter a repository URL',
+  'tm_title': 'Tool market',
+  'tm_loading': 'Loading...',
 };
