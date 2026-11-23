@@ -19,3 +19,5 @@ jobs:
           pip install pytest fastapi pydantic python-jose
       - name: Run focused regressions
         run: pytest tests/test_p3_regressions.py -q
+      - name: Audit i18n key usage
+        run: python scripts/audit_i18n_usage.py
