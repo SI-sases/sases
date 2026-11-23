@@ -1,5 +1,6 @@
 // static/modules/chat_a2a.js
 // A2A 执行中浮动提示
+import { t } from './i18n.js';
 (function () {
   var timer = null;
 
@@ -19,7 +20,7 @@
         'box-shadow:0 4px 14px rgba(0,122,255,.3);font-family:system-ui';
       document.body.appendChild(el);
     }
-    el.textContent = '🤖 ' + ((d && d.content) || '对方智能体正在执行…');
+    el.textContent = '🤖 ' + ((d && d.content) || t('a2a_executing'));
     if (timer) clearTimeout(timer);
     timer = setTimeout(hide, 30000);
   }

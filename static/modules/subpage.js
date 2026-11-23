@@ -1,4 +1,5 @@
 // static/modules/subpage.js
+import { t } from './i18n.js';
 
 export function openSubpage(title, contentHtml, options = {}) {
   const subpageTitle = document.getElementById('subpage-title');
@@ -41,7 +42,7 @@ export function openSubpage(title, contentHtml, options = {}) {
   if (moreBtn) {
     if (options.showMore) {
       moreBtn.style.display = 'block';
-      moreBtn.onclick = options.onMore || (() => alert('更多操作待实现'));
+      moreBtn.onclick = options.onMore || (() => alert(t('sp_more_wip')));
     } else {
       moreBtn.style.display = 'none';
       moreBtn.onclick = null;

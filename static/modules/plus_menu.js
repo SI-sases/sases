@@ -8,7 +8,7 @@ export function showPlusMenu() {
 
   if (view === 'messages') {
     menuItems = [
-      { icon: '⏰', label: '定时任务', action: () => openSchedule() },
+      { icon: '⏰', label: t('sch_title'), action: () => openSchedule() },
       { icon: '👥', label: t('start_group_chat'), action: () => window.openGroupChatList ? window.openGroupChatList() : window.openSubpage(t('start_group_chat'), `<div class="subpage-placeholder">${t('coming_soon')}</div>`) },
       { icon: '🧑‍🤝‍🧑', label: t('add_agent'), action: () => window.openNewAgentPage ? window.openNewAgentPage() : window.openSubpage(t('add_agent'), `<div class="subpage-placeholder">${t('coming_soon')}</div>`) },
       { icon: '📷', label: t('scan'), action: () => window.openSubpage(t('scan'), `<div class="subpage-placeholder">${t('coming_soon')}</div>`) }
