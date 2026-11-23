@@ -49,8 +49,8 @@ import { t } from './i18n.js';
       '<div class="ap-desc">' + t('ca_tool') + '：' + (d.tool || t('ca_tool')) +
       (d.description ? ' · ' + d.description : '') + '</div>' +
       '<button class="primary" data-a="once">' + t('ca_allow_once') + '</button>' +
-      '<button data-a="session">总是允许</button>' +
-      '<button class="danger" data-a="deny">拒绝</button>';
+      '<button data-a="session">' + t('ca_allow_always') + '</button>' +
+      '<button class="danger" data-a="deny">' + t('ca_deny') + '</button>';
     msgs.appendChild(card);
     msgs.scrollTop = msgs.scrollHeight;
     card.querySelector('[data-a="once"]').onclick = function () {

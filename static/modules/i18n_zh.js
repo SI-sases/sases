@@ -9,6 +9,8 @@ export const zh = {
   'ca_decision_desc': '任务将继续/停止执行',
   'ca_submit_failed': '提交失败',
   'ca_allowed': '已允许',
+  'ca_allow_always': '总是允许',
+  'ca_deny': '拒绝',
   'chr_collapse': '折叠',
   'chr_history': '历史',
   'chr_expand_recent': '展开最近会话',
