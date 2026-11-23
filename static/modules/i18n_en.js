@@ -2,6 +2,7 @@
 export const en = {
   // Recent conversations rail (chat_history_rail)
   'chr_recent': 'Recent chats',
+  'chr_collapse': 'Collapse',
   // Work command (chat_work)
   'cw_agent': 'Agent',
   'cw_me': 'Me',
