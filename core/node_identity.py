@@ -410,11 +410,12 @@ def issue_manifest(
     caps = set(capabilities or effective_capabilities(node))
     grant = get_active_grant(node_id)
     creator_caps = set(CREATOR_SCOPES.values())
-    if grant:
-        grant_scopes = set(grant.get("scopes") or [])
-        caps = {cap for cap in caps if cap not in creator_caps or cap in grant_scopes}
-    else:
-        caps = {cap for cap in caps if cap not in creator_caps}
+    if node["profile"] == PROFILE_CREATOR:
+        if grant:
+            grant_scopes = set(grant.get("scopes") or [])
+            caps = {cap for cap in caps if cap not in creator_caps or cap in grant_scopes}
+        else:
+            caps = {cap for cap in caps if cap not in creator_caps}
     now = int(time.time())
     ttl = int(ttl_minutes or DEFAULT_MANIFEST_TTL_MINUTES)
     payload = {

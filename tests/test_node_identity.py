@@ -88,6 +88,8 @@ def test_official_capabilities(temp_db):
     assert ni.CAP_WRITE_REGISTRY in caps
     assert ni.CAP_ISSUE_LICENSE in caps
     assert ni.CAP_ADMIN_CONSOLE in caps
+    assert ni.CAP_PROVIDE_API in caps
+    assert ni.CAP_PUBLISH_TOOL in caps
     assert ni.bind_node_wg(node["node_id"], "wg-public-key", "device-fp")
     assert ni.get_node(node["node_id"])["wg_pubkey"] == "wg-public-key"
 
