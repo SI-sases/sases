@@ -43,21 +43,21 @@ window.openGroupManage = async function(groupId) {
   const html = `
     <div class="me-menu">
       <div class="me-menu-item" id="gm-announcement" style="cursor:pointer;">
-        <span class="menu-label">群公告</span>
+        <span class="menu-label">${t('gm2_announcement')}</span>
         <span class="menu-arrow">›</span>
       </div>
       <div class="me-menu-item" id="gm-invite-confirm" style="cursor:pointer;">
-        <span class="menu-label">群聊邀请确认</span>
+        <span class="menu-label">${t('gm2_invite_confirm')}</span>
         <div class="switch"><div class="slider"></div></div>
       </div>
     </div>
-    <div class="section-title">群管理员</div>
+    <div class="section-title">${t('gm2_admins')}</div>
     <div class="me-menu" id="gm-admins-list">
       ${adminsHtml}
     </div>
     <div class="me-menu">
       <div class="me-menu-item" id="gm-pending-invites" style="cursor:pointer;">
-        <span class="menu-label">待批准邀请</span>
+        <span class="menu-label">${t('gm2_pending')}</span>
         <span class="menu-value" id="gm-pending-count">0</span>
         <span class="menu-arrow">›</span>
       </div>
@@ -65,17 +65,17 @@ window.openGroupManage = async function(groupId) {
     ${isOwner ? '<div class="me-menu"><div class="me-menu-item" id="gm-add-admin" style="cursor:pointer;"><span class="menu-label" style="color:#007aff;">+ ' + t('gm_add_admin') + '</span></div></div>' : ''}
     <div class="me-menu">
       <div class="me-menu-item" id="gm-qrcode" style="cursor:pointer;">
-        <span class="menu-label">群二维码</span>
+        <span class="menu-label">${t('gm2_qr')}</span>
         <span class="menu-arrow">›</span>
       </div>
       <div class="me-menu-item" id="gm-transfer" style="cursor:pointer;">
-        <span class="menu-label">群主管理权转让</span>
+        <span class="menu-label">${t('gm2_transfer')}</span>
         <span class="menu-arrow">›</span>
       </div>
     </div>
     <div class="me-menu">
       <div class="me-menu-item" id="gm-remove-log" style="cursor:pointer;">
-        <span class="menu-label">移出群聊记录</span>
+        <span class="menu-label">${t('gm2_remove_log')}</span>
         <span class="menu-arrow">›</span>
       </div>
     </div>
@@ -151,7 +151,7 @@ window.openGroupManage = async function(groupId) {
           if (data.error || data.detail) { alert(t('gm_remove_failed') + '：' + (data.error || data.detail)); return; }
           alert(t('gm_removed'));
           window.openGroupManage(groupId);
-        } catch (err) { alert('网络错误：' + err.message); }
+        } catch (err) { alert(t('gm2_network') + err.message); }
       };
     });
 
@@ -190,7 +190,7 @@ window.openTransferOwnerDialog = async function(groupId) {
 
   const html = `
     <div style="padding:12px;font-size:12px;color:#ff3b30;line-height:1.6;">
-      ⚠️ 转让后你将成为管理员，新群主拥有完整权限。此操作不可撤销。
+      ⚠️ ${t('gm2_transfer_note')}
     </div>
     <div class="me-menu">
       ${listHtml}
@@ -218,7 +218,7 @@ window.openTransferOwnerDialog = async function(groupId) {
           alert(t('gm_transferred'));
           window.closeSubpage();
           window.openGroupManage(groupId);
-        } catch (e) { alert('网络错误：' + e.message); }
+        } catch (e) { alert(t('gm2_network') + e.message); }
       };
     });
   }, 300);

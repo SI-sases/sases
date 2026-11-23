@@ -1365,4 +1365,13 @@ export const zh = {
   'gt2_join': '一键参与',
   'gt2_join_ok': '参与成功，系统已自动分配',
   'gt2_join_failed': '参与失败：',
+  'gm2_announcement': '群公告',
+  'gm2_invite_confirm': '群聊邀请确认',
+  'gm2_admins': '群管理员',
+  'gm2_pending': '待批准邀请',
+  'gm2_qr': '群二维码',
+  'gm2_transfer': '群主管理权转让',
+  'gm2_remove_log': '移出群聊记录',
+  'gm2_transfer_note': '转让后你将成为管理员，新群主拥有完整权限。此操作不可撤销。',
+  'gm2_network': '网络错误：',
 };

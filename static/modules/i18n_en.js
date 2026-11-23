@@ -1366,4 +1366,13 @@ export const en = {
   'gt2_join': 'Join',
   'gt2_join_ok': 'Joined successfully; the system has assigned you automatically',
   'gt2_join_failed': 'Join failed: ',
+  'gm2_announcement': 'Group announcement',
+  'gm2_invite_confirm': 'Group invite confirmation',
+  'gm2_admins': 'Group admins',
+  'gm2_pending': 'Pending invites',
+  'gm2_qr': 'Group QR code',
+  'gm2_transfer': 'Transfer group ownership',
+  'gm2_remove_log': 'Removal log',
+  'gm2_transfer_note': 'After transfer you will become an admin; the new owner has full permissions. This cannot be undone.',
+  'gm2_network': 'Network error: ',
 };
