@@ -265,6 +265,18 @@ def revoke_node(node_id: str, reason: str = "") -> bool:
     return bool(changed)
 
 
+def bind_node_wg(node_id: str, wg_pubkey: str, device_fingerprint: str | None = None) -> bool:
+    with db_cursor(commit=True) as cur:
+        cur.execute(
+            "UPDATE identity_nodes SET wg_pubkey=?, device_fingerprint=COALESCE(?, device_fingerprint) "
+            "WHERE node_id=?",
+            (wg_pubkey, device_fingerprint, node_id),
+        )
+        changed = cur.rowcount
+    audit_event(node_id=node_id, action="node.bind_wg", result="ok" if changed else "missing", detail=wg_pubkey[:12])
+    return bool(changed)
+
+
 def grant_creator(
     user_id: int,
     node_id: str,

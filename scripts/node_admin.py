@@ -97,6 +97,12 @@ def main() -> int:
     p.add_argument("--reason", default="revoked by admin")
     p.set_defaults(func=lambda a: _print({"ok": ni.revoke_node(a.node_id, a.reason)}))
 
+    p = sub.add_parser("bind-wg", help="bind a node to a WireGuard public key")
+    p.add_argument("--node-id", required=True)
+    p.add_argument("--wg-pubkey", required=True)
+    p.add_argument("--device-fingerprint")
+    p.set_defaults(func=lambda a: _print({"ok": ni.bind_node_wg(a.node_id, a.wg_pubkey, a.device_fingerprint)}))
+
     p = sub.add_parser("manifest", help="issue a manifest")
     p.add_argument("--node-id", required=True)
     p.add_argument("--ttl-minutes", type=int)
