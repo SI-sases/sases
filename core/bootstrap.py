@@ -749,6 +749,26 @@ def create_app() -> FastAPI:
     )
 
     @app.middleware("http")
+    async def _node_permission_middleware(request, call_next):
+        from core import node_auth
+        if node_auth.MODE == "off":
+            return await call_next(request)
+        path = request.url.path
+        if path.startswith(("/node", "/auth", "/version", "/static", "/ws", "/docs", "/openapi")):
+            return await call_next(request)
+        manifest = request.headers.get("X-SASES-Node-Manifest")
+        check = node_auth.check_request(path, request.method, manifest)
+        if not check.ok:
+            peer = request.client.host if request.client else None
+            node_auth.audit_check(path, request.method, check, peer)
+            if node_auth.MODE == "enforce":
+                return JSONResponse(
+                    {"error": "node permission denied", "reason": check.reason, "code": check.status_code},
+                    status_code=check.status_code,
+                )
+        return await call_next(request)
+
+    @app.middleware("http")
     async def _replica_read_only_middleware(request, call_next):
         """副本拦截 + 主节点验签 + 业务日志黑匣子。"""
         import time, logging

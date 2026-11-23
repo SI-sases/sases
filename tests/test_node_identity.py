@@ -96,3 +96,33 @@ def test_revoked_node_cannot_get_manifest(temp_db):
     assert ni.revoke_node(node["node_id"], "test")
     with pytest.raises(ni.NodeIdentityError):
         ni.issue_manifest(node["node_id"])
+
+
+def test_node_auth_requires_manifest_for_tools(temp_db):
+    import core.node_auth as na
+
+    check = na.check_request("/tools/install", "POST", None)
+    assert not check.ok
+    assert check.status_code == 401
+    assert check.capability == ni.CAP_INSTALL_TOOL
+
+    _priv, pub = ni.generate_node_keypair()
+    edge = ni.create_node(5, "edge", ed25519_pubkey=pub)
+    edge_manifest = ni.issue_manifest(edge["node_id"])
+    check = na.check_request("/tools/install", "POST", edge_manifest)
+    assert not check.ok
+    assert check.status_code == 403
+
+    _priv, opub = ni.generate_node_keypair()
+    official = ni.create_node(6, "official", ed25519_pubkey=opub)
+    official_manifest = ni.issue_manifest(official["node_id"])
+    check = na.check_request("/tools/install", "POST", official_manifest)
+    assert check.ok
+
+
+def test_node_auth_allows_plain_chat_without_manifest(temp_db):
+    import core.node_auth as na
+
+    check = na.check_request("/messages/send", "POST", None)
+    assert check.ok
+
