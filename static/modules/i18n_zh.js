@@ -6,6 +6,9 @@ export const zh = {
   'chr_history': '历史',
   'chr_expand_recent': '展开最近会话',
   'chr_just_now': '刚刚',
+  'chr_minutes': '分',
+  'chr_hours': '时',
+  'chr_days': '天',
   // 指令执行（chat_work）
   'cw_agent': '智能体',
   'cw_me': '我',

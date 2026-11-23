@@ -6,6 +6,9 @@ export const en = {
   'chr_history': 'History',
   'chr_expand_recent': 'Expand recent conversations',
   'chr_just_now': 'Just now',
+  'chr_minutes': 'm',
+  'chr_hours': 'h',
+  'chr_days': 'd',
   // Work command (chat_work)
   'cw_agent': 'Agent',
   'cw_me': 'Me',

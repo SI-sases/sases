@@ -126,11 +126,11 @@ function _relTime(iso) {
   const diff = Math.max(0, Date.now() - d.getTime());
   const m = Math.floor(diff / 60000);
   if (m < 1) return t('chr_just_now');
-  if (m < 60) return m + '分';
+  if (m < 60) return m + t('chr_minutes');
   const h = Math.floor(m / 60);
-  if (h < 24) return h + '时';
+  if (h < 24) return h + t('chr_hours');
   const day = Math.floor(h / 24);
-  if (day < 30) return day + '天';
+  if (day < 30) return day + t('chr_days');
   return (d.getMonth() + 1) + '/' + d.getDate();
 }
 
