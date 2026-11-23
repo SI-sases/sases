@@ -1,4 +1,5 @@
 // static/modules/api.js
+import { getNodeManifest, refreshNodeManifest } from './node_identity_client.js';
 
 const BASE_URL = '';
 
@@ -14,6 +15,10 @@ async function request(url, options = {}) {
   };
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
+  }
+  const nodeManifest = getNodeManifest();
+  if (nodeManifest) {
+    headers['X-SASES-Node-Manifest'] = nodeManifest;
   }
 
   const response = await fetch(`${BASE_URL}${url}`, {
@@ -69,7 +74,9 @@ export const api = {
         try { errText = JSON.parse(text).detail || text; } catch {}
         throw new Error(errText || `登录失败 (${resp.status})`);
       }
-      return JSON.parse(text);
+      const data = JSON.parse(text);
+      await refreshNodeManifest(data.access_token || data.token).catch(() => null);
+      return data;
     });
   },
   register: (username, password) =>

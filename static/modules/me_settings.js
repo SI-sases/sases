@@ -1,6 +1,7 @@
 // static/modules/me_settings.js
 import { api } from './api.js';
 import { t, setLang, getLang } from './i18n.js';
+import { setNodeBundle, clearNodeIdentity, getNodeId, getNodeProfile, refreshNodeManifest } from './node_identity_client.js';
 
 // 语言选择用全局函数 + 内联 onclick，避免子页面重绘后事件监听丢失
 // 注意：不要在这里 location.reload()。整页刷新会打断 openSettings 的 setTimeout 绑定、
@@ -24,6 +25,7 @@ export function openSettings() {
       <div class="me-menu-item" id="set-notify"><span class="menu-label">${t('notification_settings')}</span><span class="menu-arrow">›</span></div>
       <div class="me-menu-item" id="set-privacy"><span class="menu-label">${t('privacy')}</span><span class="menu-arrow">›</span></div>
       <div class="me-menu-item" id="set-language"><span class="menu-label">${t('language_settings')}</span><span class="menu-arrow">›</span></div>
+      <div class="me-menu-item" id="set-node"><span class="menu-label">${t('node_identity')}</span><span class="menu-value">${getNodeProfile() || t('node_not_set')}</span><span class="menu-arrow">›</span></div>
       <div class="me-menu-item" id="set-about"><span class="menu-label">${t('about_sases')}</span><span class="menu-arrow">›</span></div>
       <div class="me-menu-item" id="set-logout" style="justify-content:center;"><span class="menu-label" style="color:#ff3b30;">${t('logout')}</span></div>
     </div>
@@ -40,6 +42,7 @@ export function openSettings() {
     document.getElementById('set-notify').onclick = openNotificationSettings;
     document.getElementById('set-privacy').onclick = openPrivacySettings;
     document.getElementById('set-language').onclick = openLanguageSettings;
+    document.getElementById('set-node').onclick = openNodeIdentity;
     document.getElementById('set-about').onclick = openAboutPage;
     document.getElementById('set-logout').onclick = () => {
       localStorage.removeItem('sases_token');
@@ -154,6 +157,57 @@ function openPollinationPlan() {
     </div>
   `;
   window.openSubpage(t('pollination_plan'), contentHtml, { showMore: false });
+}
+
+// ==================== 节点身份 ====================
+function openNodeIdentity() {
+  const nodeId = getNodeId();
+  const profile = getNodeProfile();
+  const contentHtml = `
+    <div class="me-menu">
+      <div class="me-menu-item"><span class="menu-label">node_id</span><span class="menu-value">${nodeId || t('node_not_set')}</span></div>
+      <div class="me-menu-item"><span class="menu-label">profile</span><span class="menu-value">${profile || t('node_not_set')}</span></div>
+    </div>
+    <div style="padding:12px;background:#f5f5f5;border-radius:8px;font-size:12px;color:#666;line-height:1.6;">
+      ${t('node_import_hint')}
+    </div>
+    <div style="padding:12px 0;">
+      <input type="file" id="node-bundle-file" accept=".json,application/json" style="width:100%;">
+    </div>
+    <button class="save-btn" id="node-import" style="width:100%;">${t('node_import')}</button>
+  `;
+  window.openSubpage(t('node_identity'), contentHtml, { showMore: false });
+  setTimeout(() => {
+    const importBtn = document.getElementById('node-import');
+    if (importBtn) importBtn.onclick = async () => {
+      const input = document.getElementById('node-bundle-file');
+      const file = input && input.files && input.files[0];
+      if (!file) { alert(t('node_import_failed')); return; }
+      try {
+        const bundle = JSON.parse(await file.text());
+        setNodeBundle(bundle);
+        await refreshNodeManifest(localStorage.getItem('sases_token'));
+        alert(t('node_import_ok'));
+        window.closeSubpage();
+        openSettings();
+      } catch (e) {
+        alert(t('node_import_failed') + ': ' + e.message);
+      }
+    };
+    if (nodeId) {
+      const clearBtn = document.createElement('button');
+      clearBtn.className = 'save-btn';
+      clearBtn.style.cssText = 'width:100%;margin-top:8px;background:#ff3b30;';
+      clearBtn.textContent = t('node_clear');
+      clearBtn.onclick = () => {
+        clearNodeIdentity();
+        alert(t('node_clear_ok'));
+        window.closeSubpage();
+        openSettings();
+      };
+      importBtn.parentNode.appendChild(clearBtn);
+    }
+  }, 100);
 }
 
 // 挂载到全局
