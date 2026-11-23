@@ -1241,4 +1241,9 @@ export const en = {
   'dst_task_desc': 'Task description',
   'dst_choose_agent': 'Choose an agent',
   'dst_start': 'Start rescue',
+  'dst_use_official_free': 'Using official assistant (free left today: ',
+  'dst_use_official_cost': 'Using official assistant (cost: ',
+  'dst_compute': 'compute',
+  'dst_sunlight_plus': 'Sunlight +',
+  'dst_exp_small_plus': 'Small EXP capsule +',
 };

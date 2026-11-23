@@ -432,9 +432,9 @@ async function openYunchongRescue(taskId) {
         const usageInfo = analyzeResult.official_agent_usage;
         let usageText = '';
         if (usageInfo.free) {
-          usageText = `使用官方助手（今日剩余免费 ${usageInfo.remaining_free} 次）`;
+          usageText = `${t('dst_use_official_free')}${usageInfo.remaining_free} ${t('dst_times')}`;
         } else {
-          usageText = `使用官方助手（消耗 ${usageInfo.consumed_compute} 算力）`;
+          usageText = `${t('dst_use_official_cost')}${usageInfo.consumed_compute} ${t('dst_compute')}`;
         }
         addProcessStep(processContainer, 'usage', 'ℹ️ ' + usageText, '');
       }
@@ -455,8 +455,8 @@ async function openYunchongRescue(taskId) {
 
         if (verifyResult.comfort_reward) {
           const cr = verifyResult.comfort_reward;
-          let rewardText = `阳光 +${cr.sunlight}`;
-          if (cr.exp_small) rewardText += ` · 经验胶囊小 +${cr.exp_small}`;
+          let rewardText = `${t('dst_sunlight_plus')}${cr.sunlight}`;
+          if (cr.exp_small) rewardText += ` · ${t('dst_exp_small_plus')}${cr.exp_small}`;
           addProcessStep(processContainer, 'comfort', '💊 ' + t('ds_comfort'), rewardText);
         }
 

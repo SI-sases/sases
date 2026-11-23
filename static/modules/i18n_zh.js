@@ -1240,4 +1240,9 @@ export const zh = {
   'dst_task_desc': '任务描述',
   'dst_choose_agent': '选择执行智能体',
   'dst_start': '开始解救',
+  'dst_use_official_free': '使用官方助手（今日剩余免费 ',
+  'dst_use_official_cost': '使用官方助手（消耗 ',
+  'dst_compute': '算力',
+  'dst_sunlight_plus': '阳光 +',
+  'dst_exp_small_plus': '经验胶囊小 +',
 };
