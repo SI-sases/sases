@@ -73,14 +73,14 @@ export async function sendWorkCommand(command, chatState, api) {
     if (data.credit_deducted) {
       resultText += `\n\n⚠️ ${t('cw_credits_deducted')} ${t('cw_remaining')} ${data.credit_remaining ?? t('cw_unknown')}`;
     }
-    appendWorkMessage('assistant', resultText, '指令执行');
+    appendWorkMessage('assistant', resultText, t('cw_cmd_exec'));
 
     // 上报新手引导动作：成功执行指令（Day 3）
     if (data.status !== 'blocked' && data.status !== 'error' && typeof window.onboarding?.report === 'function') {
       window.onboarding.report('execute_command');
     }
   } catch (err) {
-    appendWorkMessage('assistant', `执行失败：${err.message}`, '指令执行');
+    appendWorkMessage('assistant', `${t('cw_exec_failed')}${err.message}`, t('cw_cmd_exec'));
   }
 }
 
@@ -95,7 +95,7 @@ export async function sendCommanderTask(taskText, chatState, api) {
     window.updateSendButtonVisibility();
   }
 
-  appendCommanderHint('指挥官正在拆解任务...');
+  appendCommanderHint(t('cw_commander_splitting'));
 
   try {
     const data = await api.commanderExecute(

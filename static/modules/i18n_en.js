@@ -5,8 +5,11 @@ export const en = {
   'cw_me': 'Me',
   'cw_no_output': '(no output)',
   'cw_credits_deducted': '2 credits deducted,',
-  'cw_remaining': 'remaining',
   'cw_unknown': 'unknown',
+  'cw_cmd_exec': 'Command execution',
+  'cw_exec_failed': 'Execution failed: ',
+  'cw_commander_splitting': 'Commander is breaking down the task...',
+  'cw_remaining': 'remaining',
   // Capability switches (api_pill)
   'cp_web': 'Web',
   'cp_web_desc': 'Allow reading web pages / calling external APIs',

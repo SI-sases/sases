@@ -5,8 +5,11 @@ export const zh = {
   'cw_me': '我',
   'cw_no_output': '(无输出)',
   'cw_credits_deducted': '已扣除 2 积分，',
-  'cw_remaining': '剩余',
   'cw_unknown': '未知',
+  'cw_cmd_exec': '指令执行',
+  'cw_exec_failed': '执行失败：',
+  'cw_commander_splitting': '指挥官正在拆解任务...',
+  'cw_remaining': '剩余',
   // 能力开关（api_pill）
   'cp_web': '联网',
   'cp_web_desc': '允许读取网页 / 调用外部 API',
