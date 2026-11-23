@@ -15,6 +15,7 @@ class EnqueueBody(BaseModel):
     node_id: str
     action: str
     payload: dict | None = None
+    idempotency_key: str | None = None
 
 
 class ClaimBody(BaseModel):
@@ -34,7 +35,9 @@ def enqueue(
 ):
     _payload, admin = _require_cap(x_sases_node_manifest, ni.CAP_MANAGE_NODES)
     try:
-        return client_ops.enqueue(body.node_id, body.action, body.payload, int(admin["user_id"]))
+        return client_ops.enqueue(
+            body.node_id, body.action, body.payload, int(admin["user_id"]), body.idempotency_key
+        )
     except client_ops.ClientOpsError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 

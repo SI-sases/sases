@@ -645,9 +645,28 @@ class MainWindow(QMainWindow):
         self._set_running_ui(True)
         self.sidebar.setCurrentRow(0)
         self._real_start_service()
+        self._start_ops_agent()
         self._log("[启动器] 正在通过服务器检查代码更新...")
         import threading
         threading.Thread(target=self._bg_download_update, daemon=True).start()
+
+    def _start_ops_agent(self):
+        script = os.path.join(self.work_dir, "scripts", "client_ops_agent.py")
+        if not os.path.isfile(script):
+            return
+        candidates = [
+            os.path.join(self.work_dir, "python-embed", "python.exe"),
+            os.path.join(self.work_dir, "python-embed", "pythonw.exe"),
+        ]
+        python = next((path for path in candidates if os.path.isfile(path)), "python")
+        try:
+            subprocess.Popen(
+                [python, script],
+                cwd=self.work_dir,
+                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+            )
+        except Exception:
+            pass
 
     def _bg_download_update(self):
         try:
