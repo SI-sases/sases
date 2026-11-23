@@ -1245,4 +1245,9 @@ export const zh = {
   'dst_compute': '算力',
   'dst_sunlight_plus': '阳光 +',
   'dst_exp_small_plus': '经验胶囊小 +',
+  'yc_subtitle': '培养你的宠物，探索智维宇宙',
+  'yc_pets': '宠物',
+  'yc_base': '基地',
+  'yc_bag': '背包',
+  'yc_battle': '对战',
 };

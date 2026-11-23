@@ -1246,4 +1246,9 @@ export const en = {
   'dst_compute': 'compute',
   'dst_sunlight_plus': 'Sunlight +',
   'dst_exp_small_plus': 'Small EXP capsule +',
+  'yc_subtitle': 'Raise your pets and explore the Zhiwei universe',
+  'yc_pets': 'Pets',
+  'yc_base': 'Base',
+  'yc_bag': 'Bag',
+  'yc_battle': 'Battle',
 };

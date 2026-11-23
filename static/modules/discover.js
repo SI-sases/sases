@@ -557,25 +557,25 @@ function openYunchongCamp() {
     <div class="yunchong-hub">
       <div class="yunchong-banner">
         <div class="yunchong-title">${t('discover_yunchong_title')}</div>
-        <div class="yunchong-subtitle">培养你的宠物，探索智维宇宙</div>
+        <div class="yunchong-subtitle">${t('yc_subtitle')}</div>
       </div>
       
       <div class="yunchong-nodes">
         <div class="yunchong-node" data-action="pets">
           <div class="yunchong-node-icon">🐾</div>
-          <div class="yunchong-node-name">宠物</div>
+          <div class="yunchong-node-name">${t('yc_pets')}</div>
         </div>
         <div class="yunchong-node" data-action="base">
           <div class="yunchong-node-icon">🏠</div>
-          <div class="yunchong-node-name">基地</div>
+          <div class="yunchong-node-name">${t('yc_base')}</div>
         </div>
         <div class="yunchong-node" data-action="bag">
           <div class="yunchong-node-icon">🎒</div>
-          <div class="yunchong-node-name">背包</div>
+          <div class="yunchong-node-name">${t('yc_bag')}</div>
         </div>
         <div class="yunchong-node" data-action="battle">
           <div class="yunchong-node-icon">⚔️</div>
-          <div class="yunchong-node-name">对战</div>
+          <div class="yunchong-node-name">${t('yc_battle')}</div>
         </div>
       </div>
     </div>
