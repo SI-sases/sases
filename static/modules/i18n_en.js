@@ -2,11 +2,13 @@
 export const en = {
   'chr_recent': 'Recent chats',
   // Approval card (chat_approval)
-  'ca_allowed': 'Allowed',
+  'ca_confirm_needed': 'Confirmation needed',
+  'ca_tool': 'Tool',
+  'ca_allow_once': 'Allow once',
   'ca_denied': 'Denied',
   'ca_decision_desc': 'The task will continue / stop accordingly',
   'ca_submit_failed': 'Submit failed',
-  'chr_recent': 'Recent chats',
+  'ca_allowed': 'Allowed',
   'chr_collapse': 'Collapse',
   'chr_history': 'History',
   'chr_expand_recent': 'Expand recent conversations',
