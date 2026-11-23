@@ -760,8 +760,9 @@ def create_app() -> FastAPI:
         check = node_auth.check_request(path, request.method, manifest)
         if not check.ok:
             peer = request.client.host if request.client else None
-            node_auth.audit_check(path, request.method, check, peer)
-            if node_auth.should_block(check, manifest):
+            blocked = node_auth.should_block(check, manifest)
+            node_auth.audit_check(path, request.method, check, peer, blocked=blocked)
+            if blocked:
                 return JSONResponse(
                     {"error": "node permission denied", "reason": check.reason, "code": check.status_code},
                     status_code=check.status_code,

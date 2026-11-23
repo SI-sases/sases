@@ -95,7 +95,7 @@ def should_block(check: NodeCheck, manifest: str | None) -> bool:
     return bool(ENFORCE_PRESENT and manifest)
 
 
-def audit_check(path: str, method: str, check: NodeCheck, wg_peer_ip: str | None = None) -> None:
+def audit_check(path: str, method: str, check: NodeCheck, wg_peer_ip: str | None = None, blocked: bool = False) -> None:
     if check.ok:
         return
     ni.audit_event(
@@ -105,6 +105,6 @@ def audit_check(path: str, method: str, check: NodeCheck, wg_peer_ip: str | None
         profile=check.profile,
         capability=check.capability,
         wg_peer_ip=wg_peer_ip,
-        result="shadow" if MODE != "enforce" else "denied",
+        result="denied" if (blocked or MODE == "enforce") else "shadow",
         detail=check.reason,
     )
