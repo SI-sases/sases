@@ -31,7 +31,7 @@ def main() -> int:
     local_version = {}
     path = ROOT / "client_version.json"
     if path.exists():
-        local_version = json.loads(path.read_text(encoding="utf-8"))
+        local_version = json.loads(path.read_text(encoding="utf-8-sig"))
     version = args.version or local_version.get("version") or "1.0.0"
     build_id = time.strftime("%Y%m%d%H%M%S")
 
