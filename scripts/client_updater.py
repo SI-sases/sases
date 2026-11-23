@@ -26,7 +26,7 @@ DEFAULT_MANIFEST_URLS = [
 _env_urls = os.getenv("SASES_CLIENT_UPDATE_URL", "").strip()
 if _env_urls:
     DEFAULT_MANIFEST_URLS = [u.strip() for u in _env_urls.split(",") if u.strip()]
-ALLOWED_ROOTS = ("core", "static", "scripts", "launcher")
+ALLOWED_ROOTS = ("core", "static", "scripts", "launcher", "wireguard")
 EXCLUDED_PARTS = {"__pycache__", ".git", "build", "dist", "node_modules"}
 
 

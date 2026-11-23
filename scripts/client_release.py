@@ -15,7 +15,7 @@ import time
 import zipfile
 
 ROOT_FILES = ("app_full.py", "requirements.txt", "boot_launcher.py")
-ROOT_DIRS = ("core", "static", "scripts", "launcher")
+ROOT_DIRS = ("core", "static", "scripts", "launcher", "wireguard")
 EXCLUDE_DIRS = {"__pycache__", ".git", "build", "dist", "node_modules", ".pytest_cache", "downloads", "_ui_shots"}
 
 

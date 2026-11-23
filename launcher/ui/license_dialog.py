@@ -5,6 +5,10 @@ try:
     from launcher.node_identity_store import load_or_create, save_activation
 except ImportError:
     from node_identity_store import load_or_create, save_activation
+try:
+    from launcher.wireguard_setup import ensure_wireguard
+except ImportError:
+    from wireguard_setup import ensure_wireguard
 
 class LicenseDialog(QDialog):
     def __init__(self, parent=None):
@@ -57,6 +61,10 @@ class LicenseDialog(QDialog):
             with urllib.request.urlopen(req, timeout=10) as response:
                 res_data = json.loads(response.read().decode('utf-8'))
                 save_activation(os.getcwd(), res_data)
+                try:
+                    ensure_wireguard(os.getcwd())
+                except Exception:
+                    pass
                 self.license_data = res_data
                 self.lbl_status.setText("✅ 激活成功！")
                 self.lbl_status.setStyleSheet("color: green;")
