@@ -1,93 +1,162 @@
-import os, shutil, urllib.request, zipfile
+#!/usr/bin/env python3
+"""Build the full portable SASES client package.
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-BUILD_DIR = os.path.join(ROOT, "build_portable")
-EMBED_URL = "https://www.python.org/ftp/python/3.12.10/python-3.12.10-embed-amd64.zip"
+Output is intentionally written outside the source tree to avoid recursively
+including old packages from static/downloads.
+"""
+from __future__ import annotations
 
-# 定义要排除的超大依赖库前缀或完整名称
-EXCLUDE_PREFIXES = ["chromadb", "playwright", "scipy", "torch", "pandas"]
+import argparse
+import os
+import shutil
+import stat
+import sys
+import zipfile
 
-def ignore_heavy_libs(directory, contents):
-    """在打包时过滤掉不需要的巨型库和缓存文件"""
+ROOT_DEFAULT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DEFAULT_OUT = r"D:\sases_build\sases-portable.zip"
+DEFAULT_STAGE = r"D:\sases_build\portable_stage"
+DEFAULT_EMBED = r"D:\sases\python-embed"
+
+ROOT_DIRS = ("core", "static", "harness_modules", "launcher", "scripts", "wireguard")
+ROOT_FILES = (
+    "app_full.py",
+    "requirements.txt",
+    "client_version.json",
+    "LICENSE",
+    "COMMERCIAL.md",
+    "THIRD_PARTY_LICENSES.md",
+)
+EXCLUDE_DIRS = {
+    "__pycache__",
+    ".git",
+    "build",
+    "dist",
+    "downloads",
+    "_ui_shots",
+    ".backups",
+    ".update_backup",
+    ".update_staging",
+    "data",
+    "node_modules",
+    ".pytest_cache",
+}
+EXCLUDE_FILES = {
+    "users.db",
+    "users.db-wal",
+    "users.db-shm",
+    "remote_users.db",
+    "remote_users.db-wal",
+    "remote_users.db-shm",
+    ".env",
+    "local_run.out",
+    "local_run.err",
+    "remote_run.out",
+    "remote_run.err",
+    "runtime_port.json",
+    "node_identity.json",
+    "license.json",
+}
+
+BAT = """@echo off
+cd /d %~dp0
+if exist "python-embed\\pythonw.exe" (
+  start "" "python-embed\\pythonw.exe" "launcher\\launcher.py"
+) else if exist "python-embed\\python.exe" (
+  start "" "python-embed\\python.exe" "launcher\\launcher.py"
+) else (
+  start "" python "launcher\\launcher.py"
+)
+"""
+
+
+def _ignore(directory, names):
     ignored = []
-    for item in contents:
-        # 如果是以黑名单开头的文件夹或文件
-        if any(item.startswith(prefix) for prefix in EXCLUDE_PREFIXES):
-            ignored.append(item)
-        # 过滤掉 .whl 安装包、__pycache__ 等无用文件
-        elif item.endswith(".whl") or item == "__pycache__":
-            ignored.append(item)
+    for name in names:
+        if name in EXCLUDE_DIRS or name in EXCLUDE_FILES:
+            ignored.append(name)
+        elif name.endswith(".pyc") or name.endswith(".pyo"):
+            ignored.append(name)
     return ignored
 
-def build():
-    print("1. 清理旧目录...")
-    if os.path.exists(BUILD_DIR):
-        # 强制清除可能被占用的 .git 目录
-        git_dir = os.path.join(BUILD_DIR, ".git")
-        if os.path.exists(git_dir):
-            import stat
-            def on_rm_error(func, path, exc_info):
-                os.chmod(path, stat.S_IWRITE)
-                func(path)
-            shutil.rmtree(git_dir, onerror=on_rm_error)
+
+def _remove(path: str) -> None:
+    if not os.path.exists(path):
+        return
+
+    def _onerror(func, target, _exc):
         try:
-            shutil.rmtree(BUILD_DIR)
-        except Exception as e:
-            print(f"常规删除失败，尝试静默强杀: {e}")
-            os.system(f'rmdir /s /q "{BUILD_DIR}"')
-    os.makedirs(BUILD_DIR)
+            os.chmod(target, stat.S_IWRITE)
+            func(target)
+        except Exception:
+            pass
 
-    print("2. 下载并解压 Python Embeddable...")
-    embed_zip = os.path.join(BUILD_DIR, "python-embed.zip")
-    urllib.request.urlretrieve(EMBED_URL, embed_zip)
-    with zipfile.ZipFile(embed_zip, 'r') as z:
-        z.extractall(os.path.join(BUILD_DIR, "python-embed"))
-    os.remove(embed_zip)
+    shutil.rmtree(path, onerror=_onerror)
 
-    pth_file = os.path.join(BUILD_DIR, "python-embed", "python312._pth")
-    if os.path.exists(pth_file):
-        with open(pth_file, "a", encoding="utf-8") as f:
-            f.write("\nLib\\site-packages\n")
 
-    print("3. 复制项目文件...")
-    items_to_copy = ["core", "static", "harness_modules", "launcher", "scripts", "LICENSE", "COMMERCIAL.md", "THIRD_PARTY_LICENSES.md", "app_full.py", "requirements.txt"]
-    for item in items_to_copy:
-        src = os.path.join(ROOT, item)
-        if os.path.exists(src):
-            if os.path.isdir(src):
-                shutil.copytree(src, os.path.join(BUILD_DIR, item))
-            else:
-                shutil.copy2(src, os.path.join(BUILD_DIR, item))
+def _copy_tree(src: str, dst: str) -> None:
+    shutil.copytree(src, dst, ignore=_ignore, dirs_exist_ok=False)
 
-    print("4. 复制本地依赖包 (自动过滤巨型库)...")
-    venv_site = os.path.join(ROOT, "venv312", "Lib", "site-packages")
-    embed_site = os.path.join(BUILD_DIR, "python-embed", "Lib", "site-packages")
-    os.makedirs(embed_site, exist_ok=True)
-    if os.path.exists(venv_site):
-        # 应用过滤规则
-        shutil.copytree(venv_site, embed_site, dirs_exist_ok=True, ignore=ignore_heavy_libs)
 
-    print("5. 将打包好的启动器 EXE 复制到根目录...")
-    src_exe = os.path.join(ROOT, "launcher", "dist", "SASES启动器.exe")
-    if os.path.exists(src_exe):
-        shutil.copy2(src_exe, os.path.join(BUILD_DIR, "SASES启动器.exe"))
-    else:
-        print("⚠️ 警告: 未找到 launcher/dist/SASES启动器.exe，请先运行 build_launcher_exe.py")
+def _verify(zip_path: str) -> None:
+    forbidden = ("users.db", ".env", "static/downloads", "sases_client", "code_update.zip")
+    with zipfile.ZipFile(zip_path) as zf:
+        names = zf.namelist()
+    for name in names:
+        low = name.lower()
+        if any(part in low for part in forbidden):
+            raise SystemExit(f"forbidden file in package: {name}")
+    required = ("python-embed/python.exe", "core/bootstrap.py", "launcher/launcher.py", "app_full.py")
+    missing = [item for item in required if item not in names]
+    if missing:
+        raise SystemExit(f"missing required files: {missing}")
+    print(f"[portable] verified {len(names)} files")
 
-    print("6. 生成备用启动脚本...")
-    bat_content = "@echo off\nstart python-embed\\pythonw.exe launcher\\launcher.py\n"
-    with open(os.path.join(BUILD_DIR, "启动SASES.bat"), "w", encoding="gbk") as f:
-        f.write(bat_content)
 
-    print("7. 压缩成 zip...")
-    output_zip = os.path.join(ROOT, "static", "downloads", "sases-portable.zip")
-    os.makedirs(os.path.dirname(output_zip), exist_ok=True)
-    if os.path.exists(output_zip):
-        os.remove(output_zip)
-    
-    # 修复 make_archive 传入路径的坑，确保不把 build_portable 文件夹本身包进去
-    shutil.make_archive(output_zip.replace(".zip", ""), 'zip', BUILD_DIR)
-    print(f"✅ 打包成功！文件已保存至: {output_zip}")
+def build(root: str, out: str, stage: str, embed: str) -> None:
+    if not os.path.isdir(embed):
+        raise SystemExit(f"python-embed not found: {embed}")
+    if not os.path.isfile(os.path.join(root, "launcher", "dist", "SASES启动器.exe")):
+        raise SystemExit("SASES启动器.exe missing; run build_launcher_exe.py first")
+
+    _remove(stage)
+    os.makedirs(stage, exist_ok=True)
+    _copy_tree(embed, os.path.join(stage, "python-embed"))
+
+    for name in ROOT_DIRS:
+        src = os.path.join(root, name)
+        if os.path.isdir(src):
+            _copy_tree(src, os.path.join(stage, name))
+    for name in ROOT_FILES:
+        src = os.path.join(root, name)
+        if os.path.isfile(src):
+            shutil.copy2(src, os.path.join(stage, name))
+
+    shutil.copy2(
+        os.path.join(root, "launcher", "dist", "SASES启动器.exe"),
+        os.path.join(stage, "SASES启动器.exe"),
+    )
+    with open(os.path.join(stage, "启动SASES.bat"), "w", encoding="utf-8") as handle:
+        handle.write(BAT)
+
+    os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
+    if os.path.exists(out):
+        os.remove(out)
+    shutil.make_archive(out[:-4], "zip", stage)
+    _verify(out)
+    print(f"[portable] {out} {os.path.getsize(out) / 1024 / 1024:.1f} MB")
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--root", default=ROOT_DEFAULT)
+    parser.add_argument("--out", default=DEFAULT_OUT)
+    parser.add_argument("--stage", default=DEFAULT_STAGE)
+    parser.add_argument("--python-embed", default=DEFAULT_EMBED)
+    args = parser.parse_args()
+    build(os.path.abspath(args.root), os.path.abspath(args.out), os.path.abspath(args.stage), os.path.abspath(args.python_embed))
+    return 0
+
 
 if __name__ == "__main__":
-    build()
+    raise SystemExit(main())

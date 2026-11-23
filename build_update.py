@@ -1,53 +1,62 @@
-﻿import os, zipfile, json
-from datetime import datetime
+#!/usr/bin/env python3
+"""Build the hot-update bundle and manifest used by client_updater."""
+from __future__ import annotations
 
-BUILD_DIR = "D:/sases_build_temp"
-VERSION = datetime.now().strftime("%Y.%m.%d.%H%M")
-# 保留 "launcher" 目录，以便随时热更新 UI 源码
-TARGETS = ["core", "static", "harness_modules", "launcher", "scripts/run_forever.py", "app_full.py"]
+import argparse
+import json
+import os
+import sys
+import time
+from pathlib import Path
 
-# 🔥 关键修复：排除 launcher/dist（编译出的 EXE）和 launcher/build（缓存），以及常见垃圾文件
-SKIP_DIRS = [
-    "__pycache__", 
-    "static/downloads", 
-    "static/.backups", 
-    "static/_ui_shots", 
-    "hive-nodes",
-    "launcher/dist",     # 排除打包好的 EXE
-    "launcher/build",    # 排除 PyInstaller 缓存
-    "launcher/__pycache__"
-]
+ROOT = Path(__file__).resolve().parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
-SKIP_FILES = [".pyc", ".db", ".env", ".bak", ".spec"] # 顺便排除 .spec
+from scripts.client_release import build, _sha256
 
-os.makedirs(BUILD_DIR, exist_ok=True)
-zip_path = os.path.join(BUILD_DIR, "code_update.zip")
+DEFAULT_OUT = r"D:\sases_build\client_update.zip"
+DEFAULT_MANIFEST = r"D:\sases_build\client_version.json"
+BASE_URL = "http://120.77.136.90:8001/static/downloads"
 
-with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-    for target in TARGETS:
-        if os.path.isfile(target):
-            zipf.write(target, target)
-        else:
-            for root, dirs, files in os.walk(target):
-                root_normalized = root.replace("\\", "/")
-                
-                # 检查当前目录是否被拉黑
-                if any(skip in root_normalized for skip in SKIP_DIRS):
-                    continue
-                
-                for file in files:
-                    # 检查文件后缀和特殊文件
-                    if any(file.endswith(ext) for ext in SKIP_FILES) or file == ".env":
-                        continue
-                    
-                    file_path = os.path.join(root, file)
-                    zipf.write(file_path, file_path)
 
-manifest = {
-    "version": VERSION,
-    "update_url": "http://127.0.0.1:8002/code_update.zip" 
-}
-with open(os.path.join(BUILD_DIR, "version.json"), "w", encoding="utf-8") as f:
-    json.dump(manifest, f, ensure_ascii=False, indent=2)
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--version", default=None)
+    parser.add_argument("--out", default=DEFAULT_OUT)
+    parser.add_argument("--manifest", default=DEFAULT_MANIFEST)
+    parser.add_argument("--base-url", default=BASE_URL)
+    args = parser.parse_args()
 
-print(f"纯净版热更新包生成成功: {zip_path}")
+    local_version = {}
+    path = ROOT / "client_version.json"
+    if path.exists():
+        local_version = json.loads(path.read_text(encoding="utf-8"))
+    version = args.version or local_version.get("version") or "1.0.0"
+    build_id = time.strftime("%Y%m%d%H%M%S")
+
+    os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
+    build(str(ROOT), args.out, version, build_id)
+    size = os.path.getsize(args.out)
+    if size > 10 * 1024 * 1024:
+        raise SystemExit(f"update bundle too large: {size} bytes")
+
+    manifest = {
+        "channel": "test",
+        "version": version,
+        "build": build_id,
+        "min_version": "0.0.0",
+        "published_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        "package_url": args.base_url.rstrip("/") + "/" + os.path.basename(args.out),
+        "sha256": _sha256(args.out),
+        "size": size,
+        "notes": "client update",
+    }
+    with open(args.manifest, "w", encoding="utf-8") as handle:
+        json.dump(manifest, handle, ensure_ascii=False, indent=2)
+    print(json.dumps(manifest, ensure_ascii=False, indent=2))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
