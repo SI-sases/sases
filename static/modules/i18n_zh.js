@@ -1346,4 +1346,13 @@ export const zh = {
   'pt_stake': '质押',
   'pt_status': '状态：',
   'pt_submissions': '提交列表',
+  'gk_search_ph': '搜索知识',
+  'gk_search_btn': '搜索',
+  'gk_title_label': '标题',
+  'gk_title_ph': '简短描述',
+  'gk_category': '分类',
+  'gk_content': '内容',
+  'gk_tags': '标签',
+  'gk_tags_ph': '逗号分隔，可选',
+  'gk_save': '保存',
 };

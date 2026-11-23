@@ -1347,4 +1347,13 @@ export const en = {
   'pt_stake': 'Staked',
   'pt_status': 'Status: ',
   'pt_submissions': 'Submissions',
+  'gk_search_ph': 'Search knowledge',
+  'gk_search_btn': 'Search',
+  'gk_title_label': 'Title',
+  'gk_title_ph': 'Short description',
+  'gk_category': 'Category',
+  'gk_content': 'Content',
+  'gk_tags': 'Tags',
+  'gk_tags_ph': 'Comma-separated, optional',
+  'gk_save': 'Save',
 };

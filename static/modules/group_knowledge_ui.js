@@ -43,8 +43,8 @@ window.openGroupKnowledge = async function(groupId) {
   const items = await load();
   const html = `
     <div class="subpage-search-bar">
-      <input type="text" id="gk-search" class="search-input" placeholder="搜索知识">
-      <button class="search-btn" id="gk-search-btn">搜索</button>
+      <input type="text" id="gk-search" class="search-input" placeholder="${t('gk_search_ph')}">
+      <button class="search-btn" id="gk-search-btn">${t('gk_search_btn')}</button>
     </div>
     <div id="gk-list">${renderList(items)}</div>
   `;
@@ -101,32 +101,32 @@ window.openGroupKnowledgeAdd = function(groupId) {
   const html = `
     <div class="me-menu">
       <div class="me-menu-item">
-        <span class="menu-label">标题</span>
-        <input id="gk-title" type="text" class="inline-input" placeholder="简短描述">
+        <span class="menu-label">${t('gk_title_label')}</span>
+        <input id="gk-title" type="text" class="inline-input" placeholder="${t('gk_title_ph')}">
       </div>
       <div class="me-menu-item">
-        <span class="menu-label">分类</span>
+        <span class="menu-label">${t('gk_category')}</span>
         <select id="gk-category" class="inline-input">
-          <option value="doc">文档</option>
+          <option value="doc">${t('gk_doc')}</option>
           <option value="faq">FAQ</option>
-          <option value="meeting">会议纪要</option>
-          <option value="policy">规章制度</option>
+          <option value="meeting">${t('gk_minutes')}</option>
+          <option value="policy">${t('gk_policy')}</option>
         </select>
       </div>
     </div>
     <div class="me-menu">
       <div class="me-menu-item" style="display:block;padding:12px;">
-        <div style="font-size:13px;color:#666;margin-bottom:6px;">内容</div>
+        <div style="font-size:13px;color:#666;margin-bottom:6px;">${t('gk_content')}</div>
         <textarea id="gk-content" rows="6" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:14px;resize:vertical;"></textarea>
       </div>
     </div>
     <div class="me-menu">
       <div class="me-menu-item">
-        <span class="menu-label">标签</span>
-        <input id="gk-tags" type="text" class="inline-input" placeholder="逗号分隔，可选">
+        <span class="menu-label">${t('gk_tags')}</span>
+        <input id="gk-tags" type="text" class="inline-input" placeholder="${t('gk_tags_ph')}">
       </div>
     </div>
-    <button class="save-btn" id="gk-submit">保存</button>
+    <button class="save-btn" id="gk-submit">${t('gk_save')}</button>
   `;
   window.openSubpage(t('gk_add_title'), html, {
     returnAction: () => window.openGroupKnowledge(groupId)
