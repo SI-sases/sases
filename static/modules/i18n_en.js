@@ -13,6 +13,12 @@ export const en = {
   'cw_no_cmd': 'Could not generate an executable command',
   'cw_commander': 'Commander',
   'cw_commander_failed': 'Commander task failed: ',
+  'cw_blocked': 'Blocked: ',
+  'cw_task_done': 'Task completed; executed',
+  'cw_executed': '',
+  'cw_commands': 'commands',
+  'cw_success': 'succeeded',
+  'cw_items': '',
   // Capability switches (api_pill)
   'cp_web': 'Web',
   'cp_web_desc': 'Allow reading web pages / calling external APIs',

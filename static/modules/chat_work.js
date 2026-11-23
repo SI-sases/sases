@@ -118,15 +118,15 @@ export async function sendCommanderTask(taskText, chatState, api) {
       if (r.status === 'success') {
         stepText += `\n输出:\n${r.output}`;
       } else if (r.status === 'blocked') {
-        stepText += `\n⚠️ 已被拦截：${r.output}`;
+        stepText += `\n⚠️ ${t('cw_blocked')}${r.output}`;
       } else {
         stepText += `\n${r.output}`;
       }
       appendWorkMessage('assistant', stepText, t('cw_commander'));
     });
 
-    const summaryText = `✅ 任务完成，共执行 ${data.commands_executed} 条命令，成功 ${data.success_count} 条`;
-    appendWorkMessage('assistant', summaryText, '指挥官');
+    const summaryText = `✅ ${t('cw_task_done')} ${t('cw_executed')} ${data.commands_executed} ${t('cw_commands')}，${t('cw_success')} ${data.success_count} ${t('cw_items')}`;
+    appendWorkMessage('assistant', summaryText, t('cw_commander'));
 
     // 上报新手引导动作（指挥官成功执行也算）
     if (data.success_count > 0 && typeof window.onboarding?.report === 'function') {
