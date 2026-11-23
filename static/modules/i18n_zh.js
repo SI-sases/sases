@@ -1082,4 +1082,9 @@ export const zh = {
   'pb_complex_task': '复杂任务',
   'pb_unlimited': '不限',
   'pb_caution': '谨慎使用',
+  'pb_caution': '谨慎使用',
+  // 执行追踪抽屉（chat_trace）
+  'ctr_background': '后台任务',
+  'ctr_title': '执行追踪',
+  'ctr_show_l34': '显示 L3/L4 细节',
 };

@@ -86,7 +86,7 @@ function _ensure() {
 
   _chip = _el('div', null);
   _chip.id = 'trace-chip';
-  _chip.innerHTML = '<span class="dot"></span><span class="txt">后台任务</span>';
+  _chip.innerHTML = '<span class="dot"></span><span class="txt">' + t('ctr_background') + '</span>';
   _chip.onclick = () => open();
   win.appendChild(_chip);
 
@@ -94,7 +94,7 @@ function _ensure() {
   _drawer.id = 'trace-drawer';
 
   const head = _el('div', 'tr-head');
-  _title = _el('span', 'tr-title', '执行追踪');
+  _title = _el('span', 'tr-title', t('ctr_title'));
   _select = document.createElement('select');
   _select.onchange = () => {
     const id = parseInt(_select.value || '0', 10);
@@ -112,7 +112,7 @@ function _ensure() {
   cb.onchange = () => _drawer.classList.toggle('show-detail', cb.checked);
   _detailToggle = cb;
   tools.appendChild(cb);
-  tools.appendChild(_el('span', null, '显示 L3/L4 细节'));
+  tools.appendChild(_el('span', null, t('ctr_show_l34')));
   const artBtn = document.createElement('button');
   artBtn.id = 'trace-artifacts-btn';
   artBtn.textContent = '产物';

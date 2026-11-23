@@ -1084,4 +1084,8 @@ export const en = {
   'pb_complex_task': 'Complex task',
   'pb_unlimited': 'Unlimited',
   'pb_caution': 'Use with caution',
+  // Execution trace drawer (chat_trace)
+  'ctr_background': 'Background tasks',
+  'ctr_title': 'Execution trace',
+  'ctr_show_l34': 'Show L3/L4 details',
 };
