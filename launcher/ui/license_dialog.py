@@ -1,6 +1,10 @@
 import os, json, urllib.request
 from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox
 from launcher.hardware import get_hardware_fingerprint
+try:
+    from launcher.node_identity_store import load_or_create, save_activation
+except ImportError:
+    from node_identity_store import load_or_create, save_activation
 
 class LicenseDialog(QDialog):
     def __init__(self, parent=None):
@@ -36,13 +40,15 @@ class LicenseDialog(QDialog):
         self.lbl_status.setStyleSheet("color: blue;")
         
         fp = get_hardware_fingerprint()
+        identity = load_or_create(os.getcwd())
         
         # 这里填你云端的真实 IP
         api_url = "http://120.77.136.90:8001/auth/license/activate"
         payload = json.dumps({
             "key_code": key,
             "device_fingerprint": fp,
-            "user_id": 1  # 默认本地主账号为 1
+            "user_id": 1,  # 默认本地主账号为 1
+            "ed25519_pubkey": identity.get("ed25519_public_key", "")
         }).encode('utf-8')
         
         req = urllib.request.Request(api_url, data=payload, headers={'Content-Type': 'application/json'})
@@ -50,6 +56,7 @@ class LicenseDialog(QDialog):
         try:
             with urllib.request.urlopen(req, timeout=10) as response:
                 res_data = json.loads(response.read().decode('utf-8'))
+                save_activation(os.getcwd(), res_data)
                 self.license_data = res_data
                 self.lbl_status.setText("✅ 激活成功！")
                 self.lbl_status.setStyleSheet("color: green;")
