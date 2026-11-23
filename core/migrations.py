@@ -1,7 +1,7 @@
 """数据库迁移框架：按版本号顺序应用 schema 变更。"""
 import datetime
 
-SCHEMA_VERSION = 12
+SCHEMA_VERSION = 13
 
 
 def _now_iso():
@@ -153,12 +153,80 @@ def _migrate_v12_agent_goals(cur):
     """)
 
 
+def _migrate_v13_node_identity(cur):
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS identity_nodes (
+            node_id TEXT PRIMARY KEY,
+            user_id INTEGER NOT NULL,
+            profile TEXT NOT NULL,
+            ed25519_pubkey TEXT NOT NULL,
+            wg_pubkey TEXT,
+            device_fingerprint TEXT,
+            status TEXT NOT NULL DEFAULT 'active',
+            manifest_version INTEGER NOT NULL DEFAULT 1,
+            created_at TEXT NOT NULL,
+            revoked_at TEXT
+        )
+    """)
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_identity_nodes_user ON identity_nodes(user_id)")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_identity_nodes_status ON identity_nodes(status)")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_identity_nodes_wg ON identity_nodes(wg_pubkey)")
+    cur.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_identity_nodes_ed25519 ON identity_nodes(ed25519_pubkey)")
+
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS identity_creator_grants (
+            grant_id TEXT PRIMARY KEY,
+            user_id INTEGER NOT NULL,
+            node_id TEXT NOT NULL,
+            status TEXT NOT NULL,
+            scopes TEXT NOT NULL,
+            approved_by INTEGER,
+            approved_at TEXT,
+            expires_at TEXT,
+            revoke_reason TEXT,
+            created_at TEXT NOT NULL
+        )
+    """)
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_identity_grants_node ON identity_creator_grants(node_id)")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_identity_grants_status ON identity_creator_grants(status)")
+
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS identity_capabilities (
+            node_id TEXT NOT NULL,
+            capability TEXT NOT NULL,
+            granted_by INTEGER,
+            granted_at TEXT,
+            expires_at TEXT,
+            PRIMARY KEY (node_id, capability)
+        )
+    """)
+
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS identity_audit (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            node_id TEXT,
+            user_id INTEGER,
+            profile TEXT,
+            grant_id TEXT,
+            capability TEXT,
+            action TEXT NOT NULL,
+            wg_peer_ip TEXT,
+            device_fingerprint TEXT,
+            result TEXT,
+            detail TEXT,
+            created_at TEXT NOT NULL
+        )
+    """)
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_identity_audit_node ON identity_audit(node_id)")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_identity_audit_created ON identity_audit(created_at)")
+
+
 MIGRATIONS = {1: _migrate_v1_outbox, 2: _migrate_v2_hmac, 3: _migrate_v3_reconcile,
               4: _migrate_v4_transfer_fields, 5: _migrate_v5_credit_type,
               6: _migrate_v6_group_columns, 7: _migrate_v7_api_registry,
               8: _migrate_v8_legacy_columns, 9: _migrate_v9_sync_received,
               10: _migrate_v10_agent_context, 11: _migrate_v11_agent_todos,
-              12: _migrate_v12_agent_goals}
+              12: _migrate_v12_agent_goals, 13: _migrate_v13_node_identity}
 
 
 def ensure_schema():
