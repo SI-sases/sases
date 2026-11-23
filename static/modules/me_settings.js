@@ -1,7 +1,6 @@
 // static/modules/me_settings.js
 import { api } from './api.js';
-import { t } from './me_i18n.js';
-import { setLang, getLang } from './i18n.js';
+import { t, setLang, getLang } from './i18n.js';
 
 // 语言选择用全局函数 + 内联 onclick，避免子页面重绘后事件监听丢失
 // 注意：不要在这里 location.reload()。整页刷新会打断 openSettings 的 setTimeout 绑定、
@@ -54,7 +53,7 @@ export function openSettings() {
 }
 
 function openAccountSettings() {
-  const username = localStorage.getItem('sases_username') || '用户';
+  const username = localStorage.getItem('sases_username') || t('mp_user');
   const sasesId = localStorage.getItem('sases_sas_id') || t('not_set');
   const contentHtml = `
     <div class="me-menu">
@@ -115,7 +114,7 @@ function openLanguageSettings() {
   const currentLang = getLang();
   const contentHtml = `
     <div class="me-menu">
-      <div class="me-menu-item" id="lang-zh" data-lang-choice="zh" onclick="window.__sasesPickLang('zh')"><span class="menu-label">简体中文</span><span class="menu-check">${currentLang === 'zh' ? '✓' : ''}</span></div>
+      <div class="me-menu-item" id="lang-zh" data-lang-choice="zh" onclick="window.__sasesPickLang('zh')"><span class="menu-label">${t('ms_zh')}</span><span class="menu-check">${currentLang === 'zh' ? '✓' : ''}</span></div>
       <div class="me-menu-item" id="lang-en" data-lang-choice="en" onclick="window.__sasesPickLang('en')"><span class="menu-label">English</span><span class="menu-check">${currentLang === 'en' ? '✓' : ''}</span></div>
     </div>
   `;
@@ -128,8 +127,8 @@ function openAboutPage() {
     '<h2 style="color: #007aff; margin-bottom: 5px;">SASES</h2>' +
     '<p style="color: #888; font-size: 14px; margin-bottom: 30px;">v1.0.0-Release</p>' +
     '<div style="text-align: left; background: #fff; padding: 15px; border-radius: 8px; line-height: 1.8; font-size: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">' +
-        '<p><strong>开源协议：</strong>MIT License</p>' +
-        '<p><strong>项目地址：</strong><a href="https://github.com/SI-sases/sases" target="_blank" style="color: #007aff; text-decoration: none;">github.com/SI-sases/sases</a></p>' +
+        '<p><strong>' + t('ms_license') + ':</strong>MIT License</p>' +
+        '<p><strong>' + t('ms_project_url') + ':</strong><a href="https://github.com/SI-sases/sases" target="_blank" style="color: #007aff; text-decoration: none;">github.com/SI-sases/sases</a></p>' +
     '</div>' +
   '</div>';
   window.openSubpage(t('about_sases'), contentHtml);
@@ -140,7 +139,7 @@ function openPollinationPlan() {
   const contentHtml = `
     <div style="padding:20px 16px;background:#fff;border-radius:8px;margin-bottom:12px;">
       <h3 style="margin-bottom:8px;">🌱 ${t('pollination_plan')}</h3>
-      <p style="color:#666;font-size:14px;line-height:1.6;">${t('pollination_desc') || '授粉是分享知识、获取积分的重要方式。'}</p>
+      <p style="color:#666;font-size:14px;line-height:1.6;">${t('ms_pollination_desc')}</p>
     </div>
     <div class="me-menu">
       <div class="me-menu-item"><span class="menu-label">${t('basic_value')}</span><span class="menu-value">+1</span></div>
