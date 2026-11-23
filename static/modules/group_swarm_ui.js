@@ -49,22 +49,22 @@ window.openSwarmConfig = async function(groupId) {
     const html = `
       <div class="me-menu">
         <div class="me-menu-item" id="swarm-toggle-row" style="cursor:pointer;">
-          <span class="menu-label">蜂群模式</span>
+          <span class="menu-label">${t('sw2_mode')}</span>
           <div class="switch${swarmEnabled ? ' on' : ''}" id="swarm-toggle-switch"><div class="slider"></div></div>
         </div>
       </div>
-      <div class="section-title">共享给群成员的智能体</div>
+      <div class="section-title">${t('sw2_shared')}</div>
       <div class="me-menu" id="swarm-agents-list">
         ${agentsHtml}
       </div>
       <div class="me-menu">
         <div class="me-menu-item" id="swarm-usage-entry" style="cursor:pointer;">
-          <span class="menu-label">使用统计</span>
+          <span class="menu-label">${t('sw2_usage')}</span>
           <span class="menu-arrow">›</span>
         </div>
       </div>
       <div style="padding:12px;font-size:12px;color:#999;line-height:1.6;">
-        开启后，群成员切换身份时可以选择你共享的智能体，使用其模型资源。每人每日 100 次配额。
+        ${t('sw2_note')}
       </div>
     `;
     window.openSubpage(t('sw_title'), html, {
@@ -172,15 +172,15 @@ window.openSwarmUsage = async function(groupId) {
 
     const html = `
       <div class="wallet-card" style="background: linear-gradient(135deg, #8b5cf6, #6366f1);">
-        <div class="wallet-label">今日调用</div>
+        <div class="wallet-label">${t('sw2_today_calls')}</div>
         <div class="wallet-balance">${today.calls || 0}</div>
-        <div style="font-size:12px;color:rgba(255,255,255,0.8);margin-top:4px;">Token 消耗 ${today.tokens || 0}</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.8);margin-top:4px;">${t('sw2_token_cost')} ${today.tokens || 0}</div>
       </div>
-      <div class="section-title">今日活跃用户</div>
+      <div class="section-title">${t('sw2_active_users')}</div>
       <div class="me-menu">
         ${topHtml}
       </div>
-      <div class="section-title">近 7 日趋势</div>
+      <div class="section-title">${t('sw2_trend')}</div>
       <div class="me-menu">
         ${trendHtml}
       </div>

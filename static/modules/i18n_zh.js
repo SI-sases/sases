@@ -1393,4 +1393,12 @@ export const zh = {
   'tmk_uninstall': '卸载',
   'tmk_builtin': '内置工具',
   'tmk_load_failed': '加载失败：',
+  'sw2_mode': '蜂群模式',
+  'sw2_shared': '共享给群成员的智能体',
+  'sw2_usage': '使用统计',
+  'sw2_note': '开启后，群成员切换身份时可以选择你共享的智能体，使用其模型资源。每人每日 100 次配额。',
+  'sw2_today_calls': '今日调用',
+  'sw2_token_cost': 'Token 消耗',
+  'sw2_active_users': '今日活跃用户',
+  'sw2_trend': '近 7 日趋势',
 };

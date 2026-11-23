@@ -1394,4 +1394,12 @@ export const en = {
   'tmk_uninstall': 'Uninstall',
   'tmk_builtin': 'Built-in tools',
   'tmk_load_failed': 'Load failed: ',
+  'sw2_mode': 'Swarm mode',
+  'sw2_shared': 'Agents shared with group members',
+  'sw2_usage': 'Usage statistics',
+  'sw2_note': 'When enabled, group members can choose your shared agents when switching identity and use their model resources. Quota: 100 uses per person per day.',
+  'sw2_today_calls': 'Calls today',
+  'sw2_token_cost': 'Token usage',
+  'sw2_active_users': 'Active users today',
+  'sw2_trend': 'Last 7 days trend',
 };
