@@ -1017,4 +1017,9 @@ export const zh = {
   'msg_leave_confirm': '确定退出该群聊吗？',
   'cd_cancel': '取消',
   'cd_rejected_notified': '已拒绝，已通知对方',
+  // 工具市场（tool_market）
+  'tm_no_allowlist': '未配置白名单，git 安装默认拒绝',
+  'tm_configured': '已配置',
+  'tm_not_configured': '未配置',
+  'tm_empty': '还没有安装外部工具',
 };

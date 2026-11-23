@@ -4,6 +4,7 @@
 
 import { openSubpage } from './subpage.js';
 
+import { t } from './i18n.js';
 const TOKEN_KEY = 'sases_tools_admin_token';
 let _root = null;
 
@@ -89,7 +90,7 @@ function _render(cat) {
       <button class="tm-btn primary" id="tm-install-zip">上传并安装</button>
     </div>
     <div style="margin-top:10px;border-top:1px dashed #eee;padding-top:8px">
-      <div class="tm-hint">Git（需白名单）：${allow.length ? _esc(allow.join(' , ')) : '未配置白名单，git 安装默认拒绝'}</div>
+      <div class="tm-hint">Git（需白名单）：${allow.length ? _esc(allow.join(' , ')) : t('tm_no_allowlist')}</div>
       <div class="tm-grid">
         <input class="tm-input" id="tm-git-repo" placeholder="https://github.com/org/sases-tools">
         <input class="tm-input" id="tm-git-ref" placeholder="分支/标签（可空）">
@@ -100,14 +101,14 @@ function _render(cat) {
     </div>
     <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
       <button class="tm-btn" id="tm-admin">管理员 Token</button>
-      <span class="tm-hint" id="tm-admin-state">${_adminToken() ? '已配置' : '未配置'}</span>
+      <span class="tm-hint" id="tm-admin-state">${_adminToken() ? t('tm_configured') : t('tm_not_configured')}</span>
       <span class="tm-err" id="tm-err"></span>
     </div>
   </div>`;
 
   html += `<div class="tm-card"><h3>外部工具 <span class="tm-badge">${external.length}</span></h3>`;
   if (!external.length) {
-    html += '<div class="tm-empty">还没有安装外部工具</div>';
+    html += `<div class="tm-empty">${t('tm_empty')}</div>`;
   } else {
     external.forEach(t => {
       const src = t.source || {};

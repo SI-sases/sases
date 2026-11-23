@@ -1019,4 +1019,9 @@ export const en = {
   'msg_leave_confirm': 'Leave this group chat?',
   'cd_cancel': 'Cancel',
   'cd_rejected_notified': 'Rejected, the other party has been notified',
+  // Tool market (tool_market)
+  'tm_no_allowlist': 'No allowlist configured; git install is denied by default',
+  'tm_configured': 'Configured',
+  'tm_not_configured': 'Not configured',
+  'tm_empty': 'No external tools installed yet',
 };
