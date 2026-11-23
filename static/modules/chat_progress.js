@@ -88,7 +88,7 @@
       body: JSON.stringify({ confirm: true })
     }).then(function (r) { return r.json(); }).then(function (j) {
       btn.textContent = t('cpr_undone') + ' ' + ((j.restored || []).length) + '，' + t('cpr_undone_deleted') + ' ' + ((j.deleted || []).length);
-    }).catch(function () { btn.disabled = false; btn.textContent = '撤销失败'; });
+    }).catch(function () { btn.disabled = false; btn.textContent = t('cpr_undo_failed'); });
   }
 
   function showError(runId, tool, preview) {
@@ -97,8 +97,8 @@
     if (!msgs) return;
     var d = document.createElement('div');
     d.id = 'run-error-card';
-    d.innerHTML = '<div class="er-title">⚠️ 执行失败</div>' +
-      '<div class="er-desc">' + (tool ? '工具：' + tool + ' · ' : '') + (preview || '步骤未成功') + '</div>' +
+    d.innerHTML = '<div class="er-title">⚠️ ' + t('cpr_failed_title') + '</div>' +
+      '<div class="er-desc">' + (tool ? t('cpr_tool') + '：' + tool + ' · ' : '') + (preview || t('cpr_no_step')) + '</div>' +
       '<button data-e="retry">重试</button>' +
       '<button data-e="undo">撤销本次修改</button>' +
       '<button data-e="detail">查看详情</button>';

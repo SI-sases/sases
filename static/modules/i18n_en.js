@@ -971,6 +971,10 @@ export const en = {
   'cpr_restore_confirm': 'Restore files modified/created by this run?',
   'cpr_undone': 'Undone: restored',
   'cpr_undone_deleted': 'deleted',
+  'cpr_undo_failed': 'Undo failed',
+  'cpr_failed_title': 'Execution failed',
+  'cpr_tool': 'Tool: ',
+  'cpr_no_step': 'Step did not succeed',
   'cd_cancel': 'Cancel',
   'cd_rejected_notified': 'Rejected, the other party has been notified',
 };

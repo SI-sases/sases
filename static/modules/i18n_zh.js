@@ -969,6 +969,10 @@ export const zh = {
   'cpr_restore_confirm': '恢复本次运行修改/创建的文件？',
   'cpr_undone': '已撤销：恢复',
   'cpr_undone_deleted': '删除',
+  'cpr_undo_failed': '撤销失败',
+  'cpr_failed_title': '执行失败',
+  'cpr_tool': '工具：',
+  'cpr_no_step': '步骤未成功',
   'cd_cancel': '取消',
   'cd_rejected_notified': '已拒绝，已通知对方',
 };
