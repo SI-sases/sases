@@ -29,6 +29,8 @@ export const zh = {
   'ci_empty': '暂无智能体',
   'ci_self': '以本人身份',
   'ci_agent_suffix': '智能体',
+  'mp_user': '用户',
+  'mp_not_set': '未设置',
   'chr_collapse': '折叠',
   'chr_history': '历史',
   'chr_expand_recent': '展开最近会话',

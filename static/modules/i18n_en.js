@@ -29,6 +29,8 @@ export const en = {
   'ci_empty': 'No agents',
   'ci_self': 'As myself',
   'ci_agent_suffix': 'Agent',
+  'mp_user': 'User',
+  'mp_not_set': 'Not set',
   'chr_collapse': 'Collapse',
   'chr_history': 'History',
   'chr_expand_recent': 'Expand recent conversations',

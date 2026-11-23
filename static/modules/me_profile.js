@@ -10,11 +10,11 @@ export async function openPersonalInfo() {
     console.warn('获取资料失败，使用本地缓存', e);
   }
 
-  const username = profile?.username || localStorage.getItem('sases_username') || '用户';
-  const sasesId = profile?.sases_id || localStorage.getItem('sases_sas_id') || '未设置';
-  const gender = profile?.gender || localStorage.getItem('sases_gender') || '未设置';
-  const region = profile?.region || localStorage.getItem('sases_region') || '未设置';
-  const signature = profile?.signature || localStorage.getItem('sases_signature') || '未设置';
+  const username = profile?.username || localStorage.getItem('sases_username') || t('mp_user');
+  const sasesId = profile?.sases_id || localStorage.getItem('sases_sas_id') || t('mp_not_set');
+  const gender = profile?.gender || localStorage.getItem('sases_gender') || t('mp_not_set');
+  const region = profile?.region || localStorage.getItem('sases_region') || t('mp_not_set');
+  const signature = profile?.signature || localStorage.getItem('sases_signature') || t('mp_not_set');
 
   const contentHtml = `
     <div class="personal-info-header">
