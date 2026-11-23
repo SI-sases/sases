@@ -1385,4 +1385,13 @@ export const en = {
   'mm2_model_name': 'Model name',
   'mm2_key_ph': 'Leave blank to keep unchanged',
   'mm2_save': 'Save',
+  'tmk_install': 'Install tools',
+  'tmk_zip_note': 'ZIP must contain manifest.json + main.py. Installed tools are disabled by default and must be enabled manually. No code runs during installation.',
+  'tmk_force': 'Overwrite an existing version with the same id',
+  'tmk_upload': 'Upload and install',
+  'tmk_external': 'External tools',
+  'tmk_toggle': 'Enable / disable',
+  'tmk_uninstall': 'Uninstall',
+  'tmk_builtin': 'Built-in tools',
+  'tmk_load_failed': 'Load failed: ',
 };

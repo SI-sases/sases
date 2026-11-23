@@ -1384,4 +1384,13 @@ export const zh = {
   'mm2_model_name': '模型名',
   'mm2_key_ph': '留空表示不修改',
   'mm2_save': '保存',
+  'tmk_install': '安装工具',
+  'tmk_zip_note': 'ZIP：包内需含 manifest.json + main.py；安装后默认禁用，需手动启用。安装期不会执行任何代码。',
+  'tmk_force': '覆盖同 id 旧版本',
+  'tmk_upload': '上传并安装',
+  'tmk_external': '外部工具',
+  'tmk_toggle': '启用/禁用',
+  'tmk_uninstall': '卸载',
+  'tmk_builtin': '内置工具',
+  'tmk_load_failed': '加载失败：',
 };

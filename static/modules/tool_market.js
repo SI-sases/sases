@@ -82,12 +82,12 @@ function _render(cat) {
   let html = '';
 
   html += `<div class="tm-card">
-    <h3>安装工具</h3>
-    <div class="tm-hint">ZIP：包内需含 manifest.json + main.py；安装后默认禁用，需手动启用。安装期不会执行任何代码。</div>
+    <h3>${t('tmk_install')}</h3>
+    <div class="tm-hint">${t('tmk_zip_note')}</div>
     <div style="margin-top:8px">
       <input class="tm-input" type="file" id="tm-zip" accept=".zip">
-      <label class="tm-hint"><input type="checkbox" id="tm-force"> 覆盖同 id 旧版本</label>
-      <button class="tm-btn primary" id="tm-install-zip">上传并安装</button>
+      <label class="tm-hint"><input type="checkbox" id="tm-force"> ${t('tmk_force')}</label>
+      <button class="tm-btn primary" id="tm-install-zip">${t('tmk_upload')}</button>
     </div>
     <div style="margin-top:10px;border-top:1px dashed #eee;padding-top:8px">
       <div class="tm-hint">${t('tm_git_allowlist')}${allow.length ? _esc(allow.join(' , ')) : t('tm_no_allowlist')}</div>
@@ -106,7 +106,7 @@ function _render(cat) {
     </div>
   </div>`;
 
-  html += `<div class="tm-card"><h3>外部工具 <span class="tm-badge">${external.length}</span></h3>`;
+  html += `<div class="tm-card"><h3>${t('tmk_external')} <span class="tm-badge">${external.length}</span></h3>`;
   if (!external.length) {
     html += `<div class="tm-empty">${t('tm_empty')}</div>`;
   } else {
@@ -120,15 +120,15 @@ function _render(cat) {
           <div class="tm-name">${_esc(t.name || t.id)}<span class="tm-badge ${t.enabled ? '' : 'off'}">${t.enabled ? t('tm_enabled') : t('tm_disabled')}</span></div>
           <div class="tm-sub">${_esc(t.id)} · v${_esc(t.version || '?')}${srcText ? ' · ' + _esc(srcText) : ''}</div>
         </div>
-        <div class="tm-toggle ${t.enabled ? 'on' : ''}" data-action="toggle" title="启用/禁用"></div>
-        <button class="tm-btn danger" data-action="delete">卸载</button>
+        <div class="tm-toggle ${t.enabled ? 'on' : ''}" data-action="toggle" title="${t('tmk_toggle')}"></div>
+        <button class="tm-btn danger" data-action="delete">${t('tmk_uninstall')}</button>
       </div>`;
     });
   }
   html += '</div>';
 
   html += `<div class="tm-card">
-    <details class="tm-details"><summary>内置工具 <span class="tm-badge">${builtin.length}</span></summary>`;
+    <details class="tm-details"><summary>${t('tmk_builtin')} <span class="tm-badge">${builtin.length}</span></summary>`;
   builtin.forEach(t => {
     html += `<div class="tm-row"><div class="tm-main">
       <div class="tm-name">${_esc(t.name || t.id)}</div>
@@ -151,7 +151,7 @@ async function _refresh() {
     const cat = await _json('/tools/catalog', { headers: _headers(false) });
     _render(cat);
   } catch (e) {
-    _root.innerHTML = `<div class="tm-card tm-err">加载失败：${_esc(e.message)}</div>`;
+    _root.innerHTML = `<div class="tm-card tm-err">${t('tmk_load_failed')}${_esc(e.message)}</div>`;
   }
 }
 
