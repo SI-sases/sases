@@ -779,35 +779,35 @@ async function applyGroupMode(mode) {
 async function openGroupSettings() {
   const contentHtml = `
     <div class="group-settings-container">
-      <div class="member-grid" id="group-members-container"><div class="subpage-placeholder">加载中...</div></div>
+      <div class="member-grid" id="group-members-container"><div class="subpage-placeholder">${t('gcs_loading')}</div></div>
       <div class="me-menu">
-<div class="me-menu-item" id="group-name-entry" style="cursor:pointer;"><span class="menu-label">群聊名称</span><span class="menu-value" id="group-name-value">${currentGroupName}</span><span class="menu-arrow">›</span></div>
-        <div class="me-menu-item" id="identity-switch-entry"><span class="menu-label">身份切换</span><span class="menu-value" id="identity-current">以本人身份</span><span class="menu-arrow">›</span></div>
+<div class="me-menu-item" id="group-name-entry" style="cursor:pointer;"><span class="menu-label">${t('gcs_group_name')}</span><span class="menu-value" id="group-name-value">${currentGroupName}</span><span class="menu-arrow">›</span></div>
+        <div class="me-menu-item" id="identity-switch-entry"><span class="menu-label">${t('gcs_identity')}</span><span class="menu-value" id="identity-current">${t('gcs_self')}</span><span class="menu-arrow">›</span></div>
         <div class="me-menu-item" id="group-mode-entry"><span class="menu-label">${t('gc_group_mode')}</span><span class="menu-value" id="group-mode-current">${currentGroupMode === 'normal' ? t('gc_mode_normal') : t('gc_mode_swarm')}</span><span class="menu-arrow">›</span></div>
-        <div class="me-menu-item" id="announcement-entry"><span class="menu-label">群公告</span><span class="menu-arrow">›</span></div>
-        <div class="me-menu-item" id="nickname-entry"><span class="menu-label">我在本群的昵称</span><span class="menu-arrow">›</span></div>
-        <div class="me-menu-item" id="search-history-entry"><span class="menu-label">查找聊天记录</span><span class="menu-arrow">›</span></div>
+        <div class="me-menu-item" id="announcement-entry"><span class="menu-label">${t('gcs_announcement')}</span><span class="menu-arrow">›</span></div>
+        <div class="me-menu-item" id="nickname-entry"><span class="menu-label">${t('gcs_nickname')}</span><span class="menu-arrow">›</span></div>
+        <div class="me-menu-item" id="search-history-entry"><span class="menu-label">${t('gcs_search_history')}</span><span class="menu-arrow">›</span></div>
       </div>
       <div class="me-menu">
-        <div class="me-menu-item" id="mute-entry"><span class="menu-label">消息免打扰</span><div class="switch" id="mute-switch"><div class="slider"></div></div></div>
-        <div class="me-menu-item" id="pin-entry"><span class="menu-label">置顶聊天</span><div class="switch" id="pin-switch"><div class="slider"></div></div></div>
+        <div class="me-menu-item" id="mute-entry"><span class="menu-label">${t('gcs_mute')}</span><div class="switch" id="mute-switch"><div class="slider"></div></div></div>
+        <div class="me-menu-item" id="pin-entry"><span class="menu-label">${t('gcs_pin')}</span><div class="switch" id="pin-switch"><div class="slider"></div></div></div>
       </div>
       <div class="me-menu">
-        <div class="me-menu-item" id="group-credits-entry"><span class="menu-label">群积分</span><span class="menu-value" id="group-credits-balance">0</span><span class="menu-arrow">›</span></div>
-        <div class="me-menu-item" id="group-leaderboard-entry"><span class="menu-label">群排行榜</span><span class="menu-arrow">›</span></div>
+        <div class="me-menu-item" id="group-credits-entry"><span class="menu-label">${t('gcs_credits')}</span><span class="menu-value" id="group-credits-balance">0</span><span class="menu-arrow">›</span></div>
+        <div class="me-menu-item" id="group-leaderboard-entry"><span class="menu-label">${t('gcs_leaderboard')}</span><span class="menu-arrow">›</span></div>
       </div>
 
       <div class="me-menu">
-        <div class="me-menu-item" id="group-knowledge-entry"><span class="menu-label">群知识库</span><span class="menu-arrow">›</span></div>
+        <div class="me-menu-item" id="group-knowledge-entry"><span class="menu-label">${t('gcs_knowledge')}</span><span class="menu-arrow">›</span></div>
 
-        <div class="me-menu-item" id="swarm-config-entry" style="display:none;"><span class="menu-label">蜂群模式管理</span><span class="menu-arrow">›</span></div>
-        <div class="me-menu-item" id="group-manage-entry" style="display:none;"><span class="menu-label">群管理</span><span class="menu-arrow">›</span></div>
-        <div class="me-menu-item" id="group-report-entry" style="display:none;"><span class="menu-label">群汇报</span><span class="menu-value" id="group-report-count">0</span><span class="menu-arrow">›</span></div>
-        <div class="me-menu-item" id="group-files-entry"><span class="menu-label">群文件</span><span class="menu-arrow">›</span></div>
+        <div class="me-menu-item" id="swarm-config-entry" style="display:none;"><span class="menu-label">${t('gcs_swarm')}</span><span class="menu-arrow">›</span></div>
+        <div class="me-menu-item" id="group-manage-entry" style="display:none;"><span class="menu-label">${t('gcs_manage')}</span><span class="menu-arrow">›</span></div>
+        <div class="me-menu-item" id="group-report-entry" style="display:none;"><span class="menu-label">${t('gcs_report')}</span><span class="menu-value" id="group-report-count">0</span><span class="menu-arrow">›</span></div>
+        <div class="me-menu-item" id="group-files-entry"><span class="menu-label">${t('gcs_files')}</span><span class="menu-arrow">›</span></div>
       </div>
       <div class="me-menu">
-        <div class="me-menu-item" id="clear-history-entry"><span class="menu-label">清空聊天记录</span></div>
-        <div class="me-menu-item danger" id="leave-group-entry"><span class="menu-label">退出群聊</span></div>
+        <div class="me-menu-item" id="clear-history-entry"><span class="menu-label">${t('gcs_clear_history')}</span></div>
+        <div class="me-menu-item danger" id="leave-group-entry"><span class="menu-label">${t('gcs_leave')}</span></div>
       </div>
     </div>
   `;
