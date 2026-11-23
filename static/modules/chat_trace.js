@@ -115,7 +115,7 @@ function _ensure() {
   tools.appendChild(_el('span', null, t('ctr_show_l34')));
   const artBtn = document.createElement('button');
   artBtn.id = 'trace-artifacts-btn';
-  artBtn.textContent = '产物';
+  artBtn.textContent = t('ctr_artifacts');
   artBtn.style.cssText = 'margin-left:auto;border:1px solid #ddd;background:#fff;border-radius:6px;padding:2px 8px;font-size:11px;cursor:pointer';
   artBtn.onclick = () => _loadArtifacts();
   tools.appendChild(artBtn);
@@ -149,19 +149,19 @@ function _row(ev) {
 
 async function _loadArtifacts() {
   if (!_body) return;
-  if (!_runId) { _body.innerHTML = '<div class="tr-empty">当前没有任务</div>'; return; }
-  _body.innerHTML = '<div class="tr-empty">加载产物…</div>';
+  if (!_runId) { _body.innerHTML = '<div class="tr-empty">' + t('ctr_no_task') + '</div>'; return; }
+  _body.innerHTML = '<div class="tr-empty">' + t('ctr_loading_artifacts') + '</div>';
   try {
     const d = await _get('/supervisor/runs/' + _runId + '/artifacts');
     const list = d.artifacts || [];
     _body.innerHTML = '';
     const back = document.createElement('div');
-    back.textContent = '← 返回轨迹';
+    back.textContent = t('ctr_back_trace');
     back.style.cssText = 'padding:6px 8px;color:#007aff;cursor:pointer;font-size:12px';
     back.onclick = () => _paint();
     _body.appendChild(back);
     if (!list.length) {
-      _body.appendChild(_el('div', 'tr-empty', '本次任务没有产物'));
+      _body.appendChild(_el('div', 'tr-empty', t('ctr_no_artifacts')));
       return;
     }
     for (const a of list) {
@@ -176,7 +176,7 @@ async function _loadArtifacts() {
       _body.appendChild(row);
     }
   } catch (e) {
-    _body.innerHTML = '<div class="tr-empty">产物加载失败</div>';
+    _body.innerHTML = '<div class="tr-empty">' + t('ctr_artifacts_failed') + '</div>';
   }
 }
 
@@ -184,7 +184,7 @@ function _paint() {
   if (!_body) return;
   _body.innerHTML = '';
   if (!_events.length) {
-    _body.appendChild(_el('div', 'tr-empty', _runId ? '暂无轨迹（任务刚开始）' : '当前窗口没有可查看的任务'));
+    _body.appendChild(_el('div', 'tr-empty', _runId ? t('ctr_no_trace') : t('ctr_no_task_window')));
     return;
   }
   for (const ev of _events) _body.appendChild(_row(ev));
@@ -198,7 +198,7 @@ function _paintRuns() {
   for (const r of _runs) {
     const opt = document.createElement('option');
     opt.value = String(r.id);
-    const st = r.status === 'running' ? '执行中' : (r.status === 'completed' ? '完成' : r.status);
+    const st = r.status === 'running' ? t('ctr_running') : (r.status === 'completed' ? t('ctr_completed') : r.status);
     opt.textContent = '#' + r.id + ' ' + st + ' · ' + String(r.goal || '').slice(0, 18);
     _select.appendChild(opt);
   }
@@ -209,7 +209,7 @@ async function _loadRun(runId) {
   _runId = runId;
   _lastSeq = 0;
   _events = [];
-  _title.textContent = '执行追踪 · run ' + runId;
+  _title.textContent = t('ctr_title_run') + ' ' + runId;
   _paint();
   try {
     const data = await _get(API.events(runId, 0) + '&limit=1000');
@@ -242,7 +242,7 @@ function _updateChip(n) {
   if (!_chip) return;
   _chip.style.display = n > 0 ? 'flex' : 'none';
   const txt = _chip.querySelector('.txt');
-  if (txt) txt.textContent = '后台任务 ' + n;
+  if (txt) txt.textContent = t('ctr_background') + ' ' + n;
 }
 
 export async function open() {
