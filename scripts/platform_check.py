@@ -64,14 +64,18 @@ def main() -> int:
             try:
                 page.goto(url, wait_until="commit", timeout=20000)
                 page.wait_for_timeout(4000)
+                body = ""
                 body_len = 0
                 try:
-                    body_len = len(page.locator("body").inner_text())
+                    body = page.locator("body").inner_text()
+                    body_len = len(body)
                 except Exception:
                     pass
                 status = classify(name, page.url, page.title())
                 auth = has_auth_cookie(context, name, url)
                 if not auth:
+                    status = "needs_login"
+                elif any(marker in body for marker in ("重新登录", "无法打开", "页面暂时")):
                     status = "needs_login"
                 elif body_len < 20 and name in ("douyin", "xiaohongshu") and "login" not in page.url.lower():
                     status = "page_error"
