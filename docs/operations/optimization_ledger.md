@@ -22,7 +22,7 @@
 | 新浏览器没有已登录 Edge 会话 | 增加 CDP 接管 `--cdp http://127.0.0.1:9222`，直接使用 Edge 登录态 | XHS 返回 `sases - rednote`，ok=true | `scripts/browser_exec.py`、`scripts/start_edge_cdp.ps1` | 需要 |
 | Edge 重启后 CDP 不稳定 | 增加 `scripts/start_edge_cdp.ps1`，检查 9222 并带调试端口重启 Edge | CDP ready on 9222 | `scripts/start_edge_cdp.ps1` | 需要 |
 | 本地 SASES/Edge 重启后需人工启动 | 增加 `start_local_stack.ps1` + 启动文件夹快捷方式 | cdp=True sases=True | `scripts/start_local_stack.ps1`、`scripts/install_local_stack.ps1` | 需要 |
-| 平台登录态不透明 | 增加 `platform_check.py`，通过 CDP 逐个检查 | XHS/抖音/GitHub/gitcn logged_in；Medium/LinkedIn/Blogger needs_login | `scripts/platform_check.py` | 需要 |
+| 平台登录态不透明 | 增加 `platform_check.py`，通过 CDP 逐个检查 | XHS/抖音页面空白 page_error；GitHub/gitcn logged_in；Medium/LinkedIn/Blogger needs_login | `scripts/platform_check.py` | 需要 |
 
 ## 深圳 node-A（HQ）
 

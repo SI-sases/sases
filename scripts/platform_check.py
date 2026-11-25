@@ -9,7 +9,7 @@ from pathlib import Path
 
 CDP = os.environ.get("SASES_CDP_URL", "http://127.0.0.1:9222")
 PLATFORMS = {
-    "xiaohongshu": "https://creator.xiaohongshu.com/new/note-manager",
+    "xiaohongshu": "https://creator.xiaohongshu.com/publish/publish",
     "douyin": "https://creator.douyin.com/creator-micro/content/upload",
     "medium": "https://medium.com/new-story",
     "linkedin": "https://www.linkedin.com/feed/",
@@ -48,11 +48,20 @@ def main() -> int:
             page = context.new_page()
             try:
                 page.goto(url, wait_until="commit", timeout=20000)
-                page.wait_for_timeout(2000)
+                page.wait_for_timeout(4000)
+                body_len = 0
+                try:
+                    body_len = len(page.locator("body").inner_text())
+                except Exception:
+                    pass
+                status = classify(name, page.url, page.title())
+                if body_len < 20 and name in ("douyin", "xiaohongshu") and "login" not in page.url.lower():
+                    status = "page_error"
                 results[name] = {
-                    "status": classify(name, page.url, page.title()),
+                    "status": status,
                     "url": page.url,
                     "title": page.title(),
+                    "body_len": body_len,
                 }
             except Exception as exc:
                 results[name] = {
