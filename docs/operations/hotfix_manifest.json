@@ -56,6 +56,14 @@
       "requires_restart": true
     },
     {
+      "id": "local-edge-dedicated-profile",
+      "node": "local",
+      "summary": "使用专用 Edge profile，停止占用 9222 的进程但不关闭用户标签",
+      "files": ["scripts/start_edge_cdp.ps1"],
+      "client_sync": true,
+      "requires_restart": true
+    },
+    {
       "id": "local-platform-check",
       "node": "local",
       "summary": "通过 CDP 检查六个平台登录态并写入 data/platform_check.json",

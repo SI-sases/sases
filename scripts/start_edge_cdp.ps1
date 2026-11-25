@@ -1,19 +1,15 @@
 # Start Microsoft Edge with a local CDP endpoint for SASES browser tasks.
+# Uses a dedicated profile so the user's normal Edge tabs are never closed.
 # Usage: powershell -ExecutionPolicy Bypass -File scripts\start_edge_cdp.ps1 [-Force]
 param([switch]$Force)
 $ErrorActionPreference = "Stop"
 
 $port = 9222
 $edge = "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
-$realProfile = Join-Path $env:LOCALAPPDATA "Microsoft\Edge\User Data"
-$profile = "C:\edge_profile"
+$profile = "C:\edge_sases_profile"
 
 if (-not (Test-Path $edge)) {
     throw "Microsoft Edge not found: $edge"
-}
-
-if (-not (Test-Path $profile)) {
-    cmd.exe /c "mklink /J `"$profile`" `"$realProfile`"" | Out-Host
 }
 
 $listening = Get-NetTCPConnection -State Listen -LocalPort $port -ErrorAction SilentlyContinue
@@ -22,13 +18,21 @@ if ($listening -and -not $Force) {
     exit 0
 }
 
-Get-Process msedge -ErrorAction SilentlyContinue | Stop-Process -Force
-Start-Sleep -Seconds 1
+if ($listening) {
+    # Stop only the process holding the CDP port; leave normal Edge tabs alone.
+    $ownerPid = ($listening | Select-Object -First 1).OwningProcess
+    if ($ownerPid) {
+        Stop-Process -Id $ownerPid -Force -ErrorAction SilentlyContinue
+        Start-Sleep -Seconds 1
+    }
+}
+
 Start-Process -FilePath $edge -ArgumentList @(
     "--remote-debugging-port=$port",
     "--user-data-dir=$profile",
     "--profile-directory=Default",
-    "--restore-last-session",
+    "--no-first-run",
+    "--no-default-browser-check",
     "about:blank"
 )
 
