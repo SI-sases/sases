@@ -58,8 +58,16 @@
     {
       "id": "local-platform-check",
       "node": "local",
-      "summary": "通过 CDP 检查各平台登录态并写入 data/platform_check.json",
+      "summary": "通过 CDP 检查六个平台登录态并写入 data/platform_check.json",
       "files": ["scripts/platform_check.py"],
+      "client_sync": true,
+      "requires_restart": false
+    },
+    {
+      "id": "local-account-registry",
+      "node": "local",
+      "summary": "统一六个平台账号资料，GitHub 仓库强制附带",
+      "files": ["docs/agi_promotion/platform_accounts.md", "scripts/account_inventory.py"],
       "client_sync": true,
       "requires_restart": false
     },

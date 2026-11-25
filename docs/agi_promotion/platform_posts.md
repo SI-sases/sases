@@ -110,60 +110,13 @@ Release：v1.0.0
 
 ---
 
-## Medium 文章
-
-标题：
+## 不再使用
 
 ```text
-Deploy Your Own AGI on a Cloud Server
+Medium：平台问题，不再执行
+gitcn.org：不再执行
+LinkedIn：当前不作为发布平台
 ```
-
-正文：
-
-```text
-SASES is a self-hosted, privacy-first AI system. This guide shows how to run your own AGI-style assistant on a Linux cloud server with Docker, HTTPS, and a model API key.
-
-What you need: Ubuntu 22.04 or 24.04, 2 vCPU and 4 GB RAM, 20 GB disk, a domain, and a model API key.
-
-Quick start:
-
-git clone https://github.com/SI-sases/sases.git
-cd sases/deploy/docker
-cp .env.example .env
-docker compose up -d --build
-
-The service listens on 127.0.0.1:8001. Put HTTPS in front with Caddy or Nginx.
-
-Create the first account, configure the model key, and verify /version.
-
-Back up data/ and .env before upgrading. Never commit keys or databases.
-
-Full guide: https://github.com/SI-sases/sases/blob/main/docs/deploy-your-own-agi.md
-Release: https://github.com/SI-sases/sases/releases/tag/v1.0.0
-```
-
-Tags:
-
-```text
-AGI, Self-Hosted, Docker, AI, Cloud
-```
-
----
-
-## LinkedIn 文案
-
-```text
-We just open-sourced SASES v1.0.0: a self-hosted, privacy-first AGI system.
-
-It runs on a clean Ubuntu server with Docker Compose, keeps the database and model key under your control, and ships with a deployment guide and a source release.
-
-Repo: https://github.com/SI-sases/sases
-Release: https://github.com/SI-sases/sases/releases/tag/v1.0.0
-
-#AGI #SelfHosted #Docker #AI
-```
-
----
 
 ## 已发布记录
 

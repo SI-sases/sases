@@ -23,7 +23,9 @@
 | Edge 重启后 CDP 不稳定 | 增加 `scripts/start_edge_cdp.ps1`，检查 9222 并带调试端口重启 Edge | CDP ready on 9222 | `scripts/start_edge_cdp.ps1` | 需要 |
 | 本地 SASES/Edge 重启后需人工启动 | 增加 `start_local_stack.ps1` + 启动文件夹快捷方式 | cdp=True sases=True | `scripts/start_local_stack.ps1`、`scripts/install_local_stack.ps1` | 需要 |
 | Edge profile 路径含空格，CDP 启动后变成新 profile | 用 `C:\edge_profile` junction 指向真实 User Data，固定 Default profile | CDP ready on 9222 | `scripts/start_edge_cdp.ps1` | 需要 |
-| 平台登录态不透明 | 增加 `platform_check.py`，通过 CDP 逐个检查 | XHS/抖音页面空白 page_error；GitHub/gitcn logged_in；Medium/LinkedIn/Blogger needs_login | `scripts/platform_check.py` | 需要 |
+| 平台登录态不透明 | 增加 `platform_check.py`，通过 CDP 逐个检查 | 小红书/抖音页面空白 page_error；GitHub/gitcn logged_in；Medium/LinkedIn/Blogger needs_login | `scripts/platform_check.py` | 需要 |
+| 平台账号资料分散 | 统一六个平台资料，所有内容必须带 GitHub 仓库 | `docs/agi_promotion/platform_accounts.md` | 文档 + `scripts/account_inventory.py` | 不需要 |
+| Medium/gitcn 不稳定或不使用 | 从执行清单移除 | 平台表只保留六个 | `platform_accounts.md`、`platform_check.py` | 需要 |
 
 ## 深圳 node-A（HQ）
 

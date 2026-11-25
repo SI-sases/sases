@@ -1,89 +1,28 @@
-# 平台账号与主页资料清单
+# 平台账号统一资料
 
-用于本地 SASES 统一发布执行。只记录公开主页信息，不记录密码、Cookie、Token。
+更新：2026-11-26
 
-## 已确认
+## 统一账号表
 
-### 小红书
+| 平台 | 账号名 | 账号 ID | 主页 | 粉丝 | 状态 |
+|---|---|---|---|---|---|
+| GitHub | SI-sases | SI-sases | https://github.com/SI-sases | — | 已登录 |
+| X | sases | @i88033 | https://x.com/i88033 | — | 已登录 |
+| 小红书 | sases | xht20201028 | https://www.xiaohongshu.com/user/profile/63eafd940000000026005a6a | 277 | 已登录 |
+| 抖音 | sases | i88036 | https://www.douyin.com/user/self | 71 | 已登录 |
+| TikTok | sases | @sases_ai | https://www.tiktok.com/@sases_ai | 20 | 已登录 |
+| Blogger | sases云端服务器部署agi | — | https://sases-ai.blogspot.com/ | — | 已登录 |
 
-- 账号名：sases
-- 小红书号：xht20201028
-- 主页：https://www.xiaohongshu.com/user/profile/63eafd940000000026005a6a
-- 粉丝：277
-- 获赞与收藏：992
-- IP 属地：美国
-- 已发布笔记：云服务器部署属于自己的AGI（已通过审核，公开）
-- 置顶评论建议：GitHub 搜索 SI-sases/sases
+## GitHub 仓库（所有平台统一带）
 
-### GitHub
-
-- 账号：SI-sases
-- 仓库：https://github.com/SI-sases/sases
-- Release：https://github.com/SI-sases/sases/releases/tag/v1.0.0
-- 源码资产：https://github.com/SI-sases/sases/releases/download/v1.0.0/sases-v1.0.0-source.tar.gz
-
-### Blogger
-
-- 博客名：sases云端服务器部署agi
-- 已发布：Deploy Your Own AGI on a Cloud Server
-- 主页 URL：待从 Blogger 后台“查看博客”复制
-- 账号：Google / SI-sases
-
-### gitcn.org
-
-- 论坛：https://forum.github-zh.cn
-- 账号：SI-sases（GitHub OAuth）
-- 已提交：SASES v1.0.0：在云服务器上部署自己的 AGI
-- 状态：待版主审批
-- 分类：常规
-
-### X / Twitter
-
-- 账号：@i88033
-- 已发布：Deploy Your Own AGI on a Cloud Server
-- 短链：https://t.co/p6hLl3W3ul
-
-## 待补齐
-
-### 抖音
-
-- 创作者中心：https://creator.douyin.com/creator-micro/content/upload?enter_from=dou_web
-- 当前状态：打开后跳回抖音首页，未进入上传页
-- 需要：账号名、抖音号、主页 URL、粉丝数、可发布形式（视频/图文）
-
-### Medium
-
-- 编辑器：https://medium.com/new-story
-- 当前状态：跳转登录页
-- 需要：登录后记录账号名、主页 URL、关注者数
-
-### LinkedIn
-
-- 发布入口：https://www.linkedin.com/feed/
-- 当前状态：未登录
-- 需要：登录后记录个人/公司主页 URL
-
-## 统一登记格式
-
-```json
-{
-  "platform": "xiaohongshu",
-  "account_name": "sases",
-  "account_id": "xht20201028",
-  "profile_url": "https://www.xiaohongshu.com/user/profile/63eafd940000000026005a6a",
-  "followers": 277,
-  "status": "logged_in",
-  "can_post": true,
-  "supports_links": false,
-  "fallback_text": "GitHub 搜索 SI-sases/sases"
-}
+```text
+仓库：https://github.com/SI-sases/sases
+Release：https://github.com/SI-sases/sases/releases/tag/v1.0.0
+源码资产：https://github.com/SI-sases/sases/releases/download/v1.0.0/sases-v1.0.0-source.tar.gz
+文档：https://github.com/SI-sases/sases/blob/main/docs/self-hosting.md
 ```
 
-## 发布规则
-
-- 支持链接：X、Blogger、Medium、LinkedIn、gitcn
-- 不支持可点击链接：小红书、抖音
-- 不支持链接的平台统一写：
+不能点击外链的平台，统一写：
 
 ```text
 GitHub 搜索：SI-sases/sases
@@ -91,10 +30,100 @@ Release：v1.0.0
 文档：docs/self-hosting.md
 ```
 
+---
+
+## 逐平台资料
+
+### GitHub
+
+- 账号：SI-sases
+- 主页：https://github.com/SI-sases
+- 仓库：https://github.com/SI-sases/sases
+- 仓库数：3
+- 状态：已登录
+
+### X
+
+- 账号：sases
+- Handle：@i88033
+- 主页：https://x.com/i88033
+- 状态：已登录
+
+### 小红书
+
+- 账号：sases
+- 小红书号：xht20201028
+- 主页：https://www.xiaohongshu.com/user/profile/63eafd940000000026005a6a
+- 粉丝：277
+- 获赞与收藏：992
+- IP 属地：美国
+- 已发布：云服务器部署属于自己的AGI（审核通过，公开）
+- 状态：已登录
+
+### 抖音
+
+- 账号：sases
+- 抖音号：i88036
+- 主页：https://www.douyin.com/user/self
+- 关注：6
+- 粉丝：71
+- 获赞：965
+- 地区：广东·深圳
+- 简介：sases云端服务器部署agi
+- 状态：已登录
+
+### TikTok
+
+- 账号：sases
+- Handle：@sases_ai
+- 主页：https://www.tiktok.com/@sases_ai
+- 关注：2
+- 粉丝：20
+- 赞：277
+- 简介：Theme: Planning & Implementation of Hanfu Events
+- 状态：已登录
+
+### Blogger
+
+- 博客：sases云端服务器部署agi
+- 主页：https://sases-ai.blogspot.com/
+- 已发布：Deploy Your Own AGI on a Cloud Server
+- 文章：https://sases-ai.blogspot.com/2026/11/deploy-your-own-agi-on-cloud-server.html
+- 状态：已登录
+
+---
+
+## 不再使用的平台
+
+```text
+Medium：平台问题，不再执行
+gitcn.org：不再执行
+```
+
+---
+
+## 发布规则
+
+- 所有平台内容必须带 GitHub 仓库信息。
+- 支持外链：X、GitHub、Blogger。
+- 不支持可点击外链：小红书、抖音、TikTok。
+- 不支持外链平台统一用文字：
+
+```text
+GitHub 搜索：SI-sases/sases
+Release：v1.0.0
+文档：docs/self-hosting.md
+```
+
+---
+
 ## 本地 SASES 采集方式
 
-1. 使用已登录的 Edge/Chromium 用户目录。
-2. 打开各平台主页。
-3. 读取账号名、账号 ID、主页 URL、粉丝数。
-4. 截图保存到 `data/platform_profiles/<platform>/`。
-5. 写入本清单，不保存密码/Cookie。
+```text
+CDP：http://127.0.0.1:9222
+执行器：scripts/account_inventory.py
+检查：scripts/platform_check.py
+结果：data/account_inventory.json
+```
+
+不要保存密码、Cookie、Token。

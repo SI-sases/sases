@@ -11,13 +11,28 @@ CDP = os.environ.get("SASES_CDP_URL", "http://127.0.0.1:9222")
 PLATFORMS = {
     "xiaohongshu": "https://creator.xiaohongshu.com/publish/publish",
     "douyin": "https://creator.douyin.com/creator-micro/content/upload",
-    "medium": "https://medium.com/new-story",
-    "linkedin": "https://www.linkedin.com/feed/",
-    "blogger": "https://www.blogger.com/u/1/blog/posts/7227324231931786018",
     "github": "https://github.com/SI-sases/sases",
-    "gitcn": "https://forum.github-zh.cn",
+    "x": "https://x.com/i88033",
+    "tiktok": "https://www.tiktok.com/@sases_ai",
+    "blogger": "https://www.blogger.com/u/1/blog/posts/7227324231931786018",
 }
 LOGIN_MARKERS = ("/login", "signin", "accounts.google.com", "passport", "登录")
+AUTH_COOKIES = {
+    "xiaohongshu": ("web_session",),
+    "douyin": ("sessionid", "sessionid_ss", "sid_guard"),
+    "github": ("user_session", "logged_in"),
+    "x": ("auth_token",),
+    "tiktok": ("sessionid", "sessionid_ss", "sid_guard"),
+    "blogger": ("SID", "HSID", "SSID"),
+}
+
+
+def has_auth_cookie(context, platform: str, url: str) -> bool:
+    try:
+        names = {c["name"] for c in context.cookies(url)}
+    except Exception:
+        return False
+    return any(name in names for name in AUTH_COOKIES.get(platform, ()))
 
 
 def classify(platform: str, url: str, title: str) -> str:
@@ -55,7 +70,10 @@ def main() -> int:
                 except Exception:
                     pass
                 status = classify(name, page.url, page.title())
-                if body_len < 20 and name in ("douyin", "xiaohongshu") and "login" not in page.url.lower():
+                auth = has_auth_cookie(context, name, url)
+                if not auth:
+                    status = "needs_login"
+                elif body_len < 20 and name in ("douyin", "xiaohongshu") and "login" not in page.url.lower():
                     status = "page_error"
                 results[name] = {
                     "status": status,
