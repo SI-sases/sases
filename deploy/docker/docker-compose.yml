@@ -1,4 +1,4 @@
-﻿services:
+services:
   sases:
     build:
       context: ../..
@@ -11,8 +11,3 @@
       - "127.0.0.1:8001:8001"
     volumes:
       - ./data:/data
-    healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8001/version"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
