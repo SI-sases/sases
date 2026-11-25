@@ -32,6 +32,14 @@
       "requires_restart": true
     },
     {
+      "id": "local-edge-cdp",
+      "node": "local",
+      "summary": "通过 Edge CDP 接管已登录会话，XHS 返回 sases - rednote",
+      "files": ["scripts/browser_exec.py", "scripts/start_edge_cdp.ps1"],
+      "client_sync": true,
+      "requires_restart": true
+    },
+    {
       "id": "local-launcher-single-instance",
       "node": "local",
       "summary": "启动器单实例、Guardian 两连败重启、日志过滤",

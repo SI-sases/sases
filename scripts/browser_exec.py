@@ -26,11 +26,13 @@ def main() -> int:
     parser.add_argument("--screenshot", default="")
     parser.add_argument("--headed", action="store_true")
     parser.add_argument("--timeout", type=int, default=30000)
+    parser.add_argument("--wait", default="commit", choices=["commit", "domcontentloaded", "load"])
     parser.add_argument("--profile", default="")
+    parser.add_argument("--cdp", default=os.environ.get("SASES_CDP_URL", ""))
     args = parser.parse_args()
 
     executable = os.environ.get("PLAYWRIGHT_CHROMIUM_EXECUTABLE") or DEFAULT_CHROME
-    if not os.path.isfile(executable):
+    if not args.cdp and not os.path.isfile(executable):
         print(json.dumps({"ok": False, "error": "chromium not found", "path": executable}, ensure_ascii=False))
         return 2
 
@@ -38,7 +40,12 @@ def main() -> int:
 
     with sync_playwright() as p:
         browser = None
-        if args.profile:
+        context = None
+        if args.cdp:
+            browser = p.chromium.connect_over_cdp(args.cdp)
+            context = browser.contexts[0] if browser.contexts else browser.new_context()
+            page = context.pages[0] if context.pages else context.new_page()
+        elif args.profile:
             context = p.chromium.launch_persistent_context(
                 args.profile,
                 headless=not args.headed,
@@ -69,6 +76,9 @@ def main() -> int:
             page = context.new_page()
 
         def close() -> None:
+            if args.cdp:
+                browser.close()
+                return
             try:
                 context.close()
             finally:
@@ -76,7 +86,7 @@ def main() -> int:
                     browser.close()
 
         try:
-            response = page.goto(args.url, wait_until="domcontentloaded", timeout=args.timeout)
+            response = page.goto(args.url, wait_until=args.wait, timeout=args.timeout)
             page.wait_for_timeout(1500)
         except Exception as exc:
             if args.screenshot:
@@ -91,6 +101,7 @@ def main() -> int:
                 "error": f"{type(exc).__name__}: {str(exc)[:200]}",
                 "screenshot": args.screenshot or None,
                 "profile": args.profile or None,
+                "cdp": args.cdp or None,
             }, ensure_ascii=False))
             close()
             return 1
@@ -104,6 +115,7 @@ def main() -> int:
             "status": response.status if response else None,
             "screenshot": args.screenshot or None,
             "profile": args.profile or None,
+            "cdp": args.cdp or None,
         }
         print(json.dumps(result, ensure_ascii=False))
         close()

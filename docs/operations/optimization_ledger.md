@@ -19,6 +19,8 @@
 | 浏览器执行器无统一入口 | 新增 `scripts/browser_exec.py`，固定 Chromium 路径，异常返回结构化 JSON | `example.com` 返回 ok=true | `scripts/browser_exec.py` | 需要 |
 | 新浏览器没有平台登录态 | XHS 会跳 `/login`，抖音创作者页跳首页，Medium 跳登录 | 记录为 `needs_login`，不再静默失败 | `docs/operations/optimization_ledger.md` | 需要 |
 | 浏览器执行器无持久化会话 | 增加 `--profile` 支持 Edge/Chromium 用户目录 | 空 profile 测试 ok=true | `scripts/browser_exec.py` | 需要 |
+| 新浏览器没有已登录 Edge 会话 | 增加 CDP 接管 `--cdp http://127.0.0.1:9222`，直接使用 Edge 登录态 | XHS 返回 `sases - rednote`，ok=true | `scripts/browser_exec.py`、`scripts/start_edge_cdp.ps1` | 需要 |
+| Edge 重启后 CDP 不稳定 | 增加 `scripts/start_edge_cdp.ps1`，检查 9222 并带调试端口重启 Edge | CDP ready on 9222 | `scripts/start_edge_cdp.ps1` | 需要 |
 
 ## 深圳 node-A（HQ）
 
