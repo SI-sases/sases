@@ -26,6 +26,7 @@
 | 平台登录态不透明 | 增加 `platform_check.py`，通过 CDP 逐个检查 | 小红书/抖音页面空白 page_error；GitHub/gitcn logged_in；Medium/LinkedIn/Blogger needs_login | `scripts/platform_check.py` | 需要 |
 | 平台账号资料分散 | 统一六个平台资料，所有内容必须带 GitHub 仓库 | `docs/agi_promotion/platform_accounts.md` | 文档 + `scripts/account_inventory.py` | 不需要 |
 | 小红书/抖音发布页空包或要求重新登录 | 页面诊断：小红书 page_error；抖音“页面暂时无法打开/重新登录”识别为 needs_login | `platform_check.py` 输出明确状态 | `scripts/platform_check.py` | 需要 |
+| 误判为 CDP 导致小红书空白 | 用普通 Edge（无 CDP）复测，仍空白，确认是平台页面/网络侧 | 普通 Edge 截图空白 | 台账 | 不需要 |
 | Medium/gitcn 不稳定或不使用 | 从执行清单移除 | 平台表只保留六个 | `platform_accounts.md`、`platform_check.py` | 需要 |
 
 ## 深圳 node-A（HQ）
