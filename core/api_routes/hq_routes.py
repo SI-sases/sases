@@ -28,15 +28,17 @@ def _user(credentials: HTTPAuthorizationCredentials | None = Depends(security)) 
 
 def _executor(
     x_sases_link_token: str | None = Header(default=None, alias="X-SASES-Link-Token"),
+    x_sases_executor: str | None = Header(default=None, alias="X-SASES-Executor"),
     credentials: HTTPAuthorizationCredentials | None = Depends(security),
 ) -> str:
+    executor = x_sases_executor or os.environ.get("SASES_NODE_ID") or "local"
     expected = os.environ.get("SASES_LINK_TOKEN", "")
     if expected and x_sases_link_token and hmac.compare_digest(expected, x_sases_link_token):
-        return os.environ.get("SASES_NODE_ID") or "local"
+        return executor
     if credentials is not None:
         try:
             jwt.decode(credentials.credentials, SECRET_KEY, algorithms=["HS256"])
-            return os.environ.get("SASES_NODE_ID") or "local"
+            return executor
         except (JWTError, ValueError):
             pass
     raise HTTPException(status_code=401, detail="Not authenticated")

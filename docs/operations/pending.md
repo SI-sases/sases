@@ -134,3 +134,9 @@ P1 鏈湴骞冲彴鍙戝竷閫傞厤鍣?P1 鐑洿鏂板鎴风鍚屾�
 - `docs/build-your-own-sases-adapter.md`
 - 说明 HQ、campaign、approval、task_queue、本地 executor、平台适配器接口。
 - 已发布到 X；GitHub 文档同步。
+
+## D 盘执行器
+
+- D:\sases 独立，端口 8010，节点 d-drive-executor。
+- 深圳 HQ 控制验证通过。
+- 详见 docs/operations/d-drive-executor.md。

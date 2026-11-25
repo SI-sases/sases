@@ -16,6 +16,9 @@ CDP = os.environ.get("SASES_CDP_URL", "http://127.0.0.1:9222")
 
 def _headers() -> dict:
     headers = {"Content-Type": "application/json"}
+    executor_id = os.environ.get("SASES_EXECUTOR_ID") or os.environ.get("SASES_NODE_ID", "")
+    if executor_id:
+        headers["X-SASES-Executor"] = executor_id
     jwt_token = os.environ.get("SASES_HQ_TOKEN", "")
     if jwt_token:
         headers["Authorization"] = f"Bearer {jwt_token}"

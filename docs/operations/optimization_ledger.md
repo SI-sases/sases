@@ -140,3 +140,10 @@ docker exec docker_sases_1 python -c "import sqlite3;c=sqlite3.connect('/data/us
 - 本地 hq_executor 端到端 dry-run 通过：
   create 200 → approve 200 → claim 200 → receipt 200。
 - 深圳生产镜像已更新为 `docker_sases:hq`，容器重建后 HQ 路由仍在。
+
+## 2026-11-26 04:40
+
+- D:\sases 独立执行器已建立，端口 8010，节点 d-drive-executor。
+- 深圳 HQ 创建/审批任务，D 盘 claim 并回执成功。
+- executor 正确记录为 d-drive-executor。
+- C:\sases 未被修改，8001 保持原状。
