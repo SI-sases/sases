@@ -64,6 +64,14 @@
       "requires_restart": true
     },
     {
+      "id": "cloud-browser",
+      "node": "node-A",
+      "summary": "云服务器无头 Chromium 镜像，实测 example.com 和小红书 200",
+      "files": ["deploy/browser/Dockerfile", "scripts/cloud_browser_test.py", "docs/operations/cloud-browser.md"],
+      "client_sync": true,
+      "requires_restart": false
+    },
+    {
       "id": "local-platform-check",
       "node": "local",
       "summary": "通过 CDP 检查六个平台登录态并写入 data/platform_check.json",

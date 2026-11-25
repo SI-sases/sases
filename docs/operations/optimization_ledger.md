@@ -24,6 +24,7 @@
 | 本地 SASES/Edge 重启后需人工启动 | 增加 `start_local_stack.ps1` + 启动文件夹快捷方式 | cdp=True sases=True | `scripts/start_local_stack.ps1`、`scripts/install_local_stack.ps1` | 需要 |
 | Edge profile 路径含空格，CDP 启动后变成新 profile | 用 `C:\edge_profile` junction 指向真实 User Data，固定 Default profile | CDP ready on 9222 | `scripts/start_edge_cdp.ps1` | 需要 |
 | 关闭 Edge 全部进程导致“还原网页”弹窗、标签占满、新页面空白 | 改用专用 `C:\edge_sases_profile`，只停止占用 9222 的进程，不动用户 Edge 标签；去掉 `--restore-last-session` | 用户 Edge 不被关闭，CDP 独立启动 | `scripts/start_edge_cdp.ps1` | 需要 |
+| 广州远程不可用，需要云服务器直接打开网页 | 新增 `deploy/browser` 无头 Chromium 镜像，深圳实测 example.com 200、小红书 200 | 云浏览器可用 | `deploy/browser/Dockerfile`、`docs/operations/cloud-browser.md` | 需要 |
 | 平台登录态不透明 | 增加 `platform_check.py`，通过 CDP 逐个检查 | 小红书/抖音页面空白 page_error；GitHub/gitcn logged_in；Medium/LinkedIn/Blogger needs_login | `scripts/platform_check.py` | 需要 |
 | 平台账号资料分散 | 统一六个平台资料，所有内容必须带 GitHub 仓库 | `docs/agi_promotion/platform_accounts.md` | 文档 + `scripts/account_inventory.py` | 不需要 |
 | 小红书/抖音发布页空包或要求重新登录 | 页面诊断：小红书 page_error；抖音“页面暂时无法打开/重新登录”识别为 needs_login | `platform_check.py` 输出明确状态 | `scripts/platform_check.py` | 需要 |
