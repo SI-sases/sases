@@ -1,0 +1,35 @@
+{
+  "hq": {
+    "node_id": "node-A",
+    "name": "shenzhen",
+    "role": "总负责",
+    "responsibilities": ["campaign", "approval", "routing", "aggregation", "audit"]
+  },
+  "regions": {
+    "hz": {
+      "node_id": "node-C",
+      "name": "hangzhou",
+      "scope": "domestic",
+      "audience": "cn",
+      "language": "zh-CN",
+      "timezone": "Asia/Shanghai",
+      "channels": ["domestic"]
+    },
+    "hk": {
+      "node_id": "node-B",
+      "name": "hongkong",
+      "scope": "international",
+      "audience": "intl",
+      "language": "en",
+      "timezone": "Asia/Hong_Kong",
+      "channels": ["international"]
+    }
+  },
+  "executors": {
+    "local": {
+      "node_id": "local-publisher",
+      "role": "publisher",
+      "platforms": ["x", "xiaohongshu", "douyin", "blogger", "medium", "linkedin", "gitcn"]
+    }
+  }
+}
