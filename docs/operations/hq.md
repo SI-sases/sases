@@ -96,3 +96,19 @@ adapter_not_implemented
 - 失败最多重试 3 次，超过后置为 `failed`。
 - 本地 executor 需要 Edge CDP 和平台登录态。
 - 任务 payload 必须带 GitHub 仓库。
+
+## 镜像固化
+
+```text
+docker_sases:hq
+```
+
+已从包含 HQ 代码的仓库重新构建，并重建生产容器：
+
+```text
+/version: node-A, tables:120
+/hq/campaigns: 401（路由已加载，需要认证）
+create/approve/claim/receipt: 200
+```
+
+容器重建不再依赖 `docker cp`。

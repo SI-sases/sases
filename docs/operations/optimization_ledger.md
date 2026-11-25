@@ -128,3 +128,9 @@ docker exec docker_sases_1 python -c "import sqlite3;c=sqlite3.connect('/data/us
 - 本地 `scripts/hq_executor.py` 已实现 claim / execute / receipt。
 - 当前正式平台适配器：X。
 - 小红书/抖音/TikTok/Blogger 仍是 `adapter_not_implemented`，不虚报。
+
+## 2026-11-26 04:20
+
+- 深圳 HQ 代码已打进 `docker_sases:hq` 镜像。
+- 生产容器已用新镜像重建。
+- `/hq/campaigns` 加载，create/approve/claim/receipt 实测 200。
