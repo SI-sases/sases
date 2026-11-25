@@ -16,7 +16,7 @@ def is_installed() -> bool:
 def installer_path(root: str | None = None) -> str | None:
     root = root or os.getcwd()
     base = os.path.join(root, "wireguard")
-    for pattern in ("wireguard-installer.exe", "wireguard-amd64-*.msi", "*.msi"):
+    for pattern in ("wireguard-amd64-*.msi", "*.msi", "wireguard-installer.exe"):
         matches = glob.glob(os.path.join(base, pattern))
         if matches:
             return matches[0]
@@ -37,12 +37,21 @@ def install(root: str | None = None) -> bool:
     path = installer_path(root)
     if not path:
         raise FileNotFoundError("wireguard installer not bundled (wireguard/wireguard-installer.exe)")
-    if not _is_admin():
-        raise PermissionError("administrator privileges required to install WireGuard")
     if path.lower().endswith(".msi"):
-        subprocess.run(["msiexec.exe", "/i", path, "/qn", "/norestart"], check=True)
+        if _is_admin():
+            subprocess.run(["msiexec.exe", "/i", path, "/qn", "/norestart"], check=True)
+        else:
+            ps = (
+                "Start-Process msiexec.exe -Verb RunAs -Wait -ArgumentList "
+                f"'/i \"{path}\" /qn /norestart'"
+            )
+            subprocess.run(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", ps], check=True)
     else:
-        subprocess.run([path, "/S"], check=True)
+        if _is_admin():
+            subprocess.run([path, "/S"], check=True)
+        else:
+            subprocess.run(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command",
+                            f"Start-Process '{path}' -Verb RunAs -Wait -ArgumentList '/S'"], check=True)
     return is_installed()
 
 
@@ -51,7 +60,14 @@ def import_tunnel(config_path: str) -> bool:
         raise RuntimeError("WireGuard is not installed")
     if not os.path.isfile(config_path):
         raise FileNotFoundError(config_path)
-    subprocess.run([WG_EXE, "/installtunnelservice", config_path], check=True)
+    if _is_admin():
+        subprocess.run([WG_EXE, "/installtunnelservice", config_path], check=True)
+    else:
+        ps = (
+            "Start-Process '" + WG_EXE + "' -Verb RunAs -Wait -ArgumentList "
+            "@('/installtunnelservice','" + config_path + "')"
+        )
+        subprocess.run(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", ps], check=True)
     return True
 
 

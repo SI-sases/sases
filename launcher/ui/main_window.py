@@ -28,7 +28,7 @@ from PyQt6.QtWidgets import (
 )
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-HIDDEN_NODE_PORTS = [8101, 8102]
+HIDDEN_NODE_PORTS = []
 
 def _decode_child_line(raw):
     for enc in ('utf-8', 'gbk', 'cp936', 'latin-1'):
@@ -149,60 +149,15 @@ class MainWindow(QMainWindow):
         self.stacked_widget = QStackedWidget()
         self.stacked_widget.setStyleSheet("background-color: #1e1e1e;")
 
-        # 页面 0：运行日志 + 执行轨迹
+        # 页面 0：简洁运行日志
         page_log = QWidget()
         log_layout = QVBoxLayout(page_log)
-        log_layout.setContentsMargins(0, 0, 0, 0)
-
-        log_bar = QHBoxLayout()
-        log_bar.setContentsMargins(10, 8, 10, 0)
-        btn_copy_diag = QPushButton("复制诊断")
-        btn_copy_diag.setStyleSheet("background:#4a90e2;color:#fff;padding:5px 10px;border-radius:4px;font-size:12px;")
-        btn_copy_diag.clicked.connect(self._copy_diagnostics)
-        btn_open_dir = QPushButton("打开日志目录")
-        btn_open_dir.setStyleSheet("background:#2b2b2b;color:#ddd;padding:5px 10px;border-radius:4px;font-size:12px;")
-        btn_open_dir.clicked.connect(lambda: os.startfile(ROOT))
-        btn_clear = QPushButton("清空显示")
-        btn_clear.setStyleSheet("background:#2b2b2b;color:#ddd;padding:5px 10px;border-radius:4px;font-size:12px;")
-        btn_clear.clicked.connect(lambda: self.log.clear())
-        log_bar.addWidget(btn_copy_diag)
-        log_bar.addWidget(btn_open_dir)
-        log_bar.addWidget(btn_clear)
-        log_bar.addStretch(1)
-        log_layout.addLayout(log_bar)
-
-        self.log_tabs = QTabWidget()
-        self.log_tabs.setStyleSheet("QTabWidget::pane{border:none;} QTabBar::tab{background:#2b2b2b;color:#ccc;padding:5px 12px;} QTabBar::tab:selected{background:#1e1e1e;color:#fff;}")
+        log_layout.setContentsMargins(10, 10, 10, 10)
         self.log = QPlainTextEdit()
         self.log.setReadOnly(True)
         self.log.setMaximumBlockCount(50000)
         self.log.setStyleSheet("background-color: #1e1e1e; color: #00ff00; border: none; font-family: Consolas, monospace; padding: 10px;")
-        self.log_tabs.addTab(self.log, "运行日志")
-
-        trace_page = QWidget()
-        trace_layout = QVBoxLayout(trace_page)
-        trace_layout.setContentsMargins(0, 0, 0, 0)
-        trace_bar = QHBoxLayout()
-        btn_trace_refresh = QPushButton("刷新轨迹")
-        btn_trace_refresh.setStyleSheet("background:#2b2b2b;color:#ddd;padding:4px 10px;border-radius:4px;font-size:12px;")
-        btn_trace_refresh.clicked.connect(self._load_trace_table)
-        btn_trace_export = QPushButton("导出 JSONL")
-        btn_trace_export.setStyleSheet("background:#2b2b2b;color:#ddd;padding:4px 10px;border-radius:4px;font-size:12px;")
-        btn_trace_export.clicked.connect(self._export_trace_jsonl)
-        trace_bar.addWidget(btn_trace_export)
-        trace_bar.addWidget(btn_trace_refresh)
-        trace_bar.addStretch(1)
-        trace_layout.addLayout(trace_bar)
-        self.trace_table = QTableWidget(0, 5)
-        self.trace_table.setHorizontalHeaderLabels(["run", "事件", "工具", "状态", "内容"])
-        self.trace_table.setStyleSheet("background:#1e1e1e;color:#ddd;gridline-color:#333;font-size:12px;")
-        self.trace_table.horizontalHeader().setStretchLastSection(True)
-        self.trace_table.verticalHeader().setVisible(False)
-        trace_layout.addWidget(self.trace_table)
-        self.log_tabs.addTab(trace_page, "执行轨迹")
-        self.log_tabs.currentChanged.connect(lambda i: self._load_trace_table() if i == 1 else None)
-        log_layout.addWidget(self.log_tabs)
-        self._load_trace_table()
+        log_layout.addWidget(self.log)
 
         # 页面 1：统一设置页
         page_settings = QWidget()
@@ -640,12 +595,52 @@ class MainWindow(QMainWindow):
                 self._load_version_info()
         except Exception: pass
 
+    def _ensure_autostart(self):
+        """First run: register HKCU Run entry; no admin and no UAC."""
+        import os as _os
+        try:
+            import winreg
+            bat = _os.path.join(self.work_dir, "SASES-start.bat")
+            if not _os.path.isfile(bat):
+                return
+            key = winreg.OpenKey(
+                winreg.HKEY_CURRENT_USER,
+                r"Software\Microsoft\Windows\CurrentVersion\Run",
+                0,
+                winreg.KEY_SET_VALUE,
+            )
+            winreg.SetValueEx(key, "SASES", 0, winreg.REG_SZ, '"' + bat + '"')
+            winreg.CloseKey(key)
+        except Exception:
+            pass
+
+    def _ensure_wireguard_async(self):
+        import threading
+
+        def work():
+            try:
+                from launcher.wireguard_setup import ensure_wireguard, is_installed, installer_path
+                if is_installed():
+                    return
+                if not installer_path(self.work_dir):
+                    return
+                self._log("[启动器] 正在安装 WireGuard...")
+                ensure_wireguard(self.work_dir)
+                self._log("[启动器] WireGuard 安装完成")
+            except Exception as exc:
+                self._log(f"[启动器] WireGuard 未安装：{exc}")
+
+        threading.Thread(target=work, daemon=True).start()
+
     def start(self):
         if self.proc is not None: return
         self._set_running_ui(True)
         self.sidebar.setCurrentRow(0)
+        self._ensure_autostart()
+        self._ensure_wireguard_async()
         self._real_start_service()
         self._start_ops_agent()
+        self._start_link_agent()
         self._log("[启动器] 正在通过服务器检查代码更新...")
         import threading
         threading.Thread(target=self._bg_download_update, daemon=True).start()
@@ -653,6 +648,10 @@ class MainWindow(QMainWindow):
     def _start_ops_agent(self):
         script = os.path.join(self.work_dir, "scripts", "client_ops_agent.py")
         if not os.path.isfile(script):
+            self._log("[启动器] Remote Ops 未启动：缺少 client_ops_agent.py")
+            return
+        if not os.path.isfile(os.path.join(self.work_dir, "node_identity.json")):
+            self._log("[启动器] Remote Ops 未启动：请先激活 CDK（缺少 node_identity.json）")
             return
         candidates = [
             os.path.join(self.work_dir, "python-embed", "python.exe"),
@@ -663,6 +662,29 @@ class MainWindow(QMainWindow):
             subprocess.Popen(
                 [python, script],
                 cwd=self.work_dir,
+                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+            )
+        except Exception:
+            pass
+
+    def _start_link_agent(self):
+        script = os.path.join(self.work_dir, "scripts", "link_agent.py")
+        if not os.path.isfile(script):
+            return
+        if not os.path.isfile(os.path.join(self.work_dir, "node_identity.json")):
+            return
+        candidates = [
+            os.path.join(self.work_dir, "python-embed", "python.exe"),
+            os.path.join(self.work_dir, "python-embed", "pythonw.exe"),
+        ]
+        python = next((path for path in candidates if os.path.isfile(path)), "python")
+        try:
+            env = os.environ.copy()
+            env.setdefault("SASES_LINK_BASE", "http://10.10.0.1:8001")
+            subprocess.Popen(
+                [python, script],
+                cwd=self.work_dir,
+                env=env,
                 creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
             )
         except Exception:
@@ -700,10 +722,13 @@ class MainWindow(QMainWindow):
         self.proc.setWorkingDirectory(self.work_dir)
 
         self.proc.start(self.python_path, [self.script_path])
-        QTimer.singleShot(3000, self._start_hidden_nodes)
         QTimer.singleShot(5000, self._load_version_info)
 
     def _start_hidden_nodes(self):
+        # Subtraction: Hive is disabled; hidden nodes only caused port 8101/8102
+        # collisions with the main SASES instance.
+        if not HIDDEN_NODE_PORTS:
+            return
         for i, port in enumerate(HIDDEN_NODE_PORTS, start=1):
             db_dir = os.path.join(os.getcwd(), f"hive-nodes/{port}")
             os.makedirs(db_dir, exist_ok=True)
@@ -733,12 +758,26 @@ class MainWindow(QMainWindow):
         self._set_running_ui(False)
         self._log("[启动器] 服务已停止")
 
+    @staticmethod
+    def _hide_noise(line):
+        noise = (
+            "[API] GET /messages/conversations",
+            "[API] GET /group/list",
+            "[API] GET /tools/capsules",
+            "[outbox] idle",
+            "[ws] user ",
+            "INFO:     127.0.0.1",
+            "INFO:     connection open",
+        )
+        return any(item in line for item in noise)
+
     def _read_out(self):
         if not self.proc: return
         raw = self.proc.readAllStandardOutput().data()
         text = _decode_child_line(raw)
         for line in text.splitlines():
             if any(w in line for w in ["fatal: not a git repository", "PyTorch was not found", "[hive-register] no peers"]): continue
+            if self._hide_noise(line): continue
             self._log(line)
             if "Application startup complete" in line or "服务已就绪" in line:
                 self._set_running_ui(True)

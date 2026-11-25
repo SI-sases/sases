@@ -49,6 +49,7 @@ def main() -> int:
     parser.add_argument("--goal", required=True)
     parser.add_argument("--confirm", action="store_true", help="actually click; default dry-run")
     parser.add_argument("--verify", action="store_true", help="screenshot after click and ask vision to verify")
+    parser.add_argument("--window", default="", help="window title substring to focus before click")
     parser.add_argument("--out", default=os.path.join(ROOT, "data", "screenshots"))
     args = parser.parse_args()
     os.makedirs(args.out, exist_ok=True)
@@ -83,6 +84,7 @@ def main() -> int:
         x, y = int(target["x"]), int(target["y"])
     click = modules["screen_click"]["run_fn"]({
         "x": x, "y": y, "confirm": bool(args.confirm), "button": "left", "clicks": 1,
+        "window_title": args.window,
     })
     print("click", json.dumps(click, ensure_ascii=False))
     if not args.confirm:

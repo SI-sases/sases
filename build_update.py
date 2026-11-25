@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 import sys
 import time
 from pathlib import Path
@@ -54,7 +55,20 @@ def main() -> int:
     }
     with open(args.manifest, "w", encoding="utf-8") as handle:
         json.dump(manifest, handle, ensure_ascii=False, indent=2)
+
+    # SOP compatibility: code_update.zip + version.json.
+    base_dir = os.path.dirname(os.path.abspath(args.out))
+    code_path = os.path.join(base_dir, "code_update.zip")
+    shutil.copy2(args.out, code_path)
+    legacy = {
+        "build_time": build_id,
+        "version": version,
+        "update_url": args.base_url.rstrip("/") + "/code_update.zip",
+    }
+    with open(os.path.join(base_dir, "version.json"), "w", encoding="utf-8") as handle:
+        json.dump(legacy, handle, ensure_ascii=False, indent=2)
     print(json.dumps(manifest, ensure_ascii=False, indent=2))
+    print(json.dumps(legacy, ensure_ascii=False, indent=2))
     return 0
 
 

@@ -32,12 +32,16 @@ HYBRID_LOW = getattr(config, "HYBRID_LOW_THRESHOLD", 0.5)
 HYBRID_HIGH = getattr(config, "HYBRID_HIGH_THRESHOLD", 0.85)
 
 # ========== 本地模型 ==========
-try:
-    local_embedder = LocalEmbedding(model_dir="./bge-small-zh-onnx")
-    print("[本地Embedding] 模型加载成功")
-except Exception as e:
-    print(f"[本地Embedding] 模型加载失败: {e}")
+if os.environ.get("SASES_DISABLE_LOCAL_EMBEDDING") == "1" or getattr(config, "EMBEDDING_MODE", "hybrid") == "api":
     local_embedder = None
+    print("[LocalEmbedding] disabled, API mode")
+else:
+    try:
+        local_embedder = LocalEmbedding(model_dir="./bge-small-zh-onnx")
+        print("[LocalEmbedding] loaded")
+    except Exception as e:
+        print(f"[LocalEmbedding] failed: {e}")
+        local_embedder = None
 
 # ========== DashScope 客户端 ==========
 _dashscope_client = None

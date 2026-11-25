@@ -283,6 +283,7 @@ window.activateMainView = function activateMainView(viewName) {
     messages: t('nav_messages'),
     contacts: t('nav_contacts'),
     discover: t('nav_discover'),
+    link: '节点',
     me: t('nav_me')
   };
   const topTitle = document.getElementById('top-title');

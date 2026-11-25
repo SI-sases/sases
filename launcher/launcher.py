@@ -89,18 +89,10 @@ def main():
     # 这样以后只需要热更新 launcher 文件夹，用户完全无感
     # =========================================================================
     if getattr(sys, 'frozen', False):
-        exe_dir = os.path.dirname(sys.executable)
-        python_embed = os.path.join(exe_dir, "python-embed", "python.exe")
-        script_path = os.path.join(exe_dir, "launcher", "launcher.py")
-        
-        if os.path.exists(python_embed) and os.path.exists(script_path):
-            creationflags = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
-            subprocess.Popen(
-                [python_embed, script_path], 
-                cwd=exe_dir, 
-                creationflags=creationflags
-            )
-            os._exit(0) # EXE 立刻自杀，释放控制权
+        # 减法：EXE 自带 PyQt6，直接运行内置界面，不再交接给 python-embed。
+        # 这样客户端包不需要在 python-embed 里额外安装 PyQt6，也不会因为
+        # 外部 launcher.py 缺少 PyQt6 而双击无窗口。
+        pass
 
     # =========================================================================
     # 以下为正常外部环境运行的逻辑

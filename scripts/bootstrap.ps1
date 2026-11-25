@@ -1,15 +1,15 @@
 param(
     [string]$BaseUrl = "http://120.77.136.90:8001",
     [string]$InstallDir = "D:\sases",
-    [string]$ZipPath = "D:\sases-portable.tar.xz",
+    [string]$ZipPath = "D:\sases-portable.zip",
     [switch]$SkipAutostart,
     [switch]$SkipStart
 )
 
 $ErrorActionPreference = "Stop"
 $base = $BaseUrl.TrimEnd("/")
-$portableUrl = "$base/static/downloads/sases-portable.tar.xz"
-$hashUrl = "$base/static/downloads/sases-portable.tar.xz.sha256"
+$portableUrl = "$base/static/downloads/sases-portable.zip"
+$hashUrl = "$base/static/downloads/sases-portable.zip.sha256"
 
 Write-Host "[bootstrap] downloading portable package..."
 $downloaded = $false

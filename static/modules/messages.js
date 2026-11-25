@@ -7,13 +7,16 @@ import { t } from './i18n.js';
 import { stripSummaryPrefix } from './chat_ui.js';
 
 let initialized = false;
+let _loadTimer = null;
+let _loadInFlight = false;
 
 if (!window._sasesMsgListenerBound) {
   window._sasesMsgListenerBound = true;
   window.addEventListener('sases_new_message', () => {
     const container = document.getElementById('messages-list');
     if (container && document.getElementById('view-messages').classList.contains('active')) {
-      loadConversations(container);
+      if (_loadTimer) clearTimeout(_loadTimer);
+      _loadTimer = setTimeout(() => loadConversations(container), 300);
     }
   });
 }
@@ -36,6 +39,8 @@ export async function initMessages() {
 }
 
 async function loadConversations(container) {
+  if (_loadInFlight) return;
+  _loadInFlight = true;
   try {
     const [convData, groupData] = await Promise.all([
       api.listConversations(),
@@ -180,6 +185,8 @@ async function loadConversations(container) {
   } catch (e) {
     console.error('loadConversations error:', e);
     container.innerHTML = `<div class="empty">${t('load_failed')}: ${e.message}</div>`;
+  } finally {
+    _loadInFlight = false;
   }
 }
 

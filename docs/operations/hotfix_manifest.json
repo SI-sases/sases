@@ -1,0 +1,91 @@
+{
+  "schema": 1,
+  "generated_at": "2026-11-25T22:45:00+08:00",
+  "leader": "node-A",
+  "leader_name": "shenzhen",
+  "base_version": "1.0.0-test.41",
+  "target_version": "1.0.0-test.42",
+  "ledger": "docs/operations/optimization_ledger.md",
+  "client_sync": {
+    "enabled": true,
+    "manifest_url": "/static/downloads/client_version.json",
+    "package_url": "/static/downloads/client_update.zip",
+    "verify": "sha256",
+    "restart": "launcher",
+    "preserve": [".env", "users.db", "data/", "node_identity.json", "node_signing.key"]
+  },
+  "changes": [
+    {
+      "id": "local-playwright-chromium",
+      "node": "local",
+      "summary": "固定 Chromium 可执行文件，修复 Playwright 默认 headless shell 缺失",
+      "files": ["docs/operations/optimization_ledger.md"],
+      "client_sync": true,
+      "requires_restart": true
+    },
+    {
+      "id": "local-launcher-single-instance",
+      "node": "local",
+      "summary": "启动器单实例、Guardian 两连败重启、日志过滤",
+      "files": ["launcher/launcher.py", "launcher/ui/main_window.py", "scripts/guardian.ps1"],
+      "client_sync": true,
+      "requires_restart": true
+    },
+    {
+      "id": "local-screen-click-focus",
+      "node": "local",
+      "summary": "小窗口两段式点击与窗口聚焦",
+      "files": ["harness_modules/screen_click/main.py"],
+      "client_sync": true,
+      "requires_restart": true
+    },
+    {
+      "id": "sz-docker-slim",
+      "node": "node-A",
+      "summary": "slim 镜像、Python healthcheck、可配置 pip 镜像",
+      "files": ["deploy/docker/Dockerfile", "deploy/docker/docker-compose.yml"],
+      "client_sync": true,
+      "requires_restart": true
+    },
+    {
+      "id": "sz-wg1-restore",
+      "node": "node-A",
+      "summary": "恢复 wg1 10.10.0.1/24、51821 服务端",
+      "files": [],
+      "client_sync": false,
+      "requires_restart": false
+    },
+    {
+      "id": "sz-hq-policy",
+      "node": "node-A",
+      "summary": "深圳 HQ、杭州 node-C、香港 node-B、本地 publisher",
+      "files": ["region_policy.json", "docs/operations/optimization_ledger.md"],
+      "client_sync": true,
+      "requires_restart": true
+    },
+    {
+      "id": "hk-link-receiver",
+      "node": "node-B",
+      "summary": "link_agent 拉取 inbox 带 receiver，共享 token 认证",
+      "files": ["scripts/link_agent.py", "core/api_routes/link_routes.py", "core/sases_link/store.py"],
+      "client_sync": true,
+      "requires_restart": true
+    },
+    {
+      "id": "sz-link-container-base",
+      "node": "node-A",
+      "summary": "容器内 link_agent 使用 172.17.0.1:18002",
+      "files": ["scripts/link_agent.py"],
+      "client_sync": true,
+      "requires_restart": true
+    },
+    {
+      "id": "hz-policy-node-ids",
+      "node": "node-C",
+      "summary": "杭州/香港节点 ID 修正为 node-C/node-B",
+      "files": ["region_policy.json"],
+      "client_sync": true,
+      "requires_restart": false
+    }
+  ]
+}

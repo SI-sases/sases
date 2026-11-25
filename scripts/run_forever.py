@@ -10,6 +10,7 @@ import urllib.request
 
 if os.environ.get("SASES_ENABLE_LOCAL_EMBEDDING") != "1":
     os.environ["SASES_DISABLE_LOCAL_EMBEDDING"] = "1"
+    os.environ.setdefault("EMBEDDING_MODE", "api")
     print("[wrapper] 本地 embedding 已禁用，走 API 模式", flush=True)
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

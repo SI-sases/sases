@@ -161,6 +161,27 @@ def _execute(action: str, payload: dict) -> dict:
         config = payload.get("config_path") if action == "import_tunnel" else None
         return ensure_wireguard(ROOT, config)
 
+    if action == "promotion.publish":
+        campaign_id = str(payload.get("campaign_id") or "")
+        region = str(payload.get("region") or os.environ.get("SASES_NODE_ID") or "")
+        if not campaign_id:
+            raise ValueError("campaign_id required")
+        out_dir = os.path.join(ROOT, "data", "promotions")
+        os.makedirs(out_dir, exist_ok=True)
+        receipt = {
+            "campaign_id": campaign_id,
+            "region": region,
+            "title": payload.get("title", ""),
+            "content": payload.get("content", ""),
+            "url": payload.get("url", ""),
+            "delivered": True,
+            "published_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        }
+        with open(os.path.join(out_dir, campaign_id + ".json"), "w", encoding="utf-8") as handle:
+            json.dump(receipt, handle, ensure_ascii=False, indent=2)
+        return receipt
+    if action == "promotion.metrics":
+        return {"campaign_id": payload.get("campaign_id"), "region": payload.get("region"), "impressions": 0, "clicks": 0, "delivered": True}
     if action == "capture_screen":
         from core.harness_loader import load_harness_modules
         modules = load_harness_modules(os.path.join(ROOT, "harness_modules"))

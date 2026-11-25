@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
-"""Build the full portable SASES client package.
-
-Output is intentionally written outside the source tree to avoid recursively
-including old packages from static/downloads.
-"""
+"""Build the full SOP portable SASES client package."""
 from __future__ import annotations
 
 import argparse
@@ -12,7 +8,6 @@ import os
 import shutil
 import stat
 import sys
-import tarfile
 import zipfile
 
 ROOT_DEFAULT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -26,6 +21,7 @@ ROOT_FILES = (
     "requirements.txt",
     "client_version.json",
     "SASES-start.bat",
+    "启动控制台.bat",
     "LICENSE",
     "COMMERCIAL.md",
     "THIRD_PARTY_LICENSES.md",
@@ -60,39 +56,17 @@ EXCLUDE_FILES = {
     "node_identity.json",
     "license.json",
 }
-# Optional heavy dependencies are not needed by the desktop client runtime.
-EXCLUDE_PACKAGES = {
-    "scipy",
-    "scipy.libs",
-    "sklearn",
-    "chromadb",
-    "chromadb_rust_bindings",
-    "kubernetes",
-    "grpc",
-    "hf_xet",
-    "tokenizers",
-    "transformers",
-    "huggingface_hub",
-    "torch",
-    "pandas",
-    "pyarrow",
-    "matplotlib",
-    "playwright",
-    "PyInstaller",
-    "pytest",
-    "_pytest",
-    "pip",
-}
+EXCLUDE_PACKAGES = set()
 
 BAT = """@echo off
 cd /d %~dp0
 if exist "python-embed\\pythonw.exe" (
-  start "" "python-embed\\pythonw.exe" "launcher\\launcher.py"
-) else if exist "python-embed\\python.exe" (
-  start "" "python-embed\\python.exe" "launcher\\launcher.py"
+  start "" /min "python-embed\\pythonw.exe" "scripts\\run_forever.py"
 ) else (
-  start "" python "launcher\\launcher.py"
+  start "" /min "python-embed\\python.exe" "scripts\\run_forever.py"
 )
+timeout /t 6 /nobreak >nul
+start "" "http://127.0.0.1:8001"
 """
 
 
@@ -147,7 +121,8 @@ def _verify(zip_path: str) -> None:
 def build(root: str, out: str, stage: str, embed: str) -> None:
     if not os.path.isdir(embed):
         raise SystemExit(f"python-embed not found: {embed}")
-    if not os.path.isfile(os.path.join(root, "launcher", "dist", "SASES启动器.exe")):
+    launcher_exe = os.path.join(root, "launcher", "dist", "SASES启动器.exe")
+    if not os.path.isfile(launcher_exe):
         raise SystemExit("SASES启动器.exe missing; run build_launcher_exe.py first")
 
     _remove(stage)
@@ -163,10 +138,7 @@ def build(root: str, out: str, stage: str, embed: str) -> None:
         if os.path.isfile(src):
             shutil.copy2(src, os.path.join(stage, name))
 
-    shutil.copy2(
-        os.path.join(root, "launcher", "dist", "SASES启动器.exe"),
-        os.path.join(stage, "SASES启动器.exe"),
-    )
+    shutil.copy2(launcher_exe, os.path.join(stage, "SASES启动器.exe"))
     with open(os.path.join(stage, "启动SASES.bat"), "w", encoding="utf-8") as handle:
         handle.write(BAT)
 
@@ -175,18 +147,11 @@ def build(root: str, out: str, stage: str, embed: str) -> None:
         os.remove(out)
     shutil.make_archive(out[:-4], "zip", stage)
     _verify(out)
-    xz_path = out[:-4] + ".tar.xz"
-    with tarfile.open(xz_path, "w:xz", preset=6) as archive:
-        for name in os.listdir(stage):
-            archive.add(os.path.join(stage, name), arcname=name)
     digest = hashlib.sha256(open(out, "rb").read()).hexdigest()
     with open(out + ".sha256", "w", encoding="utf-8") as handle:
         handle.write(digest + "  " + os.path.basename(out) + "\n")
-    xz_digest = hashlib.sha256(open(xz_path, "rb").read()).hexdigest()
-    with open(xz_path + ".sha256", "w", encoding="utf-8") as handle:
-        handle.write(xz_digest + "  " + os.path.basename(xz_path) + "\n")
     print(f"[portable] {out} {os.path.getsize(out) / 1024 / 1024:.1f} MB")
-    print(f"[portable] {xz_path} {os.path.getsize(xz_path) / 1024 / 1024:.1f} MB")
+    print(f"[portable] sha256 {digest}")
 
 
 def main() -> int:

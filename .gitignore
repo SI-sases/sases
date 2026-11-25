@@ -72,3 +72,14 @@ scripts/orphans_report.json
 _archive/
 
 backup/
+
+# local runtime artifacts
+.link_agent*.lock
+local_run.out
+local_run.err
+runtime_port.json
+data/promotions/
+data/screenshots/
+wireguard/*.msi
+scripts/click_test_form.ps1
+scripts/click_test_window.py
