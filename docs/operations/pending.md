@@ -118,3 +118,13 @@ P0 骞垮窞璁惧涓婄嚎鍚庡洖褰?P1 娣卞湷 campaign / approval / ta
 P1 鏈湴骞冲彴鍙戝竷閫傞厤鍣?P1 鐑洿鏂板鎴风鍚屾
 ```
 
+
+## 进度更新 2026-11-26
+
+```text
+[✓] 深圳 HQ：campaign / approval / task_queue
+[✓] HQ 深圳实测 create/approve/claim/receipt 200
+[✓] 本地 hq_executor 框架
+[✓] X 正式适配器
+[ ] 小红书/抖音/TikTok/Blogger 适配器
+```

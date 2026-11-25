@@ -121,3 +121,10 @@ curl -fsS http://172.17.0.1:18002/version
 # 生产库
 docker exec docker_sases_1 python -c "import sqlite3;c=sqlite3.connect('/data/users.db');print(c.execute('PRAGMA integrity_check').fetchone()[0])"
 ```
+
+## HQ 与本地适配器
+
+- 深圳 HQ 已实现 campaign / approval / task_queue。
+- 本地 `scripts/hq_executor.py` 已实现 claim / execute / receipt。
+- 当前正式平台适配器：X。
+- 小红书/抖音/TikTok/Blogger 仍是 `adapter_not_implemented`，不虚报。

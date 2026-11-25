@@ -874,6 +874,10 @@ def create_app() -> FastAPI:
     app.include_router(client_ops_routes.router)
     from .api_routes import link_routes
     app.include_router(link_routes.router)
+    from . import hq
+    hq.ensure_schema()
+    from .api_routes import hq_routes
+    app.include_router(hq_routes.router)
     app.include_router(seed_routes.router)
     app.include_router(credit_routes.router)
     app.include_router(harness_routes.router)
