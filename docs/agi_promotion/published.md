@@ -42,3 +42,12 @@
 - 状态：已发布
 - 主页：https://x.com/i88033
 - 帖子包含：https://github.com/SI-sases/sases
+
+## TikTok 图文帖
+
+- 时间：2026-11-26 01:20 CST
+- 形式：图文（封面 xhs_agi_cover.png）
+- 状态：已提交，内容审查中
+- 文案：在云服务器上部署一套自己的 AGI
+- 含 GitHub：SI-sases/sases、v1.0.0、docs/self-hosting.md
+- 账号：@sases_ai
