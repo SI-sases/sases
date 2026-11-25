@@ -48,6 +48,14 @@
       "requires_restart": true
     },
     {
+      "id": "local-edge-profile-junction",
+      "node": "local",
+      "summary": "修复 Edge profile 路径空格导致 CDP 启动新 profile",
+      "files": ["scripts/start_edge_cdp.ps1"],
+      "client_sync": true,
+      "requires_restart": true
+    },
+    {
       "id": "local-platform-check",
       "node": "local",
       "summary": "通过 CDP 检查各平台登录态并写入 data/platform_check.json",

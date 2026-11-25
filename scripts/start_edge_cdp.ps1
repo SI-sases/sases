@@ -1,17 +1,23 @@
 # Start Microsoft Edge with a local CDP endpoint for SASES browser tasks.
-# Usage: powershell -ExecutionPolicy Bypass -File scripts\start_edge_cdp.ps1
+# Usage: powershell -ExecutionPolicy Bypass -File scripts\start_edge_cdp.ps1 [-Force]
+param([switch]$Force)
 $ErrorActionPreference = "Stop"
 
 $port = 9222
 $edge = "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
-$profile = Join-Path $env:LOCALAPPDATA "Microsoft\Edge\User Data"
+$realProfile = Join-Path $env:LOCALAPPDATA "Microsoft\Edge\User Data"
+$profile = "C:\edge_profile"
 
 if (-not (Test-Path $edge)) {
     throw "Microsoft Edge not found: $edge"
 }
 
+if (-not (Test-Path $profile)) {
+    cmd.exe /c "mklink /J `"$profile`" `"$realProfile`"" | Out-Host
+}
+
 $listening = Get-NetTCPConnection -State Listen -LocalPort $port -ErrorAction SilentlyContinue
-if ($listening) {
+if ($listening -and -not $Force) {
     Write-Output "CDP already listening on $port"
     exit 0
 }
@@ -21,6 +27,7 @@ Start-Sleep -Seconds 1
 Start-Process -FilePath $edge -ArgumentList @(
     "--remote-debugging-port=$port",
     "--user-data-dir=$profile",
+    "--profile-directory=Default",
     "--restore-last-session",
     "about:blank"
 )
