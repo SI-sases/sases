@@ -60,3 +60,11 @@
 - 文案：在云服务器上部署一套自己的 AGI
 - 含 GitHub：SI-sases/sases、v1.0.0、docs/self-hosting.md
 - 账号：sases / i88036
+
+## 小红书 GitHub 评论
+
+- 时间：2026-11-26 02:22 CST
+- 笔记：云服务器部署属于自己的AGI
+- 评论：GitHub 仓库：SI-sases/sases；Release：v1.0.0；部署文档：docs/self-hosting.md；完整地址
+- 状态：评论已发布
+- 置顶：平台当前未显示置顶入口
