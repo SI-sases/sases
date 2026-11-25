@@ -3,6 +3,8 @@
     build:
       context: ../..
       dockerfile: deploy/docker/Dockerfile
+      args:
+        PIP_INDEX_URL: ${PIP_INDEX_URL:-https://pypi.org/simple}
     restart: unless-stopped
     env_file: .env
     ports:
