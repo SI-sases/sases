@@ -40,6 +40,22 @@
       "requires_restart": true
     },
     {
+      "id": "local-stack-autostart",
+      "node": "local",
+      "summary": "登录时自动启动 Edge CDP 与本地 SASES",
+      "files": ["scripts/start_local_stack.ps1", "scripts/install_local_stack.ps1"],
+      "client_sync": true,
+      "requires_restart": true
+    },
+    {
+      "id": "local-platform-check",
+      "node": "local",
+      "summary": "通过 CDP 检查各平台登录态并写入 data/platform_check.json",
+      "files": ["scripts/platform_check.py"],
+      "client_sync": true,
+      "requires_restart": false
+    },
+    {
       "id": "local-launcher-single-instance",
       "node": "local",
       "summary": "启动器单实例、Guardian 两连败重启、日志过滤",
