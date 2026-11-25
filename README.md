@@ -13,6 +13,7 @@ It combines autonomous seed iteration, credit systems, pollination mechanisms, c
 Run SASES on your own Linux server with Docker:
 
 - [Self-hosting guide](docs/self-hosting.md)
+- [Build your own platform adapter](docs/build-your-own-sases-adapter.md)
 - [Docker Compose](deploy/docker/docker-compose.yml)
 
 The service binds to `127.0.0.1:8001`; put HTTPS in front of it.
