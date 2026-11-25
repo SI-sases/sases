@@ -147,3 +147,11 @@ docker exec docker_sases_1 python -c "import sqlite3;c=sqlite3.connect('/data/us
 - 深圳 HQ 创建/审批任务，D 盘 claim 并回执成功。
 - executor 正确记录为 d-drive-executor。
 - C:\sases 未被修改，8001 保持原状。
+
+## 2026-11-26 07:20
+
+- 新增销售页 `static/pricing.html`
+- 新增 `docs/business/service-terms.md`、`partner.md`、`orders.csv`、`hk-bank-checklist.md`
+- 新增 `docs/agi_promotion/content_calendar.md`
+- 新增 `scripts/sases_ctl.py` 与 `skills/sases-control/SKILL.md`
+- sases_ctl 已通过本地 HQ 验证

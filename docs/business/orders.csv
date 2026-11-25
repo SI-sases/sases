@@ -1,0 +1,2 @@
+date,customer,contact,product,amount,payment_method,payment_status,delivery_status,owner,notes
+2026-11-26,示例客户,微信/邮箱,创始CDK,299,个人码/对公,待确认,待交付,待分配,首单示例
