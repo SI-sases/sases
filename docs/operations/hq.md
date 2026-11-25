@@ -112,3 +112,13 @@ create/approve/claim/receipt: 200
 ```
 
 容器重建不再依赖 `docker cp`。
+
+## 端到端测试
+
+```text
+create 200
+approve 200
+claim 200
+receipt 200
+task status: done
+```

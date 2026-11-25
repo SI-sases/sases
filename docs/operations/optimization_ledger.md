@@ -134,3 +134,9 @@ docker exec docker_sases_1 python -c "import sqlite3;c=sqlite3.connect('/data/us
 - 深圳 HQ 代码已打进 `docker_sases:hq` 镜像。
 - 生产容器已用新镜像重建。
 - `/hq/campaigns` 加载，create/approve/claim/receipt 实测 200。
+
+## 2026-11-26 04:21
+
+- 本地 hq_executor 端到端 dry-run 通过：
+  create 200 → approve 200 → claim 200 → receipt 200。
+- 深圳生产镜像已更新为 `docker_sases:hq`，容器重建后 HQ 路由仍在。
