@@ -15,6 +15,10 @@
 | WireGuard 在线引导程序失败 | 优先完整 MSI 安装包 | 远程安装返回 installed=true | `launcher/wireguard_setup.py` | 需要 |
 | Playwright 默认启动缺少 headless shell | 固定 Chromium 可执行文件路径 | `playwright_ok Example Domain` | 发布执行器配置 | 客户端配置，不打包浏览器 |
 | 平台登录态不统一 | 统一平台账号清单 | `docs/agi_promotion/platform_accounts.md` | 文档 | 不需要 |
+| 本地 SASES 8001 未监听，任务无法执行 | 启动 `scripts/run_forever.py`，设置 `SASES_NODE_ID=local-assistant` | `/version` 返回 local-assistant | `.env`、本地进程 | 不适用 |
+| 浏览器执行器无统一入口 | 新增 `scripts/browser_exec.py`，固定 Chromium 路径，异常返回结构化 JSON | `example.com` 返回 ok=true | `scripts/browser_exec.py` | 需要 |
+| 新浏览器没有平台登录态 | XHS 会跳 `/login`，抖音创作者页跳首页，Medium 跳登录 | 记录为 `needs_login`，不再静默失败 | `docs/operations/optimization_ledger.md` | 需要 |
+| 浏览器执行器无持久化会话 | 增加 `--profile` 支持 Edge/Chromium 用户目录 | 空 profile 测试 ok=true | `scripts/browser_exec.py` | 需要 |
 
 ## 深圳 node-A（HQ）
 

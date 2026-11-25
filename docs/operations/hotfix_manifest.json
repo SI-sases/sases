@@ -19,7 +19,15 @@
       "id": "local-playwright-chromium",
       "node": "local",
       "summary": "固定 Chromium 可执行文件，修复 Playwright 默认 headless shell 缺失",
-      "files": ["docs/operations/optimization_ledger.md"],
+      "files": ["scripts/browser_exec.py", "docs/operations/optimization_ledger.md"],
+      "client_sync": true,
+      "requires_restart": true
+    },
+    {
+      "id": "local-browser-exec",
+      "node": "local",
+      "summary": "新增 browser_exec.py，支持截图、结构化错误和 --profile 持久化登录态",
+      "files": ["scripts/browser_exec.py", "docs/operations/optimization_ledger.md"],
       "client_sync": true,
       "requires_restart": true
     },
