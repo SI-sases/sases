@@ -34,3 +34,11 @@
 - 抖音：需登录创作者中心
 - Medium：需登录
 - LinkedIn：需登录
+
+## X v1.0.0 Release 帖
+
+- 时间：2026-11-26 00:35 CST
+- 内容：SASES v1.0.0、Docker Compose、GitHub 仓库、Release
+- 状态：已发布
+- 主页：https://x.com/i88033
+- 帖子包含：https://github.com/SI-sases/sases
