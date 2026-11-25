@@ -68,3 +68,11 @@
 - 评论：GitHub 仓库：SI-sases/sases；Release：v1.0.0；部署文档：docs/self-hosting.md；完整地址
 - 状态：评论已发布
 - 置顶：平台当前未显示置顶入口
+
+## X 适配器架构文章
+
+- 时间：2026-11-26 04:25 CST
+- 内容：SASES HQ / campaign / approval / task queue / local executor / adapter
+- 链接：https://github.com/SI-sases/sases/blob/main/docs/build-your-own-sases-adapter.md
+- 状态：已发布，已通过 X 搜索验证
+- 账号：@i88033

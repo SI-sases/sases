@@ -128,3 +128,9 @@ P1 鏈湴骞冲彴鍙戝竷閫傞厤鍣?P1 鐑洿鏂板鎴风鍚屾�
 [✓] X 正式适配器
 [ ] 小红书/抖音/TikTok/Blogger 适配器
 ```
+
+## 公开文章
+
+- `docs/build-your-own-sases-adapter.md`
+- 说明 HQ、campaign、approval、task_queue、本地 executor、平台适配器接口。
+- 已发布到 X；GitHub 文档同步。
