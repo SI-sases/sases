@@ -1,4 +1,4 @@
-﻿# Deploy Your Own AGI on a Cloud Server
+# Deploy Your Own AGI on a Cloud Server
 
 SASES is a self-hosted, privacy-first AI system. This guide shows how to run
 your own AGI-style assistant on a Linux cloud server with Docker, HTTPS, and a
@@ -97,12 +97,33 @@ it again.
 
 ## 7. Upgrade
 
+Back up `data/` and `.env` first, then fetch the release and rebuild:
+
 ```bash
-git pull
+cd /opt/sases
+git fetch --tags
+git checkout v1.0.0
+
+cd deploy/docker
+tar czf ../sases-backup-$(date +%F-%H%M).tgz data .env
 docker compose up -d --build
+curl -fsS http://127.0.0.1:8001/version
 ```
 
-Always back up `data/` and `.env` first.
+The database is migrated automatically on startup. A backup is the reliable
+rollback path.
+
+If the server cannot reach PyPI, rebuild with a mirror:
+
+```bash
+PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple \
+  docker compose up -d --build
+```
+
+Do not run `docker compose down -v`; it deletes the database volume.
+
+To roll back, check out the previous tag, rebuild, and restore the backup if the
+new version already migrated the database.
 
 ## 8. Secure the server
 

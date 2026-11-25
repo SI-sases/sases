@@ -1,4 +1,4 @@
-﻿# Self-hosting SASES on a cloud server
+# Self-hosting SASES on a cloud server
 
 This guide is for running SASES on your own Linux server. It does not require
 access to any private deployment.
@@ -23,6 +23,19 @@ curl http://127.0.0.1:8001/version
 ```
 
 The service listens on `127.0.0.1:8001` only. Put a reverse proxy in front of it.
+
+Use Docker Compose v2 (`docker compose`). The legacy `docker-compose` v1 CLI is
+not supported on current Docker releases and can fail with `ContainerConfig`.
+
+If Docker Hub or PyPI is slow or blocked, pass a mirror before building:
+
+```bash
+PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple \
+  docker compose up -d --build
+```
+
+The image is based on `python:3.12-slim` and does not install `curl`. Its
+healthcheck uses Python, so do not override it with a curl-based check.
 
 ## Configuration
 
@@ -61,12 +74,63 @@ To restore, stop the service, extract the archive in place, and start again.
 
 ## Upgrade
 
+Back up first. The database is migrated automatically on startup, so a backup is
+the only reliable rollback path.
+
 ```bash
-git pull
+cd /opt/sases
+
+# 1. Back up the database and environment file
+cd deploy/docker
+tar czf ../sases-backup-$(date +%F-%H%M).tgz data .env
+
+# 2. Fetch the release you want to run
+cd /opt/sases
+git fetch --tags
+git checkout v1.0.0
+
+# 3. Review configuration changes
+cd deploy/docker
+diff -u .env.example .env || true
+
+# 4. Rebuild and recreate the container
+docker compose up -d --build
+
+# 5. Verify
+curl -fsS http://127.0.0.1:8001/version
+docker compose ps
+docker compose logs --tail=100 sases
+```
+
+Replace `v1.0.0` with the tag you intend to run. If the server cannot reach
+Docker Hub or PyPI, set a build mirror before rebuilding:
+
+```bash
+PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple \
+  docker compose up -d --build
+```
+
+Do not use `docker compose down -v`: `-v` deletes the database volume.
+
+### Rolling back
+
+```bash
+cd /opt/sases
+git checkout <previous-tag>
+cd deploy/docker
 docker compose up -d --build
 ```
 
-Back up `data/` and `.env` before upgrading.
+If the new version has already migrated the database, also restore the backup
+taken before the upgrade. Do not assume an older binary can read a newer schema.
+
+### Notes for cloud servers
+
+- Back up to object storage or another machine, not only the same disk.
+- Keep `8001` private; expose only `80/443` through Caddy or Nginx.
+- Open `22/80/443` in the cloud security group, not just `ufw`.
+- Watch disk usage: Docker images and `data/` both grow.
+- Run upgrades in a maintenance window and verify `/version` afterwards.
 
 ## Firewall
 
@@ -78,6 +142,10 @@ ufw enable
 ```
 
 Do not expose port 8001 publicly.
+
+On a cloud VM, also configure the provider security group: allow `22/80/443`
+inbound, and keep `8001` closed to the internet. `ufw` alone is not enough if
+the security group still allows `8001`.
 
 ## Troubleshooting
 
