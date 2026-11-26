@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "sases": {
+      "command": "python",
+      "args": [
+        "C:\\path\\to\\sases\\skills\\sases-control\\mcp_server.py"
+      ],
+      "env": {
+        "SASES_HQ_URL": "https://your-sases.example.com",
+        "SASES_HQ_TOKEN": "replace-me"
+      }
+    }
+  }
+}

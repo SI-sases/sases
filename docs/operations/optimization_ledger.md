@@ -155,3 +155,11 @@ docker exec docker_sases_1 python -c "import sqlite3;c=sqlite3.connect('/data/us
 - 新增 `docs/agi_promotion/content_calendar.md`
 - 新增 `scripts/sases_ctl.py` 与 `skills/sases-control/SKILL.md`
 - sases_ctl 已通过本地 HQ 验证
+
+## 2026-11-26 08:58
+
+- SASES Control MCP stdio server 完成，initialize/tools/list/tools/call 已验证。
+- 公开仓库：https://github.com/SI-sases/sases-control
+- GitHub topic：dsh-plugin
+- DSH Market 提交 issue：#58
+- 等社区反馈后再决定公司和规模化。

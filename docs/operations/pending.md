@@ -140,3 +140,10 @@ P1 鏈湴骞冲彴鍙戝竷閫傞厤鍣?P1 鐑洿鏂板鎴风鍚屾�
 - D:\sases 独立，端口 8010，节点 d-drive-executor。
 - 深圳 HQ 控制验证通过。
 - 详见 docs/operations/d-drive-executor.md。
+
+## SASES Control 已公开
+
+- 仓库：https://github.com/SI-sases/sases-control
+- MCP + CLI
+- DSH Market issue #58
+- 等社区反馈，不先做公司投入
