@@ -95,6 +95,7 @@ SASES instances:
 - [Workflows](docs/workflows.md)
 - [Theme](docs/theme.md)
 - [Marketplace](docs/marketplace.md)
+- [Wisdom Space switch](docs/wisdom-space.md)
 - [Roadmap](docs/roadmap.md)
 - [Security](SECURITY.md)
 - [Contributing](CONTRIBUTING.md)

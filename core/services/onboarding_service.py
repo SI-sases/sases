@@ -4,6 +4,7 @@ import json
 from datetime import datetime
 from typing import Optional, Dict, Any, List
 from ..db import db_cursor
+from ..feature_flags import wisdom_enabled
 
 
 # 7天引导配置
@@ -77,8 +78,13 @@ def get_user_onboarding(user_id: int) -> Dict[str, Any]:
     # 当前应显示的任务
     current_step = ONBOARDING_STEPS.get(day)
 
-    # 是否已完成所有引导
-    all_done = day > 7
+    # 智维空间暂时关闭时，不再把用户卡在 4-7 步。
+    if not wisdom_enabled() and day >= 4:
+        current_step = None
+        all_done = True
+    else:
+        # 是否已完成所有引导
+        all_done = day > 7
 
     return {
         "success": True,
@@ -123,6 +129,18 @@ def complete_onboarding_step(user_id: int, action: str) -> Dict[str, Any]:
             "advanced": False,
             "message": "已完成所有引导"
         }
+
+    # 智维空间关闭：跳过 4-7 步，避免用户卡住。
+    if not wisdom_enabled() and day >= 4:
+        completed = sorted(set(completed + [4, 5, 6, 7]))
+        with db_cursor(commit=True) as cur:
+            cur.execute(
+                "UPDATE users SET onboarding_day=8, onboarding_completed=?, onboarding_started_at=? WHERE id=?",
+                (json.dumps(completed), started_at, user_id),
+            )
+        return {"success": True, "advanced": True, "new_day": 8,
+                "completed_days": completed, "next_step": None,
+                "message": "智维空间暂时关闭，已跳过相关引导"}
 
     current_step = ONBOARDING_STEPS.get(day)
     if not current_step:

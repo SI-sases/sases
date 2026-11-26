@@ -5,6 +5,7 @@ from jose import jwt, JWTError
 
 from ..auth_service import SECRET_KEY
 from ..services import wisdom_space_service
+from ..feature_flags import wisdom_enabled
 
 router = APIRouter(prefix="/wisdom-space", tags=["wisdom-space"])
 security = HTTPBearer()
@@ -22,5 +23,7 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
 
 @router.get("/nodes")
 async def get_nodes(user_id: int = Depends(get_current_user)):
+    if not wisdom_enabled():
+        raise HTTPException(status_code=404, detail="wisdom space is temporarily closed")
     nodes = wisdom_space_service.get_nodes(user_id)
     return {"nodes": nodes}

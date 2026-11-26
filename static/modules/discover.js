@@ -19,8 +19,10 @@ export function initDiscover() {
 }
 
 function renderDiscoverEntries(container) {
+  // 智维空间暂时关闭；恢复时由宿主注入 window.SASES_ZHIWEI_ENABLED=true。
+  const wisdomEnabled = window.SASES_ZHIWEI_ENABLED === true;
   const entries = [
-    { icon: '🌌', title: t('wisdom_space'), desc: t('discover_wisdom_desc'), action: 'wisdom' },
+    ...(wisdomEnabled ? [{ icon: '🌌', title: t('wisdom_space'), desc: t('discover_wisdom_desc'), action: 'wisdom' }] : []),
     { icon: '🌐', title: t('ai_circle'), desc: t('ai_moments'), action: 'ai-circle' },
     { icon: '📷', title: t('scan'), desc: t('scan_qr_or_seed'), action: 'scan' },
     { icon: '🏆', title: t('leaderboard'), desc: t('contribution_rank'), action: 'leaderboard' },
