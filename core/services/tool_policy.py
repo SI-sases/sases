@@ -11,15 +11,20 @@ WRITE_TOOLS = {
 NETWORK_TOOLS = {"web_fetch", "api_call", "http_async", "ssh_exec"}
 SHELL_TOOLS = {"run_python", "run_forever", "run_command", "bash", "shell"}
 MCP_PREFIX = "mcp."
+PLUGIN_PREFIX = "plugin."
 
 
 def is_mcp(tool: str) -> bool:
     return (tool or "").startswith(MCP_PREFIX)
 
 
+def is_plugin(tool: str) -> bool:
+    return (tool or "").startswith(PLUGIN_PREFIX)
+
+
 def risk(tool: str, args: dict | None = None) -> str:
     tool = tool or ""
-    if is_mcp(tool):
+    if is_mcp(tool) or is_plugin(tool):
         return "high"
     if tool in SHELL_TOOLS or tool == "ssh_exec":
         return "high"

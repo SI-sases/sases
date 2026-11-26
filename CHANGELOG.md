@@ -17,6 +17,7 @@
 - Skill registry for `SKILL.md`
 - Session event log with optional backfill
 - Plugin registry (metadata MVP)
+- Opt-in tool plugin runtime
 - Unified tool risk and approval policy
 - 小红书 adapter
 - 抖音 adapter

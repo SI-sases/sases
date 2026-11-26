@@ -68,9 +68,23 @@ def _invoke_mcp_sync(module_id: str, params: Dict[str, Any]) -> ToolInvokeRespon
         return ToolInvokeResponse(module_id=module_id, success=False, error=str(exc)[:500])
 
 
+def _invoke_plugin_sync(module_id: str, params: Dict[str, Any]) -> ToolInvokeResponse:
+    parts = module_id.split(".", 1)
+    if len(parts) != 2:
+        return ToolInvokeResponse(module_id=module_id, success=False, error="Use plugin.<id>")
+    try:
+        from core.services import plugin_runtime
+        result = plugin_runtime.run_tool(parts[1], params)
+        return ToolInvokeResponse(module_id=module_id, success=True, result=result)
+    except Exception as exc:
+        return ToolInvokeResponse(module_id=module_id, success=False, error=str(exc)[:500])
+
+
 def _route(module_id: str, params: Dict[str, Any]) -> ToolInvokeResponse:
     if module_id.startswith("mcp."):
         return _invoke_mcp_sync(module_id, params)
+    if module_id.startswith("plugin."):
+        return _invoke_plugin_sync(module_id, params)
     _guard = _external_guard(module_id)
     if _guard:
         return _guard

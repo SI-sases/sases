@@ -4,9 +4,10 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
+from pydantic import BaseModel
 
 from core.auth_service import SECRET_KEY
-from core.services import plugin_registry
+from core.services import plugin_registry, plugin_runtime
 
 router = APIRouter(prefix="/plugins", tags=["plugins"])
 security = HTTPBearer(auto_error=False)
@@ -41,3 +42,15 @@ def disable(plugin_id: str, _: int = Depends(_user)):
         return plugin_registry.set_enabled(plugin_id, False)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
+
+
+class CallBody(BaseModel):
+    params: dict = {}
+
+
+@router.post("/{plugin_id}/call")
+def call(plugin_id: str, body: CallBody, _: int = Depends(_user)):
+    try:
+        return plugin_runtime.run_tool(plugin_id, body.params)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc))

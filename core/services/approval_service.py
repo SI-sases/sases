@@ -18,6 +18,8 @@ def is_risky(step) -> bool:
     mid = str(step.get("module_id") or "")
     if mid.startswith("mcp."):
         return True
+    if mid.startswith("plugin."):
+        return True
     if mid in WRITE_TOOLS or mid in NETWORK_TOOLS:
         return True
     if str(step.get("command") or "").strip():

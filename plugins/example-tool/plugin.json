@@ -3,5 +3,6 @@
   "name": "Example tool",
   "version": "1.0.0",
   "type": "tool",
-  "description": "Example plugin manifest. This registry entry does not execute code."
+  "entrypoint": "main.py",
+  "description": "Example plugin manifest and stdin/stdout tool."
 }

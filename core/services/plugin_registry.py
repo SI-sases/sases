@@ -54,6 +54,12 @@ def _read_manifest(path: Path) -> dict | None:
     data["id"] = pid
     data.setdefault("name", pid)
     data.setdefault("description", "")
+    entry = data.get("entrypoint")
+    if entry:
+        candidate = (path / str(entry)).resolve()
+        if path.resolve() not in candidate.parents or not candidate.is_file() or candidate.suffix != ".py":
+            return None
+        data["entrypoint"] = candidate.relative_to(path.resolve()).as_posix()
     return data
 
 
@@ -111,3 +117,11 @@ def get_plugin(plugin_id: str) -> dict:
         if item["id"] == plugin_id:
             return item
     raise KeyError("plugin not found")
+
+
+def get_manifest(plugin_id: str) -> dict:
+    path = PLUGINS / plugin_id / "plugin.json"
+    manifest = _read_manifest(PLUGINS / plugin_id) if path.is_file() else None
+    if not manifest:
+        raise KeyError("plugin not found")
+    return manifest

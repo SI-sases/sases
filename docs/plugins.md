@@ -40,17 +40,51 @@ All endpoints require login.
 
 ## Scope
 
-This MVP is a **registry**, not a code loader.
+This MVP is a **registry + opt-in tool runtime**.
+
+It does:
+
+- discover manifests
+- enable/disable
+- run `tool` plugins through a subprocess
+- require `SASES_PLUGIN_ALLOW=1`
+- classify `plugin.*` as high risk
 
 It does not:
 
-- execute plugin code
 - install from npm/Git
 - inject UI
-- grant shell access
+- execute adapters yet
+- grant shell access automatically
 
-Execution is intentionally separate so an untrusted plugin cannot run just by
-being present in the directory.
+## Tool contract
+
+```text
+stdin  → JSON params
+stdout → JSON result
+exit 0
+```
+
+Example:
+
+```json
+{"entrypoint": "main.py", "type": "tool"}
+```
+
+Run through the gateway:
+
+```python
+invoke_tool("plugin.example-tool", {"x": 1})
+```
+
+or:
+
+```text
+POST /plugins/{id}/call
+```
+
+Execution is short-lived, has a 20 second timeout, and runs with the plugin
+directory as cwd.
 
 ## Adding execution later
 

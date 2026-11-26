@@ -12,6 +12,7 @@
 - Skill registry (`skills/*/SKILL.md`)
 - Session event log (`session_events`)
 - Plugin registry (metadata MVP)
+- Opt-in tool plugin runtime
 - Cloud browser smoke test
 
 ## Next
