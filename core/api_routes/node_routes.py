@@ -61,6 +61,10 @@ class TunnelConfigBody(BaseModel):
     wg_pubkey: str = Field(min_length=40, max_length=60)
 
 
+class TunnelRevokeBody(BaseModel):
+    wg_pubkey: str | None = None
+
+
 def _manifest_node(token: str | None) -> tuple[dict[str, Any], dict[str, Any]]:
     if not token:
         raise HTTPException(status_code=401, detail="node manifest required")
@@ -228,6 +232,37 @@ def tunnel_config(
         action="tunnel.issue", result="failed", detail=last_error,
     )
     raise HTTPException(status_code=502, detail=f"tunnel agent failed: {last_error}")
+
+
+@router.post("/tunnel/revoke")
+def tunnel_revoke(
+    body: TunnelRevokeBody,
+    x_sases_node_manifest: str | None = Header(default=None, alias="X-SASES-Node-Manifest"),
+):
+    _payload, node = _manifest_node(x_sases_node_manifest)
+    pubkey = body.wg_pubkey or str(node.get("wg_pubkey") or "")
+    if not pubkey:
+        raise HTTPException(status_code=409, detail="node has no wg_pubkey")
+    agent_url = os.environ.get("SASES_WG_AGENT_URL", "").rstrip("/")
+    agent_token = os.environ.get("SASES_WG_AGENT_TOKEN", "")
+    if not (agent_url and agent_token):
+        raise HTTPException(status_code=503, detail="tunnel provisioning is not configured")
+    req = urllib.request.Request(
+        agent_url + "/peer/remove",
+        data=json.dumps({"pubkey": pubkey}).encode(),
+        headers={"Content-Type": "application/json", "X-SASES-WG-Token": agent_token},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            result = json.loads(resp.read().decode() or "{}")
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"tunnel agent failed: {exc}") from exc
+    ni.audit_event(
+        node_id=node.get("node_id"), user_id=node.get("user_id"), profile=node.get("profile"),
+        action="tunnel.revoke", result="ok", detail=pubkey[:12],
+    )
+    return {"ok": True, **result}
 
 
 @router.post("/creator/apply")

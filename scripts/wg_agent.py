@@ -11,6 +11,7 @@ import fcntl
 import ipaddress
 import json
 import os
+import re
 import subprocess
 import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -70,6 +71,24 @@ def _persist(pubkey: str, ip_text: str) -> bool:
     return True
 
 
+def _remove_persist(pubkey: str) -> bool:
+    """Remove a peer block from wg0.conf under the same lock."""
+    if not os.path.isfile(CONF):
+        return False
+    lock_path = CONF + ".agent.lock"
+    with open(lock_path, "w", encoding="utf-8") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        text = open(CONF, encoding="utf-8").read()
+        blocks = re.split(r"(?=\n\[Peer\])", text)
+        kept = [b for b in blocks if f"PublicKey = {pubkey}" not in b]
+        if len(kept) == len(blocks):
+            return False
+        with open(CONF, "w", encoding="utf-8") as handle:
+            handle.write("".join(kept))
+        os.chmod(CONF, 0o600)
+    return True
+
+
 class Handler(BaseHTTPRequestHandler):
     def _send(self, code: int, payload: dict) -> None:
         body = json.dumps(payload).encode()
@@ -86,7 +105,7 @@ class Handler(BaseHTTPRequestHandler):
             self._send(404, {"error": "not found"})
 
     def do_POST(self) -> None:  # noqa: N802
-        if self.path != "/peer":
+        if self.path not in ("/peer", "/peer/remove"):
             self._send(404, {"error": "not found"})
             return
         if not TOKEN or self.headers.get("X-SASES-WG-Token", "") != TOKEN:
@@ -96,11 +115,20 @@ class Handler(BaseHTTPRequestHandler):
             length = int(self.headers.get("Content-Length", "0"))
             body = json.loads(self.rfile.read(length).decode())
             pubkey = str(body.get("pubkey", ""))
+            if not _valid_key(pubkey):
+                raise ValueError("invalid pubkey")
+            if self.path == "/peer/remove":
+                subprocess.run(
+                    [WG, "set", IFACE, "peer", pubkey, "remove"],
+                    check=False, capture_output=True, text=True, timeout=10,
+                )
+                removed = _remove_persist(pubkey)
+                print(f"peer removed pubkey={pubkey[:8]} config_removed={removed}", flush=True)
+                self._send(200, {"ok": True, "config_removed": removed})
+                return
             ip_text = str(body.get("ip", ""))
             node_id = str(body.get("node_id", ""))
             ip = ipaddress.ip_address(ip_text)
-            if not _valid_key(pubkey):
-                raise ValueError("invalid pubkey")
             if ip not in NET or ip in (NET.network_address, NET.broadcast_address):
                 raise ValueError("ip outside pool")
             existing = _existing()
