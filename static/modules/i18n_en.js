@@ -126,6 +126,8 @@ export const en = {
   'cp_background_short': 'background ',
   'cp_external_api': 'External API',
   'cp_skill': 'Skills',
+  'cp_mcp_empty': 'No MCP tools',
+  'cp_mcp_disabled': 'MCP is disabled. Set SASES_MCP_ALLOW=1 first.',
   'cp_search_skill': 'Search DSH skills, e.g. doc / office / verify',
   'cp_no_external_api': 'No external APIs',
   'cp_risk_write': 'Write',

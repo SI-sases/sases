@@ -131,6 +131,8 @@ export const zh = {
   'cp_background_short': '后台 ',
   'cp_external_api': '外部 API',
   'cp_skill': '技能',
+  'cp_mcp_empty': '暂无 MCP 工具',
+  'cp_mcp_disabled': 'MCP 未启用，请先设置 SASES_MCP_ALLOW=1',
   'cp_search_skill': '搜索 DSH 技能，如 doc / office / verify',
   'cp_no_external_api': '暂无外部 API',
   'cp_risk_write': '写',

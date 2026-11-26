@@ -17,7 +17,7 @@
   import('./i18n.js').then(function (m) { _t = m.t; }).catch(function () {});
   var STORE = 'sases_capsules_v1';
   var PERM_KEY = 'sases_perms_v1';
-  var state = { apis: [], tools: [], skills: [], hidden: [] };
+  var state = { apis: [], tools: [], skills: [], mcp: [], hidden: [] };
   var groups = [];
   var perms = { web: false, write: false, schedule: true };
 
@@ -59,6 +59,7 @@
         state.apis = s.apis || [];
         state.tools = [];
         state.skills = s.skills || [];
+        state.mcp = s.mcp || [];
         state.hidden = s.hidden || [];
         return true;
       }
@@ -77,9 +78,10 @@
     // 工具由系统按任务自动选择，不再由胶囊勾选限制
     window.currentSessionTools = null;
     window.currentSessionSkills = state.skills.slice();
+    window.currentSessionMCP = state.mcp.slice();
   }
 
-  function total() { return state.apis.length + state.skills.length; }
+  function total() { return state.apis.length + state.skills.length + state.mcp.length; }
 
   function updatePill() {
     var p = document.getElementById('api-pill');
@@ -103,6 +105,7 @@
     var items = [];
     state.apis.forEach(function (id) { items.push({ id: id, type: 'api' }); });
     state.skills.forEach(function (id) { items.push({ id: id, type: 'skill' }); });
+    state.mcp.forEach(function (id) { items.push({ id: id, type: 'mcp' }); });
     var settings = document.getElementById('capsule-settings-btn');
     items.forEach(function (it) {
       var chip = document.createElement('span');
@@ -111,6 +114,7 @@
       chip.title = t('cp_click_remove');
       chip.onclick = function () {
         if (it.type === 'api') state.apis = state.apis.filter(function (x) { return x !== it.id; });
+        else if (it.type === 'mcp') state.mcp = state.mcp.filter(function (x) { return x !== it.id; });
         else state.skills = state.skills.filter(function (x) { return x !== it.id; });
         save();
       };
@@ -145,6 +149,7 @@
       '#capsule-panel .cp-risk{margin-left:auto;font-size:10px;padding:1px 5px;border-radius:7px;background:#eef4ff;color:#1a73e8}',
       '#capsule-panel .cp-risk.write{background:#fff4e5;color:#b26a00}',
       '#capsule-panel .cp-risk.network{background:#eef7ee;color:#2e7d32}',
+      '#capsule-panel .cp-risk.high{background:#fdecea;color:#c5221f}',
       '#capsule-panel .cp-item{display:flex;align-items:flex-start;gap:8px;padding:5px 4px;border-radius:6px;cursor:pointer}',
       '#capsule-panel .cp-item:hover{background:#f7f9fc}',
       '#capsule-panel .cp-item input{margin-top:2px}',
@@ -169,10 +174,54 @@
   var _skillQuery = '';
   var _panel = null;
   var _notice = '';
+  var _mcpNotice = '';
+  var _mcpLoaded = false;
+
+  function loadMCP() {
+    _mcpLoaded = true;
+    groups = groups.filter(function (g) { return g.id !== 'mcp'; });
+    if (!token()) return;
+    fetch('/mcp/servers', { headers: { Authorization: 'Bearer ' + token() } })
+      .then(function (res) {
+        if (!res.ok) throw new Error(res.status === 403 ? t('cp_mcp_disabled') : ('HTTP ' + res.status));
+        return res.json();
+      })
+      .then(function (data) {
+        var servers = data.servers || [];
+        _mcpNotice = servers.length ? '' : t('cp_mcp_empty');
+        return Promise.all(servers.map(function (s) {
+          return fetch('/mcp/servers/' + s.id + '/tools', { headers: { Authorization: 'Bearer ' + token() } })
+            .then(function (r) { return r.ok ? r.json() : { tools: [] }; })
+            .then(function (d) { return { server: s, tools: d.tools || [] }; });
+        }));
+      })
+      .then(function (list) {
+        var items = [];
+        list.forEach(function (pair) {
+          pair.tools.forEach(function (tool) {
+            items.push({
+              id: pair.server.id + ':' + tool.name,
+              type: 'mcp',
+              label: pair.server.name + ' / ' + tool.name,
+              desc: tool.description || ''
+            });
+          });
+        });
+        if (items.length) {
+          groups.push({ id: 'mcp', label: 'MCP', risk: 'high', items: items });
+        }
+        if (_tab === 'mcp') render();
+      })
+      .catch(function (e) {
+        _mcpNotice = e && e.message ? e.message : t('cp_mcp_disabled');
+        if (_tab === 'mcp') render();
+      });
+  }
 
   function inState(type) {
     if (type === 'api') return state.apis;
     if (type === 'tool') return state.tools;
+    if (type === 'mcp') return state.mcp;
     return state.skills;
   }
 
@@ -187,7 +236,7 @@
   function render() {
     if (!_panel) return;
     var tabs = [
-      ['api', t('cp_external_api')], ['skill', t('cp_skill')]
+      ['api', t('cp_external_api')], ['skill', t('cp_skill')], ['mcp', 'MCP']
     ];
     var html = '<div class="cp-tabs">';
     tabs.forEach(function (t) {
@@ -197,6 +246,9 @@
     if (_notice) {
       html += '<div class="cp-notice" style="margin:6px 0;padding:6px 8px;background:#fff7e6;border:1px solid #ffd591;border-radius:6px;font-size:12px;color:#ad6800;">' + _notice + '</div>';
     }
+    if (_tab === 'mcp' && _mcpNotice) {
+      html += '<div class="cp-empty" style="padding:12px 8px">' + _mcpNotice + '</div>';
+    }
     if (_tab === 'skill') {
       html += '<div class="cp-search"><input id="cp-skill-search" placeholder="' + t('cp_search_skill') + '" value="' +
         String(_skillQuery).replace(/"/g, '&quot;') + '"></div>';
@@ -204,13 +256,15 @@
     html += '<div class="cp-body">';
 
     var shown = groups.filter(function (g) {
-      return _tab === 'api' ? g.id === 'external' : g.id === 'skill';
+      if (_tab === 'api') return g.id === 'external';
+      if (_tab === 'mcp') return g.id === 'mcp';
+      return g.id === 'skill';
     });
 
     if (!shown.length) {
       html += '<div class="cp-empty">' + (_tab === 'skill'
         ? t('cp_no_skills') + '<br><span style="font-size:11px;color:#aaa">' + t('cp_skills_help') + '</span>'
-        : t('cp_no_external_api')) + '</div>';
+        : (_tab === 'mcp' ? t('cp_mcp_empty') : t('cp_no_external_api'))) + '</div>';
     }
     shown.forEach(function (g) {
       var items = (g.items || []).filter(function (it) {
@@ -219,7 +273,7 @@
       });
       html += '<div class="cp-group"><div class="cp-ghead">' + g.label +
         '<span class="cp-risk ' + (g.risk || '') + '">' +
-        (g.risk === 'write' ? t('cp_risk_write') : (g.risk === 'network' ? t('cp_risk_network') : t('cp_risk_read'))) + '</span></div>';
+        (g.risk === 'write' ? t('cp_risk_write') : (g.risk === 'network' ? t('cp_risk_network') : (g.risk === 'high' ? 'HIGH' : t('cp_risk_read')))) + '</span></div>';
       items.forEach(function (it) {
         var checked = inState(it.type).indexOf(it.id) !== -1 ? 'checked' : '';
         html += '<label class="cp-item"><input type="checkbox" ' + checked +
@@ -233,7 +287,11 @@
     _panel.innerHTML = html;
 
     _panel.querySelectorAll('.cp-tab').forEach(function (el) {
-      el.onclick = function () { _tab = el.dataset.tab; render(); };
+      el.onclick = function () {
+        _tab = el.dataset.tab;
+        if (_tab === 'mcp' && !_mcpLoaded) loadMCP();
+        render();
+      };
     });
     var _si = document.getElementById('cp-skill-search');
     if (_si) _si.onchange = function () { _skillQuery = _si.value || ''; render(); };
@@ -250,7 +308,7 @@
       };
     });
     var clear = document.getElementById('cp-clear');
-    if (clear) clear.onclick = function () { state.apis = []; state.tools = []; state.skills = []; save(); render(); };
+    if (clear) clear.onclick = function () { state.apis = []; state.tools = []; state.skills = []; state.mcp = []; save(); render(); };
   }
 
   function togglePanel() {
@@ -284,6 +342,9 @@
         load();
         render();
         renderChips();
+        _mcpLoaded = false;
+        _mcpNotice = '';
+        loadMCP();
       })
       .catch(function (e) {
         _panel.innerHTML = '<div class="cp-empty">' + t('cp_load_failed') + e.message + '</div>';

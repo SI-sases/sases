@@ -83,7 +83,7 @@ async def send_message(
     msg_type: str = "standard",
     max_steps: int = None,
     attachments: list = None
-, enabled_api_ids=None, enabled_tool_ids=None, enabled_skill_ids=None, agent_mode=None,
+, enabled_api_ids=None, enabled_tool_ids=None, enabled_skill_ids=None, enabled_mcp_ids=None, agent_mode=None,
       quote_content=None, permissions=None, force_strict=False, resume_run_id=None,
       subagent_agent_id=None, multi_agent=False, budget_tokens=0, timeout_seconds=0,
       on_token=None):
@@ -169,7 +169,7 @@ async def send_message(
         _ir = _intent_svc.route_intent(content)
         print("[intent] " + str(_ir))
         if _ir.get("intent") == "schedule" and not content.lstrip().startswith("#5"):
-            _snap = {"apis": enabled_api_ids or [], "tools": enabled_tool_ids or [], "skills": enabled_skill_ids or []}
+            _snap = {"apis": enabled_api_ids or [], "tools": enabled_tool_ids or [], "skills": enabled_skill_ids or [], "mcp": enabled_mcp_ids or []}
             if _ir.get("normalized"):
                 content = "#5: " + _ir["normalized"]
             elif _ir.get("weekly") and conversation_id:

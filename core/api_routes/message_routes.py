@@ -57,6 +57,7 @@ class SendMessageRequest(BaseModel):
     enabled_api_ids: list = None
     enabled_tool_ids: list = None
     enabled_skill_ids: list = None
+    enabled_mcp_ids: list = None
     agent_mode: Optional[str] = None
     quote_content: Optional[str] = None
     msg_type: Optional[str] = "standard"
@@ -277,6 +278,7 @@ async def send_message(body: SendMessageRequest, user_id: int = Depends(get_curr
         enabled_api_ids=body.enabled_api_ids,
         enabled_tool_ids=body.enabled_tool_ids,
         enabled_skill_ids=body.enabled_skill_ids,
+        enabled_mcp_ids=body.enabled_mcp_ids,
         agent_mode=body.agent_mode,
         quote_content=body.quote_content,
         max_steps=body.max_steps,
