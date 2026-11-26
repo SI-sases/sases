@@ -5,6 +5,7 @@
 Deploy with Docker. Keep your database and model key. Control it from any agent.
 
 [![Docker build](https://github.com/SI-sases/sases/actions/workflows/docker.yml/badge.svg)](https://github.com/SI-sases/sases/actions/workflows/docker.yml)
+[![tests](https://github.com/SI-sases/sases/actions/workflows/tests.yml/badge.svg)](https://github.com/SI-sases/sases/actions/workflows/tests.yml)
 
 ![SASES](docs/assets/sases-cover.png)
 
