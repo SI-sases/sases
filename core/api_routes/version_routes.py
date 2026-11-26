@@ -61,6 +61,37 @@ def get_version():
     }
 
 
+@router.get("/health")
+def health():
+    """Lightweight liveness/readiness probe for cron and uptime checks."""
+    db_path = os.environ.get("SASES_DB_PATH", "users.db")
+    db_ok = False
+    tables = 0
+    schema_version = 0
+    error = None
+    try:
+        conn = sqlite3.connect(db_path, timeout=3)
+        db_ok = conn.execute("PRAGMA quick_check").fetchone()[0] == "ok"
+        tables = conn.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table'").fetchone()[0]
+        try:
+            from ..migrations import current_version
+            schema_version = current_version(conn)
+        except Exception:
+            pass
+        conn.close()
+    except Exception as exc:
+        error = str(exc)
+    return {
+        "ok": db_ok,
+        "db": "ok" if db_ok else "error",
+        "tables": tables,
+        "schema_version": schema_version,
+        "node_id": os.environ.get("SASES_NODE_ID", "unknown"),
+        "credit_protocol": credit_protocol.PROTOCOL,
+        "error": error,
+    }
+
+
 @router.post("/version/check-update")
 def check_update():
     import subprocess
