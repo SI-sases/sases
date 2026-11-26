@@ -4,6 +4,8 @@ from ..db import db_cursor
 
 # 红包默认有效期（小时）
 RED_PACKET_EXPIRE_HOURS = 24
+# 跨云节点传递费：只对远端节点收取，本地客户端不收
+NODE_TRANSFER_FEE = 1.0
 
 
 def get_sent_red_packets(user_id, limit=50):
@@ -43,6 +45,8 @@ def create_transfer(sender_id: int, receiver_id: int, amount: float, message: st
             if _sr:
                 _sender_sases = _sr["sases_id"]
 
+    _fee = NODE_TRANSFER_FEE if _receiver_is_remote else 0.0
+
     with db_cursor(commit=True) as cur:
         if idempotency_key:
             cur.execute("SELECT id FROM transactions WHERE idempotency_key=?", (idempotency_key,))
@@ -53,16 +57,23 @@ def create_transfer(sender_id: int, receiver_id: int, amount: float, message: st
             cur.execute("SELECT balance FROM user_compute_balance WHERE user_id=?", (sender_id,))
             row = cur.fetchone()
             if not row or row["balance"] < amount:
-                return None, "算力余额不足"
+                return None, "源余额不足"
+            if _fee:
+                cur.execute("SELECT credits FROM users WHERE id=?", (sender_id,))
+                _cr = cur.fetchone()
+                if not _cr or _cr["credits"] < _fee:
+                    return None, "种子积分不足，无法支付跨节点传递费"
             cur.execute("UPDATE user_compute_balance SET balance = balance - ? WHERE user_id=?", (amount, sender_id))
+            if _fee:
+                cur.execute("UPDATE users SET credits = credits - ? WHERE id=?", (_fee, sender_id))
             if not _receiver_is_remote:
                 cur.execute("INSERT INTO user_compute_balance (user_id, balance) VALUES (?, ?) ON CONFLICT(user_id) DO UPDATE SET balance = balance + ?", (receiver_id, amount, amount))
         else:
             cur.execute("SELECT credits FROM users WHERE id=?", (sender_id,))
             row = cur.fetchone()
-            if not row or row["credits"] < amount:
-                return None, "积分不足"
-            cur.execute("UPDATE users SET credits = credits - ? WHERE id=?", (amount, sender_id))
+            if not row or row["credits"] < amount + _fee:
+                return None, "积分不足" + ("（含跨节点传递费 1）" if _fee else "")
+            cur.execute("UPDATE users SET credits = credits - ? WHERE id=?", (amount + _fee, sender_id))
             if not _receiver_is_remote:
                 cur.execute("UPDATE users SET credits = credits + ? WHERE id=?", (amount, receiver_id))
 
@@ -75,6 +86,17 @@ def create_transfer(sender_id: int, receiver_id: int, amount: float, message: st
             VALUES (?, ?, ?, 'transfer', ?, ?, ?, ?, ?, ?)
         """, (sender_id, receiver_id, amount, _tx_status, message, now, credit_type, idempotency_key, _tx_rx_node))
         tx_id = cur.lastrowid
+
+        if _fee:
+            cur.execute("""
+                INSERT INTO transactions
+                (sender_id, receiver_id, amount, tx_type, status, message, completed_at, credit_type, idempotency_key, receiver_node_id)
+                VALUES (?, ?, ?, 'node_transfer_fee', 'completed', ?, ?, 'credits', ?, 'fee')
+            """, (sender_id, receiver_id, _fee, "跨节点传递费", datetime.now().isoformat(), "fee:" + str(tx_id)))
+            cur.execute("""
+                INSERT INTO contribution_log (user_id, action, event_type, points, detail)
+                VALUES (?, '跨节点传递费', 'node_transfer_fee', ?, ?)
+            """, (sender_id, -_fee, f"跨节点传递费 tx={tx_id}"))
 
         cur.execute("""
             INSERT INTO contribution_log (user_id, action, event_type, points, detail)
