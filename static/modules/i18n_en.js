@@ -197,6 +197,7 @@ export const en = {
   'gm_generate_failed': 'Generate failed: ',
   'gm_no_suggestion': '(no suggestion)',
   'sp_tasks': 'Background tasks',
+  'sp_detail': 'Details',
   'sp_loading': 'Loading...',
   'sp_no_tasks': 'No running tasks',
   'sp_agents': 'Subagents',

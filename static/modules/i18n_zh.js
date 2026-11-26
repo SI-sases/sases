@@ -203,6 +203,7 @@ export const zh = {
   'gm_generate_failed': '生成失败：',
   'gm_no_suggestion': '（无建议）',
   'sp_tasks': '后台任务',
+  'sp_detail': '详情',
   'sp_loading': '加载中...',
   'sp_no_tasks': '暂无运行中的任务',
   'sp_agents': '子智能体',

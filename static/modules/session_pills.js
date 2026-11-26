@@ -99,10 +99,25 @@
     try {
       const data = await api('/supervisor/runs');
       const runs = data.runs || [];
-      if (!runs.length) { panel.innerHTML = '<div class="sp-title">' + t('sp_tasks') + '</div><div class="sp-empty">' + t('sp_no_tasks') + '</div>'; return; }
+      let hqTasks = [];
+      try {
+        const hq = await api('/hq/tasks?status=running');
+        hqTasks = (hq.tasks || []).filter(function (x) { return x.payload && x.payload.manual; });
+      } catch (e) {}
+      if (!runs.length && !hqTasks.length) { panel.innerHTML = '<div class="sp-title">' + t('sp_tasks') + '</div><div class="sp-empty">' + t('sp_no_tasks') + '</div>'; return; }
+      var hqHtml = hqTasks.length ? '<div class="sp-title">内容任务 · HQ</div>' + hqTasks.map(function (r) {
+        var title = (r.payload && r.payload.title) || ('HQ task #' + r.id);
+        var owner = (r.payload && r.payload.owner) || r.executor || '';
+        var body = (r.payload && r.payload.body) || '';
+        return '<div class="sp-row"><div class="sp-main"><div class="sp-name">' + esc(title) +
+          '</div><div class="sp-sub">HQ #' + r.id + ' · ' + esc(r.platform) + ' · ' + esc(r.status) +
+          (owner ? ' · ' + esc(owner) : '') + '</div>' +
+          '<div class="sp-detail" style="display:none;white-space:pre-wrap;margin-top:6px;font-size:11px;color:#555;max-height:160px;overflow:auto;">' +
+          esc(body) + '</div></div><button class="sp-btn" data-hq="' + r.id + '">' + t('sp_detail') + '</button></div>';
+      }).join('') : '';
       panel.innerHTML = '<div class="sp-title">' + t('sp_tasks') +
         (runs.filter(function (x) { return x.status === 'queued'; }).length ? ' · ' + t('sp_queued') + ' ' +
-          runs.filter(function (x) { return x.status === 'queued'; }).length : '') + '</div>' + runs.map(function (r) {
+          runs.filter(function (x) { return x.status === 'queued'; }).length : '') + '</div>' + hqHtml + runs.map(function (r) {
         const paused = r.status === 'paused' || r.status === 'partial';
         const child = r.parent_run_id ? ' sp-child' : '';
         const label = r.parent_run_id ? '↳ ' : '';
@@ -116,6 +131,14 @@
             '<button class="sp-btn ' + (paused ? 'warn' : '') + '" data-run="' + r.id + '" data-paused="' + (paused ? '1' : '0') + '">' +
             (paused ? t('sp_resume') : t('sp_pause')) + '</button><button class="sp-btn" data-cancel="' + r.id + '" style="margin-left:4px;">' + t('sp_cancel') + '</button>') + '</div>';
       }).join('');
+      panel.querySelectorAll('[data-hq]').forEach(function (b) {
+        b.onclick = function (ev) {
+          ev.stopPropagation();
+          var row = b.closest('.sp-row');
+          var d = row ? row.querySelector('.sp-detail') : null;
+          if (d) d.style.display = d.style.display === 'none' ? 'block' : 'none';
+        };
+      });
       panel.querySelectorAll('[data-cancel]').forEach(function (b) {
         b.onclick = async function (ev) {
           ev.stopPropagation();
