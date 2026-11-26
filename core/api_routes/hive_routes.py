@@ -430,6 +430,7 @@ async def sync_transfer(body: dict):
     """接收 peer 转账。idempotency_key 去重。自动创建影子用户。"""
     from ..db import db_cursor
     from ..broadcast.ws_hub import broadcast_to_user
+    from .. import credit_protocol
     from datetime import datetime
     _idem = body.get("idempotency_key")
     _ss = body.get("sender_sases_id")
@@ -437,6 +438,11 @@ async def sync_transfer(body: dict):
     _amt = body.get("amount")
     _ct = body.get("credit_type", "credits")
     _msg = body.get("message", "")
+    _proto = body.get("credit_protocol")
+
+    if not credit_protocol.accepted(_proto):
+        return {"status": "error", "msg": "credit protocol mismatch",
+                "expected": credit_protocol.PROTOCOL}
 
     if not _idem or not _ss or not _ts or _amt is None:
         return {"status": "error", "msg": "missing params"}

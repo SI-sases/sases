@@ -100,6 +100,7 @@ SASES instances:
 - [Plugins](docs/plugins.md)
 - [Manual publishing tasks](docs/manual-tasks.md)
 - [Memory](docs/memory.md)
+- [Credit protocol](docs/credit-protocol.md)
 - [Workflows](docs/workflows.md)
 - [Theme](docs/theme.md)
 - [Marketplace](docs/marketplace.md)

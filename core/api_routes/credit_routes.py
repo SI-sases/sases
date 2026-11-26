@@ -7,6 +7,7 @@ from jose import jwt, JWTError
 
 from ..auth_service import SECRET_KEY
 from ..services import credit_service
+from .. import credit_protocol
 
 router = APIRouter(prefix="/credits", tags=["credits"])
 security = HTTPBearer()
@@ -43,6 +44,11 @@ async def get_balance(user_id: int = Depends(get_current_user)):
 async def get_history(limit: int = 50, user_id: int = Depends(get_current_user)):
     history = credit_service.get_history(user_id, limit)
     return {"history": history}
+
+
+@router.get("/protocol")
+async def protocol():
+    return credit_protocol.describe()
 
 
 @router.post("/exchange")

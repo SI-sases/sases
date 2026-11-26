@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 import subprocess, os, sqlite3
+from .. import credit_protocol
 
 router = APIRouter()
 
@@ -55,6 +56,8 @@ def get_version():
         "schema_version": schema_version,
         "node_id": os.environ.get("SASES_NODE_ID", "unknown"),
         "port": os.environ.get("SASES_PORT", "8001"),
+        "credit_protocol": credit_protocol.PROTOCOL,
+        "credit_rules_hash": credit_protocol.RULES_HASH,
     }
 
 

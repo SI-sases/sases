@@ -114,6 +114,7 @@ def create_transfer(sender_id: int, receiver_id: int, amount: float, message: st
             import httpx, os
             from ..broadcast.node_relay import hive_headers
             from .outbox.outbox_service import enqueue
+            from .. import credit_protocol
             _mx = os.environ.get("HIVE_MASTER", "http://127.0.0.1:8001")
             _pl = {
                 "idempotency_key": idempotency_key or ("tx-" + str(tx_id)),
@@ -121,7 +122,8 @@ def create_transfer(sender_id: int, receiver_id: int, amount: float, message: st
                 "target_sases_id": _receiver_sases,
                 "amount": amount,
                 "credit_type": credit_type,
-                "message": message or ""
+                "message": message or "",
+                "credit_protocol": credit_protocol.PROTOCOL
             }
             _ok = False
             _hdrs = {}
