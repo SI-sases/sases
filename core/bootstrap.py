@@ -887,6 +887,10 @@ def create_app() -> FastAPI:
     session_event_service.ensure_schema()
     from .api_routes import session_routes
     app.include_router(session_routes.router)
+    from .services import plugin_registry
+    plugin_registry.ensure_schema()
+    from .api_routes import plugin_routes
+    app.include_router(plugin_routes.router)
     app.include_router(seed_routes.router)
     app.include_router(credit_routes.router)
     app.include_router(harness_routes.router)

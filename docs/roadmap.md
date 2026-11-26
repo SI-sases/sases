@@ -11,6 +11,7 @@
 - MCP client for external tools (experimental)
 - Skill registry (`skills/*/SKILL.md`)
 - Session event log (`session_events`)
+- Plugin registry (metadata MVP)
 - Cloud browser smoke test
 
 ## Next

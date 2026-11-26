@@ -1,0 +1,7 @@
+{
+  "id": "example-tool",
+  "name": "Example tool",
+  "version": "1.0.0",
+  "type": "tool",
+  "description": "Example plugin manifest. This registry entry does not execute code."
+}

@@ -88,6 +88,7 @@ SASES instances:
 - [MCP client](docs/mcp-client.md)
 - [Tool policy](docs/tool-policy.md)
 - [Session events](docs/session-events.md)
+- [Plugins](docs/plugins.md)
 - [Roadmap](docs/roadmap.md)
 - [Security](SECURITY.md)
 - [Contributing](CONTRIBUTING.md)
