@@ -117,7 +117,8 @@
           '<div class="sp-detail" style="display:none;white-space:pre-wrap;margin-top:6px;font-size:11px;color:#555;max-height:160px;overflow:auto;">' +
           esc(body) + '</div></div><button class="sp-btn" data-hq="' + r.id + '">' + t('sp_detail') + '</button>' +
           '<button class="sp-btn" data-copy="' + r.id + '">' + t('sp_copy') + '</button>' +
-          '<button class="sp-btn" data-open="' + r.id + '">' + t('sp_open') + '</button></div>';
+          '<button class="sp-btn" data-open="' + r.id + '">' + t('sp_open') + '</button>' +
+          '<button class="sp-btn" data-receipt="' + r.id + '">' + t('sp_receipt') + '</button></div>';
       }).join('') : '';
       panel.innerHTML = '<div class="sp-title">' + t('sp_tasks') +
         (runs.filter(function (x) { return x.status === 'queued'; }).length ? ' · ' + t('sp_queued') + ' ' +
@@ -173,6 +174,26 @@
           };
           var u = urls[d.platform];
           if (u) window.open(u, '_blank', 'noopener');
+        };
+      });
+      panel.querySelectorAll('[data-receipt]').forEach(function (b) {
+        b.onclick = async function (ev) {
+          ev.stopPropagation();
+          var id = b.getAttribute('data-receipt');
+          var url = window.prompt(t('sp_receipt_url'));
+          if (!url) return;
+          b.disabled = true;
+          try {
+            await api('/hq/tasks/' + id + '/receipt', {
+              method: 'POST',
+              body: JSON.stringify({ status: 'done', result: { ok: true, url: url } })
+            });
+            b.textContent = t('sp_receipt_ok');
+            await render();
+          } catch (e) {
+            b.textContent = t('sp_receipt_fail');
+            b.disabled = false;
+          }
         };
       });
       panel.querySelectorAll('[data-cancel]').forEach(function (b) {
