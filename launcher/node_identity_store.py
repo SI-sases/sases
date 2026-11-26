@@ -93,7 +93,7 @@ def _write(path: str, data: dict) -> None:
         pass
 
 
-def refresh_manifest(root: str | None = None, base_url: str = "http://120.77.136.90:8001") -> bool:
+def refresh_manifest(root: str | None = None, base_url: str = "http://127.0.0.1:8001") -> bool:
     """Refresh an expired manifest using the node's own Ed25519 key."""
     import httpx
 

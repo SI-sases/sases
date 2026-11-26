@@ -17,7 +17,7 @@ import subprocess
 CONF = "/etc/wireguard/wg1.conf"
 CLIENT_DIR = "/root/wg_clients"
 REVOKED_DIR = "/root/wg_clients/revoked"
-ENDPOINT = os.getenv("WG_ENDPOINT", "120.77.136.90:51821")
+ENDPOINT = os.getenv("WG_ENDPOINT", "127.0.0.1:51821")
 NAME_RE = re.compile(r"^[a-zA-Z0-9_-]{1,32}$")
 
 

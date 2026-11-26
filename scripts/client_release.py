@@ -3,7 +3,7 @@
 
 Example:
   python scripts/client_release.py --version 1.0.1-test --out dist/client_update.zip \
-    --manifest dist/client_version.json --base-url http://120.77.136.90:8001/static/downloads/
+    --manifest dist/client_version.json --base-url http://127.0.0.1:8001/static/downloads/
 """
 from __future__ import annotations
 

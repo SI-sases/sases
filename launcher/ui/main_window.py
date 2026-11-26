@@ -400,7 +400,7 @@ class MainWindow(QMainWindow):
             fp = get_hardware_fingerprint()
         except: pass
             
-        api_url = "http://120.77.136.90:8001/auth/license/activate"
+        api_url = "http://127.0.0.1:8001/auth/license/activate"
         payload = json.dumps({"key_code": key, "device_fingerprint": fp, "user_id": 1}).encode('utf-8')
         req = urllib.request.Request(api_url, data=payload, headers={'Content-Type': 'application/json'})
         

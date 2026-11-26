@@ -18,7 +18,7 @@ from scripts.client_release import build, _sha256
 
 DEFAULT_OUT = r"D:\sases_build\client_update.zip"
 DEFAULT_MANIFEST = r"D:\sases_build\client_version.json"
-BASE_URL = "http://120.77.136.90:8001/static/downloads"
+BASE_URL = "http://127.0.0.1:8001/static/downloads"
 
 
 def main() -> int:

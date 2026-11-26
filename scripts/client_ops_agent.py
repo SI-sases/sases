@@ -19,7 +19,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
-BASE_URL = os.environ.get("SASES_BASE_URL", "http://120.77.136.90:8001").rstrip("/")
+BASE_URL = os.environ.get("SASES_BASE_URL", "http://127.0.0.1:8001").rstrip("/")
 IDENTITY = os.path.join(ROOT, "node_identity.json")
 LOCK = os.path.join(ROOT, ".ops_agent.lock")
 ONCE = os.environ.get("SASES_OPS_AGENT_ONCE", "").lower() in ("1", "true", "yes")

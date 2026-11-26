@@ -5,7 +5,7 @@ Node-A 部署脚本：pull 代码 + 安装 systemd service + 重启
 import subprocess, sys
 
 SSH_BASE = ["ssh", "-o", "StrictHostKeyChecking=no", "-o", "BatchMode=no", "-o", "PreferredAuthentications=password", "-o", "PubkeyAuthentication=no", "-o", "ConnectTimeout=10"]
-HOST = "root@120.77.136.90"
+HOST = "root@127.0.0.1"
 
 def run(cmd, timeout=120):
     full = SSH_BASE + [HOST, cmd]

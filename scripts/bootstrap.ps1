@@ -1,5 +1,5 @@
 param(
-    [string]$BaseUrl = "http://120.77.136.90:8001",
+    [string]$BaseUrl = "http://127.0.0.1:8001",
     [string]$InstallDir = "D:\sases",
     [string]$ZipPath = "D:\sases-portable.zip",
     [switch]$SkipAutostart,

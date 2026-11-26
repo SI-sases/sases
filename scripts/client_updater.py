@@ -21,7 +21,7 @@ from urllib.parse import urljoin
 
 DEFAULT_MANIFEST_URLS = [
     "https://github.com/SI-sases/sases/releases/latest/download/client_version.json",
-    "http://120.77.136.90:8001/static/downloads/client_version.json",
+    "http://127.0.0.1:8001/static/downloads/client_version.json",
 ]
 _env_urls = os.getenv("SASES_CLIENT_UPDATE_URL", "").strip()
 if _env_urls:

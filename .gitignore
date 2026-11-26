@@ -83,3 +83,10 @@ data/screenshots/
 wireguard/*.msi
 scripts/click_test_form.ps1
 scripts/click_test_window.py
+
+# sensitive / generated artifacts
+users.db.pre-taskstate
+*.pre-taskstate
+_tmp_db*.py
+launcher/ui/diag.txt
+restart_cooling.lock

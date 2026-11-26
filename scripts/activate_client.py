@@ -29,7 +29,7 @@ def keypair():
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--base", default="http://120.77.136.90:8001")
+    parser.add_argument("--base", default="http://127.0.0.1:8001")
     parser.add_argument("--key", required=True)
     parser.add_argument("--user-id", type=int, default=1)
     parser.add_argument("--device", default="reference-device")

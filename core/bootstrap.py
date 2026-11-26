@@ -6,7 +6,7 @@ async def poll_cross_network_messages():
     from core.db import db_cursor
     from core.broadcast.ws_hub import broadcast_to_user
 
-    _master_url = os.environ.get("HIVE_MASTER", "http://120.77.136.90:8001")
+    _master_url = os.environ.get("HIVE_MASTER", "http://127.0.0.1:8001")
     
     while True:
         try:

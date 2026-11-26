@@ -1,5 +1,5 @@
 param(
-    [string]$InstallerUrl = "http://120.77.136.90:8001/static/downloads/wireguard-installer.exe",
+    [string]$InstallerUrl = "http://127.0.0.1:8001/static/downloads/wireguard-installer.exe",
     [string]$ConfigPath = "",
     [string]$WorkDir = "D:\sases"
 )
