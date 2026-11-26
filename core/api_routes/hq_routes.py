@@ -83,8 +83,8 @@ def tasks(status: str | None = None, limit: int = 100, _: str = Depends(_executo
 
 
 @router.post("/tasks/claim")
-def claim(platform: str | None = None, executor: str = Depends(_executor)):
-    task = hq.claim_task(executor, platform)
+def claim(platform: str | None = None, manual: bool | None = None, executor: str = Depends(_executor)):
+    task = hq.claim_task(executor, platform, manual)
     if not task:
         return {"task": None}
     return {"task": task, "executor": executor}

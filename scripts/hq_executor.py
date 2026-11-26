@@ -74,7 +74,10 @@ def main() -> int:
 
     while True:
         with httpx.Client(base_url=HQ, timeout=20, trust_env=False) as c:
-            r = c.post("/hq/tasks/claim", params={"platform": args.platform} if args.platform else None, headers=_headers())
+            params = {"manual": "false"}
+            if args.platform:
+                params["platform"] = args.platform
+            r = c.post("/hq/tasks/claim", params=params, headers=_headers())
             if r.status_code != 200:
                 print("claim error", r.status_code, r.text[:200])
                 task = None

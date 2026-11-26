@@ -44,11 +44,14 @@ def main() -> int:
     p.add_argument("--platform", action="append", required=True)
     p.add_argument("--body", required=True)
     p.add_argument("--title", default="")
+    p.add_argument("--manual", action="store_true")
     p = sub.add_parser("approve", help="approve a campaign")
     p.add_argument("campaign_id", type=int)
     sub.add_parser("tasks", help="list tasks")
     p = sub.add_parser("claim", help="claim one task")
     p.add_argument("--platform", default=None)
+    p.add_argument("--manual", action="store_true")
+    p.add_argument("--no-manual", action="store_true")
     p = sub.add_parser("receipt", help="post a receipt")
     p.add_argument("task_id", type=int)
     p.add_argument("--status", default="done")
@@ -64,14 +67,21 @@ def main() -> int:
                 "name": args.name,
                 "region": args.region,
                 "platforms": args.platform,
-                "content": {"title": args.title, "body": args.body},
+                "content": {"title": args.title, "body": args.body, "manual": bool(args.manual)},
             })
         elif args.cmd == "approve":
             r = c.post(f"/hq/campaigns/{args.campaign_id}/approve")
         elif args.cmd == "tasks":
             r = c.get("/hq/tasks")
         elif args.cmd == "claim":
-            r = c.post("/hq/tasks/claim", params={"platform": args.platform} if args.platform else None)
+            params = {}
+            if args.platform:
+                params["platform"] = args.platform
+            if args.manual:
+                params["manual"] = "true"
+            elif args.no_manual:
+                params["manual"] = "false"
+            r = c.post("/hq/tasks/claim", params=params or None)
         elif args.cmd == "receipt":
             r = c.post(f"/hq/tasks/{args.task_id}/receipt", json={
                 "status": args.status,

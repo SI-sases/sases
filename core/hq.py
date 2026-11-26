@@ -157,7 +157,7 @@ def get_task(task_id: int) -> dict:
     return _row(row)
 
 
-def claim_task(executor: str, platform: str | None = None) -> dict | None:
+def claim_task(executor: str, platform: str | None = None, manual: bool | None = None) -> dict | None:
     ensure_schema()
     now = _now()
     with db_cursor(commit=True) as cur:
@@ -166,6 +166,10 @@ def claim_task(executor: str, platform: str | None = None) -> dict | None:
         if platform:
             sql += " AND platform=?"
             args.append(platform)
+        if manual is True:
+            sql += " AND json_extract(payload_json, '$.manual') = 1"
+        elif manual is False:
+            sql += " AND COALESCE(json_extract(payload_json, '$.manual'), 0) = 0"
         sql += " ORDER BY id LIMIT 1"
         cur.execute(sql, args)
         row = cur.fetchone()

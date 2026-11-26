@@ -98,6 +98,7 @@ SASES instances:
 - [Tool policy](docs/tool-policy.md)
 - [Session events](docs/session-events.md)
 - [Plugins](docs/plugins.md)
+- [Manual publishing tasks](docs/manual-tasks.md)
 - [Memory](docs/memory.md)
 - [Workflows](docs/workflows.md)
 - [Theme](docs/theme.md)
