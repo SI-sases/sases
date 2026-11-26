@@ -8,6 +8,12 @@ Deploy with Docker. Keep your database and model key. Control it from any agent.
 
 ![SASES](docs/assets/sases-cover.png)
 
+## Screenshots
+
+| Login | Discover |
+|---|---|
+| ![Login](docs/assets/sases-login.png) | ![Discover](docs/assets/sases-discover.png) |
+
 ## What it does
 
 - Self-hosted web UI and API
