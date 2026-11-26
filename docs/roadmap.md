@@ -8,6 +8,8 @@
 - HQ campaign / approval / task queue
 - X adapter
 - SASES Control MCP/CLI
+- MCP client for external tools (experimental)
+- Skill registry (`skills/*/SKILL.md`)
 - Cloud browser smoke test
 
 ## Next

@@ -17,6 +17,8 @@ Deploy with Docker. Keep your database and model key. Control it from any agent.
 - Local executor with a logged-in browser
 - Platform adapter interface
 - SASES Control: MCP + CLI for agents
+- MCP client for external tools (experimental, disabled by default)
+- Skill registry for `SKILL.md` packages
 - Cloud browser image for public pages and screenshots
 
 ## Quick start
@@ -83,6 +85,7 @@ SASES instances:
 - [Architecture](docs/architecture.md)
 - [Build your own adapter](docs/build-your-own-sases-adapter.md)
 - [SASES Control](skills/sases-control/SKILL.md)
+- [MCP client](docs/mcp-client.md)
 - [Roadmap](docs/roadmap.md)
 - [Security](SECURITY.md)
 - [Contributing](CONTRIBUTING.md)
