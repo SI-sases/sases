@@ -86,6 +86,7 @@ SASES instances:
 - [Build your own adapter](docs/build-your-own-sases-adapter.md)
 - [SASES Control](skills/sases-control/SKILL.md)
 - [MCP client](docs/mcp-client.md)
+- [Tool policy](docs/tool-policy.md)
 - [Roadmap](docs/roadmap.md)
 - [Security](SECURITY.md)
 - [Contributing](CONTRIBUTING.md)

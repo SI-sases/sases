@@ -46,10 +46,9 @@ class ApprovalRequired(Exception):
 async def before_tool(user_id, conversation_id, run_id, step, tool, args):
     import os
     try:
-        _mode = str(os.getenv("SASES_APPROVAL_MODE", "risk")).strip().lower()
-        _all = os.getenv("SASES_REQUIRE_APPROVAL") == "1"
-        _need = _all or (_mode != "off" and _is_high_risk(tool, args))
-        if run_id and _need and tool in (WRITE_TOOLS | NETWORK_TOOLS | {"run_python"}):
+        from . import tool_policy
+        _need = bool(run_id) and tool_policy.requires_approval(tool, args)
+        if run_id and _need:
             from . import approval_service
             if not approval_service.is_approved(run_id, str(step), {"step": step, "module_id": tool}):
                 await approval_service.request_approval(run_id, str(step),

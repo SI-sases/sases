@@ -53,6 +53,22 @@ The API response redacts `env` values and returns only `env_keys`.
 - Tool calls are not yet routed through the agent's normal tool policy.
 - Keep `SASES_MCP_ALLOW=0` unless you need it.
 
+## Tool gateway
+
+MCP tools are routed through the normal tool gateway:
+
+```text
+mcp.<server>.<tool>
+```
+
+Example:
+
+```python
+invoke_tool("mcp.1.sases_list_campaigns", {})
+```
+
+`mcp.*` is classified as high risk and requires approval.
+
 ## Skills
 
 SASES also scans `skills/*/SKILL.md`:

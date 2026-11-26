@@ -49,7 +49,28 @@ def _external_guard(module_id: str):
     return None
 
 
+def _invoke_mcp_sync(module_id: str, params: Dict[str, Any]) -> ToolInvokeResponse:
+    if __import__("os").environ.get("SASES_MCP_ALLOW", "0") not in ("1", "true", "yes"):
+        return ToolInvokeResponse(module_id=module_id, success=False, error="MCP client disabled")
+    parts = module_id.split(".", 2)
+    if len(parts) != 3:
+        return ToolInvokeResponse(module_id=module_id, success=False, error="Use mcp.<server>.<tool>")
+    _, server, tool = parts
+    try:
+        from core.services import mcp_client
+        servers = mcp_client.list_servers()
+        match = next((s for s in servers if str(s["id"]) == server or s["name"] == server), None)
+        if not match:
+            return ToolInvokeResponse(module_id=module_id, success=False, error="MCP server not found")
+        result = mcp_client.call_tool(match["id"], tool, params)
+        return ToolInvokeResponse(module_id=module_id, success=True, result=result)
+    except Exception as exc:
+        return ToolInvokeResponse(module_id=module_id, success=False, error=str(exc)[:500])
+
+
 def _route(module_id: str, params: Dict[str, Any]) -> ToolInvokeResponse:
+    if module_id.startswith("mcp."):
+        return _invoke_mcp_sync(module_id, params)
     _guard = _external_guard(module_id)
     if _guard:
         return _guard
