@@ -111,7 +111,7 @@ SASES instances:
 
 - [Discussions](https://github.com/SI-sases/sases/discussions)
 - [Issues](https://github.com/SI-sases/sases/issues)
-- [Release v1.0.0](https://github.com/SI-sases/sases/releases/tag/v1.0.0)
+- [Release v1.0.1](https://github.com/SI-sases/sases/releases/tag/v1.0.1)
 
 If you deploy SASES, open a Showcase discussion with your setup and what you
 built.
