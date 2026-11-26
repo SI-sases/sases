@@ -12,6 +12,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel, Field
 
 from core import node_identity as ni
+from core import credit_protocol
 from core.api_routes.auth_routes import get_current_user
 
 router = APIRouter(prefix="/node", tags=["node"])
@@ -23,6 +24,7 @@ class NodeRegisterBody(BaseModel):
     wg_pubkey: str | None = None
     device_fingerprint: str | None = None
     node_id: str | None = None
+    credit_protocol: str | None = None
 
 
 class CreatorApplyBody(BaseModel):
@@ -86,6 +88,9 @@ def _require_cap(token: str | None, capability: str) -> tuple[dict[str, Any], di
 
 @router.post("/register")
 def register_node(body: NodeRegisterBody, user: dict = Depends(get_current_user)):
+    if not credit_protocol.accepted(body.credit_protocol):
+        raise HTTPException(status_code=409, detail="credit protocol mismatch",
+                            headers={"X-SASES-Credit-Protocol": credit_protocol.PROTOCOL})
     profile = (body.profile or "edge").strip().lower()
     if profile != ni.PROFILE_EDGE:
         raise HTTPException(status_code=403, detail="creator/official nodes are provisioned by admin")
@@ -104,6 +109,7 @@ def register_node(body: NodeRegisterBody, user: dict = Depends(get_current_user)
         "node_id": node.get("node_id"),
         "profile": node.get("profile"),
         "issuer_public_key": ni.issuer_public_key(),
+        "credit_protocol": credit_protocol.PROTOCOL,
     }
 
 
