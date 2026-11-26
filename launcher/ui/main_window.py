@@ -619,15 +619,10 @@ class MainWindow(QMainWindow):
 
         def work():
             try:
-                from launcher.wireguard_setup import ensure_wireguard, is_installed, installer_path, find_config
-                config = find_config(self.work_dir)
-                if is_installed() and not config:
-                    return
-                if not installer_path(self.work_dir):
-                    return
-                self._log("[启动器] 正在安装 WireGuard...")
-                ensure_wireguard(self.work_dir, config)
-                self._log("[启动器] WireGuard 安装完成" if is_installed() else "[启动器] WireGuard 安装失败")
+                from launcher.tunnel import ensure_tunnel
+                self._log("[启动器] 正在准备 WireGuard 通道...")
+                result = ensure_tunnel(self.work_dir)
+                self._log(f"[启动器] 通道已就绪：{result.get('address') or result.get('config')}")
             except Exception as exc:
                 self._log(f"[启动器] WireGuard 未安装：{exc}")
 

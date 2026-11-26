@@ -6,6 +6,11 @@ authority; creator-only actions additionally require an active grant.
 """
 from __future__ import annotations
 
+import hashlib
+import json
+import os
+import urllib.error
+import urllib.request
 from typing import Any
 
 from fastapi import APIRouter, Depends, Header, HTTPException
@@ -50,6 +55,10 @@ class ManifestRefreshBody(BaseModel):
     timestamp: int
     nonce: str
     signature: str
+
+
+class TunnelConfigBody(BaseModel):
+    wg_pubkey: str = Field(min_length=40, max_length=60)
 
 
 def _manifest_node(token: str | None) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -155,6 +164,70 @@ def whoami(x_sases_node_manifest: str | None = Header(default=None, alias="X-SAS
         "manifest_capabilities": payload.get("capabilities") or [],
         "grant": ni.get_active_grant(node.get("node_id")) or None,
     }
+
+
+@router.post("/tunnel/config")
+def tunnel_config(
+    body: TunnelConfigBody,
+    x_sases_node_manifest: str | None = Header(default=None, alias="X-SASES-Node-Manifest"),
+):
+    """Issue WireGuard connection parameters for one activated edge node.
+
+    The container cannot touch the host's wg0 directly; a root-only host agent
+    adds the peer and this endpoint only talks to that agent.
+    """
+    _payload, node = _manifest_node(x_sases_node_manifest)
+    if node.get("profile") not in (ni.PROFILE_EDGE, ni.PROFILE_CREATOR):
+        raise HTTPException(status_code=403, detail="edge/creator profile required")
+    agent_url = os.environ.get("SASES_WG_AGENT_URL", "").rstrip("/")
+    agent_token = os.environ.get("SASES_WG_AGENT_TOKEN", "")
+    server_pub = os.environ.get("SASES_WG_SERVER_PUBKEY", "")
+    endpoint = os.environ.get("SASES_WG_ENDPOINT", "")
+    allowed = os.environ.get("SASES_WG_ALLOWED_IPS", "10.0.0.0/24")
+    dns = os.environ.get("SASES_WG_DNS", "1.1.1.1")
+    if not (agent_url and agent_token and server_pub and endpoint):
+        raise HTTPException(status_code=503, detail="tunnel provisioning is not configured")
+
+    node_id = str(node.get("node_id") or "")
+    start = int(hashlib.sha256(node_id.encode()).hexdigest()[:8], 16) % 100
+    last_error = "no free ip"
+    for offset in range(100):
+        octet = 100 + ((start + offset) % 100)
+        ip = f"10.0.0.{octet}"
+        req = urllib.request.Request(
+            agent_url + "/peer",
+            data=json.dumps({"pubkey": body.wg_pubkey, "ip": ip, "node_id": node_id}).encode(),
+            headers={"Content-Type": "application/json", "X-SASES-WG-Token": agent_token},
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                json.loads(resp.read().decode() or "{}")
+            ni.audit_event(
+                node_id=node_id, user_id=node.get("user_id"), profile=node.get("profile"),
+                action="tunnel.issue", wg_peer_ip=ip, result="ok",
+            )
+            return {
+                "address": ip + "/32",
+                "server_public_key": server_pub,
+                "endpoint": endpoint,
+                "allowed_ips": allowed,
+                "dns": dns,
+                "persistent_keepalive": 25,
+            }
+        except urllib.error.HTTPError as exc:
+            last_error = exc.read().decode("utf-8", "replace")[:200]
+            if exc.code == 409:
+                continue
+            break
+        except Exception as exc:
+            last_error = str(exc)
+            break
+    ni.audit_event(
+        node_id=node_id, user_id=node.get("user_id"), profile=node.get("profile"),
+        action="tunnel.issue", result="failed", detail=last_error,
+    )
+    raise HTTPException(status_code=502, detail=f"tunnel agent failed: {last_error}")
 
 
 @router.post("/creator/apply")

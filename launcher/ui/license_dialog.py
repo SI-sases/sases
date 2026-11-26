@@ -63,6 +63,8 @@ class LicenseDialog(QDialog):
                 save_activation(os.getcwd(), res_data)
                 try:
                     ensure_wireguard(os.getcwd(), find_config(os.getcwd()))
+                    from launcher.tunnel import ensure_tunnel
+                    ensure_tunnel(os.getcwd())
                 except Exception:
                     pass
                 self.license_data = res_data

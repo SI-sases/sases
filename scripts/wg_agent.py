@@ -1,0 +1,105 @@
+#!/usr/bin/env python3
+"""Host-side WireGuard peer agent for the SASES container.
+
+It only accepts authenticated requests to add one peer with one /32.
+It never executes arbitrary shell input.
+"""
+from __future__ import annotations
+
+import base64
+import ipaddress
+import json
+import os
+import subprocess
+import sys
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+TOKEN = os.environ.get("SASES_WG_AGENT_TOKEN", "")
+HOST = os.environ.get("SASES_WG_AGENT_HOST", "172.17.0.1")
+PORT = int(os.environ.get("SASES_WG_AGENT_PORT", "8010"))
+IFACE = os.environ.get("SASES_WG_INTERFACE", "wg0")
+CIDR = os.environ.get("SASES_WG_CIDR", "10.0.0.0/24")
+WG = "/usr/bin/wg"
+NET = ipaddress.ip_network(CIDR)
+
+
+def _valid_key(key: str) -> bool:
+    if len(key) != 44 or not key.endswith("="):
+        return False
+    try:
+        return len(base64.b64decode(key)) == 32
+    except Exception:
+        return False
+
+
+def _existing() -> dict[str, str]:
+    out = subprocess.run([WG, "show", IFACE, "allowed-ips"], capture_output=True, text=True, timeout=10)
+    peers: dict[str, str] = {}
+    for line in out.stdout.splitlines():
+        parts = line.split("\t")
+        if len(parts) >= 2:
+            for ip in parts[1].split():
+                peers[ip] = parts[0]
+    return peers
+
+
+class Handler(BaseHTTPRequestHandler):
+    def _send(self, code: int, payload: dict) -> None:
+        body = json.dumps(payload).encode()
+        self.send_response(code)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def do_GET(self) -> None:  # noqa: N802
+        if self.path == "/health":
+            self._send(200, {"ok": True, "iface": IFACE, "cidr": CIDR})
+        else:
+            self._send(404, {"error": "not found"})
+
+    def do_POST(self) -> None:  # noqa: N802
+        if self.path != "/peer":
+            self._send(404, {"error": "not found"})
+            return
+        if not TOKEN or self.headers.get("X-SASES-WG-Token", "") != TOKEN:
+            self._send(401, {"error": "unauthorized"})
+            return
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+            body = json.loads(self.rfile.read(length).decode())
+            pubkey = str(body.get("pubkey", ""))
+            ip_text = str(body.get("ip", ""))
+            node_id = str(body.get("node_id", ""))
+            ip = ipaddress.ip_address(ip_text)
+            if not _valid_key(pubkey):
+                raise ValueError("invalid pubkey")
+            if ip not in NET or ip in (NET.network_address, NET.broadcast_address):
+                raise ValueError("ip outside pool")
+            existing = _existing()
+            if ip_text in existing and existing[ip_text] != pubkey:
+                self._send(409, {"error": "ip already assigned"})
+                return
+            if ip_text in existing and existing[ip_text] == pubkey:
+                self._send(200, {"ok": True, "idempotent": True})
+                return
+            subprocess.run(
+                [WG, "set", IFACE, "peer", pubkey, "allowed-ips", f"{ip_text}/32", "persistent-keepalive", "25"],
+                check=True, capture_output=True, text=True, timeout=10,
+            )
+            print(f"peer added node={node_id} ip={ip_text}", flush=True)
+            self._send(200, {"ok": True, "ip": ip_text})
+        except subprocess.CalledProcessError as exc:
+            self._send(500, {"error": "wg failed", "detail": (exc.stderr or "").strip()[:200]})
+        except Exception as exc:
+            self._send(400, {"error": str(exc)})
+
+    def log_message(self, fmt: str, *args) -> None:
+        return
+
+
+if __name__ == "__main__":
+    if not TOKEN:
+        print("SASES_WG_AGENT_TOKEN is required", file=sys.stderr)
+        raise SystemExit(2)
+    ThreadingHTTPServer((HOST, PORT), Handler).serve_forever()
