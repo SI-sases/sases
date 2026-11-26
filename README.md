@@ -58,6 +58,8 @@ More: [docs/architecture.md](docs/architecture.md)
 - SASES Link and HQ task queue
 - X adapter
 - SASES Control MCP/CLI
+- MCP client, skills, plugins, memory, workflows (opt-in APIs)
+- Light/dark theme and marketplace index
 - Cloud headless browser
 
 ## Not yet
