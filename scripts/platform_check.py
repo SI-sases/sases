@@ -50,6 +50,31 @@ def classify(platform: str, url: str, title: str) -> str:
     return "logged_in"
 
 
+REPAIR = {
+    "xiaohongshu": "打开小红书 App 扫码登录；再打开 creator.xiaohongshu.com/publish/publish；仍空白则换普通 Edge 登录后重试。",
+    "douyin": "打开抖音 App 扫码登录；再打开 creator.douyin.com；一直“加载中”时关闭标签、清缓存、重新登录。",
+    "tiktok": "确认已登录 TikTok；打开 tiktok.com/tiktokstudio/upload；空白时重新登录。",
+    "github": "确认 GitHub 已登录；打开仓库页。",
+    "x": "确认 X 已登录；打开个人页。",
+    "blogger": "确认 Google 账号已登录；打开 Blogger 博文页。",
+}
+
+
+def diagnose(platform: str, status: str, body: str, body_len: int) -> dict:
+    text = (body or "").lower()
+    if status == "needs_login":
+        return {"reason": "needs_login", "next_action": REPAIR.get(platform, "重新登录")}
+    if status == "error":
+        return {"reason": "cdp_or_page_error", "next_action": "检查 Edge CDP 9222 是否在运行，再重试。"}
+    if any(x in text for x in ("验证", "滑动", "安全验证", "captcha", "verify")):
+        return {"reason": "anti_bot", "next_action": "人工完成验证；不要连续刷新。"}
+    if status == "page_error":
+        return {"reason": "page_blank", "next_action": REPAIR.get(platform, "重新登录并刷新")}
+    if body_len < 20:
+        return {"reason": "empty_body", "next_action": REPAIR.get(platform, "重新登录并刷新")}
+    return {"reason": "ok", "next_action": ""}
+
+
 def main() -> int:
     from playwright.sync_api import sync_playwright
 
@@ -84,12 +109,15 @@ def main() -> int:
                     "url": page.url,
                     "title": page.title(),
                     "body_len": body_len,
+                    **diagnose(name, status, body, body_len),
                 }
             except Exception as exc:
                 results[name] = {
                     "status": "error",
                     "url": page.url,
                     "error": f"{type(exc).__name__}: {str(exc)[:160]}",
+                    "reason": "cdp_or_page_error",
+                    "next_action": "检查 Edge CDP 9222 是否在运行，再重试。",
                 }
             finally:
                 page.close()
