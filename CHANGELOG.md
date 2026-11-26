@@ -22,6 +22,7 @@
 - Memory injection into agent prompt
 - Tool workflow runner
 - Light/dark theme in the capability settings
+- Read-only marketplace index
 - Unified tool risk and approval policy
 - 小红书 adapter
 - 抖音 adapter

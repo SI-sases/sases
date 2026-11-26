@@ -1,0 +1,28 @@
+{
+  "entries": [
+    {
+      "id": "sases-control",
+      "type": "skill",
+      "name": "SASES Control",
+      "description": "MCP + CLI control for self-hosted SASES instances.",
+      "url": "https://github.com/SI-sases/sases-control",
+      "version": "1.0.0"
+    },
+    {
+      "id": "example-tool",
+      "type": "plugin",
+      "name": "Example tool",
+      "description": "Example stdin/stdout tool plugin.",
+      "url": "https://github.com/SI-sases/sases/tree/main/plugins/example-tool",
+      "version": "1.0.0"
+    },
+    {
+      "id": "read-readme",
+      "type": "workflow",
+      "name": "Read README",
+      "description": "Read the repository README through the tool gateway.",
+      "url": "https://github.com/SI-sases/sases/tree/main/workflows/read-readme",
+      "version": "1.0.0"
+    }
+  ]
+}

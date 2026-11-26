@@ -899,6 +899,8 @@ def create_app() -> FastAPI:
     workflow_service.ensure_schema()
     from .api_routes import workflow_routes
     app.include_router(workflow_routes.router)
+    from .api_routes import marketplace_routes
+    app.include_router(marketplace_routes.router)
     app.include_router(seed_routes.router)
     app.include_router(credit_routes.router)
     app.include_router(harness_routes.router)

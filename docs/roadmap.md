@@ -17,6 +17,7 @@
 - Memory injection into agent prompt
 - Tool workflow runner
 - Light/dark theme in the capability settings
+- Read-only marketplace index
 - Cloud browser smoke test
 
 ## Next
