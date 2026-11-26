@@ -202,3 +202,17 @@ def complete_task(task_id: int, status: str, result: dict | None = None, error: 
             (final_status, json.dumps(result, ensure_ascii=False) if result is not None else None, error, now, task_id),
         )
     return get_task(task_id)
+
+
+def cancel_task(task_id: int, reason: str = "cancelled by operator") -> dict:
+    """Close a task without automatic retry."""
+    ensure_schema()
+    now = _now()
+    with db_cursor(commit=True) as cur:
+        cur.execute(
+            "UPDATE hq_tasks SET status='cancelled', error=?, updated_at=?, lease_until=NULL WHERE id=?",
+            (reason, now, task_id),
+        )
+        if cur.rowcount == 0:
+            raise KeyError("task not found")
+    return get_task(task_id)

@@ -57,6 +57,9 @@ def main() -> int:
     p.add_argument("--status", default="done")
     p.add_argument("--url", default="")
     p.add_argument("--error", default="")
+    p = sub.add_parser("cancel", help="cancel a task without retry")
+    p.add_argument("task_id", type=int)
+    p.add_argument("--reason", default="cancelled by operator")
 
     args = parser.parse_args()
     with client() as c:
@@ -82,6 +85,8 @@ def main() -> int:
             elif args.no_manual:
                 params["manual"] = "false"
             r = c.post("/hq/tasks/claim", params=params or None)
+        elif args.cmd == "cancel":
+            r = c.post(f"/hq/tasks/{args.task_id}/cancel", params={"reason": args.reason})
         elif args.cmd == "receipt":
             r = c.post(f"/hq/tasks/{args.task_id}/receipt", json={
                 "status": args.status,

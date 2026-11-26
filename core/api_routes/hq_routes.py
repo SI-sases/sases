@@ -96,3 +96,11 @@ def receipt(task_id: int, body: ReceiptBody, _: str = Depends(_executor)):
         return hq.complete_task(task_id, body.status, body.result, body.error)
     except KeyError:
         raise HTTPException(status_code=404, detail="task not found")
+
+
+@router.post("/tasks/{task_id}/cancel")
+def cancel(task_id: int, reason: str = "cancelled by operator", _: str = Depends(_executor)):
+    try:
+        return hq.cancel_task(task_id, reason)
+    except KeyError:
+        raise HTTPException(status_code=404, detail="task not found")
