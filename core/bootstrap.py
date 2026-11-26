@@ -891,6 +891,10 @@ def create_app() -> FastAPI:
     plugin_registry.ensure_schema()
     from .api_routes import plugin_routes
     app.include_router(plugin_routes.router)
+    from .services import memory_service
+    memory_service.ensure_schema()
+    from .api_routes import memory_routes
+    app.include_router(memory_routes.router)
     app.include_router(seed_routes.router)
     app.include_router(credit_routes.router)
     app.include_router(harness_routes.router)

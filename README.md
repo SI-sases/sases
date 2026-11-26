@@ -89,6 +89,7 @@ SASES instances:
 - [Tool policy](docs/tool-policy.md)
 - [Session events](docs/session-events.md)
 - [Plugins](docs/plugins.md)
+- [Memory](docs/memory.md)
 - [Roadmap](docs/roadmap.md)
 - [Security](SECURITY.md)
 - [Contributing](CONTRIBUTING.md)

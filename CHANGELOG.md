@@ -18,6 +18,7 @@
 - Session event log with optional backfill
 - Plugin registry (metadata MVP)
 - Opt-in tool plugin runtime
+- Memory store (global and session)
 - Unified tool risk and approval policy
 - 小红书 adapter
 - 抖音 adapter

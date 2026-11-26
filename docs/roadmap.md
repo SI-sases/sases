@@ -13,6 +13,7 @@
 - Session event log (`session_events`)
 - Plugin registry (metadata MVP)
 - Opt-in tool plugin runtime
+- Memory store (global and session)
 - Cloud browser smoke test
 
 ## Next
