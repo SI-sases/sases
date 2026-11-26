@@ -105,15 +105,19 @@
         hqTasks = (hq.tasks || []).filter(function (x) { return x.payload && x.payload.manual; });
       } catch (e) {}
       if (!runs.length && !hqTasks.length) { panel.innerHTML = '<div class="sp-title">' + t('sp_tasks') + '</div><div class="sp-empty">' + t('sp_no_tasks') + '</div>'; return; }
+      var hqData = {};
       var hqHtml = hqTasks.length ? '<div class="sp-title">内容任务 · HQ</div>' + hqTasks.map(function (r) {
         var title = (r.payload && r.payload.title) || ('HQ task #' + r.id);
         var owner = (r.payload && r.payload.owner) || r.executor || '';
         var body = (r.payload && r.payload.body) || '';
+        hqData[r.id] = { title: title, body: body, platform: r.platform };
         return '<div class="sp-row"><div class="sp-main"><div class="sp-name">' + esc(title) +
           '</div><div class="sp-sub">HQ #' + r.id + ' · ' + esc(r.platform) + ' · ' + esc(r.status) +
           (owner ? ' · ' + esc(owner) : '') + '</div>' +
           '<div class="sp-detail" style="display:none;white-space:pre-wrap;margin-top:6px;font-size:11px;color:#555;max-height:160px;overflow:auto;">' +
-          esc(body) + '</div></div><button class="sp-btn" data-hq="' + r.id + '">' + t('sp_detail') + '</button></div>';
+          esc(body) + '</div></div><button class="sp-btn" data-hq="' + r.id + '">' + t('sp_detail') + '</button>' +
+          '<button class="sp-btn" data-copy="' + r.id + '">' + t('sp_copy') + '</button>' +
+          '<button class="sp-btn" data-open="' + r.id + '">' + t('sp_open') + '</button></div>';
       }).join('') : '';
       panel.innerHTML = '<div class="sp-title">' + t('sp_tasks') +
         (runs.filter(function (x) { return x.status === 'queued'; }).length ? ' · ' + t('sp_queued') + ' ' +
@@ -137,6 +141,38 @@
           var row = b.closest('.sp-row');
           var d = row ? row.querySelector('.sp-detail') : null;
           if (d) d.style.display = d.style.display === 'none' ? 'block' : 'none';
+        };
+      });
+      panel.querySelectorAll('[data-copy]').forEach(function (b) {
+        b.onclick = function (ev) {
+          ev.stopPropagation();
+          var d = hqData[b.getAttribute('data-copy')];
+          if (!d) return;
+          var text = d.title + '\n\n' + d.body;
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(function () { b.textContent = t('sp_copied'); });
+          } else {
+            var ta = document.createElement('textarea');
+            ta.value = text; document.body.appendChild(ta); ta.select();
+            try { document.execCommand('copy'); b.textContent = t('sp_copied'); } catch (e) {}
+            ta.remove();
+          }
+        };
+      });
+      panel.querySelectorAll('[data-open]').forEach(function (b) {
+        b.onclick = function (ev) {
+          ev.stopPropagation();
+          var d = hqData[b.getAttribute('data-open')];
+          if (!d) return;
+          var urls = {
+            xiaohongshu: 'https://creator.xiaohongshu.com/publish/publish',
+            douyin: 'https://creator.douyin.com/creator-micro/content/upload',
+            tiktok: 'https://www.tiktok.com/tiktokstudio/upload',
+            x: 'https://x.com/compose/post',
+            blogger: 'https://www.blogger.com/'
+          };
+          var u = urls[d.platform];
+          if (u) window.open(u, '_blank', 'noopener');
         };
       });
       panel.querySelectorAll('[data-cancel]').forEach(function (b) {
