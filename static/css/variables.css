@@ -87,3 +87,30 @@
   --avatar-xl: 64px;
   --avatar-xxl: 80px;
 }
+
+/* Dark theme: keep the same tokens, override values only. */
+html[data-theme="dark"] {
+  --bg-page: #111113;
+  --bg-card: #1c1c1e;
+  --bg-hover: #2c2c2e;
+  --bg-pressed: #3a3a3c;
+  --bg-input: #2c2c2e;
+  --bg-overlay: rgba(0, 0, 0, 0.65);
+  --bg-overlay-light: rgba(255, 255, 255, 0.08);
+
+  --text-primary: #f2f2f7;
+  --text-secondary: #8e9bb3;
+  --text-regular: #d1d1d6;
+  --text-muted: #8e8e93;
+  --text-faint: #636366;
+  --text-white: #ffffff;
+
+  --border-light: #2c2c2e;
+  --border-base: #38383a;
+  --border-strong: #48484a;
+
+  --color-primary-light: #0b2540;
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-menu: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --shadow-modal: 0 8px 32px rgba(0, 0, 0, 0.6);
+}

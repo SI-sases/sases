@@ -125,6 +125,14 @@
 
   function token() { return localStorage.getItem('sases_token') || ''; }
 
+  function applyTheme(theme) {
+    var t = theme || localStorage.getItem('sases_theme') || 'auto';
+    var dark = t === 'dark' || (t === 'auto' && window.matchMedia &&
+      window.matchMedia('(prefers-color-scheme: dark)').matches);
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+    try { localStorage.setItem('sases_theme', t); } catch (e) {}
+  }
+
   function css() {
     if (document.getElementById('capsule-style')) return;
     var s = document.createElement('style');
@@ -364,6 +372,7 @@
     var _mode = localStorage.getItem('sases_agent_mode') || 'auto';
     var _exec = localStorage.getItem('sases_exec_mode') || 'single';
     var _font = localStorage.getItem('sases_chat_font') || '15';
+    var _theme = localStorage.getItem('sases_theme') || 'auto';
     var html = '<div class="sm-title">' + t('cp_advanced') + '</div>';
     html += '<label class="sm-item">' + t('cp_rounds') + '<select class="sm-select" id="sm-rounds">' +
       ['5', '8', '15', '-1'].map(function (v) {
@@ -376,6 +385,10 @@
     html += '<label class="sm-item">' + t('cp_font') + '<select class="sm-select" id="sm-font">' +
       [['14', t('cp_small')], ['15', t('cp_medium')], ['17', t('cp_large')]].map(function (v) {
         return '<option value="' + v[0] + '" ' + (_font === v[0] ? 'selected' : '') + '>' + v[1] + '</option>';
+      }).join('') + '</select></label>';
+    html += '<label class="sm-item">' + t('cp_theme') + '<select class="sm-select" id="sm-theme">' +
+      [['auto', t('cp_theme_auto')], ['light', t('cp_theme_light')], ['dark', t('cp_theme_dark')]].map(function (v) {
+        return '<option value="' + v[0] + '" ' + (_theme === v[0] ? 'selected' : '') + '>' + v[1] + '</option>';
       }).join('') + '</select></label>';
     html += '<div class="sm-title">' + t('cp_display') + '</div>';
     html += '<div class="sm-item" style="color:#999">' + t('cp_tools_auto') + '</div>';
@@ -413,6 +426,8 @@
       } catch (e) {}
     };
     var _fontSel = document.getElementById('sm-font');
+    var _themeSel = document.getElementById('sm-theme');
+    if (_themeSel) _themeSel.onchange = function () { applyTheme(_themeSel.value); };
     var _execSel = document.getElementById('sm-exec');
     if (_execSel) _execSel.onchange = function () {
       try { localStorage.setItem('sases_exec_mode', _execSel.value); } catch (e) {}
@@ -459,6 +474,7 @@
     updatePill();
   });
     css();
+    applyTheme();
     try {
       var _f = localStorage.getItem('sases_chat_font') || '15';
       document.documentElement.style.setProperty('--chat-font-size', _f + 'px');

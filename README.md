@@ -91,6 +91,7 @@ SASES instances:
 - [Plugins](docs/plugins.md)
 - [Memory](docs/memory.md)
 - [Workflows](docs/workflows.md)
+- [Theme](docs/theme.md)
 - [Roadmap](docs/roadmap.md)
 - [Security](SECURITY.md)
 - [Contributing](CONTRIBUTING.md)

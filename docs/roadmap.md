@@ -16,6 +16,7 @@
 - Memory store (global and session)
 - Memory injection into agent prompt
 - Tool workflow runner
+- Light/dark theme in the capability settings
 - Cloud browser smoke test
 
 ## Next
