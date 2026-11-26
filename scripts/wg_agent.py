@@ -7,6 +7,7 @@ It never executes arbitrary shell input.
 from __future__ import annotations
 
 import base64
+import fcntl
 import ipaddress
 import json
 import os
@@ -20,6 +21,7 @@ PORT = int(os.environ.get("SASES_WG_AGENT_PORT", "8010"))
 IFACE = os.environ.get("SASES_WG_INTERFACE", "wg0")
 CIDR = os.environ.get("SASES_WG_CIDR", "10.0.0.0/24")
 WG = "/usr/bin/wg"
+CONF = os.environ.get("SASES_WG_CONF", f"/etc/wireguard/{IFACE}.conf")
 NET = ipaddress.ip_network(CIDR)
 
 
@@ -41,6 +43,31 @@ def _existing() -> dict[str, str]:
             for ip in parts[1].split():
                 peers[ip] = parts[0]
     return peers
+
+
+def _persist(pubkey: str, ip_text: str) -> bool:
+    """Append the peer to wg0.conf once, under an exclusive lock."""
+    if not os.path.isfile(CONF):
+        return False
+    lock_path = CONF + ".agent.lock"
+    with open(lock_path, "w", encoding="utf-8") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        text = open(CONF, encoding="utf-8").read()
+        if pubkey in text:
+            return True
+        if not os.path.exists(CONF + ".bak.agent"):
+            with open(CONF + ".bak.agent", "w", encoding="utf-8") as backup:
+                backup.write(text)
+        block = (
+            "\n[Peer]\n"
+            f"PublicKey = {pubkey}\n"
+            f"AllowedIPs = {ip_text}/32\n"
+            "PersistentKeepalive = 25\n"
+        )
+        with open(CONF, "a", encoding="utf-8") as handle:
+            handle.write(block)
+        os.chmod(CONF, 0o600)
+    return True
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -81,14 +108,16 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(409, {"error": "ip already assigned"})
                 return
             if ip_text in existing and existing[ip_text] == pubkey:
-                self._send(200, {"ok": True, "idempotent": True})
+                persisted = _persist(pubkey, ip_text)
+                self._send(200, {"ok": True, "idempotent": True, "persisted": persisted})
                 return
             subprocess.run(
                 [WG, "set", IFACE, "peer", pubkey, "allowed-ips", f"{ip_text}/32", "persistent-keepalive", "25"],
                 check=True, capture_output=True, text=True, timeout=10,
             )
-            print(f"peer added node={node_id} ip={ip_text}", flush=True)
-            self._send(200, {"ok": True, "ip": ip_text})
+            persisted = _persist(pubkey, ip_text)
+            print(f"peer added node={node_id} ip={ip_text} persisted={persisted}", flush=True)
+            self._send(200, {"ok": True, "ip": ip_text, "persisted": persisted})
         except subprocess.CalledProcessError as exc:
             self._send(500, {"error": "wg failed", "detail": (exc.stderr or "").strip()[:200]})
         except Exception as exc:
