@@ -163,3 +163,11 @@ docker exec docker_sases_1 python -c "import sqlite3;c=sqlite3.connect('/data/us
 - GitHub topic：dsh-plugin
 - DSH Market 提交 issue：#58
 - 等社区反馈后再决定公司和规模化。
+
+## 2026-11-26 09:00
+
+- SASES Control 已公开：https://github.com/SI-sases/sases-control
+- GitHub topic：dsh-plugin
+- DSH Market 提交：#58
+- X 已发布 SASES Control 帖子
+- 等社区反馈后再决定公司和投入
