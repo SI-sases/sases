@@ -86,3 +86,21 @@ def delete_memory(user_id: int, memory_id: int) -> bool:
     with db_cursor(commit=True) as cur:
         cur.execute("DELETE FROM memory_entries WHERE id=? AND user_id=?", (memory_id, user_id))
         return cur.rowcount > 0
+
+
+def prompt_for(user_id: int, session_id: int | None = None, max_chars: int = 2000) -> str:
+    """Bounded prompt block for global and current-session memory."""
+    items = list_memory(user_id, "global")
+    if session_id:
+        items += list_memory(user_id, "session", session_id)
+    if not items:
+        return ""
+    lines = ["## Saved memory", "Use only when relevant; do not repeat it verbatim."]
+    used = 0
+    for item in items[:30]:
+        line = "- " + str(item["key"]) + ": " + str(item["value"]).replace("\n", " ")[:300]
+        if used + len(line) > max_chars:
+            break
+        lines.append(line)
+        used += len(line)
+    return "\n".join(lines) if len(lines) > 2 else ""

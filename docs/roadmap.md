@@ -14,6 +14,7 @@
 - Plugin registry (metadata MVP)
 - Opt-in tool plugin runtime
 - Memory store (global and session)
+- Memory injection into agent prompt
 - Cloud browser smoke test
 
 ## Next

@@ -19,6 +19,7 @@
 - Plugin registry (metadata MVP)
 - Opt-in tool plugin runtime
 - Memory store (global and session)
+- Memory injection into agent prompt
 - Unified tool risk and approval policy
 - 小红书 adapter
 - 抖音 adapter

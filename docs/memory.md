@@ -33,11 +33,12 @@ Write:
 - Per-user isolation.
 - Upsert by `(user_id, scope, session_id, key)`.
 - `session` requires `session_id`.
-- No automatic prompt injection yet; callers read memory explicitly.
+- Global and current-session memories are injected into the agent prompt as a
+  bounded `## Saved memory` block (max 30 entries / 2000 chars).
 - Do not store passwords, tokens, or private keys.
 
 ## Next
 
-- Inject selected memories into the agent prompt
 - Memory extraction after a conversation
 - Search and ranking
+- Per-memory enable/disable

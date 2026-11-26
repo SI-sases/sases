@@ -223,6 +223,13 @@ async def _run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=
     except Exception as _e_sk:
         print("[skill] 注入失败: " + str(_e_sk))
     try:
+        from . import memory_service
+        _mp = memory_service.prompt_for(user_id, conversation_id)
+        if _mp:
+            messages[0]["content"] += "\n\n" + _mp
+    except Exception as _e_mem:
+        print("[memory] 注入失败: " + str(_e_mem))
+    try:
         from .agent_context import build_runtime_context
         _runtime = build_runtime_context(user_id, conversation_id, goal, mode)
         if _runtime:
@@ -387,6 +394,13 @@ async def _run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=
                 if await maybe_compact(conversation_id, user_id):
                     messages = [{"role": "system", "content": BASE_SYSTEM}] + agent_memory.history(
                         conversation_id, run_id=(run_id if resume else None))
+                    try:
+                        from . import memory_service
+                        _mp_mid = memory_service.prompt_for(user_id, conversation_id)
+                        if _mp_mid:
+                            messages[0]["content"] += "\n\n" + _mp_mid
+                    except Exception:
+                        pass
                     print("[ctx] compacted mid-run, rebuilt messages")
             except Exception as _e_mid:
                 print("[ctx] mid-run compact 失败: " + str(_e_mid))

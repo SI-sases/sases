@@ -86,6 +86,13 @@ async def run_fast(user_id: int, conversation_id: int, goal: str,
     system = (COMMANDER_SYSTEM_PROMPT
               + "\n\n【fast 模式】直接用工具完成任务；能一步完成就不要多步；"
                 "写文件后必须 file_read 验证；完成后用中文给出结果，不要输出 JSON。")
+    try:
+        from . import memory_service
+        _mem = memory_service.prompt_for(user_id, conversation_id)
+        if _mem:
+            system += "\n\n" + _mem
+    except Exception:
+        pass
     messages = [
         {"role": "system", "content": system},
         {"role": "user", "content": goal},
