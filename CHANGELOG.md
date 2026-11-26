@@ -12,6 +12,9 @@
 
 ## Unreleased
 
+- MCP client (stdio, disabled by default)
+- Skill registry for `SKILL.md`
+- Unified tool risk and approval policy
 - 小红书 adapter
 - 抖音 adapter
 - TikTok adapter
