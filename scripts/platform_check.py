@@ -88,7 +88,8 @@ def main() -> int:
             page = context.new_page()
             try:
                 page.goto(url, wait_until="commit", timeout=20000)
-                page.wait_for_timeout(4000)
+                # Creator SPAs (XHS/Douyin/TikTok) often need >10s to render.
+                page.wait_for_timeout(15000 if name in ("xiaohongshu", "douyin", "tiktok") else 4000)
                 body = ""
                 body_len = 0
                 try:
