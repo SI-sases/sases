@@ -8,6 +8,22 @@ RED_PACKET_EXPIRE_HOURS = 24
 NODE_TRANSFER_FEE = 1.0
 
 
+def _fee_exempt(user_id: int) -> bool:
+    """Admins and explicitly configured developers are exempt."""
+    import os
+    raw = os.environ.get("SASES_FEE_EXEMPT_USERS", "")
+    try:
+        if int(user_id) in {int(x.strip()) for x in raw.split(",") if x.strip()}:
+            return True
+    except ValueError:
+        pass
+    try:
+        from ..auth_service import is_admin
+        return bool(is_admin(user_id))
+    except Exception:
+        return False
+
+
 def get_sent_red_packets(user_id, limit=50):
     '''查询指定用户已发送的红包记录'''
     with db_cursor() as cur:
@@ -45,7 +61,7 @@ def create_transfer(sender_id: int, receiver_id: int, amount: float, message: st
             if _sr:
                 _sender_sases = _sr["sases_id"]
 
-    _fee = NODE_TRANSFER_FEE if _receiver_is_remote else 0.0
+    _fee = NODE_TRANSFER_FEE if (_receiver_is_remote and not _fee_exempt(sender_id)) else 0.0
 
     with db_cursor(commit=True) as cur:
         if idempotency_key:

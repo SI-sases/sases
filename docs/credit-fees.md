@@ -38,6 +38,17 @@ rules_hash
 compute 内部字段
 ```
 
+## 开发者 / 管理员豁免
+
+以下用户不收跨节点传递费：
+
+```text
+users.is_admin = 1
+或 SASES_FEE_EXEMPT_USERS=1,2,3
+```
+
+客户端仍然不扣；豁免只发生在服务端。
+
 ## 命名
 
 对外显示：
