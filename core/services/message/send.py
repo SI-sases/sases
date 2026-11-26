@@ -266,6 +266,7 @@ async def send_message(
                 user_id, conversation_id, content,
                 allowed_tool_ids=enabled_tool_ids,
                 max_steps=(max_steps if (max_steps and max_steps > 0) else 8),
+                mcp_ids=enabled_mcp_ids,
             )
             _reply_early = (_fr_early.get("content") or "").strip()
             if _reply_early:
@@ -317,6 +318,7 @@ async def send_message(
                 budget_tokens=budget_tokens,
                 timeout_seconds=timeout_seconds,
                 on_token=on_token,
+                mcp_ids=enabled_mcp_ids,
             )
             _fr_s = _rs.get("loop") or {}
             if _fr_s.get("status") == "awaiting_approval":
@@ -1379,6 +1381,7 @@ async def send_message(
                             user_id, conversation_id, _ai_content,
                             allowed_tool_ids=enabled_tool_ids,
                             max_steps=(max_steps if (max_steps and max_steps > 0) else 8),
+                            mcp_ids=enabled_mcp_ids,
                         )
                         _freply = (_fr.get("content") or "").strip()
                         if _freply:

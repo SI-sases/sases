@@ -189,3 +189,16 @@ def call_tool(server_id: int, tool: str, arguments: dict | None = None) -> dict:
 def test_server(server_id: int) -> dict:
     tools = list_tools(server_id)
     return {"ok": True, "server_id": server_id, "tools": len(tools)}
+
+
+def get_tool_meta(server_id: int, tool: str) -> dict | None:
+    ensure_schema()
+    with db_cursor() as cur:
+        cur.execute(
+            "SELECT name,description,input_schema FROM mcp_tools WHERE server_id=? AND name=?",
+            (server_id, tool),
+        )
+        row = cur.fetchone()
+    if not row:
+        return None
+    return {"name": row[0], "description": row[1], "input_schema": json.loads(row[2] or "{}")}

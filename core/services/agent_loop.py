@@ -59,7 +59,7 @@ def _is_write_task(goal):
                                    "重构", "实现", "添加", "部署", "安装", "执行"))
 
 
-def _tool_schemas(allowed_tool_ids=None, mode="fast"):
+def _tool_schemas(allowed_tool_ids=None, mode="fast", mcp_ids=None):
     from core.harness_runtime import harness_runtime
     from .fast_agent import tool_schema
     from .tool_visibility import visible
@@ -70,7 +70,25 @@ def _tool_schemas(allowed_tool_ids=None, mode="fast"):
     tools = visible(tools)
     if str(mode or "") != "strict":
         tools = [t for t in tools if getattr(t, "module_id", "") != "todo_write"]
-    return [tool_schema(t) for t in tools if getattr(t, "module_id", "")]
+    schemas = [tool_schema(t) for t in tools if getattr(t, "module_id", "")]
+    if mcp_ids:
+        try:
+            from . import mcp_client
+            for sid_tool in mcp_ids:
+                sid, _, tool = str(sid_tool).partition(":")
+                meta = mcp_client.get_tool_meta(int(sid), tool) if tool else None
+                if meta:
+                    schemas.append({
+                        "type": "function",
+                        "function": {
+                            "name": "mcp." + str(sid) + "." + tool,
+                            "description": (meta.get("description") or "")[:200],
+                            "parameters": meta.get("input_schema") or {"type": "object", "properties": {}},
+                        },
+                    })
+        except Exception as _e_mcp:
+            print("[mcp] schema load failed: " + str(_e_mcp))
+    return schemas
 
 
 async def _stream_completion(_client, _model, req_messages, schemas, tool_choice, on_token):
@@ -156,7 +174,7 @@ async def _stream_completion(_client, _model, req_messages, schemas, tool_choice
     return _Resp(_Msg("".join(text_parts), tool_calls or None), usage)
 
 
-async def _run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8, run_id=None, mode="fast", resume=False, supervisor_id=None, on_event=None, skill_ids=None, permissions=None, agent_id=None, subagent_agent_id=None, multi_agent=False, budget_tokens=0, on_token=None):
+async def _run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8, run_id=None, mode="fast", resume=False, supervisor_id=None, on_event=None, skill_ids=None, permissions=None, agent_id=None, subagent_agent_id=None, multi_agent=False, budget_tokens=0, on_token=None, mcp_ids=None):
     if not conversation_id:
         return {"status": "error", "content": "缺少会话", "steps": 0, "history": []}
 
@@ -214,7 +232,7 @@ async def _run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=
                 messages.append({"role": "user", "content": _runtime})
     except Exception as _e_rc:
         print("[context] runtime 注入失败: " + str(_e_rc))
-    schemas = _tool_schemas(allowed_tool_ids, mode=mode)
+    schemas = _tool_schemas(allowed_tool_ids, mode=mode, mcp_ids=mcp_ids)
     if _is_investigation(goal) and int(max_steps) < 16:
         max_steps = 16
     used = []
@@ -805,10 +823,11 @@ _WRITE_LOCK = asyncio.Lock()
 async def run(user_id, conversation_id, goal, allowed_tool_ids=None, max_steps=8,
               run_id=None, mode="fast", resume=False, supervisor_id=None,
               on_event=None, skill_ids=None, permissions=None, agent_id=None,
-              subagent_agent_id=None, multi_agent=False, budget_tokens=0, on_token=None):
+              subagent_agent_id=None, multi_agent=False, budget_tokens=0, on_token=None,
+              mcp_ids=None):
     if mode == "strict" and _is_write_task(goal):
         async with _WRITE_LOCK:
             return await _run(user_id, conversation_id, goal, allowed_tool_ids, max_steps,
-                              run_id, mode, resume, supervisor_id, on_event, skill_ids, permissions, agent_id, subagent_agent_id, multi_agent, budget_tokens, on_token)
+                              run_id, mode, resume, supervisor_id, on_event, skill_ids, permissions, agent_id, subagent_agent_id, multi_agent, budget_tokens, on_token, mcp_ids)
     return await _run(user_id, conversation_id, goal, allowed_tool_ids, max_steps,
-                      run_id, mode, resume, supervisor_id, on_event, skill_ids, permissions, agent_id, subagent_agent_id, multi_agent, budget_tokens, on_token)
+                      run_id, mode, resume, supervisor_id, on_event, skill_ids, permissions, agent_id, subagent_agent_id, multi_agent, budget_tokens, on_token, mcp_ids)

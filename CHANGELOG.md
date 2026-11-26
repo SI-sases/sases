@@ -13,6 +13,7 @@
 ## Unreleased
 
 - MCP client (stdio, disabled by default)
+- MCP tools in the capability capsule and agent schema
 - Skill registry for `SKILL.md`
 - Unified tool risk and approval policy
 - 小红书 adapter

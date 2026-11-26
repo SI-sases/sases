@@ -62,7 +62,8 @@ MCP tools appear in the existing **能力 / Capabilities** capsule:
 ```
 
 Selected tools become a capsule chip and are sent with the chat request as
-`enabled_mcp_ids`. No separate settings page is added.
+`enabled_mcp_ids`. The agent loop adds those tools to its schema and calls them
+through `tool_gateway` as `mcp.<server>.<tool>`.
 
 ## Tool gateway
 
