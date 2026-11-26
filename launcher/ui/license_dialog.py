@@ -6,9 +6,9 @@ try:
 except ImportError:
     from node_identity_store import load_or_create, save_activation
 try:
-    from launcher.wireguard_setup import ensure_wireguard
+    from launcher.wireguard_setup import ensure_wireguard, find_config
 except ImportError:
-    from wireguard_setup import ensure_wireguard
+    from wireguard_setup import ensure_wireguard, find_config
 
 class LicenseDialog(QDialog):
     def __init__(self, parent=None):
@@ -62,7 +62,7 @@ class LicenseDialog(QDialog):
                 res_data = json.loads(response.read().decode('utf-8'))
                 save_activation(os.getcwd(), res_data)
                 try:
-                    ensure_wireguard(os.getcwd())
+                    ensure_wireguard(os.getcwd(), find_config(os.getcwd()))
                 except Exception:
                     pass
                 self.license_data = res_data

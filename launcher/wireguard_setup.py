@@ -23,6 +23,18 @@ def installer_path(root: str | None = None) -> str | None:
     return None
 
 
+def find_config(root: str | None = None) -> str | None:
+    """Return the bundled/activated WireGuard profile, if present."""
+    root = root or os.getcwd()
+    base = os.path.join(root, "wireguard")
+    for name in ("wg0.conf", "sases.conf"):
+        path = os.path.join(base, name)
+        if os.path.isfile(path):
+            return path
+    matches = sorted(glob.glob(os.path.join(base, "*.conf")))
+    return matches[0] if matches else None
+
+
 def _is_admin() -> bool:
     try:
         import ctypes
