@@ -1,183 +1,104 @@
 # SASES
 
-**SASES** (Seed-Apollo Self-Evolving System) is a privacy-first, local-first AI self-evolving ecosystem.  
-It combines autonomous seed iteration, credit systems, pollination mechanisms, contribution ranking, an extensible Harness runtime, AGI coordination, and distributed node services to create a personal AI service network.
+**Self-hosted AGI on your own cloud server.**
 
-> **One brain, many windows.**  
-> SASES is designed to be lightweight, modular, and community-driven.
+Deploy with Docker. Keep your database and model key. Control it from any agent.
 
----
+[![Docker build](https://github.com/SI-sases/sases/actions/workflows/docker.yml/badge.svg)](https://github.com/SI-sases/sases/actions/workflows/docker.yml)
 
-## Self-hosting
+![SASES](docs/assets/sases-cover.png)
 
-Run SASES on your own Linux server with Docker:
+## What it does
 
-- [Self-hosting guide](docs/self-hosting.md)
-- [Build your own platform adapter](docs/build-your-own-sases-adapter.md)
-- [Docker Compose](deploy/docker/docker-compose.yml)
+- Self-hosted web UI and API
+- Docker Compose deployment
+- SASES Link between nodes
+- HQ campaign / approval / task queue
+- Local executor with a logged-in browser
+- Platform adapter interface
+- SASES Control: MCP + CLI for agents
+- Cloud browser image for public pages and screenshots
 
-The service binds to `127.0.0.1:8001`; put HTTPS in front of it.
-
-
-## ✨ Core Features
-
-- **Seed Architecture**  
-  Automatic generation, branching, synthesis, verification, backtracking, and knowledge accumulation.  
-  Includes semantic deduplication for diverse seed generation.
-
-- **Apollo Security Architecture**  
-  Content safety scanning, tamper-proof state signatures, and risk control.
-
-- **Root-Vein Architecture**  
-  Multi-model routing, tool invocation, and future device I/O support.
-
-- **Credit & Pollination System**  
-  Earn credits by contributing seeds, manual pollination, or providing feedback. Credits are protected by HMAC state signatures.
-
-- **Contribution Leaderboard**  
-  A reputation-based ranking that rewards real contributions instead of simple credit accumulation.
-
-- **Harness Runtime**  
-  A modular runtime for mini-apps and tools. Developers can create Harness modules with a simple manifest and `run(params)` function.  
-  Current examples: unit converter, calculator, text stats, JSON formatter, Base64 codec, string utils.
-
-- **AGI Coordinator**  
-  Accepts natural language tasks, selects the appropriate Harness tool via keyword matching or LLM reasoning, extracts parameters, and executes the task. Supports multimodal image input.
-
-- **Space Service (Node as a Service)**  
-  Register Harness modules and AGI services as discoverable space nodes. Supports local and remote invocation, reputation tracking, node synchronization, and mDNS-based local network discovery.
-
-- **API Key Management**  
-  Users can securely add, update, delete, and prioritize multiple API keys from different providers (DeepSeek, OpenAI, Moonshot, Zhipu, Qwen). Keys are encrypted at rest using Fernet encryption. The model router automatically selects the highest-priority active key and falls back to the system default if all user keys fail.
-
-- **Unified SQLite Storage**  
-  All persistent data (knowledge base, space nodes, seed pools, logs, user data, API keys) is stored in a single SQLite database for data integrity and transactional consistency.
-
----
-
-## 🧱 Project Structure
-sases/
-├── app_full.py # Minimal FastAPI entry point
-├── core/
-│ ├── bootstrap.py # App creation, route registration, lifespan
-│ ├── config.py # Exports grouped configuration
-│ ├── config_models.py # Dataclass-based configuration groups
-│ ├── db.py # Database initialization and connection
-│ ├── auth_service.py # Authentication, credits, signatures, API keys
-│ ├── knowledge_base.py # Knowledge base management
-│ ├── contribution_log.py # Contribution logging and leaderboard
-│ ├── seed_utils.py # Main utility facade (re-exports from utils)
-│ ├── similarity.py # Semantic deduplication
-│ ├── safety_scan.py # Content safety scanning
-│ ├── encryption.py # Fernet encryption for API keys
-│ ├── harness_loader.py # Scans and loads Harness modules
-│ ├── harness_runtime.py # Harness runtime (tool listing/invocation)
-│ ├── harness_models.py # Harness data models
-│ ├── agi_coordinator.py # AGI task coordinator
-│ ├── space_service.py # Space node service facade
-│ ├── node_registry.py # Node registration and persistence
-│ ├── sync_manager.py # Peer synchronization
-│ ├── health_checker.py # Node health checks
-│ ├── discovery.py # mDNS node discovery
-│ ├── seed_store.py # Seed pool storage
-│ ├── utils/
-│ │ ├── code_utils.py # Code parsing/cleaning
-│ │ ├── sandbox.py # Safe code execution
-│ │ └── api_utils.py # API calling helpers
-│ └── api_routes/
-│ ├── auth_routes.py
-│ ├── seed_routes.py
-│ ├── credit_routes.py
-│ ├── harness_routes.py
-│ ├── agi_routes.py
-│ └── space_routes.py
-├── harness_modules/
-│ ├── unit_converter/
-│ ├── calculator/
-│ ├── text_stats/
-│ ├── json_formatter/
-│ ├── base64_codec/
-│ └── string_utils/
-├── tests/ # 68 unit & integration tests
-└── static/
-├── index.html
-├── style.css
-├── favicon.svg
-└── modules/
-├── main.js
-├── utils.js
-├── auth.js
-├── chat.js
-├── contacts.js
-├── discover.js
-└── me.js
-
-text
-
----
-
-## 🚀 Quick Start
-
-### 1. Install dependencies
+## Quick start
 
 ```bash
-pip install fastapi uvicorn openai chromadb rank_bm25 passlib[bcrypt] python-jose[cryptography] python-multipart scikit-learn httpx python-dotenv cryptography zeroconf
-2. Configure environment variables
-Create a .env file or set the following variables:
+git clone https://github.com/SI-sases/sases.git
+cd sases/deploy/docker
+cp .env.example .env
+docker compose up -d --build
+curl http://127.0.0.1:8001/version
+```
 
-text
-DEEPSEEK_API_KEY=your_deepseek_api_key
-SASES_SECRET_KEY=your_jwt_secret
-Optional:
+Put HTTPS in front with Caddy or Nginx. Do not expose `8001` publicly.
 
-text
-MODEL_NAME=deepseek-v4-flash
-SASES_PORT=8001
-SASES_NODE_ID=node-001
-SASES_NODE_NAME=My SASES Node
-SASES_PEERS=http://other-node:8001
-SASES_NODE_TOKEN=change-me
-SASES_ENABLE_MDNS=true
-3. Start the web service
-bash
-python -m uvicorn app_full:app --reload --port 8001
-Visit http://127.0.0.1:8001/static/index.html to open the console.
+Full guide: [docs/self-hosting.md](docs/self-hosting.md)
 
-🧪 Run Tests
-bash
-python -m pytest tests/ -v
-All 68 unit tests should pass.
+## Architecture
 
-🎯 Current Status
-Seed iteration loop with semantic deduplication
+```text
+User / Agent
+    │
+    ▼
+SASES HQ
+  campaign → approval → task queue
+    │
+    ▼
+Executor
+  logged-in browser → platform adapter → receipt
+```
 
-External seed submission and processing
+More: [docs/architecture.md](docs/architecture.md)
 
-Credit system with HMAC tamper detection
+## What works
 
-Pollination mechanism (manual and auto)
+- Docker deployment on a clean Ubuntu server
+- Registration, login, SQLite persistence
+- SASES Link and HQ task queue
+- X adapter
+- SASES Control MCP/CLI
+- Cloud headless browser
 
-Contribution leaderboard
+## Not yet
 
-Harness runtime with six example modules
+- Official adapters for 小红书 / 抖音 / TikTok
+- Hosted billing and multi-tenant UI
+- Full GUI for campaign management
 
-AGI coordinator with keyword matching, parameter extraction, and multimodal image support
+Adapter contributions are welcome. The interface is intentionally small:
+[Build your own adapter](docs/build-your-own-sases-adapter.md).
 
-Space service with node registration, remote invocation, peer synchronization, health checks, and mDNS discovery
+## SASES Control
 
-API key management with encryption and multi-provider routing
+Let DeepSeek Harness, Claude, or any MCP-capable agent control one or more
+SASES instances:
 
-Unified SQLite storage
+- Repo: https://github.com/SI-sases/sases-control
+- MCP: `mcp_server.py`
+- CLI: `sases_ctl.py`
 
-Modular web frontend with WeChat-style bottom navigation
+## Docs
 
-📜 License
-This project is licensed under the Apache License 2.0.
+- [Quick start](docs/quickstart.md)
+- [Self-hosting](docs/self-hosting.md)
+- [Architecture](docs/architecture.md)
+- [Build your own adapter](docs/build-your-own-sases-adapter.md)
+- [SASES Control](skills/sases-control/SKILL.md)
+- [Roadmap](docs/roadmap.md)
+- [Security](SECURITY.md)
+- [Contributing](CONTRIBUTING.md)
 
-🤝 Contributing
-Contributions are welcome! Please read CONTRIBUTING.md before submitting a pull request.
+## Community
 
-📬 Contact
-GitHub: SASESseed/sases
+- [Discussions](https://github.com/SI-sases/sases/discussions)
+- [Issues](https://github.com/SI-sases/sases/issues)
+- [Release v1.0.0](https://github.com/SI-sases/sases/releases/tag/v1.0.0)
 
-Hugging Face: BlossomArchitecture
+If you deploy SASES, open a Showcase discussion with your setup and what you
+built.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
+
+SASES is not affiliated with or endorsed by any model provider or social
+platform.

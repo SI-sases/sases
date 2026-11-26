@@ -1,54 +1,44 @@
-\# Contributing to SASES
+# Contributing
 
+## Before you start
 
+- Read `docs/architecture.md`.
+- Read `docs/build-your-own-sases-adapter.md`.
+- Search existing issues and discussions.
+- Do not include secrets, databases, cookies, or private node addresses.
 
-Thank you for your interest in contributing! Please follow these guidelines.
+## Development
 
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python -m pytest tests/ -v
+```
 
+Docker:
 
-\## Reporting Bugs
+```bash
+cd deploy/docker
+cp .env.example .env
+docker compose up -d --build
+```
 
+## Adapter contributions
 
+1. Add `check_login(page)`.
+2. Add `publish(task, page)`.
+3. Return a receipt with `url` and `screenshot`.
+4. Return `needs_login` / `page_error` instead of fake success.
+5. Test dry-run before a real post.
 
-\- Search existing issues first.
+## Pull requests
 
-\- Include clear steps to reproduce.
+- One logical change per PR.
+- Include why, what changed, and how it was verified.
+- Include screenshots for UI or publishing changes.
+- Never commit `.env`, `users.db`, `data/`, or credentials.
 
-\- Provide environment details (OS, Python version, dependencies).
+## License
 
-
-
-\## Suggesting Features
-
-
-
-\- Explain the problem you want to solve.
-
-\- Describe the expected behavior.
-
-\- If possible, provide example use cases.
-
-
-
-\## Pull Requests
-
-
-
-\- Fork the repository and create a feature branch.
-
-\- Keep changes focused and small.
-
-\- Ensure all tests pass: `python -m pytest tests/ -v`
-
-\- Follow existing code style.
-
-\- Update documentation if needed.
-
-
-
-\## Code of Conduct
-
-
-
-Be respectful and inclusive. Harassment will not be tolerated.
-
+Contributions are accepted under the MIT License.
