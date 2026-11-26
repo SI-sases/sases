@@ -10,6 +10,7 @@
 - SASES Control MCP/CLI
 - MCP client for external tools (experimental)
 - Skill registry (`skills/*/SKILL.md`)
+- Session event log (`session_events`)
 - Cloud browser smoke test
 
 ## Next

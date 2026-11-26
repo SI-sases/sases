@@ -87,6 +87,7 @@ SASES instances:
 - [SASES Control](skills/sases-control/SKILL.md)
 - [MCP client](docs/mcp-client.md)
 - [Tool policy](docs/tool-policy.md)
+- [Session events](docs/session-events.md)
 - [Roadmap](docs/roadmap.md)
 - [Security](SECURITY.md)
 - [Contributing](CONTRIBUTING.md)

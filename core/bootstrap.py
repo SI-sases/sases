@@ -883,6 +883,10 @@ def create_app() -> FastAPI:
     from .api_routes import mcp_routes, skill_routes
     app.include_router(mcp_routes.router)
     app.include_router(skill_routes.router)
+    from .services import session_event_service
+    session_event_service.ensure_schema()
+    from .api_routes import session_routes
+    app.include_router(session_routes.router)
     app.include_router(seed_routes.router)
     app.include_router(credit_routes.router)
     app.include_router(harness_routes.router)
