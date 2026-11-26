@@ -15,6 +15,7 @@
 - Opt-in tool plugin runtime
 - Memory store (global and session)
 - Memory injection into agent prompt
+- Tool workflow runner
 - Cloud browser smoke test
 
 ## Next

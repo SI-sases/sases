@@ -1,0 +1,13 @@
+{
+  "id": "read-readme",
+  "name": "Read README",
+  "description": "Read the repository README through the tool gateway.",
+  "steps": [
+    {
+      "tool": "file_read",
+      "params": {
+        "file_path": "README.md"
+      }
+    }
+  ]
+}

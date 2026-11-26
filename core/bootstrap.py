@@ -895,6 +895,10 @@ def create_app() -> FastAPI:
     memory_service.ensure_schema()
     from .api_routes import memory_routes
     app.include_router(memory_routes.router)
+    from .services import workflow_service
+    workflow_service.ensure_schema()
+    from .api_routes import workflow_routes
+    app.include_router(workflow_routes.router)
     app.include_router(seed_routes.router)
     app.include_router(credit_routes.router)
     app.include_router(harness_routes.router)

@@ -20,6 +20,7 @@
 - Opt-in tool plugin runtime
 - Memory store (global and session)
 - Memory injection into agent prompt
+- Tool workflow runner
 - Unified tool risk and approval policy
 - 小红书 adapter
 - 抖音 adapter
