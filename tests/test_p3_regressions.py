@@ -8,7 +8,7 @@ from core.services.scheduled_task_service import _backoff_next
 
 
 def test_file_gate_rejects_duplicate_id(tmp_path):
-    p = tmp_path / "x.js"
+    p = tmp_path / "x.html"
     p.write_text('<div id="a"></div><div id="a"></div>', encoding="utf-8")
     r = check_frontend(str(p))
     assert r["ok"] is False
@@ -16,7 +16,7 @@ def test_file_gate_rejects_duplicate_id(tmp_path):
 
 
 def test_file_gate_allows_unique(tmp_path):
-    p = tmp_path / "x.js"
+    p = tmp_path / "x.html"
     p.write_text('<div id="a"></div><div id="b"></div>', encoding="utf-8")
     assert check_frontend(str(p))["ok"] is True
 
