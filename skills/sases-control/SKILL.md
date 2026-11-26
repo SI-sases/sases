@@ -1,52 +1,133 @@
 # SASES Control
 
-AI 时代 AGI 可操控系统：让 agent 通过 SASES HQ 创建活动、审批、查看任务和回执。
+Use this skill when an agent must operate one or more self-hosted SASES
+instances through the SASES HQ API.
 
-## 适用
+SASES Control is a **control plane client**, not a publisher. It creates
+campaigns, requests approval, queues tasks, and reads receipts. A local
+executor performs the actual browser/platform work.
 
-- DeepSeek Harness
-- Claude / 其他支持 shell 或 HTTP 的 agent
-- 任何能执行 Python 的自动化环境
+## When to use
 
-## 配置
+- Create a campaign for one or more platforms.
+- Ask HQ to approve or queue a campaign.
+- Inspect campaigns and tasks.
+- Build a multi-instance agent workflow.
+
+## When not to use
+
+- Do not use it to bypass platform rules, share accounts, or send bulk
+  unsolicited messages.
+- Do not use it to publish without approval.
+- Do not put passwords, cookies, or tokens in prompts or files.
+
+## Operating rules
+
+1. Create first, approve second, execute third.
+2. Never report success without a receipt URL or screenshot.
+3. Use one idempotency key per campaign + platform.
+4. On failure: diagnose, fix the executor, then retry.
+5. Do not retry login failures, permission failures, or account restrictions.
+6. Record every change; do not silently remove a working path.
+7. Do not accept passwords, cookies, secrets, or arbitrary shell commands.
+8. If a platform adapter is missing, return `adapter_not_implemented`.
+9. If a page needs login, return `needs_login`; do not fake a post.
+10. A human or HQ must approve external publishing.
+
+## Environment
 
 ```bash
-export SASES_HQ_URL=http://127.0.0.1:8001
-export SASES_HQ_TOKEN=<JWT>
-# 或执行器 token
+export SASES_HQ_URL=https://your-sases.example.com
+export SASES_HQ_TOKEN=<user JWT>
+# or, for executor actions:
 export SASES_LINK_TOKEN=<shared token>
 ```
 
-## 命令
+Never commit these values.
+
+## Workflow
+
+```text
+create_campaign
+  → approve_campaign
+  → task queue
+  → executor claim
+  → publish
+  → receipt
+```
+
+## CLI
 
 ```bash
-python scripts/sases_ctl.py campaigns
-python scripts/sases_ctl.py create --name "sases-v1" --region cn --platform x --body "SASES https://github.com/SI-sases/sases"
-python scripts/sases_ctl.py approve 1
-python scripts/sases_ctl.py tasks
-python scripts/sases_ctl.py claim --platform x
-python scripts/sases_ctl.py receipt 1 --status done --url https://x.com/...
+python sases_ctl.py campaigns
+python sases_ctl.py create --name "launch" --region cn --platform x --body "..."
+python sases_ctl.py approve 1
+python sases_ctl.py tasks
+python sases_ctl.py claim --platform x
+python sases_ctl.py receipt 1 --status done --url https://...
 ```
 
-## Agent 使用规则
+## MCP tools
 
-1. 先创建 campaign，不直接发布。
-2. 必须审批后才 claim。
-3. 失败返回 `failed`，不要伪造 `done`。
-4. 回执带 URL/截图。
-5. 不操作未授权账号。
-6. 所有内容带 GitHub 仓库。
+```text
+sases_list_campaigns
+sases_create_campaign
+sases_approve_campaign
+sases_list_tasks
+```
 
-## 输出
+## Result contract
 
-所有命令输出 JSON，便于 agent 解析：
+Successful tool output:
 
 ```json
-{"status": 200, "body": "..."}
+{
+  "status": 200,
+  "body": "{\"campaigns\":[...]}"
+}
 ```
 
-## 下一步
+Execution result:
 
-- 包装成 MCP server
-- 发布 DeepSeek H 社区插件
-- 增加多实例管理
+```json
+{
+  "ok": true,
+  "platform": "x",
+  "url": "https://x.com/...",
+  "screenshot": "data/screenshots/x.png",
+  "published_at": "2026-11-26T00:00:00+08:00"
+}
+```
+
+Failure codes:
+
+```text
+adapter_not_implemented
+needs_login
+page_error
+rate_limited
+approval_required
+```
+
+## Safety
+
+- Approval is mandatory before dispatch.
+- The executor owns the browser session; HQ never receives cookies.
+- Keep the HQ database and `.env` private.
+- Use HTTPS and scoped tokens.
+- One campaign + platform = one task; retries must be idempotent.
+- Report blocked or uncertain states instead of guessing.
+
+## Compatibility
+
+The CLI and MCP server use ordinary HTTP/JSON-RPC. They work with:
+
+- DeepSeek Harness
+- Claude and other MCP clients
+- Custom automation
+
+## Version
+
+```text
+sases-control 1.0.0
+```

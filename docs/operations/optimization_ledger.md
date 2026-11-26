@@ -171,3 +171,9 @@ docker exec docker_sases_1 python -c "import sqlite3;c=sqlite3.connect('/data/us
 - DSH Market 提交：#58
 - X 已发布 SASES Control 帖子
 - 等社区反馈后再决定公司和投入
+
+## 2026-11-26 09:20
+
+- 公开 Skill 已补充审批门、幂等、回执、错误码、失败重试、安全边界。
+- 私有 Ops 目录：C:\Users\xiaomai\Documents\sases_ops_private（不进 Git）。
+- sases-control 仓库提交 93a116e。
