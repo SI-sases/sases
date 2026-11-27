@@ -166,6 +166,18 @@ class Handler(BaseHTTPRequestHandler):
                     conn.close()
                 self._send(200 if ok else 409, {"ok": ok, "leader": current})
                 return
+            if self.path == "/worker/run":
+                from .worker import run_once
+                import sqlite3
+                conn = sqlite3.connect(self.agi.db_path)
+                conn.row_factory = sqlite3.Row
+                try:
+                    result = run_once(conn, self.agi.registry, "server-worker",
+                                      "http://127.0.0.1:8001")
+                    self._send(200, result)
+                finally:
+                    conn.close()
+                return
             if self.path.startswith("/approvals"):
                 from . import approvals
                 import sqlite3

@@ -96,14 +96,37 @@ def heartbeat(conn: sqlite3.Connection, agent_id: str, owner: str, ttl: int = 60
     return cur.rowcount > 0
 
 
-def finish(conn: sqlite3.Connection, agent_id: str, status: str = "done") -> bool:
+def finish(conn: sqlite3.Connection, agent_id: str, status: str = "done",
+           result: dict | None = None) -> bool:
     ensure_schema(conn)
-    if status not in {"done", "failed", "cancelled"}:
+    if status not in {"done", "failed", "cancelled", "needs_approval"}:
         raise ValueError("invalid final status")
-    cur = conn.execute("UPDATE agi_agents SET status=?,lease_until=NULL,updated_at=? WHERE agent_id=?",
-                       (status, int(time.time()), agent_id))
+    cur = conn.execute(
+        "UPDATE agi_agents SET status=?,result_json=COALESCE(?,result_json),lease_until=NULL,"
+        "updated_at=? WHERE agent_id=?",
+        (status, json.dumps(result, ensure_ascii=False) if result is not None else None,
+         int(time.time()), agent_id),
+    )
     conn.commit()
     return cur.rowcount > 0
+
+
+def claim_next(conn: sqlite3.Connection, owner: str, ttl: int = 300) -> str | None:
+    ensure_schema(conn)
+    now = int(time.time())
+    row = conn.execute(
+        "SELECT agent_id FROM agi_agents WHERE status='queued' ORDER BY created_at ASC LIMIT 1"
+    ).fetchone()
+    if not row:
+        return None
+    agent_id = row[0]
+    cur = conn.execute(
+        "UPDATE agi_agents SET status='active',lease_owner=?,lease_until=?,last_seen=?,updated_at=? "
+        "WHERE agent_id=? AND status='queued'",
+        (owner, now + max(10, ttl), now, now, agent_id),
+    )
+    conn.commit()
+    return agent_id if cur.rowcount else None
 
 
 def list_agents(conn: sqlite3.Connection, status: str | None = None) -> list[dict]:
