@@ -99,8 +99,12 @@ def click_page(args: dict[str, Any]) -> dict[str, Any]:
 def reddit_post(args: dict[str, Any]) -> dict[str, Any]:
     title = str(args.get("title") or "")
     body = str(args.get("body") or "")
+    dry_run = bool(args.get("dry_run", True))
     if not title or not body:
         return {"ok": False, "error": "title and body are required"}
+    if not dry_run and not args.get("approved"):
+        return {"ok": False, "error": "approval_required", "requires_approval": True,
+                "tool": "browser.reddit_post", "title": title}
     script = _root() / "scripts" / "browser_reddit.py"
     if not script.exists():
         return {"ok": False, "error": "scripts/browser_reddit.py missing"}
@@ -110,7 +114,7 @@ def reddit_post(args: dict[str, Any]) -> dict[str, Any]:
         "--title", title,
         "--body", body,
     ]
-    if args.get("dry_run", True):
+    if dry_run:
         cmd.append("--dry-run")
     if args.get("screenshot"):
         cmd += ["--screenshot", str(args["screenshot"])]

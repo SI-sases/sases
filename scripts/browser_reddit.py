@@ -52,6 +52,9 @@ def main() -> int:
                 page.wait_for_timeout(6000)
                 result["submitted"] = True
                 result["url"] = page.url
+                if "/comments/" not in page.url:
+                    result["ok"] = False
+                    result["error"] = "submit did not reach a post URL"
             else:
                 result["submitted"] = False
                 result["url"] = page.url
