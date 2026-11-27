@@ -117,6 +117,7 @@ def run_once(conn: sqlite3.Connection, registry, owner: str = "worker",
         task = {}
     goal = str(agent.get("goal") or task.get("goal") or agent.get("name") or "")
     ctx_id = ""
+    parent_ctx = ""
     try:
         ctx_meta = json.loads(agent.get("context_json") or "{}")
         ctx_id = str(ctx_meta.get("context_id") or "")
@@ -126,6 +127,7 @@ def run_once(conn: sqlite3.Connection, registry, owner: str = "worker",
         pack = context_pack.get(conn, ctx_id)
         if pack:
             goal = pack.get("goal") or goal
+            parent_ctx = str(pack.get("parent_context_id") or "")
             missing = context_pack.invalidate_missing(conn, ctx_id)
             if missing:
                 agents.set_progress(conn, agent_id, "上下文文件缺失: " + ", ".join(missing)[:120])
@@ -179,6 +181,9 @@ def run_once(conn: sqlite3.Connection, registry, owner: str = "worker",
             "facts": facts,
             "artifacts": artifacts,
         }, agent_id=agent_id)
+        if parent_ctx and parent_ctx != ctx_id:
+            context_pack.patch(conn, parent_ctx, {"facts": facts, "artifacts": artifacts},
+                               agent_id=agent_id)
         result["context_id"] = ctx_id
     if steer_notes:
         result["steer_notes"] = steer_notes

@@ -292,6 +292,26 @@ class Handler(BaseHTTPRequestHandler):
                                                    {"message": text})
                         self._send(200, {"ok": True, "message_id": msg_id})
                         return
+                    if action == "fork":
+                        from . import context_pack
+                        cid = str(body.get("context_id") or "")
+                        goal = str(body.get("goal") or "forked task")
+                        child_ctx = context_pack.fork(conn, cid, goal)
+                        if not child_ctx:
+                            self._send(404, {"error": "context not found"})
+                            return
+                        agent_id = agents.spawn(
+                            conn, str(body.get("node_id") or "local"),
+                            {"goal": goal}, "sub", "", int(body.get("ttl") or 600),
+                            name=str(body.get("name") or goal[:32]), goal=goal,
+                            kind="subagent", status="queued",
+                            context={"context_id": child_ctx, "source": "fork"},
+                            parent_agent_id=str(body.get("parent_agent_id") or ""),
+                            depth=int(body.get("depth") or 1),
+                        )
+                        self._send(200, {"ok": True, "agent_id": agent_id,
+                                         "context_id": child_ctx})
+                        return
                     if action == "execute":
                         from .executor import execute
                         from .package import TaskPackage

@@ -108,6 +108,7 @@ function agentCard(a, kind) {
     <div class="child-agent-actions">
       <button data-act="messages" data-id="${esc(id)}">消息</button>
       ${ctxId ? `<button data-act="context" data-id="${esc(id)}" data-context-id="${esc(ctxId)}">上下文</button>` : ''}
+      ${ctxId ? `<button data-act="fork" data-context-id="${esc(ctxId)}" data-parent-id="${esc(id)}">派生</button>` : ''}
       ${a.status === 'done' ? `<button data-act="result" data-id="${esc(id)}">结果</button>` : ''}
       ${a.status === 'queued' ? `<button data-act="run" data-id="${esc(id)}">执行</button>` : ''}
       ${canCancel ? `<button class="danger" data-act="cancel" data-id="${esc(id)}">取消</button>` : ''}
@@ -157,6 +158,19 @@ function renderPanel() {
         const data = await getJSON(`/agi/agents/${encodeURIComponent(btn.dataset.id)}/messages`);
         state.messages[btn.dataset.id] = data.messages || [];
         renderPanel();
+      } catch (e) { btn.disabled = false; }
+    };
+  });
+  body.querySelectorAll('[data-act="fork"]').forEach((btn) => {
+    btn.onclick = async () => {
+      const goal = (prompt('派生目标', '继续这个任务') || '').trim();
+      if (!goal) return;
+      btn.disabled = true;
+      try {
+        await postJSON('/agi/agents/fork', { context_id: btn.dataset.contextId, goal,
+          parent_agent_id: btn.dataset.parentId, depth: 1 });
+        await refreshChildWindow();
+        openChildWindow('agents');
       } catch (e) { btn.disabled = false; }
     };
   });

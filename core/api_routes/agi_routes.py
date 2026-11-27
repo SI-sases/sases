@@ -140,6 +140,11 @@ async def agent_message(agent_id: str, body: dict, user_id: int = Depends(get_cu
     })
 
 
+@router.post("/agents/fork")
+async def fork_agent(body: dict, user_id: int = Depends(get_current_user)):
+    return _main_request("POST", "/agents/fork", body)
+
+
 @router.post("/agents/{agent_id}/cancel")
 async def agent_cancel(agent_id: str, user_id: int = Depends(get_current_user)):
     return _main_request("POST", f"/agents/{agent_id}/cancel", {})
