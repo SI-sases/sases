@@ -100,13 +100,24 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--db", default="data/agi.db")
     parser.add_argument("--owner", default="worker")
+    parser.add_argument("--loop", action="store_true")
+    parser.add_argument("--interval", type=float, default=2.0)
     args = parser.parse_args()
     from .tools import build_default_registry
-    conn = sqlite3.connect(args.db)
-    conn.row_factory = sqlite3.Row
-    print(json.dumps(run_once(conn, build_default_registry(), args.owner), ensure_ascii=False))
-    conn.close()
-    return 0
+    registry = build_default_registry()
+    while True:
+        conn = sqlite3.connect(args.db)
+        conn.row_factory = sqlite3.Row
+        try:
+            print(json.dumps(run_once(conn, registry, args.owner), ensure_ascii=False), flush=True)
+        except Exception as exc:  # noqa: BLE001 - keep the worker alive
+            print(json.dumps({"ok": False, "error": f"{type(exc).__name__}: {exc}"}, ensure_ascii=False),
+                  flush=True)
+        finally:
+            conn.close()
+        if not args.loop:
+            return 0
+        __import__("time").sleep(max(0.5, args.interval))
 
 
 if __name__ == "__main__":
