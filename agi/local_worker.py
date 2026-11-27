@@ -33,12 +33,12 @@ def _call(server: str, token: str, method: str, path: str, body: dict | None = N
 
 
 def _execute(server: str, token: str, registry, agent_id: str, steps: list[dict],
-             goal: str) -> dict:
+             goal: str, on_step=None) -> dict:
     _call(server, token, "POST", f"/agents/{agent_id}/progress", {"progress": "本地执行中"})
     package = TaskPackage(goal=goal, node_id="local", acceptance=["local result reported"],
                           steps=steps, tools_allowed=[s.get("tool") for s in steps])
     conn = sqlite3.connect(":memory:")
-    result = execute(package, registry, conn, owner="local-worker", profile="main")
+    result = execute(package, registry, conn, owner="local-worker", profile="main", on_step=on_step)
     status = "done" if result.get("ok") else "failed"
     try:
         _call(server, token, "POST", f"/agents/{agent_id}/finish", {"status": status, "result": result})

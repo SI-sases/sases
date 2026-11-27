@@ -13,7 +13,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from . import local_outbox
+from . import local_outbox, local_store
 from .local_worker import _call, _execute, _read_only
 from .tools import build_default_registry
 
@@ -66,11 +66,23 @@ class LocalRuntime:
                     "result": {"ok": False, "approval_id": approval.get("approval_id"), "reason": reason},
                 })
                 return
+            current = local_store.start(agent_id, goal, steps)
+            remaining = steps[current:]
+            if not remaining:
+                local_store.finish(agent_id, "done")
+                return
+
+            def on_step(index: int, step: dict, result: dict) -> None:
+                local_store.step(agent_id, current + index + 1)
+
             if self._is_browser(steps):
                 with self.browser_lock:
-                    _execute(self.server, self.token, self.registry, agent_id, steps, goal)
+                    outcome = _execute(self.server, self.token, self.registry, agent_id, remaining,
+                                       goal, on_step=on_step)
             else:
-                _execute(self.server, self.token, self.registry, agent_id, steps, goal)
+                outcome = _execute(self.server, self.token, self.registry, agent_id, remaining,
+                                   goal, on_step=on_step)
+            local_store.finish(agent_id, "done" if outcome.get("ok") else "failed")
         except Exception as exc:  # noqa: BLE001
             try:
                 _call(self.server, self.token, "POST", f"/agents/{agent_id}/finish", {
