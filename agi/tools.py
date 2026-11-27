@@ -88,6 +88,14 @@ def task_list(args: dict[str, Any]) -> dict[str, Any]:
         return {"ok": False, "status": 0, "error": str(exc)}
 
 
+def _verify_candidate(args: dict[str, Any]) -> dict[str, Any]:
+    from .staging import verify
+    root = str(args.get("root") or "")
+    if not root:
+        return {"ok": False, "error": "root is required"}
+    return verify(root, int(args.get("port") or 8030))
+
+
 def build_default_registry() -> ToolRegistry:
     from .deploy import plan_promote, plan_rollback, plan_stage
 
@@ -101,6 +109,8 @@ def build_default_registry() -> ToolRegistry:
     registry.register(ToolSpec("deploy.stage", lambda a: plan_stage(
         str(a.get("node_id") or "local"), str(a.get("version") or "next"), int(a.get("port") or 8002)),
         "deploy", frozenset({"main"}), "Plan a staging deploy (dry run)"))
+    registry.register(ToolSpec("deploy.verify", lambda a: _verify_candidate(a),
+        "deploy", frozenset({"main"}), "Run a candidate package on an alternate port"))
     registry.register(ToolSpec("deploy.promote", lambda a: plan_promote(
         str(a.get("node_id") or "local"), str(a.get("version") or "next")),
         "deploy", frozenset({"main"}), "Plan a promote (approval required)"))

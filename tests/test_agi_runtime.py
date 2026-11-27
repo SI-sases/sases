@@ -34,6 +34,13 @@ def test_deploy_tools_are_main_only_and_dry_run():
         reg.invoke("sub", "deploy.stage", {})
 
 
+def test_shadow_compare():
+    from agi.shadow import compare_steps
+    result = compare_steps(["health", "publish", "receipt"], ["health", "publish", "receipt"])
+    assert result["coverage"] == 1.0
+    assert result["missing"] == []
+
+
 def test_runtime_records_health(tmp_path):
     db = str(tmp_path / "agi.db")
     reg = ToolRegistry()

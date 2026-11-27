@@ -12,6 +12,7 @@ agi/main_agi.py   CLI entry
 agi/server.py     loopback event/control server
 agi/sub_agi.py    sub heartbeat adapter
 agi/deploy.py     staging/promote/rollback plans (dry run)
+agi/staging.py    run candidate on alternate port and verify
 agi/playbooks/    health_check, publish_platform, deploy_node
 ```
 
@@ -68,6 +69,22 @@ deploy.rollback
 ```
 
 All are main-only and `requires_approval=true`.
+
+## Staging verifier
+
+```bash
+python -m agi.staging --root D:\sases_build\portable_test2 --port 8030
+```
+
+It starts the candidate package on an alternate loopback port, checks
+`/health` or `/version`, then kills the process tree.  It never touches the
+production port/tree.
+
+Tool:
+
+```text
+deploy.verify  (main-only, candidate path required)
+```
 
 ## Run
 
