@@ -83,10 +83,8 @@ def get(conn: sqlite3.Connection, context_id: str) -> dict | None:
     row = conn.execute("SELECT * FROM agi_contexts WHERE context_id=?", (context_id,)).fetchone()
     if not row:
         return None
-    keys = ("context_id", "parent_context_id", "scope_json", "goal", "acceptance_json",
-            "constraints_json", "state_json", "facts_json", "artifacts_json",
-            "attempts_json", "history_summary", "version", "token_estimate", "created_at", "updated_at")
-    data = dict(zip(keys, row))
+    columns = [r[1] for r in conn.execute("PRAGMA table_info(agi_contexts)")]
+    data = dict(zip(columns, row))
     for key in ("scope_json", "acceptance_json", "constraints_json", "state_json",
                 "facts_json", "artifacts_json", "attempts_json"):
         data[key[:-5]] = _load(data.pop(key), [] if key != "state_json" and key != "scope_json" else {})
