@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
-from browser_checkpoint import save as save_phase, clear as clear_checkpoint
+from browser_checkpoint import load as load_checkpoint, save as save_phase, clear as clear_checkpoint
 import sys
 
 DEFAULT_CHROME = os.path.join(
@@ -35,19 +35,26 @@ def main() -> int:
         page = context.pages[0] if context.pages else context.new_page()
         result = {"ok": True, "dry_run": args.dry_run, "platform": "douyin"}
         try:
-            page.goto("https://creator.douyin.com/creator-micro/content/upload",
-                      wait_until="commit", timeout=args.timeout)
-            page.wait_for_timeout(5000)
-            page.get_by_text("发布图文", exact=True).click()
-            page.wait_for_timeout(2000)
-            page.locator("input[type=file]").last.set_input_files(args.image)
-            page.wait_for_timeout(15000)
-            save_phase("uploaded")
-            editor = page.locator("[contenteditable=true]").first
-            editor.click()
-            editor.fill(args.description)
-            page.wait_for_timeout(1000)
-            save_phase("filled")
+            phase = load_checkpoint().get("phase", "")
+            resumed = phase in ("uploaded", "filled") and page.url.startswith(
+                "https://creator.douyin.com/creator-micro/content/post/image")
+            if resumed:
+                result["resumed"] = phase
+            else:
+                page.goto("https://creator.douyin.com/creator-micro/content/upload",
+                          wait_until="commit", timeout=args.timeout)
+                page.wait_for_timeout(5000)
+                page.get_by_text("发布图文", exact=True).click()
+                page.wait_for_timeout(2000)
+                page.locator("input[type=file]").last.set_input_files(args.image)
+                page.wait_for_timeout(15000)
+                save_phase("uploaded")
+            if phase not in ("filled",):
+                editor = page.locator("[contenteditable=true]").first
+                editor.click()
+                editor.fill(args.description)
+                page.wait_for_timeout(1000)
+                save_phase("filled")
             if not args.dry_run:
                 page.get_by_role("button", name="发布", exact=True).click()
                 page.wait_for_timeout(12000)

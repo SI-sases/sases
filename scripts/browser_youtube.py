@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
-from browser_checkpoint import save as save_phase, clear as clear_checkpoint
+from browser_checkpoint import load as load_checkpoint, save as save_phase, clear as clear_checkpoint
 
 UPLOAD = "https://studio.youtube.com/channel/UCBpL3hK22rzoNP70J8evpHQ/videos/upload"
 
@@ -29,25 +29,32 @@ def main() -> int:
         page = context.pages[0] if context.pages else context.new_page()
         result = {"ok": True, "dry_run": args.dry_run, "platform": "youtube"}
         try:
-            page.goto(UPLOAD, wait_until="commit", timeout=args.timeout)
-            page.wait_for_timeout(6000)
-            page.get_by_role("button", name="上传视频").click()
-            page.wait_for_timeout(1200)
-            page.locator("input[type=file]").set_input_files(args.video)
-            page.wait_for_timeout(10000)
-            save_phase("uploaded")
-            editors = page.locator("[contenteditable=true]")
-            editors.nth(0).click()
-            editors.nth(0).fill(args.title)
-            editors.nth(1).click()
-            editors.nth(1).fill(args.description)
-            page.get_by_text("不，内容不是面向儿童的", exact=False).click()
-            page.wait_for_timeout(400)
-            save_phase("details")
-            for _ in range(3):
-                page.get_by_role("button", name="继续").click()
-                page.wait_for_timeout(1800)
-            save_phase("visibility")
+            phase = load_checkpoint().get("phase", "")
+            resumed = phase in ("uploaded", "details", "visibility", "published") and page.url.startswith("https://studio.youtube.com")
+            if resumed:
+                result["resumed"] = phase
+            else:
+                page.goto(UPLOAD, wait_until="commit", timeout=args.timeout)
+                page.wait_for_timeout(6000)
+                page.get_by_role("button", name="上传视频").click()
+                page.wait_for_timeout(1200)
+                page.locator("input[type=file]").set_input_files(args.video)
+                page.wait_for_timeout(10000)
+                save_phase("uploaded")
+            if phase not in ("details", "visibility", "published"):
+                editors = page.locator("[contenteditable=true]")
+                editors.nth(0).click()
+                editors.nth(0).fill(args.title)
+                editors.nth(1).click()
+                editors.nth(1).fill(args.description)
+                page.get_by_text("不，内容不是面向儿童的", exact=False).click()
+                page.wait_for_timeout(400)
+                save_phase("details")
+            if phase not in ("visibility", "published"):
+                for _ in range(3):
+                    page.get_by_role("button", name="继续").click()
+                    page.wait_for_timeout(1800)
+                save_phase("visibility")
             if args.dry_run:
                 result["url"] = page.url
                 result["published"] = False

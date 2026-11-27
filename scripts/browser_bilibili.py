@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
-from browser_checkpoint import save as save_phase, clear as clear_checkpoint
+from browser_checkpoint import load as load_checkpoint, save as save_phase, clear as clear_checkpoint
 
 URL = "https://member.bilibili.com/platform/upload/video/frame"
 
@@ -30,31 +30,37 @@ def main() -> int:
         page = context.pages[0] if context.pages else context.new_page()
         result = {"ok": True, "dry_run": args.dry_run, "platform": "bilibili"}
         try:
-            page.goto(URL, wait_until="commit", timeout=args.timeout)
-            page.wait_for_timeout(5000)
-            with page.expect_file_chooser(timeout=10000) as chooser:
-                page.locator(".upload-area").click()
-            chooser.value.set_files(args.video)
-            page.wait_for_timeout(15000)
-            save_phase("uploaded")
-            # A cover is required by the publish form.
-            page.get_by_text("添加封面", exact=True).click()
-            page.wait_for_timeout(1500)
-            page.get_by_text("完成", exact=True).last.click()
-            page.wait_for_timeout(1500)
-            page.locator('input[placeholder="请输入稿件标题"]').fill(args.title)
-            tag_input = page.locator('input[placeholder="按回车键Enter创建标签"]').first
-            for tag in [t.strip() for t in args.tags.split(",") if t.strip()]:
-                tag_input.fill(tag)
-                tag_input.press("Enter")
-                page.wait_for_timeout(250)
-            if args.description:
-                page.locator("[contenteditable=true]").first.fill(args.description)
-            page.locator('input[placeholder="请选择符合您视频内容的创作声明"]').click()
-            page.wait_for_timeout(400)
-            page.get_by_text("含AI生成内容", exact=True).last.click()
-            page.wait_for_timeout(600)
-            save_phase("filled")
+            phase = load_checkpoint().get("phase", "")
+            resumed = phase in ("uploaded", "filled", "submitted") and page.url.startswith(URL)
+            if resumed:
+                result["resumed"] = phase
+            else:
+                page.goto(URL, wait_until="commit", timeout=args.timeout)
+                page.wait_for_timeout(5000)
+                with page.expect_file_chooser(timeout=10000) as chooser:
+                    page.locator(".upload-area").click()
+                chooser.value.set_files(args.video)
+                page.wait_for_timeout(15000)
+                save_phase("uploaded")
+            if phase not in ("filled", "submitted"):
+                # A cover is required by the publish form.
+                page.get_by_text("添加封面", exact=True).click()
+                page.wait_for_timeout(1500)
+                page.get_by_text("完成", exact=True).last.click()
+                page.wait_for_timeout(1500)
+                page.locator('input[placeholder="请输入稿件标题"]').fill(args.title)
+                tag_input = page.locator('input[placeholder="按回车键Enter创建标签"]').first
+                for tag in [t.strip() for t in args.tags.split(",") if t.strip()]:
+                    tag_input.fill(tag)
+                    tag_input.press("Enter")
+                    page.wait_for_timeout(250)
+                if args.description:
+                    page.locator("[contenteditable=true]").first.fill(args.description)
+                page.locator('input[placeholder="请选择符合您视频内容的创作声明"]').click()
+                page.wait_for_timeout(400)
+                page.get_by_text("含AI生成内容", exact=True).last.click()
+                page.wait_for_timeout(600)
+                save_phase("filled")
             if args.dry_run:
                 result["url"] = page.url
                 result["published"] = False
