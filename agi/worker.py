@@ -161,9 +161,12 @@ def run_once(conn: sqlite3.Connection, registry, owner: str = "worker",
 
     result = execute(package, registry, conn, owner=owner, profile="main", on_step=_on_step)
     if ctx_id:
+        facts = [{"key": "last_result", "value": "ok" if result.get("ok") else "failed"}]
+        if not result.get("ok"):
+            facts.append({"key": "last_error", "value": str(result.get("error") or "failed")[:300]})
         context_pack.patch(conn, ctx_id, {
             "state": {"status": "done" if result.get("ok") else "failed", "current_step": len(steps)},
-            "facts": [{"key": "last_result", "value": "ok" if result.get("ok") else "failed"}],
+            "facts": facts,
         }, agent_id=agent_id)
         result["context_id"] = ctx_id
     if steer_notes:

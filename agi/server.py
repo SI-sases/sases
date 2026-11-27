@@ -373,10 +373,21 @@ class Handler(BaseHTTPRequestHandler):
                 from .ask import answer
                 text = str(body.get("text") or "")
                 result = answer(text, self.agi.db_path)
+                goal = text.strip()[:500]
+                from . import conversation_extractor
+                history_text = "\n".join(str(h) for h in (body.get("history") or []) if h)[-4000:]
+                extracted = conversation_extractor.extract(goal + "\n" + history_text)
                 platform_words = ("youtube", "抖音", "douyin", "bilibili", "b站", "reddit", "小红书")
                 action_words = ("发到", "发布", "上传", "帮我", "处理", "做一下")
                 dispatch = any(k in text for k in ("执行", "派给", "派活", "子智能体", "后台任务", "让子", "继续", "上次", "接着"))
                 dispatch = dispatch or (any(k in text.lower() for k in platform_words) and any(k in text for k in action_words))
+                has_conflict = any(f.get("key") == "constraint_conflict" for f in extracted.get("facts", []))
+                if has_conflict:
+                    result["requires_confirmation"] = True
+                    result["markdown"] = (result.get("markdown") or "") + (
+                        "\n\n## 需要确认\n\n你的要求里同时出现了“自动公开”和“不要自动公开”。\n"
+                        "请明确选择：允许公开，还是只 dry-run。\n\n未创建子智能体。")
+                    dispatch = False
                 if dispatch:
                     from . import agents
                     import sqlite3
@@ -388,8 +399,6 @@ class Handler(BaseHTTPRequestHandler):
                         from . import context_builder, context_collector, conversation_extractor
                         collected = context_collector.collect(
                             conn, goal, body.get("conversation_id"))
-                        history_text = "\n".join(str(h) for h in (body.get("history") or []) if h)[-4000:]
-                        extracted = conversation_extractor.extract(goal + "\n" + history_text)
                         built = context_builder.build(
                             conn, goal,
                             conversation_id=body.get("conversation_id"),
