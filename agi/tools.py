@@ -235,6 +235,15 @@ def _plugin(args: dict[str, Any], action: str) -> dict[str, Any]:
     raise ValueError(f"unknown plugin action: {action}")
 
 
+def _adapter(args: dict[str, Any], action: str) -> dict[str, Any]:
+    from . import adapters
+    if action == "list":
+        return {"adapters": adapters.list_adapters()}
+    if action == "run":
+        return adapters.run(str(args.get("adapter") or ""), args.get("args") or {})
+    raise ValueError(f"unknown adapter action: {action}")
+
+
 def _support(args: dict[str, Any], action: str) -> dict[str, Any]:
     from . import support
     import sqlite3
@@ -303,6 +312,10 @@ def build_default_registry() -> ToolRegistry:
                                frozenset({"main"}), "List plugins (disabled by default)"))
     registry.register(ToolSpec("plugin.run", lambda a: _plugin(a, "run"), "write",
                                frozenset({"main"}), "Run a tool plugin (disabled by default)"))
+    registry.register(ToolSpec("adapter.list", lambda a: _adapter(a, "list"), "read",
+                               frozenset({"main"}), "List platform adapters"))
+    registry.register(ToolSpec("adapter.run", lambda a: _adapter(a, "run"), "write",
+                               frozenset({"main"}), "Run one platform adapter"))
     registry.register(ToolSpec("support.classify", lambda a: _support(a, "classify"), "read",
                                frozenset({"main", "sub"}), "Classify a support request"))
     registry.register(ToolSpec("support.kb_search", lambda a: _support(a, "search"), "read",

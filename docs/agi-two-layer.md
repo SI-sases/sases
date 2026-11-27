@@ -28,6 +28,7 @@ agi/skills.py     versioned skill catalog + static evaluation
 agi/mcp_bridge.py MCP bridge, disabled unless SASES_MCP_ALLOW=1
 agi/planner.py    optional LLM planner with deterministic fallback
 agi/plugin_bridge.py plugin runtime bridge, disabled by default
+agi/adapters.py   platform adapter registry (Reddit implemented, others planned)
 agi/platform_policy.py  manual-only platform guard
 agi/playbooks/    health_check, publish_platform, deploy_node
 ```
@@ -280,6 +281,10 @@ manual_approved=true only for a human-opening action
 
 The browser tools enforce this; it is not just a note.
 
+Browser workers reuse the current CDP page when the target URL already
+matches, so repeated actions do not refresh the page. `--no-reuse` forces a
+navigation when explicitly needed.
+
 ## Executor
 
 `agi/executor.py` runs only the steps listed in a `TaskPackage`, enforces
@@ -356,6 +361,26 @@ SASES_PLUGIN_ALLOW=1
 
 Only manifests under `plugins/` with a valid entrypoint are executable; the
 existing runtime runs them in a short-lived subprocess.
+
+## Platform adapters
+
+```text
+adapter.list
+adapter.run
+```
+
+Current state:
+
+```text
+reddit       implemented (dry-run + approval submit)
+douyin       planned
+bilibili     planned
+youtube      planned
+xiaohongshu  manual-only
+```
+
+A platform without an adapter returns `adapter_not_implemented`; it is never
+silently treated as supported.
 
 ## Run
 
