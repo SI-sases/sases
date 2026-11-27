@@ -42,8 +42,8 @@ function statusText(s) {
 }
 
 function activeCount() {
-  return state.agents.filter((a) => a.status === 'active').length +
-    state.tasks.filter((t) => t.status === 'active').length;
+  const live = (x) => x.status === 'active' || x.status === 'queued';
+  return state.agents.filter(live).length + state.tasks.filter(live).length;
 }
 
 function badgeCount() {
@@ -60,7 +60,7 @@ export function renderChildWindow() {
   const ca = $('child-count-agents');
   const ct = $('child-count-tasks');
   const cp = $('child-count-approvals');
-  if (ca) ca.textContent = String(state.agents.filter((a) => a.status === 'active').length);
+  if (ca) ca.textContent = String(state.agents.filter((a) => a.status === 'active' || a.status === 'queued').length);
   if (ct) ct.textContent = String(state.tasks.filter((t) => t.status === 'active').length);
   if (cp) cp.textContent = String(state.approvals.length);
   renderCapsules();
@@ -71,10 +71,10 @@ function renderCapsules() {
   const box = $('subagent-capsules');
   if (!box) return;
   const items = [
-    ...state.agents.filter((a) => a.status === 'active').slice(0, 2).map((a) => ({
+    ...state.agents.filter((a) => a.status === 'active' || a.status === 'queued').slice(0, 2).map((a) => ({
       label: '🤖 ' + (a.name || a.goal || '子智能体'), tab: 'agents', id: a.agent_id
     })),
-    ...state.tasks.filter((t) => t.status === 'active').slice(0, 1).map((t) => ({
+    ...state.tasks.filter((t) => t.status === 'active' || t.status === 'queued').slice(0, 1).map((t) => ({
       label: '⚙ ' + (t.name || t.goal || '后台任务'), tab: 'tasks', id: t.agent_id
     }))
   ];
@@ -94,7 +94,7 @@ function agentCard(a, kind) {
   const id = a.agent_id || '';
   const st = statusText(a.status);
   const active = a.status === 'active';
-  const canCancel = active && kind === 'agents';
+  const canCancel = (active || a.status === 'queued') && kind === 'agents';
   const msgs = state.messages[id];
   return `<div class="child-agent-card" data-agent-card="${esc(id)}">
     <div class="child-agent-top">

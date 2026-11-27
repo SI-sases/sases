@@ -53,15 +53,15 @@ def ensure_schema(conn: sqlite3.Connection) -> None:
 
 def spawn(conn: sqlite3.Connection, node_id: str, task: dict, role: str = "sub",
           parent_run_id: str = "", ttl: int = 300, name: str = "", goal: str = "",
-          kind: str = "subagent", trace_id: str = "") -> str:
+          kind: str = "subagent", trace_id: str = "", status: str = "active") -> str:
     ensure_schema(conn)
     now = int(time.time())
     agent_id = "agent_" + secrets.token_hex(8)
     conn.execute(
         "INSERT INTO agi_agents(agent_id,parent_run_id,node_id,role,status,task_json,name,goal,"
         "kind,progress,trace_id,last_seen,lease_until,created_at,updated_at) "
-        "VALUES(?,?,?,?, 'active', ?,?,?,?, '', ?,?,?,?,?)",
-        (agent_id, parent_run_id, node_id, role, json.dumps(task, ensure_ascii=False),
+        "VALUES(?,?,?,?, ?,?,?,?,?, '', ?,?,?,?,?)",
+        (agent_id, parent_run_id, node_id, role, status, json.dumps(task, ensure_ascii=False),
          name or goal or "subagent", goal or name or "", kind, trace_id, now,
          now + max(10, ttl), now, now),
     )

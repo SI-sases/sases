@@ -454,7 +454,7 @@ async function sendMessage() {
       try { window.reportSasesEvent && window.reportSasesEvent('main_agi_ask_ok', ''); } catch (e) {}
       updateMessageStatus(tempId, 'sent');
       appendMessage('assistant', data.markdown || data.detail || t('chat.empty_reply'), '主 AGI', null, new Date().toISOString(), false, chatState);
-      setTimeout(() => { try { window.loadAgiApprovals && window.loadAgiApprovals(); } catch (e) {} }, 300);
+      setTimeout(() => { try { window.loadAgiApprovals && window.loadAgiApprovals(); window.refreshChildWindow && window.refreshChildWindow(); } catch (e) {} }, 300);
     } catch (e) {
       try { window.reportSasesEvent && window.reportSasesEvent('main_agi_ask_failed', e.message || String(e)); } catch (err) {}
       updateMessageStatus(tempId, 'failed');

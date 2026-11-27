@@ -288,7 +288,30 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if self.path == "/ask":
                 from .ask import answer
-                self._send(200, answer(str(body.get("text") or ""), self.agi.db_path))
+                text = str(body.get("text") or "")
+                result = answer(text, self.agi.db_path)
+                if any(k in text for k in ("执行", "派给", "派活", "子智能体", "后台任务", "让子")):
+                    from . import agents
+                    import sqlite3
+                    conn = sqlite3.connect(self.agi.db_path)
+                    conn.row_factory = sqlite3.Row
+                    try:
+                        goal = text.strip()[:500]
+                        name = goal[:32] or "子智能体任务"
+                        agent_id = agents.spawn(
+                            conn, "local", {"goal": goal}, "sub", "", 600,
+                            name=name, goal=goal, kind="subagent", status="queued",
+                        )
+                        agents.set_progress(conn, agent_id, "已派发，等待子智能体领取")
+                        result["agent_id"] = agent_id
+                        result["agents"] = [{"agent_id": agent_id, "name": name,
+                                             "status": "queued", "goal": goal}]
+                        result["markdown"] = (result.get("markdown") or "") + (
+                            "\n\n> 已创建子智能体：" + name + "\n"
+                            "> 可在「子窗口」查看、发消息或取消。")
+                    finally:
+                        conn.close()
+                self._send(200, result)
                 return
             self._send(404, {"error": "not found"})
         except Exception as exc:  # noqa: BLE001
