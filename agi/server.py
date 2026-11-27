@@ -58,6 +58,16 @@ class Handler(BaseHTTPRequestHandler):
         if not self._auth():
             self._send(401, {"error": "unauthorized"})
             return
+        if self.path.startswith("/agents"):
+            from . import agents
+            import sqlite3
+            conn = sqlite3.connect(self.agi.db_path)
+            conn.row_factory = sqlite3.Row
+            try:
+                self._send(200, {"agents": agents.list_agents(conn)})
+            finally:
+                conn.close()
+            return
         if self.path.startswith("/escalations"):
             from . import escalation
             import sqlite3
@@ -133,10 +143,42 @@ class Handler(BaseHTTPRequestHandler):
                     conn.close()
                 self._send(200 if ok else 409, {"ok": ok, "leader": current})
                 return
+            if self.path.startswith("/agents/"):
+                from . import agents
+                import sqlite3
+                action = self.path.rsplit("/", 1)[-1]
+                conn = sqlite3.connect(self.agi.db_path)
+                conn.row_factory = sqlite3.Row
+                try:
+                    if action == "spawn":
+                        agent_id = agents.spawn(
+                            conn, str(body.get("node_id") or "local"),
+                            body.get("task") or {}, str(body.get("role") or "sub"),
+                            str(body.get("parent_run_id") or ""), int(body.get("ttl") or 300),
+                        )
+                        self._send(200, {"ok": True, "agent_id": agent_id})
+                        return
+                    agent_id = str(body.get("agent_id") or "")
+                    if action == "lease":
+                        ok = agents.lease(conn, agent_id, str(body.get("owner") or "main"),
+                                          int(body.get("ttl") or 60))
+                    elif action == "heartbeat":
+                        ok = agents.heartbeat(conn, agent_id, str(body.get("owner") or "main"),
+                                              int(body.get("ttl") or 60))
+                    elif action == "finish":
+                        ok = agents.finish(conn, agent_id, str(body.get("status") or "done"))
+                    else:
+                        self._send(404, {"error": "not found"})
+                        return
+                    self._send(200 if ok else 409, {"ok": ok})
+                    return
+                finally:
+                    conn.close()
             if self.path == "/events":
                 allowed = {k: body[k] for k in ("type", "node_id", "scope", "severity", "payload",
                                                 "evidence", "requires_approval", "idempotency_key",
-                                                "msg_id", "created_at") if k in body}
+                                                "msg_id", "trace_id", "run_id", "parent_run_id",
+                                                "created_at") if k in body}
                 message = Message(**allowed)
                 message.validate()
                 self.agi.record_event(message)

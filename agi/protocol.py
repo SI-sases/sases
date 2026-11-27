@@ -35,6 +35,9 @@ class Message:
     requires_approval: bool = False
     idempotency_key: str | None = None
     msg_id: str = field(default_factory=lambda: uuid.uuid4().hex)
+    trace_id: str = ""
+    run_id: str = ""
+    parent_run_id: str = ""
     created_at: int = field(default_factory=lambda: int(time.time()))
 
     def validate(self) -> None:

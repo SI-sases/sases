@@ -22,6 +22,9 @@ class ToolSpec:
     profiles: frozenset[str]
     description: str = ""
     timeout: int = 10
+    input_schema: dict[str, Any] | None = None
+    approval_required: bool = False
+    idempotent: bool = False
 
 
 class ToolRegistry:
@@ -46,7 +49,37 @@ class ToolRegistry:
         spec = self.get(tool_id)
         if profile not in spec.profiles:
             raise PermissionError(f"tool {tool_id} is not allowed for profile {profile}")
-        return spec.handler(args or {})
+        data = dict(args or {})
+        if spec.input_schema:
+            _validate_object(data, spec.input_schema)
+        if spec.approval_required and not data.pop("_approved", False):
+            return {"ok": False, "error": "approval_required", "tool": tool_id,
+                    "risk": spec.risk}
+        return spec.handler(data)
+
+
+def _type_ok(value: Any, expected: str) -> bool:
+    return {
+        "string": isinstance(value, str),
+        "integer": isinstance(value, int) and not isinstance(value, bool),
+        "number": isinstance(value, (int, float)) and not isinstance(value, bool),
+        "boolean": isinstance(value, bool),
+        "object": isinstance(value, dict),
+        "array": isinstance(value, list),
+    }.get(expected, True)
+
+
+def _validate_object(data: dict[str, Any], schema: dict[str, Any]) -> None:
+    if schema.get("type") != "object":
+        return
+    required = schema.get("required") or []
+    missing = [key for key in required if key not in data]
+    if missing:
+        raise ValueError(f"missing required arguments: {', '.join(missing)}")
+    properties = schema.get("properties") or {}
+    for key, rule in properties.items():
+        if key in data and rule.get("type") and not _type_ok(data[key], rule["type"]):
+            raise ValueError(f"{key} must be {rule['type']}")
 
 
 def _http_json(url: str, timeout: int = 10) -> dict[str, Any]:

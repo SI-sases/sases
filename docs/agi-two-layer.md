@@ -18,6 +18,8 @@ agi/autopilot.py  observe + report loop (no production mutation)
 agi/report.py     human-readable fleet report
 agi/policy.py     main-auto vs human-required routing
 agi/escalation.py open items for the commander
+agi/agents.py     agent tree + leases
+agi/package.py    task package sent to a sub AGI
 agi/playbooks/    health_check, publish_platform, deploy_node
 ```
 
@@ -219,6 +221,43 @@ Open items:
 ```text
 GET /escalations
 reports/agi_report.md -> "需要指挥官处理"
+```
+
+## Agent tree and task package
+
+```text
+POST /agents/spawn
+POST /agents/lease
+POST /agents/heartbeat
+POST /agents/finish
+GET  /agents
+```
+
+Every run has:
+
+```text
+trace_id
+run_id
+parent_run_id
+```
+
+A sub AGI receives a package, not a raw chat dump:
+
+```text
+goal
+constraints
+evidence
+acceptance
+tools_allowed
+approval_required
+```
+
+Tool specs now carry:
+
+```text
+input_schema
+approval_required
+idempotent
 ```
 
 ## Run

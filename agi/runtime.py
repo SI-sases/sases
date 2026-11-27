@@ -10,6 +10,7 @@ import json
 import os
 import sqlite3
 import time
+import uuid
 from pathlib import Path
 from typing import Any
 
@@ -55,6 +56,9 @@ def ensure_schema(db_path: str) -> None:
                 playbook TEXT NOT NULL,
                 status TEXT NOT NULL,
                 result_json TEXT,
+                trace_id TEXT,
+                run_id TEXT,
+                parent_run_id TEXT,
                 started_at INTEGER NOT NULL,
                 finished_at INTEGER
             );
@@ -72,6 +76,10 @@ def ensure_schema(db_path: str) -> None:
         if "kind" not in cols:
             conn.execute("ALTER TABLE agi_nodes ADD COLUMN kind TEXT NOT NULL DEFAULT 'cloud'")
         conn.execute("UPDATE agi_nodes SET kind='client' WHERE scope='local'")
+        run_cols = {row[1] for row in conn.execute("PRAGMA table_info(agi_runs)")}
+        for name in ("trace_id", "run_id", "parent_run_id"):
+            if name not in run_cols:
+                conn.execute(f"ALTER TABLE agi_runs ADD COLUMN {name} TEXT")
 
 
 class MainAGI:
@@ -100,9 +108,15 @@ class MainAGI:
 
     def run_once(self) -> dict[str, Any]:
         started = int(time.time())
+        trace_id = "trace_" + uuid.uuid4().hex[:16]
+        trace_run_id = "run_" + uuid.uuid4().hex[:16]
         with _connect(self.db_path) as conn:
-            cur = conn.execute("INSERT INTO agi_runs(playbook,status,started_at) VALUES('health_check','running',?)", (started,))
-            run_id = cur.lastrowid
+            cur = conn.execute(
+                "INSERT INTO agi_runs(playbook,status,trace_id,run_id,started_at) "
+                "VALUES('health_check','running',?,?,?)",
+                (trace_id, trace_run_id, started),
+            )
+            db_run_id = cur.lastrowid
 
         health = self.registry.invoke("main", "node.health", {"base_url": self.base_url})
         version = self.registry.invoke("main", "node.version", {"base_url": self.base_url})
@@ -124,6 +138,8 @@ class MainAGI:
             severity=severity,
             payload={"message": message, "healthy": healthy},
             evidence={"health": health, "version": version},
+            trace_id=trace_id,
+            run_id=trace_run_id,
         )
         self.record_event(event)
         with _connect(self.db_path) as conn:
@@ -136,9 +152,10 @@ class MainAGI:
             )
             conn.execute(
                 "UPDATE agi_runs SET status=?,result_json=?,finished_at=? WHERE id=?",
-                ("ok" if healthy else "failed", json.dumps({"health": health, "version": version}, ensure_ascii=False), int(time.time()), run_id),
+                ("ok" if healthy else "failed", json.dumps({"health": health, "version": version}, ensure_ascii=False), int(time.time()), db_run_id),
             )
-        return {"ok": healthy, "node_id": node_id, "event": event.to_dict(), "health": health, "version": version}
+        return {"ok": healthy, "node_id": node_id, "trace_id": trace_id, "run_id": trace_run_id,
+                "event": event.to_dict(), "health": health, "version": version}
 
     def loop(self, interval: int = 30) -> None:
         while True:
