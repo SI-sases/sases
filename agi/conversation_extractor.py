@@ -34,6 +34,9 @@ def extract(text: str) -> dict:
         if any(w in low for w in words):
             facts.append({"key": "platform", "value": platform, "source": "user"})
             break
+    title_match = re.search(r"标题(?:用|是|：|:)\s*([^\n，,。；;]+)", text)
+    if title_match:
+        facts.append({"key": "title", "value": title_match.group(1).strip(), "source": "user"})
     artifacts = []
     for path in _PATH.findall(text):
         artifacts.append(_artifact(path))
