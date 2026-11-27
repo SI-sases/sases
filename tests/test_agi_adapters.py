@@ -6,7 +6,7 @@ def test_adapter_registry_marks_unimplemented():
     assert rows["reddit"]["implemented"] is True
     assert rows["douyin"]["implemented"] is True
     assert rows["bilibili"]["implemented"] is True
-    assert rows["youtube"]["implemented"] is False
+    assert rows["youtube"]["implemented"] is True
     assert rows["xiaohongshu"]["mode"] == "manual"
 
 

@@ -47,12 +47,17 @@ def _bilibili(args: dict[str, Any]) -> dict[str, Any]:
     return bilibili_post(args)
 
 
+def _youtube(args: dict[str, Any]) -> dict[str, Any]:
+    from .browser import youtube_post
+    return youtube_post(args)
+
+
 def registry() -> dict[str, Adapter]:
     return {
         "reddit": Adapter("reddit", "approval", _reddit),
         "douyin": Adapter("douyin", "approval", _douyin),
         "bilibili": Adapter("bilibili", "approval", _bilibili),
-        "youtube": Adapter("youtube", "planned", reason="video upload adapter not implemented"),
+        "youtube": Adapter("youtube", "approval", _youtube),
         "xiaohongshu": Adapter("xiaohongshu", "manual",
                                reason="platform risk warning; manual-only"),
     }

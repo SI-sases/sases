@@ -165,3 +165,26 @@ def bilibili_post(args: dict[str, Any]) -> dict[str, Any]:
     if args.get("screenshot"):
         cmd += ["--screenshot", str(args["screenshot"])]
     return _run_cmd(cmd, timeout=180)
+
+
+def youtube_post(args: dict[str, Any]) -> dict[str, Any]:
+    video = str(args.get("video") or "")
+    title = str(args.get("title") or "")
+    dry_run = bool(args.get("dry_run", True))
+    if not video or not os.path.isfile(video):
+        return {"ok": False, "error": "video file is required"}
+    if not title:
+        return {"ok": False, "error": "title is required"}
+    if not dry_run and not args.get("approved"):
+        return {"ok": False, "error": "approval_required", "requires_approval": True,
+                "tool": "browser.youtube_post"}
+    script = _root() / "scripts" / "browser_youtube.py"
+    if not script.exists():
+        return {"ok": False, "error": "scripts/browser_youtube.py missing"}
+    cmd = [_python(), str(script), "--video", video, "--title", title,
+           "--description", str(args.get("description") or "")]
+    if dry_run:
+        cmd.append("--dry-run")
+    if args.get("screenshot"):
+        cmd += ["--screenshot", str(args["screenshot"])]
+    return _run_cmd(cmd, timeout=180)

@@ -295,6 +295,8 @@ def build_default_registry() -> ToolRegistry:
                                frozenset({"main"}), "Upload and optionally publish a Douyin image post"))
     registry.register(ToolSpec("browser.bilibili_post", lambda a: _browser(a, "bilibili_post"), "write",
                                frozenset({"main"}), "Upload and optionally publish a Bilibili video"))
+    registry.register(ToolSpec("browser.youtube_post", lambda a: _browser(a, "youtube_post"), "write",
+                               frozenset({"main"}), "Upload and optionally publish a YouTube video"))
     registry.register(ToolSpec("recovery.plan", lambda a: _recovery_plan(a), "read",
                                frozenset({"main"}), "Plan retry or reroute after a failure"))
     registry.register(ToolSpec("platform.policy", lambda a: _platform_check(a), "read",
