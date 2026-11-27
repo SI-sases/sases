@@ -82,6 +82,25 @@ class LocalRuntime:
             with self.lock:
                 self.active.discard(agent_id)
 
+    def recover(self) -> list[str]:
+        recovered = []
+        try:
+            listing = _call(self.server, self.token, "GET", "/agents")
+        except Exception:
+            return recovered
+        for agent in listing.get("agents", []):
+            if str(agent.get("node_id") or "") not in ("local", "desktop"):
+                continue
+            if agent.get("status") != "active":
+                continue
+            agent_id = str(agent.get("agent_id") or "")
+            try:
+                if _call(self.server, self.token, "POST", f"/agents/{agent_id}/requeue", {}).get("ok"):
+                    recovered.append(agent_id)
+            except Exception:
+                pass
+        return recovered
+
     def flush_outbox(self) -> None:
         for row in local_outbox.pending():
             try:
@@ -154,6 +173,7 @@ def main() -> int:
     except RuntimeError as exc:
         print(json.dumps({"ok": False, "error": str(exc)}, ensure_ascii=False), flush=True)
         return 1
+    rt.recover()
     while True:
         try:
             outcome = rt.poll()

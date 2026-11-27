@@ -224,6 +224,17 @@ def claim_agent(conn: sqlite3.Connection, agent_id: str, owner: str, ttl: int = 
     return cur.rowcount > 0
 
 
+def requeue(conn: sqlite3.Connection, agent_id: str) -> bool:
+    ensure_schema(conn)
+    cur = conn.execute(
+        "UPDATE agi_agents SET status='queued',lease_owner=NULL,lease_until=NULL,updated_at=? "
+        "WHERE agent_id=? AND status IN ('active','needs_approval')",
+        (int(time.time()), agent_id),
+    )
+    conn.commit()
+    return cur.rowcount > 0
+
+
 def cancel(conn: sqlite3.Connection, agent_id: str) -> bool:
     ensure_schema(conn)
     cur = conn.execute(

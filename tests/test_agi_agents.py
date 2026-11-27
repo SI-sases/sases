@@ -76,3 +76,11 @@ def test_agent_context_and_messages_ack(tmp_path):
     msg = agents.unread_messages(conn, aid)[0]
     agents.ack_message(conn, msg["id"])
     assert agents.unread_messages(conn, aid) == []
+
+
+def test_requeue_active_agent(tmp_path):
+    conn = sqlite3.connect(str(tmp_path / "agi.db"))
+    conn.row_factory = sqlite3.Row
+    aid = agents.spawn(conn, "local", {"goal": "x"}, status="active")
+    assert agents.requeue(conn, aid) is True
+    assert agents.get_agent(conn, aid)["status"] == "queued"

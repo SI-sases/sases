@@ -311,13 +311,17 @@ class Handler(BaseHTTPRequestHandler):
                 conn.row_factory = sqlite3.Row
                 try:
                     parts = [p for p in self.path.split("?")[0].split("/") if p]
-                    if len(parts) >= 3 and parts[2] in {"message", "cancel", "claim", "progress", "finish"}:
+                    if len(parts) >= 3 and parts[2] in {"message", "cancel", "claim", "progress", "finish", "requeue"}:
                         agent_id = parts[1]
                         if not agents.get_agent(conn, agent_id):
                             self._send(404, {"error": "agent not found"})
                             return
                         if parts[2] == "cancel":
                             ok = agents.cancel(conn, agent_id)
+                            self._send(200 if ok else 409, {"ok": ok})
+                            return
+                        if parts[2] == "requeue":
+                            ok = agents.requeue(conn, agent_id)
                             self._send(200 if ok else 409, {"ok": ok})
                             return
                         if parts[2] == "claim":
