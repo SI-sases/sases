@@ -97,6 +97,18 @@ async def agent_messages(agent_id: str, user_id: int = Depends(get_current_user)
     return _main_request("GET", f"/agents/{agent_id}/messages")
 
 
+@router.get("/agents/{agent_id}/wait")
+async def agent_wait(agent_id: str, timeout: int = 20, user_id: int = Depends(get_current_user)):
+    from starlette.concurrency import run_in_threadpool
+    return await run_in_threadpool(_main_request, "GET",
+                                   f"/agents/{agent_id}/wait?timeout={max(0, min(timeout, 60))}")
+
+
+@router.get("/agents/{agent_id}/result")
+async def agent_result(agent_id: str, user_id: int = Depends(get_current_user)):
+    return _main_request("GET", f"/agents/{agent_id}/result")
+
+
 @router.post("/agents/{agent_id}/message")
 async def agent_message(agent_id: str, body: dict, user_id: int = Depends(get_current_user)):
     return _main_request("POST", f"/agents/{agent_id}/message", {

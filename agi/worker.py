@@ -91,6 +91,21 @@ def run_once(conn: sqlite3.Connection, registry, owner: str = "worker",
         _touch(conn, owner, result)
         return result
     agent = agents.get_agent(conn, agent_id) or {}
+    steer_notes = []
+    for msg in agents.unread_messages(conn, agent_id):
+        try:
+            payload = json.loads(msg.get("payload_json") or "{}")
+        except json.JSONDecodeError:
+            payload = {}
+        text = str(payload.get("message") or "")
+        agents.ack_message(conn, int(msg["id"]))
+        if any(k in text.lower() for k in ("取消", "停止", "cancel", "stop")):
+            agents.finish(conn, agent_id, "cancelled", {"ok": False, "reason": "cancelled by parent"})
+            out = {"ok": True, "claimed": True, "agent_id": agent_id, "status": "cancelled"}
+            _touch(conn, owner, out)
+            return out
+        if text:
+            steer_notes.append(text)
     try:
         task = json.loads(agent.get("task_json") or "{}")
     except json.JSONDecodeError:
@@ -118,6 +133,8 @@ def run_once(conn: sqlite3.Connection, registry, owner: str = "worker",
                           tools_allowed=[s.get("tool") for s in steps])
     agents.set_progress(conn, agent_id, "执行中")
     result = execute(package, registry, conn, owner=owner, profile="main")
+    if steer_notes:
+        result["steer_notes"] = steer_notes
     agents.finish(conn, agent_id, "done" if result.get("ok") else "failed", result)
     out = {"ok": bool(result.get("ok")), "claimed": True, "agent_id": agent_id,
            "status": "done" if result.get("ok") else "failed", "result": result}

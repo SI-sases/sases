@@ -23,6 +23,11 @@ def ensure_schema(conn: sqlite3.Connection) -> None:
             progress TEXT,
             result_json TEXT,
             trace_id TEXT,
+            context_json TEXT,
+            model_profile TEXT,
+            result_schema_json TEXT,
+            parent_agent_id TEXT,
+            depth INTEGER NOT NULL DEFAULT 0,
             last_seen INTEGER,
             lease_owner TEXT,
             lease_until INTEGER,
@@ -44,7 +49,9 @@ def ensure_schema(conn: sqlite3.Connection) -> None:
     for name, ddl in (
         ("name", "TEXT"), ("goal", "TEXT"), ("kind", "TEXT NOT NULL DEFAULT 'subagent'"),
         ("progress", "TEXT"), ("result_json", "TEXT"), ("trace_id", "TEXT"),
-        ("last_seen", "INTEGER"),
+        ("last_seen", "INTEGER"), ("context_json", "TEXT"),
+        ("model_profile", "TEXT"), ("result_schema_json", "TEXT"),
+        ("parent_agent_id", "TEXT"), ("depth", "INTEGER NOT NULL DEFAULT 0"),
     ):
         if name not in cols:
             conn.execute(f"ALTER TABLE agi_agents ADD COLUMN {name} {ddl}")
@@ -53,17 +60,22 @@ def ensure_schema(conn: sqlite3.Connection) -> None:
 
 def spawn(conn: sqlite3.Connection, node_id: str, task: dict, role: str = "sub",
           parent_run_id: str = "", ttl: int = 300, name: str = "", goal: str = "",
-          kind: str = "subagent", trace_id: str = "", status: str = "active") -> str:
+          kind: str = "subagent", trace_id: str = "", status: str = "active",
+          context: dict | None = None, model_profile: str = "",
+          result_schema: dict | None = None, parent_agent_id: str = "", depth: int = 0) -> str:
     ensure_schema(conn)
     now = int(time.time())
     agent_id = "agent_" + secrets.token_hex(8)
     conn.execute(
         "INSERT INTO agi_agents(agent_id,parent_run_id,node_id,role,status,task_json,name,goal,"
-        "kind,progress,trace_id,last_seen,lease_until,created_at,updated_at) "
-        "VALUES(?,?,?,?, ?,?,?,?,?, '', ?,?,?,?,?)",
+        "kind,progress,trace_id,context_json,model_profile,result_schema_json,parent_agent_id,"
+        "depth,last_seen,lease_until,created_at,updated_at) "
+        "VALUES(?,?,?,?, ?,?,?,?,?, '', ?,?,?,?,?,?,?,?,?,?)",
         (agent_id, parent_run_id, node_id, role, status, json.dumps(task, ensure_ascii=False),
-         name or goal or "subagent", goal or name or "", kind, trace_id, now,
-         now + max(10, ttl), now, now),
+         name or goal or "subagent", goal or name or "", kind, trace_id,
+         json.dumps(context or {}, ensure_ascii=False), model_profile,
+         json.dumps(result_schema or {}, ensure_ascii=False), parent_agent_id, int(depth),
+         now, now + max(10, ttl), now, now),
     )
     conn.commit()
     return agent_id
@@ -178,6 +190,23 @@ def messages(conn: sqlite3.Connection, agent_id: str, limit: int = 100) -> list[
         (agent_id, max(1, min(limit, 500))),
     ).fetchall()
     return [dict(row) for row in rows]
+
+
+def unread_messages(conn: sqlite3.Connection, agent_id: str) -> list[dict]:
+    ensure_schema(conn)
+    rows = conn.execute(
+        "SELECT * FROM agi_agent_messages WHERE agent_id=? AND direction='parent_to_child' "
+        "AND ack_at IS NULL ORDER BY id ASC",
+        (agent_id,),
+    ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def ack_message(conn: sqlite3.Connection, message_id: int) -> None:
+    ensure_schema(conn)
+    conn.execute("UPDATE agi_agent_messages SET ack_at=? WHERE id=?",
+                 (int(time.time()), message_id))
+    conn.commit()
 
 
 def cancel(conn: sqlite3.Connection, agent_id: str) -> bool:

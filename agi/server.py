@@ -91,6 +91,18 @@ class Handler(BaseHTTPRequestHandler):
                         return
                     if len(parts) >= 3 and parts[2] == "messages":
                         self._send(200, {"messages": agents.messages(conn, agent_id)})
+                    elif len(parts) >= 3 and parts[2] == "wait":
+                        from urllib.parse import parse_qs, urlparse
+                        timeout = min(60.0, max(0.0, float(parse_qs(urlparse(self.path).query).get("timeout", ["20"])[0])))
+                        import time
+                        deadline = time.time() + timeout
+                        while agent.get("status") in ("queued", "active", "needs_approval") and time.time() < deadline:
+                            time.sleep(0.25)
+                            agent = agents.get_agent(conn, agent_id) or agent
+                        self._send(200, {"agent": agent, "timed_out": agent.get("status") in ("queued", "active", "needs_approval")})
+                    elif len(parts) >= 3 and parts[2] == "result":
+                        self._send(200, {"agent_id": agent_id, "status": agent.get("status"),
+                                         "result": json.loads(agent.get("result_json") or "null")})
                     else:
                         self._send(200, {"agent": agent})
                     return
@@ -255,6 +267,9 @@ class Handler(BaseHTTPRequestHandler):
                             str(body.get("name") or ""), str(body.get("goal") or ""),
                             str(body.get("kind") or "subagent"), str(body.get("trace_id") or ""),
                             str(body.get("status") or "active"),
+                            body.get("context") or {}, str(body.get("model_profile") or ""),
+                            body.get("result_schema") or {}, str(body.get("parent_agent_id") or ""),
+                            int(body.get("depth") or 0),
                         )
                         self._send(200, {"ok": True, "agent_id": agent_id})
                         return
@@ -322,6 +337,8 @@ class Handler(BaseHTTPRequestHandler):
                         agent_id = agents.spawn(
                             conn, "local", {"goal": goal}, "sub", "", 600,
                             name=name, goal=goal, kind="subagent", status="queued",
+                            context={"conversation_id": body.get("conversation_id"),
+                                     "source": "main-agi-chat"},
                         )
                         agents.set_progress(conn, agent_id, "已派发，等待子智能体领取")
                         result["agent_id"] = agent_id

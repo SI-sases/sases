@@ -105,6 +105,7 @@ function agentCard(a, kind) {
     <div class="child-agent-meta">${esc(a.progress || '')}${a.progress ? ' · ' : ''}${esc(a.node_id || '-')}${a.trace_id ? ' · ' + esc(a.trace_id) : ''}</div>
     <div class="child-agent-actions">
       <button data-act="messages" data-id="${esc(id)}">消息</button>
+      ${a.status === 'done' ? `<button data-act="result" data-id="${esc(id)}">结果</button>` : ''}
       ${a.status === 'queued' ? `<button data-act="run" data-id="${esc(id)}">执行</button>` : ''}
       ${canCancel ? `<button class="danger" data-act="cancel" data-id="${esc(id)}">取消</button>` : ''}
     </div>
@@ -154,6 +155,18 @@ function renderPanel() {
         state.messages[btn.dataset.id] = data.messages || [];
         renderPanel();
       } catch (e) { btn.disabled = false; }
+    };
+  });
+  body.querySelectorAll('[data-act="result"]').forEach((btn) => {
+    btn.onclick = async () => {
+      try {
+        const data = await getJSON(`/agi/agents/${encodeURIComponent(btn.dataset.id)}/result`);
+        const card = btn.closest('[data-agent-card]');
+        let pre = card.querySelector('.child-result');
+        if (!pre) { pre = document.createElement('pre'); pre.className = 'child-result'; card.appendChild(pre); }
+        pre.textContent = JSON.stringify(data.result, null, 2).slice(0, 4000);
+        pre.style.cssText = 'white-space:pre-wrap;background:#f8fafc;border-radius:8px;padding:8px;font-size:10px;color:#475569;max-height:220px;overflow:auto;';
+      } catch (e) { btn.disabled = true; }
     };
   });
   body.querySelectorAll('[data-act="run"]').forEach((btn) => {

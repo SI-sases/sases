@@ -447,7 +447,7 @@ async function sendMessage() {
       const resp = await fetch('/agi/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-        body: JSON.stringify({ text })
+        body: JSON.stringify({ text, conversation_id: chatState.conversationId || null })
       });
       const data = await resp.json().catch(() => ({}));
       if (!resp.ok) throw new Error(data.detail || ('HTTP ' + resp.status));
