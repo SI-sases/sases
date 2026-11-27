@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 import sys
 from typing import Any
@@ -24,7 +25,8 @@ def _read_only(registry, steps: list[dict]) -> tuple[bool, str]:
 
 
 def run_once(conn: sqlite3.Connection, registry, owner: str = "worker",
-             base_url: str = "http://127.0.0.1:8001") -> dict[str, Any]:
+             base_url: str = "") -> dict[str, Any]:
+    base_url = base_url or os.environ.get("SASES_WORKER_BASE_URL", "http://127.0.0.1:8001")
     agent_id = agents.claim_next(conn, owner, 300)
     if not agent_id:
         return {"ok": True, "claimed": False}
