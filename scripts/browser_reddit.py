@@ -59,14 +59,18 @@ def main() -> int:
                 result["submitted"] = False
                 result["url"] = page.url
             if args.screenshot:
-                os.makedirs(os.path.dirname(os.path.abspath(args.screenshot)), exist_ok=True)
-                page.screenshot(path=args.screenshot, full_page=True)
-                result["screenshot"] = args.screenshot
+                try:
+                    os.makedirs(os.path.dirname(os.path.abspath(args.screenshot)), exist_ok=True)
+                    page.screenshot(path=args.screenshot, full_page=True)
+                    result["screenshot"] = args.screenshot
+                except Exception as exc:
+                    result["screenshot_error"] = f"{type(exc).__name__}: {str(exc)[:200]}"
             result["title"] = page.title()
         except Exception as exc:  # noqa: BLE001
-            result = {"ok": False, "dry_run": args.dry_run,
-                      "error": f"{type(exc).__name__}: {str(exc)[:300]}",
-                      "url": page.url}
+            submitted = "/comments/" in page.url
+            result = {"ok": submitted, "dry_run": args.dry_run,
+                      "submitted": submitted, "url": page.url,
+                      "error": None if submitted else f"{type(exc).__name__}: {str(exc)[:300]}"}
             if args.screenshot:
                 try:
                     page.screenshot(path=args.screenshot, full_page=False)
@@ -75,7 +79,7 @@ def main() -> int:
                     pass
             print(json.dumps(result, ensure_ascii=False))
             browser.close()
-            return 1
+            return 0 if submitted else 1
         print(json.dumps(result, ensure_ascii=False))
         browser.close()
     return 0
