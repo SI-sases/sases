@@ -165,6 +165,10 @@ class Handler(BaseHTTPRequestHandler):
             if self.path == "/observe":
                 self._send(200, self.agi.run_once())
                 return
+            if self.path == "/ask":
+                from .ask import answer
+                self._send(200, answer(str(body.get("text") or ""), self.agi.db_path))
+                return
             self._send(404, {"error": "not found"})
         except Exception as exc:  # noqa: BLE001
             self._send(400, {"error": f"{type(exc).__name__}: {exc}"})

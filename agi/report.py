@@ -19,7 +19,10 @@ def generate(db_path: str) -> str:
         "SELECT node_id,type,severity,message,created_at FROM agi_events "
         "WHERE severity IN ('error','critical') ORDER BY id DESC LIMIT 10"
     ).fetchall()
-    leader = conn.execute("SELECT scope,owner,expires_at FROM agi_leader").fetchall()
+    try:
+        leader = conn.execute("SELECT scope,owner,expires_at FROM agi_leader").fetchall()
+    except sqlite3.OperationalError:
+        leader = []
     try:
         escalations = conn.execute(
             "SELECT id,node_id,reason,severity,created_at FROM agi_escalations "
