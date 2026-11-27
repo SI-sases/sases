@@ -240,7 +240,7 @@ class Handler(BaseHTTPRequestHandler):
                 conn = sqlite3.connect(self.agi.db_path)
                 conn.row_factory = sqlite3.Row
                 try:
-                    result = run_once(conn, self.agi.registry, "server-worker", "")
+                    result = run_once(conn, self.agi.registry, "server-worker", "", exclude_local=True)
                     self._send(200, result)
                 finally:
                     conn.close()
@@ -275,7 +275,7 @@ class Handler(BaseHTTPRequestHandler):
                 conn.row_factory = sqlite3.Row
                 try:
                     parts = [p for p in self.path.split("?")[0].split("/") if p]
-                    if len(parts) >= 3 and parts[2] in {"message", "cancel"}:
+                    if len(parts) >= 3 and parts[2] in {"message", "cancel", "claim", "progress", "finish"}:
                         agent_id = parts[1]
                         if not agents.get_agent(conn, agent_id):
                             self._send(404, {"error": "agent not found"})
@@ -283,6 +283,20 @@ class Handler(BaseHTTPRequestHandler):
                         if parts[2] == "cancel":
                             ok = agents.cancel(conn, agent_id)
                             self._send(200 if ok else 409, {"ok": ok})
+                            return
+                        if parts[2] == "claim":
+                            ok = agents.claim_agent(conn, agent_id, str(body.get("owner") or "local"),
+                                                    int(body.get("ttl") or 300))
+                            self._send(200 if ok else 409, {"ok": ok})
+                            return
+                        if parts[2] == "progress":
+                            ok = agents.set_progress(conn, agent_id, str(body.get("progress") or ""))
+                            self._send(200 if ok else 404, {"ok": ok})
+                            return
+                        if parts[2] == "finish":
+                            ok = agents.finish(conn, agent_id, str(body.get("status") or "done"),
+                                               body.get("result"))
+                            self._send(200 if ok else 404, {"ok": ok})
                             return
                         text = str(body.get("message") or "").strip()
                         if not text:

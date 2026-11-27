@@ -88,9 +88,9 @@ def _run_approved(conn: sqlite3.Connection, registry, owner: str) -> dict[str, A
 
 
 def run_once(conn: sqlite3.Connection, registry, owner: str = "worker",
-             base_url: str = "") -> dict[str, Any]:
+             base_url: str = "", exclude_local: bool = False) -> dict[str, Any]:
     base_url = base_url or os.environ.get("SASES_WORKER_BASE_URL", "http://127.0.0.1:8001")
-    agent_id = agents.claim_next(conn, owner, 300)
+    agent_id = agents.claim_next(conn, owner, 300, exclude_local=exclude_local)
     if not agent_id:
         result = _run_approved(conn, registry, owner)
         _touch(conn, owner, result)

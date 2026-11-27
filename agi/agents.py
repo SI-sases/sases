@@ -123,12 +123,15 @@ def finish(conn: sqlite3.Connection, agent_id: str, status: str = "done",
     return cur.rowcount > 0
 
 
-def claim_next(conn: sqlite3.Connection, owner: str, ttl: int = 300) -> str | None:
+def claim_next(conn: sqlite3.Connection, owner: str, ttl: int = 300,
+               exclude_local: bool = False) -> str | None:
     ensure_schema(conn)
     now = int(time.time())
-    row = conn.execute(
-        "SELECT agent_id FROM agi_agents WHERE status='queued' ORDER BY created_at ASC LIMIT 1"
-    ).fetchone()
+    sql = "SELECT agent_id FROM agi_agents WHERE status='queued'"
+    if exclude_local:
+        sql += " AND node_id NOT IN ('local','desktop')"
+    sql += " ORDER BY created_at ASC LIMIT 1"
+    row = conn.execute(sql).fetchone()
     if not row:
         return None
     agent_id = row[0]
@@ -207,6 +210,18 @@ def ack_message(conn: sqlite3.Connection, message_id: int) -> None:
     conn.execute("UPDATE agi_agent_messages SET ack_at=? WHERE id=?",
                  (int(time.time()), message_id))
     conn.commit()
+
+
+def claim_agent(conn: sqlite3.Connection, agent_id: str, owner: str, ttl: int = 300) -> bool:
+    ensure_schema(conn)
+    now = int(time.time())
+    cur = conn.execute(
+        "UPDATE agi_agents SET status='active',lease_owner=?,lease_until=?,last_seen=?,updated_at=? "
+        "WHERE agent_id=? AND status='queued'",
+        (owner, now + max(10, ttl), now, now, agent_id),
+    )
+    conn.commit()
+    return cur.rowcount > 0
 
 
 def cancel(conn: sqlite3.Connection, agent_id: str) -> bool:
