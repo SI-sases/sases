@@ -42,11 +42,16 @@ def _douyin(args: dict[str, Any]) -> dict[str, Any]:
     return douyin_post(args)
 
 
+def _bilibili(args: dict[str, Any]) -> dict[str, Any]:
+    from .browser import bilibili_post
+    return bilibili_post(args)
+
+
 def registry() -> dict[str, Adapter]:
     return {
         "reddit": Adapter("reddit", "approval", _reddit),
         "douyin": Adapter("douyin", "approval", _douyin),
-        "bilibili": Adapter("bilibili", "planned", reason="video upload adapter not implemented"),
+        "bilibili": Adapter("bilibili", "approval", _bilibili),
         "youtube": Adapter("youtube", "planned", reason="video upload adapter not implemented"),
         "xiaohongshu": Adapter("xiaohongshu", "manual",
                                reason="platform risk warning; manual-only"),
