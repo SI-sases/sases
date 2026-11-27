@@ -371,23 +371,67 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if self.path == "/ask":
                 from .ask import answer
+                from . import confirmations
                 text = str(body.get("text") or "")
+                conversation_id = body.get("conversation_id")
+                history = [str(h) for h in (body.get("history") or []) if h]
+                pending_choice = ""
+                if conversation_id:
+                    import sqlite3
+                    c0 = sqlite3.connect(self.agi.db_path)
+                    try:
+                        pending = confirmations.pending(c0, int(conversation_id))
+                    finally:
+                        c0.close()
+                    if pending:
+                        low = text.strip().lower()
+                        if any(k in text for k in ("允许公开", "同意公开")) or low in ("公开", "allow"):
+                            pending_choice = "allow"
+                        elif any(k in text for k in ("只 dry-run", "只dry-run", "不要公开", "不公开")):
+                            pending_choice = "dry_run"
+                        if pending_choice:
+                            c1 = sqlite3.connect(self.agi.db_path)
+                            try:
+                                confirmations.resolve(c1, int(pending["id"]), pending_choice)
+                            finally:
+                                c1.close()
+                            text = pending["goal"]
+                            history = pending["history"]
                 result = answer(text, self.agi.db_path)
                 goal = text.strip()[:500]
                 from . import conversation_extractor
-                history_text = "\n".join(str(h) for h in (body.get("history") or []) if h)[-4000:]
+                history_text = "\n".join(history)[-4000:]
                 extracted = conversation_extractor.extract(goal + "\n" + history_text)
+                if pending_choice:
+                    extracted["facts"] = [f for f in extracted.get("facts", [])
+                                          if f.get("key") != "constraint_conflict"]
+                    extracted["constraints"] = [c for c in extracted.get("constraints", [])
+                                                if "自动公开" not in c]
+                    extracted["constraints"].append("publish_mode=" + pending_choice)
                 platform_words = ("youtube", "抖音", "douyin", "bilibili", "b站", "reddit", "小红书")
                 action_words = ("发到", "发布", "上传", "帮我", "处理", "做一下")
                 dispatch = any(k in text for k in ("执行", "派给", "派活", "子智能体", "后台任务", "让子", "继续", "上次", "接着"))
                 dispatch = dispatch or (any(k in text.lower() for k in platform_words) and any(k in text for k in action_words))
-                has_conflict = any(f.get("key") == "constraint_conflict" for f in extracted.get("facts", []))
+                has_conflict = any(f.get("key") == "constraint_conflict" for f in extracted.get("facts", [])) and not pending_choice
                 if has_conflict:
+                    import sqlite3
+                    c2 = sqlite3.connect(self.agi.db_path)
+                    try:
+                        confirmation_id = confirmations.create(
+                            c2, int(conversation_id or 0), goal, history,
+                            ["allow", "dry_run"],
+                        )
+                    finally:
+                        c2.close()
                     result["requires_confirmation"] = True
+                    result["confirmation_id"] = confirmation_id
+                    result["options"] = ["allow", "dry_run"]
                     result["markdown"] = (result.get("markdown") or "") + (
                         "\n\n## 需要确认\n\n你的要求里同时出现了“自动公开”和“不要自动公开”。\n"
                         "请明确选择：允许公开，还是只 dry-run。\n\n未创建子智能体。")
                     dispatch = False
+                if pending_choice:
+                    dispatch = True
                 if dispatch:
                     from . import agents
                     import sqlite3
