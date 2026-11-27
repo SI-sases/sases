@@ -14,6 +14,8 @@ agi/sub_agi.py    sub heartbeat adapter
 agi/deploy.py     staging/promote/rollback plans (dry run)
 agi/staging.py    run candidate on alternate port and verify
 agi/leader.py     single-main lease per scope (local/fleet)
+agi/autopilot.py  observe + report loop (no production mutation)
+agi/report.py     human-readable fleet report
 agi/playbooks/    health_check, publish_platform, deploy_node
 ```
 
@@ -100,6 +102,28 @@ GET  /leader?scope=fleet
 
 A crashed owner releases the lock by lease expiry; a second owner gets 409
 while the lease is active.
+
+## Autopilot (observe/report only)
+
+```bash
+python -m agi.autopilot --once --base-url http://127.0.0.1:8001
+python -m agi.autopilot --interval 60
+```
+
+Report:
+
+```text
+reports/agi_report.md
+```
+
+`kind` distinguishes:
+
+```text
+client  local packaged client
+cloud   cloud SASES node
+```
+
+Autopilot does not promote, rollback, restart, or edit code.
 
 ## Run
 

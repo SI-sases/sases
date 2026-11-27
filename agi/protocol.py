@@ -28,6 +28,7 @@ class Message:
     type: str
     node_id: str
     scope: str = "local"
+    kind: str = "cloud"
     severity: str = "info"
     payload: dict[str, Any] = field(default_factory=dict)
     evidence: dict[str, Any] = field(default_factory=dict)
@@ -45,6 +46,8 @@ class Message:
             raise ValueError("node_id is required")
         if self.scope not in {"local", "fleet"}:
             raise ValueError("scope must be local or fleet")
+        if self.kind not in {"client", "cloud"}:
+            raise ValueError("kind must be client or cloud")
 
     def to_dict(self) -> dict[str, Any]:
         self.validate()

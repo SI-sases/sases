@@ -35,6 +35,7 @@ def ensure_schema(db_path: str) -> None:
             CREATE TABLE IF NOT EXISTS agi_nodes (
                 node_id TEXT PRIMARY KEY,
                 scope TEXT NOT NULL DEFAULT 'local',
+                kind TEXT NOT NULL DEFAULT 'cloud',
                 role TEXT NOT NULL DEFAULT 'main',
                 version TEXT,
                 health TEXT,
@@ -67,6 +68,10 @@ def ensure_schema(db_path: str) -> None:
             );
             """
         )
+        cols = {row[1] for row in conn.execute("PRAGMA table_info(agi_nodes)")}
+        if "kind" not in cols:
+            conn.execute("ALTER TABLE agi_nodes ADD COLUMN kind TEXT NOT NULL DEFAULT 'cloud'")
+        conn.execute("UPDATE agi_nodes SET kind='client' WHERE scope='local'")
 
 
 class MainAGI:
@@ -123,9 +128,11 @@ class MainAGI:
         self.record_event(event)
         with _connect(self.db_path) as conn:
             conn.execute(
-                "INSERT INTO agi_nodes(node_id,scope,role,version,health,last_seen) VALUES(?,?,?,?,?,?) "
-                "ON CONFLICT(node_id) DO UPDATE SET version=excluded.version,health=excluded.health,last_seen=excluded.last_seen",
-                (node_id, "local", "main", (version.get("data") or {}).get("commit") or "", "ok" if healthy else "error", event.created_at),
+                "INSERT INTO agi_nodes(node_id,scope,kind,role,version,health,last_seen) VALUES(?,?,?,?,?,?,?) "
+                "ON CONFLICT(node_id) DO UPDATE SET scope=excluded.scope,kind=excluded.kind,"
+                "version=excluded.version,health=excluded.health,last_seen=excluded.last_seen",
+                (node_id, "local", "client", "main", (version.get("data") or {}).get("commit") or "",
+                 "ok" if healthy else "error", event.created_at),
             )
             conn.execute(
                 "UPDATE agi_runs SET status=?,result_json=?,finished_at=? WHERE id=?",

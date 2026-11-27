@@ -136,10 +136,10 @@ class Handler(BaseHTTPRequestHandler):
                 health = "error" if message.severity == "critical" else "ok"
                 version = str(message.payload.get("version") or "")
                 conn.execute(
-                    "INSERT INTO agi_nodes(node_id,scope,role,version,health,last_seen) VALUES(?,?,?,?,?,?) "
-                    "ON CONFLICT(node_id) DO UPDATE SET scope=excluded.scope,role=excluded.role,"
+                    "INSERT INTO agi_nodes(node_id,scope,kind,role,version,health,last_seen) VALUES(?,?,?,?,?,?,?) "
+                    "ON CONFLICT(node_id) DO UPDATE SET scope=excluded.scope,kind=excluded.kind,role=excluded.role,"
                     "version=excluded.version,health=excluded.health,last_seen=excluded.last_seen",
-                    (message.node_id, message.scope, "sub" if message.scope == "fleet" else "main",
+                    (message.node_id, message.scope, message.kind, "sub" if message.scope == "fleet" else "main",
                      version, health, message.created_at),
                 )
                 conn.commit()

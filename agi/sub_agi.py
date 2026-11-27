@@ -15,7 +15,7 @@ from .protocol import make_message
 from .tools import build_default_registry
 
 
-def heartbeat(base_url: str, scope: str = "local") -> dict:
+def heartbeat(base_url: str, scope: str = "local", kind: str = "client") -> dict:
     registry = build_default_registry()
     health = registry.invoke("sub", "node.health", {"base_url": base_url})
     version = registry.invoke("sub", "node.version", {"base_url": base_url})
@@ -29,6 +29,7 @@ def heartbeat(base_url: str, scope: str = "local") -> dict:
         "agi.heartbeat" if ok else "agi.event",
         node_id=node_id,
         scope=scope,
+        kind=kind,
         severity="info" if ok else "critical",
         payload={"healthy": ok, "version": version_data.get("commit") or "",
                  "tables": (health.get("data") or {}).get("tables") if isinstance(health.get("data"), dict) else None},
@@ -60,10 +61,11 @@ def main() -> int:
     parser.add_argument("--base-url", default="http://127.0.0.1:8001")
     parser.add_argument("--post", default="", help="main AGI URL, e.g. http://127.0.0.1:8099")
     parser.add_argument("--scope", default="local", choices=["local", "fleet"])
+    parser.add_argument("--kind", default="client", choices=["client", "cloud"])
     parser.add_argument("--token", default=None)
     parser.add_argument("--once", action="store_true")
     args = parser.parse_args()
-    message = heartbeat(args.base_url, args.scope)
+    message = heartbeat(args.base_url, args.scope, args.kind)
     if args.post:
         message["_main_response"] = post_event(args.post, message, args.token)
     print(json.dumps(message, ensure_ascii=False))
