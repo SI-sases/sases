@@ -102,6 +102,7 @@ SASES instances:
 - [Memory](docs/memory.md)
 - [Credit protocol](docs/credit-protocol.md)
 - [Credit fees](docs/credit-fees.md)
+- [Two-layer AGI](docs/agi-two-layer.md)
 - [Workflows](docs/workflows.md)
 - [Theme](docs/theme.md)
 - [Marketplace](docs/marketplace.md)

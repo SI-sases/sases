@@ -1,0 +1,10 @@
+{
+  "id": "health_check",
+  "version": 1,
+  "description": "Read-only health loop used by the main AGI in shadow mode.",
+  "steps": [
+    {"tool": "node.health", "args": {"base_url": "http://127.0.0.1:8001"}},
+    {"tool": "node.version", "args": {"base_url": "http://127.0.0.1:8001"}}
+  ],
+  "on_failure": "record_event"
+}

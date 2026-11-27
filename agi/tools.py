@@ -1,0 +1,99 @@
+"""One tool registry shared by the main AGI and sub AGIs.
+
+A tool is defined once.  Profiles decide which tools a role may see and call;
+there are no duplicate main/sub implementations.
+"""
+from __future__ import annotations
+
+import json
+import urllib.error
+import urllib.request
+from dataclasses import dataclass
+from typing import Any, Callable
+
+Handler = Callable[[dict[str, Any]], dict[str, Any]]
+
+
+@dataclass(frozen=True)
+class ToolSpec:
+    id: str
+    handler: Handler
+    risk: str
+    profiles: frozenset[str]
+    description: str = ""
+    timeout: int = 10
+
+
+class ToolRegistry:
+    def __init__(self) -> None:
+        self._tools: dict[str, ToolSpec] = {}
+
+    def register(self, spec: ToolSpec) -> None:
+        if spec.id in self._tools:
+            raise ValueError(f"duplicate tool: {spec.id}")
+        self._tools[spec.id] = spec
+
+    def get(self, tool_id: str) -> ToolSpec:
+        try:
+            return self._tools[tool_id]
+        except KeyError as exc:
+            raise KeyError(f"unknown tool: {tool_id}") from exc
+
+    def for_profile(self, profile: str) -> list[ToolSpec]:
+        return [t for t in self._tools.values() if profile in t.profiles]
+
+    def invoke(self, profile: str, tool_id: str, args: dict[str, Any] | None = None) -> dict[str, Any]:
+        spec = self.get(tool_id)
+        if profile not in spec.profiles:
+            raise PermissionError(f"tool {tool_id} is not allowed for profile {profile}")
+        return spec.handler(args or {})
+
+
+def _http_json(url: str, timeout: int = 10) -> dict[str, Any]:
+    req = urllib.request.Request(url, headers={"Accept": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return {"ok": True, "status": resp.status, "data": json.loads(resp.read().decode("utf-8") or "{}")}
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8", "replace")[:500]
+        return {"ok": False, "status": exc.code, "error": body}
+    except Exception as exc:  # noqa: BLE001 - returned as a tool result
+        return {"ok": False, "status": 0, "error": f"{type(exc).__name__}: {exc}"}
+
+
+def health(args: dict[str, Any]) -> dict[str, Any]:
+    base = str(args.get("base_url") or "http://127.0.0.1:8001").rstrip("/")
+    result = _http_json(base + "/health", int(args.get("timeout") or 10))
+    result["base_url"] = base
+    return result
+
+
+def version(args: dict[str, Any]) -> dict[str, Any]:
+    base = str(args.get("base_url") or "http://127.0.0.1:8001").rstrip("/")
+    result = _http_json(base + "/version", int(args.get("timeout") or 10))
+    result["base_url"] = base
+    return result
+
+
+def task_list(args: dict[str, Any]) -> dict[str, Any]:
+    base = str(args.get("base_url") or "http://127.0.0.1:8001").rstrip("/")
+    token = str(args.get("token") or "")
+    req = urllib.request.Request(base + "/hq/tasks", headers={"Accept": "application/json"})
+    if token:
+        req.add_header("Authorization", "Bearer " + token)
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            return {"ok": True, "status": resp.status, "data": json.loads(resp.read().decode("utf-8") or "{}")}
+    except Exception as exc:  # noqa: BLE001
+        return {"ok": False, "status": 0, "error": str(exc)}
+
+
+def build_default_registry() -> ToolRegistry:
+    registry = ToolRegistry()
+    registry.register(ToolSpec("node.health", health, "read", frozenset({"main", "sub"}),
+                               "Read /health from a SASES node"))
+    registry.register(ToolSpec("node.version", version, "read", frozenset({"main", "sub"}),
+                               "Read /version from a SASES node"))
+    registry.register(ToolSpec("task.list", task_list, "read", frozenset({"main", "sub"}),
+                               "List HQ tasks with an executor token"))
+    return registry

@@ -15,7 +15,7 @@ DEFAULT_OUT = r"D:\sases_build\sases-portable.zip"
 DEFAULT_STAGE = r"D:\sases_build\portable_stage"
 DEFAULT_EMBED = r"D:\sases\python-embed"
 
-ROOT_DIRS = ("core", "static", "harness_modules", "launcher", "scripts", "wireguard")
+ROOT_DIRS = ("core", "static", "harness_modules", "launcher", "scripts", "wireguard", "agi")
 ROOT_FILES = (
     "app_full.py",
     "requirements.txt",
@@ -69,6 +69,15 @@ timeout /t 6 /nobreak >nul
 start "" "http://127.0.0.1:8001"
 """
 
+BAT_AGI = """@echo off
+cd /d %~dp0
+if exist "python-embed\\pythonw.exe" (
+  start "" /min "python-embed\\pythonw.exe" -m agi.main_agi --interval 30
+) else (
+  start "" /min "python-embed\\python.exe" -m agi.main_agi --interval 30
+)
+"""
+
 
 def _ignore(directory, names):
     ignored = []
@@ -111,7 +120,7 @@ def _verify(zip_path: str) -> None:
         low = name.lower()
         if any(part in low for part in forbidden):
             raise SystemExit(f"forbidden file in package: {name}")
-    required = ("python-embed/python.exe", "core/bootstrap.py", "launcher/launcher.py", "app_full.py")
+    required = ("python-embed/python.exe", "core/bootstrap.py", "launcher/launcher.py", "app_full.py", "agi/main_agi.py")
     missing = [item for item in required if item not in names]
     if missing:
         raise SystemExit(f"missing required files: {missing}")
@@ -141,6 +150,8 @@ def build(root: str, out: str, stage: str, embed: str) -> None:
     shutil.copy2(launcher_exe, os.path.join(stage, "SASES启动器.exe"))
     with open(os.path.join(stage, "启动SASES.bat"), "w", encoding="utf-8") as handle:
         handle.write(BAT)
+    with open(os.path.join(stage, "启动主AGI.bat"), "w", encoding="utf-8") as handle:
+        handle.write(BAT_AGI)
 
     os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
     if os.path.exists(out):

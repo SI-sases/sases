@@ -1,0 +1,13 @@
+{
+  "id": "deploy_node",
+  "version": 1,
+  "description": "Blue-green node deployment; never overwrite a running tree.",
+  "steps": [
+    {"tool": "node.health", "args": {}},
+    {"tool": "deploy.stage", "args": {}},
+    {"tool": "deploy.verify", "args": {}},
+    {"tool": "deploy.promote", "args": {}},
+    {"tool": "deploy.rollback", "args": {}}
+  ],
+  "approval_required": true
+}

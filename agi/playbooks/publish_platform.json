@@ -1,0 +1,16 @@
+{
+  "id": "publish_platform",
+  "version": 1,
+  "description": "Replicated content publishing flow.",
+  "steps": [
+    {"tool": "node.health", "args": {}},
+    {"tool": "task.create", "args": {}},
+    {"tool": "task.claim", "args": {}},
+    {"tool": "browser.open", "args": {}},
+    {"tool": "browser.fill", "args": {}},
+    {"tool": "browser.click", "args": {}},
+    {"tool": "browser.screenshot", "args": {}},
+    {"tool": "task.receipt", "args": {}}
+  ],
+  "on_failure": "record_event"
+}
