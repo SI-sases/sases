@@ -13,6 +13,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+from . import local_outbox
 from .local_worker import _call, _execute, _read_only
 from .tools import build_default_registry
 
@@ -81,7 +82,17 @@ class LocalRuntime:
             with self.lock:
                 self.active.discard(agent_id)
 
+    def flush_outbox(self) -> None:
+        for row in local_outbox.pending():
+            try:
+                _call(self.server, self.token, "POST", f"/agents/{row['agent_id']}/finish",
+                      {"status": row["status"], "result": row["result"]})
+                local_outbox.remove(int(row["id"]))
+            except Exception:
+                local_outbox.bump(int(row["id"]))
+
     def poll(self) -> dict:
+        self.flush_outbox()
         approved = _call(self.server, self.token, "GET", "/approvals/approved").get("approvals", [])
         for row in approved:
             if row.get("tool") != "agent.execute":

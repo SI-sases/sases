@@ -16,6 +16,7 @@ from pathlib import Path
 from .executor import execute
 from .package import TaskPackage
 from .planner import plan
+from . import local_outbox
 from .tools import build_default_registry
 from .worker import _read_only
 
@@ -39,7 +40,11 @@ def _execute(server: str, token: str, registry, agent_id: str, steps: list[dict]
     conn = sqlite3.connect(":memory:")
     result = execute(package, registry, conn, owner="local-worker", profile="main")
     status = "done" if result.get("ok") else "failed"
-    _call(server, token, "POST", f"/agents/{agent_id}/finish", {"status": status, "result": result})
+    try:
+        _call(server, token, "POST", f"/agents/{agent_id}/finish", {"status": status, "result": result})
+    except Exception:
+        local_outbox.add(agent_id, status, result)
+        result["outboxed"] = True
     return {"ok": bool(result.get("ok")), "claimed": True, "agent_id": agent_id, "status": status, "result": result}
 
 
