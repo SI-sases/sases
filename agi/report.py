@@ -27,6 +27,13 @@ def generate(db_path: str) -> str:
         ).fetchall()
     except sqlite3.OperationalError:
         escalations = []
+    try:
+        tickets = conn.execute(
+            "SELECT id,customer,need,level,owner,status,created_at FROM support_tickets "
+            "WHERE status='open' ORDER BY id DESC LIMIT 20"
+        ).fetchall()
+    except sqlite3.OperationalError:
+        tickets = []
     conn.close()
 
     lines = ["# SASES 主 AGI 汇报", "", f"生成时间：{time.strftime('%Y-%m-%d %H:%M:%S')}", "", "## 节点"]
@@ -53,6 +60,13 @@ def generate(db_path: str) -> str:
     for item in escalations:
         lines.append(
             f"- #{item['id']} `{item['node_id']}` {item['severity']} {item['reason']}"
+        )
+    lines += ["", "## 客服工单"]
+    if not tickets:
+        lines.append("- 无")
+    for t in tickets:
+        lines.append(
+            f"- #{t['id']} {t['level']} owner={t['owner']} `{t['customer'] or '-'}` {t['need']}"
         )
     return "\n".join(lines) + "\n"
 
