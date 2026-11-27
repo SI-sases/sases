@@ -141,6 +141,11 @@ def _verify_candidate(args: dict[str, Any]) -> dict[str, Any]:
     return verify(root, int(args.get("port") or 8030))
 
 
+def _browser(args: dict[str, Any], action: str) -> dict[str, Any]:
+    from . import browser
+    return getattr(browser, action)(args)
+
+
 def build_default_registry() -> ToolRegistry:
     from .deploy import plan_promote, plan_rollback, plan_stage
 
@@ -157,6 +162,12 @@ def build_default_registry() -> ToolRegistry:
                                "Claim one manual HQ task"))
     registry.register(ToolSpec("task.receipt", task_receipt, "write", frozenset({"main", "sub"}),
                                "Submit a task receipt"))
+    registry.register(ToolSpec("browser.open", lambda a: _browser(a, "open_page"), "read",
+                               frozenset({"main"}), "Open a URL in the CDP browser"))
+    registry.register(ToolSpec("browser.fill", lambda a: _browser(a, "fill_page"), "write",
+                               frozenset({"main"}), "Fill selectors and optionally click"))
+    registry.register(ToolSpec("browser.click", lambda a: _browser(a, "click_page"), "write",
+                               frozenset({"main"}), "Click a selector and screenshot"))
     registry.register(ToolSpec("deploy.stage", lambda a: plan_stage(
         str(a.get("node_id") or "local"), str(a.get("version") or "next"), int(a.get("port") or 8002)),
         "deploy", frozenset({"main"}), "Plan a staging deploy (dry run)"))

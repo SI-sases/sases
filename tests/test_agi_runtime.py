@@ -30,6 +30,8 @@ def test_deploy_tools_are_main_only_and_dry_run():
     assert "task.create" in {t.id for t in reg.for_profile("main")}
     assert "task.create" not in {t.id for t in reg.for_profile("sub")}
     assert "task.claim" in {t.id for t in reg.for_profile("sub")}
+    assert "browser.open" in {t.id for t in reg.for_profile("main")}
+    assert "browser.open" not in {t.id for t in reg.for_profile("sub")}
     plan = reg.invoke("main", "deploy.stage", {"node_id": "local", "version": "next", "port": 8002})
     assert plan["dry_run"] is True
     assert plan["requires_approval"] is True

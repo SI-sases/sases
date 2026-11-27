@@ -82,7 +82,19 @@ task.list     main/sub, read
 task.create   main only, write
 task.claim    main/sub, write
 task.receipt  main/sub, write
+browser.open  main only, read
+browser.fill  main only, write
+browser.click main only, write
 ```
+
+Browser worker:
+
+```text
+scripts/browser_act.py
+```
+
+Set `SASES_BROWSER_PYTHON` if the main AGI runs under an embedded Python
+without Playwright.
 
 ## Staging verifier
 
