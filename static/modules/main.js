@@ -2,6 +2,7 @@
 // 会话胶囊：后台任务 / 子智能体 / 权限
 import './session_pills.js?v=20261131';
 import './frontend_errors.js?v=20261133';
+import './agi_approval.js?v=20261133';
 import { login, register, isLoggedIn } from './auth.js';
 import { api } from './api.js';
 import { initMessages } from './messages.js';

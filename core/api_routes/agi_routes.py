@@ -53,6 +53,37 @@ def _main_agi_token() -> str:
     return path.read_text(encoding="utf-8").strip() if path.exists() else ""
 
 
+def _main_request(method: str, path: str, body: dict | None = None) -> dict:
+    base = os.environ.get("SASES_AGI_URL", "http://127.0.0.1:8099").rstrip("/")
+    token = _main_agi_token()
+    if not token:
+        raise HTTPException(status_code=503, detail="main AGI token is not configured")
+    data = json.dumps(body).encode() if body is not None else None
+    headers = {"Accept": "application/json", "X-SASES-AGI-Token": token}
+    if data is not None:
+        headers["Content-Type"] = "application/json"
+    req = urllib.request.Request(base + path, data=data, headers=headers, method=method)
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            return json.loads(resp.read().decode("utf-8") or "{}")
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=503, detail=f"main AGI unavailable: {exc}") from exc
+
+
+@router.get("/approvals")
+async def list_approvals(user_id: int = Depends(get_current_user)):
+    return _main_request("GET", "/approvals")
+
+
+@router.post("/approvals/decide")
+async def decide_approval(body: dict, user_id: int = Depends(get_current_user)):
+    return _main_request("POST", "/approvals/decide", {
+        "id": int(body.get("id") or 0),
+        "decision": str(body.get("decision") or ""),
+        "decided_by": f"user:{user_id}",
+    })
+
+
 @router.post("/ask")
 async def ask_main_agi(body: AskRequest, user_id: int = Depends(get_current_user)):
     """Proxy the chat window to the user's main AGI control plane."""
