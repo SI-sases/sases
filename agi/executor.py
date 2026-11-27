@@ -2,13 +2,14 @@
 from __future__ import annotations
 
 import sqlite3
-from typing import Any
+from typing import Any, Callable
 
 from .package import TaskPackage
 
 
 def execute(package: TaskPackage, registry, conn: sqlite3.Connection,
-            owner: str = "main", profile: str = "sub") -> dict[str, Any]:
+            owner: str = "main", profile: str = "sub",
+            on_step: Callable[[int, dict, dict], None] | None = None) -> dict[str, Any]:
     package.validate()
     if not package.steps:
         return {"ok": False, "error": "package has no steps", "trace_id": package.trace_id}
@@ -29,6 +30,11 @@ def execute(package: TaskPackage, registry, conn: sqlite3.Connection,
             return {"ok": False, "error": f"{type(exc).__name__}: {exc}", "step": index,
                     "trace_id": package.trace_id, "results": results}
         results.append({"tool": tool_id, "result": result})
+        if on_step:
+            try:
+                on_step(index, step, result)
+            except Exception:
+                pass
         if result.get("ok") is False and result.get("error") == "approval_required":
             return {"ok": False, "error": "approval_required", "step": index,
                     "trace_id": package.trace_id, "results": results}

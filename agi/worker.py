@@ -48,6 +48,10 @@ def _touch(conn: sqlite3.Connection, owner: str, result: dict[str, Any]) -> None
     conn.commit()
 
 
+def _patch_step(conn: sqlite3.Connection, agent_id: str, index: int, total: int, step: dict) -> None:
+    agents.set_progress(conn, agent_id, f"审批后第 {index + 1}/{total} 步完成")
+
+
 def _run_approved(conn: sqlite3.Connection, registry, owner: str) -> dict[str, Any]:
     rows = approvals.list_by_status(conn, "allow", 20)
     for row in rows:
@@ -73,7 +77,8 @@ def _run_approved(conn: sqlite3.Connection, registry, owner: str) -> dict[str, A
                               node_id=str(agent.get("node_id") or "local"),
                               acceptance=["approved execution"], steps=steps,
                               tools_allowed=[s.get("tool") for s in steps])
-        result = execute(package, registry, conn, owner=owner, profile="main")
+        result = execute(package, registry, conn, owner=owner, profile="main",
+                         on_step=lambda i, s, r: _patch_step(conn, agent_id, i, len(steps), s))
         agents.finish(conn, agent_id, "done" if result.get("ok") else "failed", result)
         approvals.mark_executed(conn, int(row["id"]))
         return {"ok": bool(result.get("ok")), "claimed": True, "agent_id": agent_id,
@@ -146,7 +151,15 @@ def run_once(conn: sqlite3.Connection, registry, owner: str = "worker",
                           acceptance=["worker completed"], steps=steps,
                           tools_allowed=[s.get("tool") for s in steps])
     agents.set_progress(conn, agent_id, "执行中")
-    result = execute(package, registry, conn, owner=owner, profile="main")
+    def _on_step(index: int, step: dict, step_result: dict) -> None:
+        agents.set_progress(conn, agent_id, f"第 {index + 1}/{len(steps)} 步完成")
+        if ctx_id:
+            context_pack.patch(conn, ctx_id, {
+                "state": {"status": "running", "current_step": index + 1},
+                "facts": [{"key": "last_tool", "value": str(step.get("tool") or "")}],
+            }, agent_id=agent_id)
+
+    result = execute(package, registry, conn, owner=owner, profile="main", on_step=_on_step)
     if ctx_id:
         context_pack.patch(conn, ctx_id, {
             "state": {"status": "done" if result.get("ok") else "failed", "current_step": len(steps)},

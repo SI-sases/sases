@@ -447,7 +447,9 @@ async function sendMessage() {
       const resp = await fetch('/agi/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-        body: JSON.stringify({ text, conversation_id: chatState.conversationId || null })
+        body: JSON.stringify({ text, conversation_id: chatState.conversationId || null,
+          history: Array.from(document.querySelectorAll('#chat-messages .message.user'))
+            .slice(-8).map(el => (el.innerText || '').trim()).filter(Boolean) })
       });
       const data = await resp.json().catch(() => ({}));
       if (!resp.ok) throw new Error(data.detail || ('HTTP ' + resp.status));

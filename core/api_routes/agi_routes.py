@@ -26,6 +26,7 @@ class AGIRequest(BaseModel):
 class AskRequest(BaseModel):
     text: str
     conversation_id: int | None = None
+    history: list[str] | None = None
 
 
 class FrontendEventRequest(BaseModel):
@@ -174,7 +175,7 @@ async def ask_main_agi(body: AskRequest, user_id: int = Depends(get_current_user
         raise HTTPException(status_code=503, detail="main AGI token is not configured")
     req = urllib.request.Request(
         base + "/ask",
-        data=json.dumps({"text": body.text, "conversation_id": body.conversation_id}).encode(),
+        data=json.dumps({"text": body.text, "conversation_id": body.conversation_id, "history": body.history or []}).encode(),
         headers={"Content-Type": "application/json", "X-SASES-AGI-Token": token},
         method="POST",
     )

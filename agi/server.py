@@ -388,7 +388,8 @@ class Handler(BaseHTTPRequestHandler):
                         from . import context_builder, context_collector, conversation_extractor
                         collected = context_collector.collect(
                             conn, goal, body.get("conversation_id"))
-                        extracted = conversation_extractor.extract(goal)
+                        history_text = "\n".join(str(h) for h in (body.get("history") or []) if h)[-4000:]
+                        extracted = conversation_extractor.extract(goal + "\n" + history_text)
                         built = context_builder.build(
                             conn, goal,
                             conversation_id=body.get("conversation_id"),
