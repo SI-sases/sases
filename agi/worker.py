@@ -73,6 +73,9 @@ def _run_approved(conn: sqlite3.Connection, registry, owner: str) -> dict[str, A
             continue
         if str(agent.get("node_id") or "") in ("local", "desktop"):
             continue
+        if str(agent.get("status") or "") not in ("needs_approval", "active", "queued"):
+            approvals.mark_executed(conn, int(row["id"]))
+            continue
         agents.set_progress(conn, agent_id, "审批通过，执行中")
         for step in steps:
             args = step.get("args") if isinstance(step.get("args"), dict) else {}

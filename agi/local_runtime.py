@@ -46,13 +46,13 @@ class LocalRuntime:
     def _is_browser(self, steps: list[dict]) -> bool:
         return any(str(s.get("tool") or "").startswith(("browser.", "adapter.")) for s in steps)
 
-    def _run(self, agent: dict) -> None:
+    def _run(self, agent: dict, approved: bool = False) -> None:
         agent_id = str(agent.get("agent_id") or "")
         task = self._json(agent)
         goal = str(agent.get("goal") or task.get("goal") or "local task")
         steps = task.get("steps") if isinstance(task.get("steps"), list) else []
         try:
-            safe, reason = _read_only(self.registry, steps)
+            safe, reason = (True, "") if approved else _read_only(self.registry, steps)
             if not safe:
                 approval = _call(self.server, self.token, "POST", "/approvals", {
                     "tool": "agent.execute",
@@ -111,7 +111,7 @@ class LocalRuntime:
             agent["task_json"] = json.dumps({"steps": steps})
             with self.lock:
                 self.active.add(agent_id)
-            self.pool.submit(self._run, agent)
+            self.pool.submit(self._run, agent, True)
             _call(self.server, self.token, "POST", "/approvals/executed", {"id": int(row["id"])})
             return {"ok": True, "started": agent_id, "approved": True}
 
