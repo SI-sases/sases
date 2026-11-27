@@ -161,7 +161,7 @@ def cancel(conn: sqlite3.Connection, agent_id: str) -> bool:
     ensure_schema(conn)
     cur = conn.execute(
         "UPDATE agi_agents SET status='cancelled',lease_until=NULL,updated_at=? "
-        "WHERE agent_id=? AND status='active'",
+        "WHERE agent_id=? AND status IN ('active','queued')",
         (int(time.time()), agent_id),
     )
     conn.commit()
