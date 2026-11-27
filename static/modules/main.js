@@ -4,7 +4,7 @@ import './session_pills.js?v=20261131';
 import { login, register, isLoggedIn } from './auth.js';
 import { api } from './api.js';
 import { initMessages } from './messages.js';
-import { initChat, openChatWindow, closeChatWindow } from './chat.js';
+import { initChat, openChatWindow, closeChatWindow } from './chat.js?v=20261130';
 import { initContacts } from './contacts.js';
 import { initDiscover } from './discover.js';
 import { initMe } from './me.js';

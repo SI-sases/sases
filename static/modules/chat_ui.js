@@ -1,4 +1,4 @@
-import { renderMarkdown } from './markdown.js?v=2';
+import { renderMarkdown } from './markdown.js?v=20261130';
 import { t } from './i18n.js';
 // static/modules/chat_ui.js
 
@@ -62,11 +62,12 @@ export function appendWorkMessage(role, content, senderName = null) {
   avatar.textContent = (senderName || (role === 'user' ? t('chat_me') : 'AI')).charAt(0).toUpperCase();
 
   const bubble = document.createElement('div');
-  bubble.style.maxWidth = '70%';
+  bubble.className = 'message ' + role;
+  bubble.style.maxWidth = role === 'user' ? '72%' : 'min(860px, 84%)';
   bubble.style.padding = '10px 14px';
   bubble.style.borderRadius = role === 'user' ? '12px 2px 12px 12px' : '2px 12px 12px 12px';
   bubble.style.wordBreak = 'break-word';
-  bubble.style.whiteSpace = 'pre-wrap';
+  bubble.style.whiteSpace = role === 'user' ? 'pre-wrap' : 'normal';
   bubble.style.fontSize = '15px';
   if (role === 'user') {
     bubble.style.background = '#007aff';
@@ -146,11 +147,12 @@ export function createMessageElement(role, content, senderName, messageId, timeI
   avatar.textContent = (senderName || (role === 'user' ? t('chat_me') : 'AI')).charAt(0).toUpperCase();
 
   const bubble = document.createElement('div');
-  bubble.style.maxWidth = '70%';
+  bubble.className = 'message ' + role;
+  bubble.style.maxWidth = role === 'user' ? '72%' : 'min(860px, 84%)';
   bubble.style.padding = '10px 14px';
   bubble.style.borderRadius = role === 'user' ? '12px 2px 12px 12px' : '2px 12px 12px 12px';
   bubble.style.wordBreak = 'break-word';
-  bubble.style.whiteSpace = 'pre-wrap';
+  bubble.style.whiteSpace = role === 'user' ? 'pre-wrap' : 'normal';
   bubble.style.fontSize = '15px';
   if (role === 'user') {
     bubble.style.background = '#007aff';

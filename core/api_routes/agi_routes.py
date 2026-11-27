@@ -1,4 +1,9 @@
 # core/api_routes/agi_routes.py
+import json
+import os
+import urllib.request
+from pathlib import Path
+
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
@@ -18,6 +23,10 @@ class AGIRequest(BaseModel):
     media_data: Optional[str] = None
 
 
+class AskRequest(BaseModel):
+    text: str
+
+
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     token = credentials.credentials
     try:
@@ -26,6 +35,34 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
     except (JWTError, ValueError):
         raise HTTPException(status_code=401, detail="Invalid token")
     return user_id
+
+
+def _main_agi_token() -> str:
+    token = os.environ.get("SASES_AGI_TOKEN", "").strip()
+    if token:
+        return token
+    path = Path(os.environ.get("SASES_AGI_TOKEN_FILE", str(Path("data") / "agi.token")))
+    return path.read_text(encoding="utf-8").strip() if path.exists() else ""
+
+
+@router.post("/ask")
+async def ask_main_agi(body: AskRequest, user_id: int = Depends(get_current_user)):
+    """Proxy the chat window to the user's main AGI control plane."""
+    base = os.environ.get("SASES_AGI_URL", "http://127.0.0.1:8099").rstrip("/")
+    token = _main_agi_token()
+    if not token:
+        raise HTTPException(status_code=503, detail="main AGI token is not configured")
+    req = urllib.request.Request(
+        base + "/ask",
+        data=json.dumps({"text": body.text}).encode(),
+        headers={"Content-Type": "application/json", "X-SASES-AGI-Token": token},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            return json.loads(resp.read().decode("utf-8") or "{}")
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=503, detail=f"main AGI unavailable: {exc}") from exc
 
 
 @router.post("/execute")

@@ -4,8 +4,8 @@ import { t } from './i18n.js';
 import { api } from './api.js';
 
 import { closeGroupChat, sendGroupMessage } from './group_chat.js';
-import { appendMessage, createMessageElement, updateMessageStatus } from './chat_ui.js';
-import { renderMarkdown } from './markdown.js?v=2';
+import { appendMessage, createMessageElement, updateMessageStatus } from './chat_ui.js?v=20261130';
+import { renderMarkdown } from './markdown.js?v=20261130';
 import { showWorkWarning, sendWorkCommand, sendCommanderTask, showFreeModeGuide } from './chat_work.js';
 import { updateIdentityButton, openIdentitySwitch } from './chat_identity.js';
 import { createContextMenu, showQuoteBar, hideQuoteBar, openChatInfo, toggleChatPlusPanel, closeChatPlusPanel } from './chat_menu.js';
@@ -440,6 +440,25 @@ async function sendMessage() {
   appendMessage('user', text, chatState.senderAgentId ? t('chat.sender.agent') : t('chat.sender.me'), tempId, new Date().toISOString(), true, chatState);
   input.value = '';
   updateSendButtonVisibility();
+
+  if (chatState.agentId === '__main_agi__') {
+    try {
+      const token = localStorage.getItem('sases_token') || '';
+      const resp = await fetch('/agi/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ text })
+      });
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok) throw new Error(data.detail || ('HTTP ' + resp.status));
+      updateMessageStatus(tempId, 'sent');
+      appendMessage('assistant', data.markdown || data.detail || t('chat.empty_reply'), '主 AGI', null, new Date().toISOString(), false, chatState);
+    } catch (e) {
+      updateMessageStatus(tempId, 'failed');
+      appendMessage('assistant', '主 AGI 暂时不可用：' + (e.message || e), '主 AGI', null, new Date().toISOString(), false, chatState);
+    }
+    return;
+  }
 
   try {
     // [A2A 物理切除] 移除了强行调本地接口的死代码
@@ -1034,12 +1053,17 @@ window.addEventListener('sases_new_message', (e) => {
   }
 });
 
+export function openMainAgiChat() {
+  openChatWindow(null, '主 AGI', '__main_agi__', 'main_agi');
+}
+
 export function initChat() {
   const sendBtn = document.getElementById('send-btn');
   const input = document.getElementById('chat-input');
   const backBtn = document.getElementById('chat-back-btn');
   const infoBtn = document.getElementById('chat-info-btn');
   const modeBtn = document.getElementById('chat-mode-btn');
+  const mainAgiBtn = document.getElementById('main-agi-btn');
   const toggleVoiceBtn = document.getElementById('toggle-voice-btn');
   const identityBtn = document.getElementById('identity-btn');
   const inputPlusBtn = document.getElementById('input-plus-btn');
@@ -1062,6 +1086,7 @@ export function initChat() {
   toggleVoiceBtn.addEventListener('click', toggleVoiceMode);
   identityBtn.addEventListener('click', () => openIdentitySwitch(chatState, api));
   inputPlusBtn.onclick = toggleChatPlusPanel;
+  if (mainAgiBtn) mainAgiBtn.onclick = openMainAgiChat;
 
   if (messagesContainer) {
     messagesContainer.addEventListener('scroll', handleScroll);
