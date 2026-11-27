@@ -1,3 +1,9 @@
+---
+name: sases-control
+description: Operate self-hosted SASES instances through the HQ control API: campaigns, approvals, tasks, receipts, and multi-node workflows.
+version: 1.0.0
+---
+
 # SASES Control
 
 Use this skill when an agent must operate one or more self-hosted SASES

@@ -24,6 +24,7 @@ agi/executor.py   bounded package executor
 agi/context.py    compact context for sub AGI
 agi/lessons.py    operational lessons store/search
 agi/approvals.py  human approval queue for high-risk actions
+agi/skills.py     versioned skill catalog + static evaluation
 agi/platform_policy.py  manual-only platform guard
 agi/playbooks/    health_check, publish_platform, deploy_node
 ```
@@ -298,6 +299,17 @@ allow | deny
 ```
 
 Approval does not execute the action; it only records the commander's decision.
+
+## Skills
+
+```text
+skill.list
+skill.load
+skill.evaluate
+```
+
+`skill.evaluate` is a static check (body, description, version) plus a content
+hash. It is not an LLM quality evaluation yet.
 
 ## Run
 

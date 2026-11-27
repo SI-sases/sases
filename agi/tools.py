@@ -195,6 +195,17 @@ def _platform_check(args: dict[str, Any]) -> dict[str, Any]:
                  bool(args.get("manual_approved")))
 
 
+def _skill(args: dict[str, Any], action: str) -> dict[str, Any]:
+    from . import skills
+    if action == "list":
+        return {"skills": skills.list_skills()}
+    if action == "load":
+        return skills.load_skill(str(args.get("name") or ""))
+    if action == "evaluate":
+        return skills.evaluate_skill(str(args.get("name") or ""))
+    raise ValueError(f"unknown skill action: {action}")
+
+
 def _support(args: dict[str, Any], action: str) -> dict[str, Any]:
     from . import support
     import sqlite3
@@ -245,6 +256,12 @@ def build_default_registry() -> ToolRegistry:
                                frozenset({"main"}), "Plan retry or reroute after a failure"))
     registry.register(ToolSpec("platform.policy", lambda a: _platform_check(a), "read",
                                frozenset({"main", "sub"}), "Check platform automation policy"))
+    registry.register(ToolSpec("skill.list", lambda a: _skill(a, "list"), "read",
+                               frozenset({"main", "sub"}), "List versioned skills"))
+    registry.register(ToolSpec("skill.load", lambda a: _skill(a, "load"), "read",
+                               frozenset({"main", "sub"}), "Load a skill"))
+    registry.register(ToolSpec("skill.evaluate", lambda a: _skill(a, "evaluate"), "read",
+                               frozenset({"main"}), "Static skill evaluation"))
     registry.register(ToolSpec("support.classify", lambda a: _support(a, "classify"), "read",
                                frozenset({"main", "sub"}), "Classify a support request"))
     registry.register(ToolSpec("support.kb_search", lambda a: _support(a, "search"), "read",
