@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+from browser_checkpoint import save as save_phase, clear as clear_checkpoint
 
 URL = "https://member.bilibili.com/platform/upload/video/frame"
 
@@ -35,6 +36,7 @@ def main() -> int:
                 page.locator(".upload-area").click()
             chooser.value.set_files(args.video)
             page.wait_for_timeout(15000)
+            save_phase("uploaded")
             # A cover is required by the publish form.
             page.get_by_text("添加封面", exact=True).click()
             page.wait_for_timeout(1500)
@@ -52,6 +54,7 @@ def main() -> int:
             page.wait_for_timeout(400)
             page.get_by_text("含AI生成内容", exact=True).last.click()
             page.wait_for_timeout(600)
+            save_phase("filled")
             if args.dry_run:
                 result["url"] = page.url
                 result["published"] = False
@@ -61,6 +64,7 @@ def main() -> int:
                 body = page.locator("body").inner_text()
                 result["submitted"] = "稿件投递成功" in body
                 result["url"] = page.url
+                save_phase("submitted")
                 if not result["submitted"]:
                     result["ok"] = False
                     result["error"] = "publish confirmation not found"
@@ -70,6 +74,8 @@ def main() -> int:
                     result["screenshot"] = args.screenshot
                 except Exception as exc:
                     result["screenshot_error"] = type(exc).__name__
+            if result.get("ok"):
+                clear_checkpoint()
             print(json.dumps(result, ensure_ascii=False))
         except Exception as exc:  # noqa: BLE001
             print(json.dumps({"ok": False, "dry_run": args.dry_run,

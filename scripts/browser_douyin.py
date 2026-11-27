@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+from browser_checkpoint import save as save_phase, clear as clear_checkpoint
 import sys
 
 DEFAULT_CHROME = os.path.join(
@@ -41,16 +42,20 @@ def main() -> int:
             page.wait_for_timeout(2000)
             page.locator("input[type=file]").last.set_input_files(args.image)
             page.wait_for_timeout(15000)
+            save_phase("uploaded")
             editor = page.locator("[contenteditable=true]").first
             editor.click()
             editor.fill(args.description)
             page.wait_for_timeout(1000)
+            save_phase("filled")
             if not args.dry_run:
                 page.get_by_role("button", name="发布", exact=True).click()
                 page.wait_for_timeout(12000)
                 body = page.locator("body").inner_text()
                 result["url"] = page.url
                 result["published"] = "已发布" in body and args.description[:12] in body
+                if result["published"]:
+                    save_phase("published")
                 if not result["published"]:
                     result["ok"] = False
                     result["error"] = "publish confirmation not found"
@@ -63,6 +68,8 @@ def main() -> int:
                     result["screenshot"] = args.screenshot
                 except Exception as exc:
                     result["screenshot_error"] = type(exc).__name__
+            if result.get("ok"):
+                clear_checkpoint()
             print(json.dumps(result, ensure_ascii=False))
         except Exception as exc:  # noqa: BLE001
             print(json.dumps({"ok": False, "dry_run": args.dry_run,
