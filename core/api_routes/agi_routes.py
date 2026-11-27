@@ -109,6 +109,17 @@ async def agent_result(agent_id: str, user_id: int = Depends(get_current_user)):
     return _main_request("GET", f"/agents/{agent_id}/result")
 
 
+@router.get("/context/{context_id}")
+async def get_context(context_id: str, user_id: int = Depends(get_current_user)):
+    return _main_request("GET", f"/context/{context_id}")
+
+
+@router.get("/context/{context_id}/render")
+async def render_context(context_id: str, budget: int = 4000,
+                         user_id: int = Depends(get_current_user)):
+    return _main_request("GET", f"/context/{context_id}/render?budget={max(500, min(budget, 16000))}")
+
+
 @router.post("/agents/{agent_id}/message")
 async def agent_message(agent_id: str, body: dict, user_id: int = Depends(get_current_user)):
     return _main_request("POST", f"/agents/{agent_id}/message", {

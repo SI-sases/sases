@@ -7,7 +7,7 @@ import sqlite3
 import sys
 from typing import Any
 
-from . import agents, approvals
+from . import agents, approvals, context_pack
 from .executor import execute
 from .package import TaskPackage
 from .planner import plan
@@ -111,6 +111,17 @@ def run_once(conn: sqlite3.Connection, registry, owner: str = "worker",
     except json.JSONDecodeError:
         task = {}
     goal = str(agent.get("goal") or task.get("goal") or agent.get("name") or "")
+    ctx_id = ""
+    try:
+        ctx_meta = json.loads(agent.get("context_json") or "{}")
+        ctx_id = str(ctx_meta.get("context_id") or "")
+    except json.JSONDecodeError:
+        ctx_meta = {}
+    if ctx_id:
+        pack = context_pack.get(conn, ctx_id)
+        if pack:
+            goal = pack.get("goal") or goal
+            agents.set_progress(conn, agent_id, "读取上下文")
     steps = task.get("steps") if isinstance(task.get("steps"), list) else []
     agents.set_progress(conn, agent_id, "规划中")
     if not steps:
@@ -133,6 +144,12 @@ def run_once(conn: sqlite3.Connection, registry, owner: str = "worker",
                           tools_allowed=[s.get("tool") for s in steps])
     agents.set_progress(conn, agent_id, "执行中")
     result = execute(package, registry, conn, owner=owner, profile="main")
+    if ctx_id:
+        context_pack.patch(conn, ctx_id, {
+            "state": {"status": "done" if result.get("ok") else "failed", "current_step": len(steps)},
+            "facts": [{"key": "last_result", "value": "ok" if result.get("ok") else "failed"}],
+        }, agent_id=agent_id)
+        result["context_id"] = ctx_id
     if steer_notes:
         result["steer_notes"] = steer_notes
     agents.finish(conn, agent_id, "done" if result.get("ok") else "failed", result)

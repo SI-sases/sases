@@ -76,6 +76,21 @@ class Handler(BaseHTTPRequestHandler):
             finally:
                 conn.close()
             return
+        if self.path.startswith("/context/"):
+            from . import context_pack
+            import sqlite3
+            parts = [p for p in self.path.split("?")[0].split("/") if p]
+            ctx_id = parts[1] if len(parts) > 1 else ""
+            conn = sqlite3.connect(self.agi.db_path)
+            try:
+                if len(parts) > 2 and parts[2] == "render":
+                    self._send(200, context_pack.render(conn, ctx_id))
+                else:
+                    pack = context_pack.get(conn, ctx_id)
+                    self._send(200 if pack else 404, {"context": pack} if pack else {"error": "context not found"})
+            finally:
+                conn.close()
+            return
         if self.path.startswith("/agents"):
             from . import agents
             import sqlite3
@@ -334,10 +349,19 @@ class Handler(BaseHTTPRequestHandler):
                     try:
                         goal = text.strip()[:500]
                         name = goal[:32] or "子智能体任务"
+                        from . import context_pack
+                        context_id = context_pack.create(
+                            conn, goal,
+                            scope={"conversation_id": body.get("conversation_id")},
+                            acceptance=["task result reported"],
+                            constraints=["high-risk actions require approval"],
+                            history_summary="Created from main AGI chat.",
+                        )
                         agent_id = agents.spawn(
                             conn, "local", {"goal": goal}, "sub", "", 600,
                             name=name, goal=goal, kind="subagent", status="queued",
-                            context={"conversation_id": body.get("conversation_id"),
+                            context={"context_id": context_id,
+                                     "conversation_id": body.get("conversation_id"),
                                      "source": "main-agi-chat"},
                         )
                         agents.set_progress(conn, agent_id, "已派发，等待子智能体领取")
