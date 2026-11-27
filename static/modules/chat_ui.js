@@ -1,4 +1,4 @@
-import { renderMarkdown } from './markdown.js';
+import { renderMarkdown } from './markdown.js?v=2';
 import { t } from './i18n.js';
 // static/modules/chat_ui.js
 

@@ -1,12 +1,24 @@
 // static/modules/markdown.js
-// 轻量 Markdown 渲染：代码块/行内代码/粗体/标题/列表/链接。先转义，再生成固定标签。
+// 轻量 Markdown 渲染：先转义，再生成固定标签。
+// 支持标题、段落、粗体、斜体、行内代码、代码块、列表、引用、分割线、链接。
 import { t } from './i18n.js';
+
 function esc(s) {
   return String(s == null ? '' : s)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+}
+
+function inline(text) {
+  let s = text;
+  s = s.replace(/`([^`\n]+)`/g, '<code class="inline-code">$1</code>');
+  s = s.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+  s = s.replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>');
+  s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+    '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+  return s;
 }
 
 export function renderMarkdown(text) {
@@ -19,28 +31,69 @@ export function renderMarkdown(text) {
     return '\u0000CODE' + i + '\u0000';
   });
 
-  let html = esc(src);
+  const html = esc(src);
+  const out = [];
+  let para = [];
 
-  // 标题
-  html = html.replace(/^### (.+)$/gm, '<div class="md-h3">$1</div>');
-  html = html.replace(/^## (.+)$/gm, '<div class="md-h2">$1</div>');
-  html = html.replace(/^# (.+)$/gm, '<div class="md-h1">$1</div>');
+  function flush() {
+    if (!para.length) return;
+    out.push('<p class="md-p">' + para.join('<br>') + '</p>');
+    para = [];
+  }
 
-  // 列表
-  html = html.replace(/^(?:- |\* )(.+)$/gm, '<div class="md-li">• $1</div>');
-  html = html.replace(/^(\d+)\. (.+)$/gm, '<div class="md-li">$1. $2</div>');
+  for (const line of html.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      flush();
+      continue;
+    }
+    if (/^\u0000CODE\d+\u0000$/.test(trimmed)) {
+      flush();
+      out.push(trimmed);
+      continue;
+    }
+    if (/^### (.+)$/.test(trimmed)) {
+      flush();
+      out.push('<div class="md-h3">' + inline(trimmed.slice(4)) + '</div>');
+      continue;
+    }
+    if (/^## (.+)$/.test(trimmed)) {
+      flush();
+      out.push('<div class="md-h2">' + inline(trimmed.slice(3)) + '</div>');
+      continue;
+    }
+    if (/^# (.+)$/.test(trimmed)) {
+      flush();
+      out.push('<div class="md-h1">' + inline(trimmed.slice(2)) + '</div>');
+      continue;
+    }
+    if (/^&gt; (.+)$/.test(trimmed)) {
+      flush();
+      out.push('<blockquote class="md-quote">' + inline(trimmed.slice(5)) + '</blockquote>');
+      continue;
+    }
+    if (/^(?:-{3,}|\*{3,}|_{3,})$/.test(trimmed)) {
+      flush();
+      out.push('<hr class="md-hr">');
+      continue;
+    }
+    if (/^(?:- |\* )(.+)$/.test(trimmed)) {
+      flush();
+      out.push('<div class="md-li">• ' + inline(trimmed.slice(2)) + '</div>');
+      continue;
+    }
+    if (/^\d+\. (.+)$/.test(trimmed)) {
+      flush();
+      const m = trimmed.match(/^(\d+)\. (.+)$/);
+      out.push('<div class="md-li">' + m[1] + '. ' + inline(m[2]) + '</div>');
+      continue;
+    }
+    para.push(inline(trimmed));
+  }
+  flush();
 
-  // 行内代码、粗体、斜体
-  html = html.replace(/`([^`\n]+)`/g, '<code class="inline-code">$1</code>');
-  html = html.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
-  html = html.replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
-
-  // 链接（只允许 http/https）
-  html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
-    '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
-
-  // 代码块占位符
-  html = html.replace(/\u0000CODE(\d+)\u0000/g, function (m, idx) {
+  let result = out.join('\n');
+  result = result.replace(/\u0000CODE(\d+)\u0000/g, function (m, idx) {
     const b = blocks[Number(idx)];
     if (!b) return '';
     const lang = esc(b.lang);
@@ -48,8 +101,7 @@ export function renderMarkdown(text) {
       '</span><button class="code-copy" type="button">' + t('md_copy') + '</button></div>' +
       '<pre><code>' + esc(b.code) + '</code></pre></div>';
   });
-
-  return html;
+  return result;
 }
 
 if (typeof document !== 'undefined' && !window.__sasesMdCopyBound) {
