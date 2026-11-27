@@ -146,6 +146,16 @@ def _browser(args: dict[str, Any], action: str) -> dict[str, Any]:
     return getattr(browser, action)(args)
 
 
+def _recovery_plan(args: dict[str, Any]) -> dict[str, Any]:
+    from .recovery import plan_failure
+    return plan_failure(
+        str(args.get("node_id") or "local"),
+        int(args.get("task_id") or 0),
+        int(args.get("attempts") or 0),
+        str(args.get("reason") or ""),
+    )
+
+
 def build_default_registry() -> ToolRegistry:
     from .deploy import plan_promote, plan_rollback, plan_stage
 
@@ -168,6 +178,10 @@ def build_default_registry() -> ToolRegistry:
                                frozenset({"main"}), "Fill selectors and optionally click"))
     registry.register(ToolSpec("browser.click", lambda a: _browser(a, "click_page"), "write",
                                frozenset({"main"}), "Click a selector and screenshot"))
+    registry.register(ToolSpec("browser.reddit_post", lambda a: _browser(a, "reddit_post"), "write",
+                               frozenset({"main"}), "Fill and optionally submit a Reddit post"))
+    registry.register(ToolSpec("recovery.plan", lambda a: _recovery_plan(a), "read",
+                               frozenset({"main"}), "Plan retry or reroute after a failure"))
     registry.register(ToolSpec("deploy.stage", lambda a: plan_stage(
         str(a.get("node_id") or "local"), str(a.get("version") or "next"), int(a.get("port") or 8002)),
         "deploy", frozenset({"main"}), "Plan a staging deploy (dry run)"))

@@ -1,0 +1,14 @@
+{
+  "id": "reddit_publish",
+  "version": 1,
+  "description": "Publish one Reddit text post through the local CDP browser.",
+  "steps": [
+    {"tool": "task.create", "args": {}},
+    {"tool": "task.claim", "args": {"platform": "reddit"}},
+    {"tool": "browser.reddit_post", "args": {"subreddit": "selfhostedstack", "dry_run": true}},
+    {"tool": "browser.reddit_post", "args": {"subreddit": "selfhostedstack", "dry_run": false}},
+    {"tool": "task.receipt", "args": {"status": "done"}}
+  ],
+  "approval_required": true,
+  "notes": "Dry run must pass before the real submit step."
+}

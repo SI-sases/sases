@@ -46,6 +46,12 @@ def test_shadow_compare():
     assert result["missing"] == []
 
 
+def test_recovery_retry_then_reroute():
+    from agi.recovery import plan_failure
+    assert plan_failure("node-C", 9, 1)["action"] == "retry"
+    assert plan_failure("node-C", 9, 3)["action"] == "reroute"
+
+
 def test_runtime_records_health(tmp_path):
     db = str(tmp_path / "agi.db")
     reg = ToolRegistry()

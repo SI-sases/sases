@@ -20,19 +20,23 @@ def _python() -> str:
     return sys.executable
 
 
-def _run(args: list[str], timeout: int = 90) -> dict[str, Any]:
-    script = _root() / "scripts" / "browser_act.py"
-    if not script.exists():
-        return {"ok": False, "error": "scripts/browser_act.py missing"}
-    cmd = [_python(), str(script), *args]
+def _run_cmd(cmd: list[str], timeout: int = 90) -> dict[str, Any]:
     try:
-        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, cwd=str(_root()))
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout,
+                              cwd=str(_root()), encoding="utf-8", errors="replace")
     except subprocess.TimeoutExpired:
         return {"ok": False, "error": "browser action timed out"}
     try:
         return json.loads(proc.stdout.strip().splitlines()[-1] or "{}")
     except Exception:
         return {"ok": False, "error": (proc.stderr or proc.stdout or "browser worker failed")[-800:]}
+
+
+def _run(args: list[str], timeout: int = 90) -> dict[str, Any]:
+    script = _root() / "scripts" / "browser_act.py"
+    if not script.exists():
+        return {"ok": False, "error": "scripts/browser_act.py missing"}
+    return _run_cmd([_python(), str(script), *args], timeout)
 
 
 def open_page(args: dict[str, Any]) -> dict[str, Any]:
@@ -69,3 +73,24 @@ def click_page(args: dict[str, Any]) -> dict[str, Any]:
     if args.get("screenshot"):
         cmd += ["--screenshot", str(args["screenshot"])]
     return _run(cmd)
+
+
+def reddit_post(args: dict[str, Any]) -> dict[str, Any]:
+    title = str(args.get("title") or "")
+    body = str(args.get("body") or "")
+    if not title or not body:
+        return {"ok": False, "error": "title and body are required"}
+    script = _root() / "scripts" / "browser_reddit.py"
+    if not script.exists():
+        return {"ok": False, "error": "scripts/browser_reddit.py missing"}
+    cmd = [
+        _python(), str(script),
+        "--subreddit", str(args.get("subreddit") or "selfhostedstack"),
+        "--title", title,
+        "--body", body,
+    ]
+    if args.get("dry_run", True):
+        cmd.append("--dry-run")
+    if args.get("screenshot"):
+        cmd += ["--screenshot", str(args["screenshot"])]
+    return _run_cmd(cmd, timeout=120)

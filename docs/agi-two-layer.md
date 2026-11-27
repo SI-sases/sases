@@ -85,6 +85,8 @@ task.receipt  main/sub, write
 browser.open  main only, read
 browser.fill  main only, write
 browser.click main only, write
+browser.reddit_post main only, write (dry-run by default)
+recovery.plan main only, read
 ```
 
 Browser worker:
@@ -95,6 +97,16 @@ scripts/browser_act.py
 
 Set `SASES_BROWSER_PYTHON` if the main AGI runs under an embedded Python
 without Playwright.
+
+Reddit playbook:
+
+```text
+agi/playbooks/reddit_publish.json
+scripts/browser_reddit.py
+```
+
+`browser.reddit_post` defaults to `dry_run=true`; it fills title/body and
+screenshots without submitting.  A separate real-submit step is required.
 
 ## Staging verifier
 
