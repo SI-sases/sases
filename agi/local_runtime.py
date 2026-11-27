@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import socket
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -25,6 +26,12 @@ class LocalRuntime:
         self.active: set[str] = set()
         self.lock = threading.Lock()
         self.browser_lock = threading.Lock()
+        self._lock_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            self._lock_socket.bind(("127.0.0.1", 8765))
+            self._lock_socket.listen(1)
+        except OSError as exc:
+            raise RuntimeError("another local runtime is already running") from exc
         self.running = True
 
     def _json(self, agent: dict) -> dict:
@@ -129,7 +136,11 @@ def main() -> int:
     parser.add_argument("--interval", type=float, default=1.5)
     args = parser.parse_args()
     token = Path(args.token_file).read_text(encoding="utf-8").strip()
-    rt = LocalRuntime(args.server, token, args.max_workers)
+    try:
+        rt = LocalRuntime(args.server, token, args.max_workers)
+    except RuntimeError as exc:
+        print(json.dumps({"ok": False, "error": str(exc)}, ensure_ascii=False), flush=True)
+        return 1
     while True:
         try:
             outcome = rt.poll()
