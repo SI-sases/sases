@@ -105,6 +105,7 @@ function agentCard(a, kind) {
     <div class="child-agent-meta">${esc(a.progress || '')}${a.progress ? ' · ' : ''}${esc(a.node_id || '-')}${a.trace_id ? ' · ' + esc(a.trace_id) : ''}</div>
     <div class="child-agent-actions">
       <button data-act="messages" data-id="${esc(id)}">消息</button>
+      ${a.status === 'queued' ? `<button data-act="run" data-id="${esc(id)}">执行</button>` : ''}
       ${canCancel ? `<button class="danger" data-act="cancel" data-id="${esc(id)}">取消</button>` : ''}
     </div>
     ${msgs ? `<div class="child-message-list">${msgs.length ? msgs.map((m) =>
@@ -153,6 +154,13 @@ function renderPanel() {
         state.messages[btn.dataset.id] = data.messages || [];
         renderPanel();
       } catch (e) { btn.disabled = false; }
+    };
+  });
+  body.querySelectorAll('[data-act="run"]').forEach((btn) => {
+    btn.onclick = async () => {
+      btn.disabled = true;
+      try { await postJSON('/agi/worker/run', {}); await refreshChildWindow(); }
+      catch (e) { btn.disabled = false; }
     };
   });
   body.querySelectorAll('[data-act="cancel"]').forEach((btn) => {

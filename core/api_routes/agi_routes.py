@@ -109,6 +109,11 @@ async def agent_cancel(agent_id: str, user_id: int = Depends(get_current_user)):
     return _main_request("POST", f"/agents/{agent_id}/cancel", {})
 
 
+@router.post("/worker/run")
+async def worker_run(user_id: int = Depends(get_current_user)):
+    return _main_request("POST", "/worker/run", {})
+
+
 @router.post("/approvals/decide")
 async def decide_approval(body: dict, user_id: int = Depends(get_current_user)):
     return _main_request("POST", "/approvals/decide", {
