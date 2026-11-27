@@ -246,6 +246,7 @@ class Handler(BaseHTTPRequestHandler):
                             str(body.get("parent_run_id") or ""), int(body.get("ttl") or 300),
                             str(body.get("name") or ""), str(body.get("goal") or ""),
                             str(body.get("kind") or "subagent"), str(body.get("trace_id") or ""),
+                            str(body.get("status") or "active"),
                         )
                         self._send(200, {"ok": True, "agent_id": agent_id})
                         return
