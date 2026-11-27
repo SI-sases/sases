@@ -11,10 +11,19 @@ from pathlib import Path
 
 from .report import generate
 from .runtime import MainAGI
+from . import escalation
+import sqlite3
 
 
 def run_once(base_url: str, db_path: str, report_out: str = "") -> dict:
     result = MainAGI(base_url=base_url, db_path=db_path).run_once()
+    if not result.get("ok"):
+        conn = sqlite3.connect(db_path)
+        try:
+            escalation.create(conn, result.get("node_id", "local"),
+                              "autopilot health check failed", evidence=str(result.get("health"))[:2000])
+        finally:
+            conn.close()
     report = generate(db_path)
     if report_out:
         Path(report_out).parent.mkdir(parents=True, exist_ok=True)

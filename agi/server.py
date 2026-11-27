@@ -58,6 +58,15 @@ class Handler(BaseHTTPRequestHandler):
         if not self._auth():
             self._send(401, {"error": "unauthorized"})
             return
+        if self.path.startswith("/escalations"):
+            from . import escalation
+            import sqlite3
+            conn = sqlite3.connect(self.agi.db_path)
+            try:
+                self._send(200, {"escalations": escalation.list_open(conn)})
+            finally:
+                conn.close()
+            return
         if self.path.startswith("/leader"):
             from urllib.parse import parse_qs, urlparse
             from . import leader
@@ -143,6 +152,13 @@ class Handler(BaseHTTPRequestHandler):
                      version, health, message.created_at),
                 )
                 conn.commit()
+                if message.severity == "critical":
+                    from . import escalation
+                    escalation.create(
+                        conn, message.node_id,
+                        str(message.payload.get("message") or "critical event"),
+                        evidence=json.dumps(message.evidence, ensure_ascii=False),
+                    )
                 conn.close()
                 self._send(200, {"ok": True, "msg_id": message.msg_id})
                 return

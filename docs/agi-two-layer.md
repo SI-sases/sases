@@ -16,6 +16,8 @@ agi/staging.py    run candidate on alternate port and verify
 agi/leader.py     single-main lease per scope (local/fleet)
 agi/autopilot.py  observe + report loop (no production mutation)
 agi/report.py     human-readable fleet report
+agi/policy.py     main-auto vs human-required routing
+agi/escalation.py open items for the commander
 agi/playbooks/    health_check, publish_platform, deploy_node
 ```
 
@@ -124,6 +126,42 @@ cloud   cloud SASES node
 ```
 
 Autopilot does not promote, rollback, restart, or edit code.
+
+## Supervision policy
+
+The main AGI handles routine work first:
+
+```text
+health.observe
+event.record
+report.generate
+task.retry
+task.reroute
+config.low_risk
+staging.verify
+```
+
+It escalates to the commander:
+
+```text
+code.change
+db.migration
+deploy.promote
+deploy.rollback
+service.restart.production
+security.change
+network.change
+billing.change
+critical / repeated errors
+unknown actions
+```
+
+Open items:
+
+```text
+GET /escalations
+reports/agi_report.md -> "需要指挥官处理"
+```
 
 ## Run
 

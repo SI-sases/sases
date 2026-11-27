@@ -20,6 +20,13 @@ def generate(db_path: str) -> str:
         "WHERE severity IN ('error','critical') ORDER BY id DESC LIMIT 10"
     ).fetchall()
     leader = conn.execute("SELECT scope,owner,expires_at FROM agi_leader").fetchall()
+    try:
+        escalations = conn.execute(
+            "SELECT id,node_id,reason,severity,created_at FROM agi_escalations "
+            "WHERE status='open' ORDER BY id DESC LIMIT 20"
+        ).fetchall()
+    except sqlite3.OperationalError:
+        escalations = []
     conn.close()
 
     lines = ["# SASES 主 AGI 汇报", "", f"生成时间：{time.strftime('%Y-%m-%d %H:%M:%S')}", "", "## 节点"]
@@ -40,6 +47,13 @@ def generate(db_path: str) -> str:
         lines.append("- 无")
     for e in events:
         lines.append(f"- {e['created_at']} `{e['node_id']}` {e['severity']} {e['message']}")
+    lines += ["", "## 需要指挥官处理"]
+    if not escalations:
+        lines.append("- 无")
+    for item in escalations:
+        lines.append(
+            f"- #{item['id']} `{item['node_id']}` {item['severity']} {item['reason']}"
+        )
     return "\n".join(lines) + "\n"
 
 
