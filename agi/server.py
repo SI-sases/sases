@@ -373,7 +373,7 @@ class Handler(BaseHTTPRequestHandler):
                 from .ask import answer
                 text = str(body.get("text") or "")
                 result = answer(text, self.agi.db_path)
-                if any(k in text for k in ("执行", "派给", "派活", "子智能体", "后台任务", "让子")):
+                if any(k in text for k in ("执行", "派给", "派活", "子智能体", "后台任务", "让子", "继续", "上次", "接着")):
                     from . import agents
                     import sqlite3
                     conn = sqlite3.connect(self.agi.db_path)
