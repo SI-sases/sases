@@ -75,6 +75,15 @@ deploy.rollback
 
 All are main-only and `requires_approval=true`.
 
+Task tools:
+
+```text
+task.list     main/sub, read
+task.create   main only, write
+task.claim    main/sub, write
+task.receipt  main/sub, write
+```
+
 ## Staging verifier
 
 ```bash

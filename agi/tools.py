@@ -88,6 +88,51 @@ def task_list(args: dict[str, Any]) -> dict[str, Any]:
         return {"ok": False, "status": 0, "error": str(exc)}
 
 
+def _api(method: str, args: dict[str, Any], path: str, body: dict | None = None,
+         extra_headers: dict[str, str] | None = None) -> dict[str, Any]:
+    base = str(args.get("base_url") or "http://127.0.0.1:8001").rstrip("/")
+    token = str(args.get("token") or "")
+    headers = {"Accept": "application/json"}
+    if token:
+        headers["Authorization"] = "Bearer " + token
+    if extra_headers:
+        headers.update(extra_headers)
+    data = None
+    if body is not None:
+        data = json.dumps(body).encode()
+        headers["Content-Type"] = "application/json"
+    req = urllib.request.Request(base + path, data=data, headers=headers, method=method)
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            return {"ok": True, "status": resp.status, "data": json.loads(resp.read().decode("utf-8") or "{}")}
+    except urllib.error.HTTPError as exc:
+        return {"ok": False, "status": exc.code, "error": exc.read().decode("utf-8", "replace")[:500]}
+    except Exception as exc:  # noqa: BLE001
+        return {"ok": False, "status": 0, "error": f"{type(exc).__name__}: {exc}"}
+
+
+def task_create(args: dict[str, Any]) -> dict[str, Any]:
+    payload = args.get("payload") or {}
+    return _api("POST", args, "/hq/campaigns", payload if isinstance(payload, dict) else {})
+
+
+def task_claim(args: dict[str, Any]) -> dict[str, Any]:
+    platform = str(args.get("platform") or "reddit")
+    manual = "true" if args.get("manual", True) else "false"
+    headers = {"X-SASES-Executor": str(args.get("executor") or "main-agi")}
+    return _api("POST", args, f"/hq/tasks/claim?platform={platform}&manual={manual}", {}, headers)
+
+
+def task_receipt(args: dict[str, Any]) -> dict[str, Any]:
+    task_id = int(args.get("task_id") or 0)
+    body = {
+        "status": str(args.get("status") or "done"),
+        "result": args.get("result") or {},
+        "error": args.get("error") or "",
+    }
+    return _api("POST", args, f"/hq/tasks/{task_id}/receipt", body)
+
+
 def _verify_candidate(args: dict[str, Any]) -> dict[str, Any]:
     from .staging import verify
     root = str(args.get("root") or "")
@@ -106,6 +151,12 @@ def build_default_registry() -> ToolRegistry:
                                "Read /version from a SASES node"))
     registry.register(ToolSpec("task.list", task_list, "read", frozenset({"main", "sub"}),
                                "List HQ tasks with an executor token"))
+    registry.register(ToolSpec("task.create", task_create, "write", frozenset({"main"}),
+                               "Create an HQ campaign (admin token)"))
+    registry.register(ToolSpec("task.claim", task_claim, "write", frozenset({"main", "sub"}),
+                               "Claim one manual HQ task"))
+    registry.register(ToolSpec("task.receipt", task_receipt, "write", frozenset({"main", "sub"}),
+                               "Submit a task receipt"))
     registry.register(ToolSpec("deploy.stage", lambda a: plan_stage(
         str(a.get("node_id") or "local"), str(a.get("version") or "next"), int(a.get("port") or 8002)),
         "deploy", frozenset({"main"}), "Plan a staging deploy (dry run)"))
