@@ -22,6 +22,18 @@ def test_profile_filtering():
         reg.invoke("viewer", "read.only")
 
 
+def test_deploy_tools_are_main_only_and_dry_run():
+    from agi.tools import build_default_registry
+    reg = build_default_registry()
+    assert {"deploy.stage", "deploy.promote", "deploy.rollback"} <= {t.id for t in reg.for_profile("main")}
+    assert "deploy.stage" not in {t.id for t in reg.for_profile("sub")}
+    plan = reg.invoke("main", "deploy.stage", {"node_id": "local", "version": "next", "port": 8002})
+    assert plan["dry_run"] is True
+    assert plan["requires_approval"] is True
+    with pytest.raises(PermissionError):
+        reg.invoke("sub", "deploy.stage", {})
+
+
 def test_runtime_records_health(tmp_path):
     db = str(tmp_path / "agi.db")
     reg = ToolRegistry()

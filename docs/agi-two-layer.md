@@ -9,6 +9,9 @@ agi/protocol.py   structured messages
 agi/tools.py      one shared registry, main/sub profiles
 agi/runtime.py    observe -> diagnose -> record
 agi/main_agi.py   CLI entry
+agi/server.py     loopback event/control server
+agi/sub_agi.py    sub heartbeat adapter
+agi/deploy.py     staging/promote/rollback plans (dry run)
 agi/playbooks/    health_check, publish_platform, deploy_node
 ```
 
@@ -17,10 +20,54 @@ The main AGI currently does **read-only observation**:
 ```text
 GET /health
 GET /version
+POST /events (sub AGI heartbeat)
 write agi_events / agi_nodes / agi_runs
 ```
 
 It does not edit a running tree, restart production, or change `users.db`.
+
+## Main AGI control server
+
+```bash
+python -m agi.server
+```
+
+Bind:
+
+```text
+127.0.0.1:8099
+```
+
+Token:
+
+```text
+data/agi.token
+```
+
+Endpoints:
+
+```text
+GET  /health
+GET  /events?limit=50
+POST /events
+POST /observe
+```
+
+Sub AGI push:
+
+```bash
+python -m agi.sub_agi --once --post http://127.0.0.1:8099
+```
+
+Deploy tools return **plans only**:
+
+```text
+deploy.stage
+deploy.promote
+deploy.rollback
+```
+
+All are main-only and `requires_approval=true`.
 
 ## Run
 

@@ -89,6 +89,8 @@ def task_list(args: dict[str, Any]) -> dict[str, Any]:
 
 
 def build_default_registry() -> ToolRegistry:
+    from .deploy import plan_promote, plan_rollback, plan_stage
+
     registry = ToolRegistry()
     registry.register(ToolSpec("node.health", health, "read", frozenset({"main", "sub"}),
                                "Read /health from a SASES node"))
@@ -96,4 +98,13 @@ def build_default_registry() -> ToolRegistry:
                                "Read /version from a SASES node"))
     registry.register(ToolSpec("task.list", task_list, "read", frozenset({"main", "sub"}),
                                "List HQ tasks with an executor token"))
+    registry.register(ToolSpec("deploy.stage", lambda a: plan_stage(
+        str(a.get("node_id") or "local"), str(a.get("version") or "next"), int(a.get("port") or 8002)),
+        "deploy", frozenset({"main"}), "Plan a staging deploy (dry run)"))
+    registry.register(ToolSpec("deploy.promote", lambda a: plan_promote(
+        str(a.get("node_id") or "local"), str(a.get("version") or "next")),
+        "deploy", frozenset({"main"}), "Plan a promote (approval required)"))
+    registry.register(ToolSpec("deploy.rollback", lambda a: plan_rollback(
+        str(a.get("node_id") or "local"), str(a.get("version") or "previous")),
+        "deploy", frozenset({"main"}), "Plan a rollback (approval required)"))
     return registry

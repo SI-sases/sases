@@ -7,6 +7,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import urllib.request
+from pathlib import Path
 
 from .protocol import make_message
 from .tools import build_default_registry
@@ -29,12 +32,36 @@ def heartbeat(base_url: str) -> dict:
     ).to_dict()
 
 
+def _token() -> str:
+    token = os.environ.get("SASES_AGI_TOKEN", "").strip()
+    if token:
+        return token
+    path = Path(os.environ.get("SASES_AGI_TOKEN_FILE", str(Path("data") / "agi.token")))
+    return path.read_text(encoding="utf-8").strip() if path.exists() else ""
+
+
+def post_event(url: str, message: dict, token: str | None = None) -> str:
+    req = urllib.request.Request(
+        url.rstrip("/") + "/events",
+        data=json.dumps(message, ensure_ascii=False).encode(),
+        headers={"Content-Type": "application/json", "X-SASES-AGI-Token": token or _token()},
+        method="POST",
+    )
+    with urllib.request.urlopen(req, timeout=10) as resp:
+        return resp.read().decode("utf-8", "replace")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--base-url", default="http://127.0.0.1:8001")
+    parser.add_argument("--post", default="", help="main AGI URL, e.g. http://127.0.0.1:8099")
+    parser.add_argument("--token", default=None)
     parser.add_argument("--once", action="store_true")
     args = parser.parse_args()
-    print(json.dumps(heartbeat(args.base_url), ensure_ascii=False))
+    message = heartbeat(args.base_url)
+    if args.post:
+        message["_main_response"] = post_event(args.post, message, args.token)
+    print(json.dumps(message, ensure_ascii=False))
     return 0
 
 
