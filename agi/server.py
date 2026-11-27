@@ -67,6 +67,15 @@ class Handler(BaseHTTPRequestHandler):
             finally:
                 conn.close()
             return
+        if self.path.startswith("/worker/status"):
+            from . import worker
+            import sqlite3
+            conn = sqlite3.connect(self.agi.db_path)
+            try:
+                self._send(200, {"workers": worker.status(conn)})
+            finally:
+                conn.close()
+            return
         if self.path.startswith("/agents"):
             from . import agents
             import sqlite3

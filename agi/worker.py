@@ -24,6 +24,30 @@ def _read_only(registry, steps: list[dict]) -> tuple[bool, str]:
     return True, ""
 
 
+def ensure_status(conn: sqlite3.Connection) -> None:
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS agi_worker_status ("
+        "owner TEXT PRIMARY KEY,last_seen INTEGER NOT NULL,last_result TEXT)"
+    )
+    conn.commit()
+
+
+def status(conn: sqlite3.Connection) -> list[dict]:
+    ensure_status(conn)
+    rows = conn.execute("SELECT owner,last_seen,last_result FROM agi_worker_status ORDER BY last_seen DESC").fetchall()
+    return [{"owner": r[0], "last_seen": r[1], "last_result": r[2]} for r in rows]
+
+
+def _touch(conn: sqlite3.Connection, owner: str, result: dict[str, Any]) -> None:
+    ensure_status(conn)
+    conn.execute(
+        "INSERT INTO agi_worker_status(owner,last_seen,last_result) VALUES(?,?,?) "
+        "ON CONFLICT(owner) DO UPDATE SET last_seen=excluded.last_seen,last_result=excluded.last_result",
+        (owner, int(__import__("time").time()), json.dumps(result, ensure_ascii=False)[:1000]),
+    )
+    conn.commit()
+
+
 def _run_approved(conn: sqlite3.Connection, registry, owner: str) -> dict[str, Any]:
     rows = approvals.list_by_status(conn, "allow", 20)
     for row in rows:
@@ -63,7 +87,9 @@ def run_once(conn: sqlite3.Connection, registry, owner: str = "worker",
     base_url = base_url or os.environ.get("SASES_WORKER_BASE_URL", "http://127.0.0.1:8001")
     agent_id = agents.claim_next(conn, owner, 300)
     if not agent_id:
-        return _run_approved(conn, registry, owner)
+        result = _run_approved(conn, registry, owner)
+        _touch(conn, owner, result)
+        return result
     agent = agents.get_agent(conn, agent_id) or {}
     try:
         task = json.loads(agent.get("task_json") or "{}")
@@ -83,16 +109,20 @@ def run_once(conn: sqlite3.Connection, registry, owner: str = "worker",
         agents.finish(conn, agent_id, "needs_approval", {
             "ok": False, "approval_id": approval_id, "reason": reason, "steps": steps,
         })
-        return {"ok": True, "claimed": True, "agent_id": agent_id,
-                "status": "needs_approval", "approval_id": approval_id, "reason": reason}
+        out = {"ok": True, "claimed": True, "agent_id": agent_id,
+               "status": "needs_approval", "approval_id": approval_id, "reason": reason}
+        _touch(conn, owner, out)
+        return out
     package = TaskPackage(goal=goal or "worker task", node_id=str(agent.get("node_id") or "local"),
                           acceptance=["worker completed"], steps=steps,
                           tools_allowed=[s.get("tool") for s in steps])
     agents.set_progress(conn, agent_id, "执行中")
     result = execute(package, registry, conn, owner=owner, profile="main")
     agents.finish(conn, agent_id, "done" if result.get("ok") else "failed", result)
-    return {"ok": bool(result.get("ok")), "claimed": True, "agent_id": agent_id,
-            "status": "done" if result.get("ok") else "failed", "result": result}
+    out = {"ok": bool(result.get("ok")), "claimed": True, "agent_id": agent_id,
+           "status": "done" if result.get("ok") else "failed", "result": result}
+    _touch(conn, owner, out)
+    return out
 
 
 def main() -> int:

@@ -111,7 +111,14 @@ async def agent_cancel(agent_id: str, user_id: int = Depends(get_current_user)):
 
 @router.post("/worker/run")
 async def worker_run(user_id: int = Depends(get_current_user)):
-    return _main_request("POST", "/worker/run", {})
+    from starlette.concurrency import run_in_threadpool
+    # Keep the event loop free: the worker calls back into this app for /health.
+    return await run_in_threadpool(_main_request, "POST", "/worker/run", {})
+
+
+@router.get("/worker/status")
+async def worker_status(user_id: int = Depends(get_current_user)):
+    return _main_request("GET", "/worker/status")
 
 
 @router.post("/approvals/decide")

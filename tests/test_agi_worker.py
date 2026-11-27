@@ -2,7 +2,7 @@ import sqlite3
 
 from agi import agents, approvals
 from agi.tools import ToolRegistry, ToolSpec, build_default_registry
-from agi.worker import run_once
+from agi.worker import run_once, status
 
 
 def test_worker_claims_and_finishes(tmp_path):
@@ -15,6 +15,7 @@ def test_worker_claims_and_finishes(tmp_path):
     assert result["claimed"] is True
     assert result["status"] == "done"
     assert agents.get_agent(conn, aid)["status"] == "done"
+    assert status(conn)[0]["owner"] == "test"
     conn.close()
 
 
