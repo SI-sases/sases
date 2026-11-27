@@ -395,7 +395,13 @@ class Handler(BaseHTTPRequestHandler):
                             conversation_id=body.get("conversation_id"),
                             acceptance=["task result reported"] + extracted["acceptance"],
                             constraints=["high-risk actions require approval"] + collected["constraints"] + extracted["constraints"],
-                            facts=collected["facts"] + extracted["facts"],
+                            facts=collected["facts"] + extracted["facts"] + [
+                                {"key": "preference", "value": p, "source": "user"}
+                                for p in extracted.get("preferences", [])
+                            ] + [
+                                {"key": "open_question", "value": q, "source": "user"}
+                                for q in extracted.get("open_questions", [])
+                            ],
                             artifacts=collected["artifacts"] + extracted["artifacts"],
                             history_summary=collected["history_summary"] or "Created from main AGI chat.",
                         )
