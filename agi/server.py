@@ -58,6 +58,17 @@ class Handler(BaseHTTPRequestHandler):
         if not self._auth():
             self._send(401, {"error": "unauthorized"})
             return
+        if self.path.startswith("/leader"):
+            from urllib.parse import parse_qs, urlparse
+            from . import leader
+            scope = parse_qs(urlparse(self.path).query).get("scope", ["local"])[0]
+            import sqlite3
+            conn = sqlite3.connect(self.agi.db_path)
+            try:
+                self._send(200, {"leader": leader.status(conn, scope)})
+            finally:
+                conn.close()
+            return
         if self.path.startswith("/nodes"):
             import sqlite3
             conn = sqlite3.connect(self.agi.db_path)
@@ -87,6 +98,32 @@ class Handler(BaseHTTPRequestHandler):
         try:
             length = int(self.headers.get("Content-Length", "0"))
             body = json.loads(self.rfile.read(length).decode("utf-8") or "{}")
+            if self.path.startswith("/leader/"):
+                from . import leader
+                import sqlite3
+                action = self.path.rsplit("/", 1)[-1]
+                scope = str(body.get("scope") or "local")
+                owner = str(body.get("owner") or "")
+                ttl = int(body.get("ttl") or 60)
+                if not owner:
+                    self._send(400, {"error": "owner is required"})
+                    return
+                conn = sqlite3.connect(self.agi.db_path)
+                try:
+                    if action == "acquire":
+                        ok = leader.acquire(conn, scope, owner, ttl)
+                    elif action == "renew":
+                        ok = leader.renew(conn, scope, owner, ttl)
+                    elif action == "release":
+                        ok = leader.release(conn, scope, owner)
+                    else:
+                        self._send(404, {"error": "not found"})
+                        return
+                    current = leader.status(conn, scope)
+                finally:
+                    conn.close()
+                self._send(200 if ok else 409, {"ok": ok, "leader": current})
+                return
             if self.path == "/events":
                 allowed = {k: body[k] for k in ("type", "node_id", "scope", "severity", "payload",
                                                 "evidence", "requires_approval", "idempotency_key",

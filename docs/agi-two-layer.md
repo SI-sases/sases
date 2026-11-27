@@ -13,6 +13,7 @@ agi/server.py     loopback event/control server
 agi/sub_agi.py    sub heartbeat adapter
 agi/deploy.py     staging/promote/rollback plans (dry run)
 agi/staging.py    run candidate on alternate port and verify
+agi/leader.py     single-main lease per scope (local/fleet)
 agi/playbooks/    health_check, publish_platform, deploy_node
 ```
 
@@ -85,6 +86,20 @@ Tool:
 ```text
 deploy.verify  (main-only, candidate path required)
 ```
+
+## Leader lock
+
+One active main per scope:
+
+```text
+POST /leader/acquire  {scope,owner,ttl}
+POST /leader/renew    {scope,owner,ttl}
+POST /leader/release  {scope,owner}
+GET  /leader?scope=fleet
+```
+
+A crashed owner releases the lock by lease expiry; a second owner gets 409
+while the lease is active.
 
 ## Run
 
