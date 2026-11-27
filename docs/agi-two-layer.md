@@ -373,7 +373,7 @@ Current state:
 
 ```text
 reddit       implemented (dry-run + approval submit)
-douyin       planned
+douyin       implemented (image post, dry-run + approval submit)
 bilibili     planned
 youtube      planned
 xiaohongshu  manual-only

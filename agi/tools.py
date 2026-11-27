@@ -290,6 +290,8 @@ def build_default_registry() -> ToolRegistry:
                                frozenset({"main"}), "Click a selector and screenshot"))
     registry.register(ToolSpec("browser.reddit_post", lambda a: _browser(a, "reddit_post"), "write",
                                frozenset({"main"}), "Fill and optionally submit a Reddit post"))
+    registry.register(ToolSpec("browser.douyin_post", lambda a: _browser(a, "douyin_post"), "write",
+                               frozenset({"main"}), "Upload and optionally publish a Douyin image post"))
     registry.register(ToolSpec("recovery.plan", lambda a: _recovery_plan(a), "read",
                                frozenset({"main"}), "Plan retry or reroute after a failure"))
     registry.register(ToolSpec("platform.policy", lambda a: _platform_check(a), "read",

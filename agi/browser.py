@@ -119,3 +119,25 @@ def reddit_post(args: dict[str, Any]) -> dict[str, Any]:
     if args.get("screenshot"):
         cmd += ["--screenshot", str(args["screenshot"])]
     return _run_cmd(cmd, timeout=120)
+
+
+def douyin_post(args: dict[str, Any]) -> dict[str, Any]:
+    image = str(args.get("image") or "")
+    description = str(args.get("description") or "")
+    dry_run = bool(args.get("dry_run", True))
+    if not image or not os.path.isfile(image):
+        return {"ok": False, "error": "image file is required"}
+    if not description:
+        return {"ok": False, "error": "description is required"}
+    if not dry_run and not args.get("approved"):
+        return {"ok": False, "error": "approval_required", "requires_approval": True,
+                "tool": "browser.douyin_post"}
+    script = _root() / "scripts" / "browser_douyin.py"
+    if not script.exists():
+        return {"ok": False, "error": "scripts/browser_douyin.py missing"}
+    cmd = [_python(), str(script), "--image", image, "--description", description]
+    if dry_run:
+        cmd.append("--dry-run")
+    if args.get("screenshot"):
+        cmd += ["--screenshot", str(args["screenshot"])]
+    return _run_cmd(cmd, timeout=120)

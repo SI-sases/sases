@@ -37,10 +37,15 @@ def _reddit(args: dict[str, Any]) -> dict[str, Any]:
     return reddit_post(args)
 
 
+def _douyin(args: dict[str, Any]) -> dict[str, Any]:
+    from .browser import douyin_post
+    return douyin_post(args)
+
+
 def registry() -> dict[str, Adapter]:
     return {
         "reddit": Adapter("reddit", "approval", _reddit),
-        "douyin": Adapter("douyin", "planned", reason="creator upload adapter not implemented"),
+        "douyin": Adapter("douyin", "approval", _douyin),
         "bilibili": Adapter("bilibili", "planned", reason="video upload adapter not implemented"),
         "youtube": Adapter("youtube", "planned", reason="video upload adapter not implemented"),
         "xiaohongshu": Adapter("xiaohongshu", "manual",
