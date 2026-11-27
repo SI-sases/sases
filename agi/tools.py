@@ -84,8 +84,9 @@ def _validate_object(data: dict[str, Any], schema: dict[str, Any]) -> None:
 
 def _http_json(url: str, timeout: int = 10) -> dict[str, Any]:
     req = urllib.request.Request(url, headers={"Accept": "application/json"})
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
+        with opener.open(req, timeout=timeout) as resp:
             return {"ok": True, "status": resp.status, "data": json.loads(resp.read().decode("utf-8") or "{}")}
     except urllib.error.HTTPError as exc:
         body = exc.read().decode("utf-8", "replace")[:500]
