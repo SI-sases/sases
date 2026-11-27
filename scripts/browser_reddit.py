@@ -25,6 +25,7 @@ def main() -> int:
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--screenshot", default="")
     parser.add_argument("--timeout", type=int, default=30000)
+    parser.add_argument("--no-reuse", action="store_true", help="always navigate")
     args = parser.parse_args()
 
     from playwright.sync_api import sync_playwright
@@ -35,9 +36,12 @@ def main() -> int:
         page = context.pages[0] if context.pages else context.new_page()
         result = {"ok": True, "dry_run": args.dry_run, "subreddit": args.subreddit}
         try:
-            page.goto(f"https://www.reddit.com/r/{args.subreddit}/submit",
-                      wait_until="commit", timeout=args.timeout)
-            page.wait_for_timeout(6000)
+            target = f"https://www.reddit.com/r/{args.subreddit}/submit"
+            if not args.no_reuse and page.url.rstrip("/").startswith(target.rstrip("/")):
+                result["reused"] = True
+            else:
+                page.goto(target, wait_until="commit", timeout=args.timeout)
+                page.wait_for_timeout(6000)
             page.locator("textarea[placeholder='标题']").fill(args.title)
             body = page.locator("[contenteditable=true]").last
             body.click()

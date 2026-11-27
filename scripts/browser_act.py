@@ -29,6 +29,7 @@ def main() -> int:
     parser.add_argument("--wait-ms", type=int, default=1500)
     parser.add_argument("--timeout", type=int, default=30000)
     parser.add_argument("--screenshot", default="")
+    parser.add_argument("--no-reuse", action="store_true", help="always navigate")
     args = parser.parse_args()
 
     from playwright.sync_api import sync_playwright
@@ -40,8 +41,13 @@ def main() -> int:
         result = {"ok": True, "actions": [], "url": page.url}
         try:
             if args.url:
-                page.goto(args.url, wait_until="commit", timeout=args.timeout)
-                page.wait_for_timeout(args.wait_ms)
+                target = args.url.rstrip("/")
+                current = page.url.rstrip("/")
+                if not args.no_reuse and current.split("?")[0] == target.split("?")[0]:
+                    result["reused"] = True
+                else:
+                    page.goto(args.url, wait_until="commit", timeout=args.timeout)
+                    page.wait_for_timeout(args.wait_ms)
                 result["url"] = page.url
                 result["title"] = page.title()
             for item in args.fill:
