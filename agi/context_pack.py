@@ -155,3 +155,12 @@ def fork(conn: sqlite3.Connection, context_id: str, goal: str | None = None) -> 
                   facts=pack.get("facts") or [], artifacts=pack.get("artifacts") or [],
                   history_summary=pack.get("history_summary") or "",
                   parent_context_id=context_id)
+
+
+def find_by_conversation(conn: sqlite3.Connection, conversation_id: int) -> dict | None:
+    ensure_schema(conn)
+    row = conn.execute(
+        "SELECT context_id FROM agi_contexts WHERE scope_json LIKE ? ORDER BY updated_at DESC LIMIT 1",
+        (f'%"conversation_id": {int(conversation_id)}%',),
+    ).fetchone()
+    return get(conn, row[0]) if row else None

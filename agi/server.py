@@ -76,6 +76,18 @@ class Handler(BaseHTTPRequestHandler):
             finally:
                 conn.close()
             return
+        if self.path.startswith("/context/by-conversation"):
+            from . import context_pack
+            from urllib.parse import parse_qs, urlparse
+            import sqlite3
+            conversation_id = int(parse_qs(urlparse(self.path).query).get("conversation_id", ["0"])[0])
+            conn = sqlite3.connect(self.agi.db_path)
+            try:
+                pack = context_pack.find_by_conversation(conn, conversation_id)
+                self._send(200, {"context": pack} if pack else {"context": None})
+            finally:
+                conn.close()
+            return
         if self.path.startswith("/context/"):
             from . import context_pack
             import sqlite3
@@ -201,6 +213,26 @@ class Handler(BaseHTTPRequestHandler):
                 finally:
                     conn.close()
                 self._send(200 if ok else 409, {"ok": ok, "leader": current})
+                return
+            if self.path == "/context/build":
+                from . import context_builder
+                import sqlite3
+                conn = sqlite3.connect(self.agi.db_path)
+                try:
+                    built = context_builder.build(
+                        conn, str(body.get("goal") or ""),
+                        conversation_id=body.get("conversation_id"),
+                        facts=body.get("facts") or [],
+                        artifacts=body.get("artifacts") or [],
+                        constraints=body.get("constraints") or [],
+                        acceptance=body.get("acceptance") or [],
+                        history_summary=str(body.get("history_summary") or ""),
+                        parent_context_id=str(body.get("parent_context_id") or ""),
+                        budget=int(body.get("budget") or 4000),
+                    )
+                    self._send(200, built)
+                finally:
+                    conn.close()
                 return
             if self.path == "/worker/run":
                 from .worker import run_once
@@ -349,14 +381,15 @@ class Handler(BaseHTTPRequestHandler):
                     try:
                         goal = text.strip()[:500]
                         name = goal[:32] or "子智能体任务"
-                        from . import context_pack
-                        context_id = context_pack.create(
+                        from . import context_builder
+                        built = context_builder.build(
                             conn, goal,
-                            scope={"conversation_id": body.get("conversation_id")},
+                            conversation_id=body.get("conversation_id"),
                             acceptance=["task result reported"],
                             constraints=["high-risk actions require approval"],
                             history_summary="Created from main AGI chat.",
                         )
+                        context_id = built["context_id"]
                         agent_id = agents.spawn(
                             conn, "local", {"goal": goal}, "sub", "", 600,
                             name=name, goal=goal, kind="subagent", status="queued",

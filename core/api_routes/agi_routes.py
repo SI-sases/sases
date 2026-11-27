@@ -110,6 +110,17 @@ async def agent_result(agent_id: str, user_id: int = Depends(get_current_user)):
     return _main_request("GET", f"/agents/{agent_id}/result")
 
 
+@router.post("/context/build")
+async def build_context(body: dict, user_id: int = Depends(get_current_user)):
+    return _main_request("POST", "/context/build", body)
+
+
+@router.get("/context/by-conversation")
+async def context_by_conversation(conversation_id: int,
+                                  user_id: int = Depends(get_current_user)):
+    return _main_request("GET", f"/context/by-conversation?conversation_id={conversation_id}")
+
+
 @router.get("/context/{context_id}")
 async def get_context(context_id: str, user_id: int = Depends(get_current_user)):
     return _main_request("GET", f"/context/{context_id}")
