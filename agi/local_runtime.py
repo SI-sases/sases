@@ -193,14 +193,22 @@ def main() -> int:
         print(json.dumps({"ok": False, "error": str(exc)}, ensure_ascii=False), flush=True)
         return 1
     rt.recover()
+    idle = 0
     while True:
         try:
             outcome = rt.poll()
             rt.heartbeat(outcome)
-            print(json.dumps(outcome, ensure_ascii=False), flush=True)
+            if outcome.get("started"):
+                idle = 0
+                print(json.dumps(outcome, ensure_ascii=False), flush=True)
+            else:
+                idle += 1
+                if idle % 20 == 0:
+                    print(json.dumps({"ok": True, "idle": idle}, ensure_ascii=False), flush=True)
         except Exception as exc:  # noqa: BLE001
             print(json.dumps({"ok": False, "error": f"{type(exc).__name__}: {exc}"}, ensure_ascii=False), flush=True)
-        time.sleep(max(0.5, args.interval))
+        delay = args.interval * min(4.0, 1.0 + idle / 5.0)
+        time.sleep(max(0.5, delay))
 
 
 if __name__ == "__main__":

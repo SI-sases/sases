@@ -213,11 +213,19 @@ def main() -> int:
     args = parser.parse_args()
     from .tools import build_default_registry
     registry = build_default_registry()
+    idle = 0
     while True:
         conn = sqlite3.connect(args.db)
         conn.row_factory = sqlite3.Row
         try:
-            print(json.dumps(run_once(conn, registry, args.owner, exclude_local=True), ensure_ascii=False), flush=True)
+            outcome = run_once(conn, registry, args.owner, exclude_local=True)
+            if outcome.get("claimed"):
+                idle = 0
+                print(json.dumps(outcome, ensure_ascii=False), flush=True)
+            else:
+                idle += 1
+                if idle % 30 == 0:
+                    print(json.dumps({"ok": True, "idle": idle}, ensure_ascii=False), flush=True)
         except Exception as exc:  # noqa: BLE001 - keep the worker alive
             print(json.dumps({"ok": False, "error": f"{type(exc).__name__}: {exc}"}, ensure_ascii=False),
                   flush=True)
@@ -225,7 +233,7 @@ def main() -> int:
             conn.close()
         if not args.loop:
             return 0
-        __import__("time").sleep(max(0.5, args.interval))
+        __import__("time").sleep(max(0.5, args.interval * min(3.0, 1.0 + idle / 10.0)))
 
 
 if __name__ == "__main__":
