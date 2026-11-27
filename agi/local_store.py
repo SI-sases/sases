@@ -56,3 +56,27 @@ def finish(agent_id: str, status: str = "done") -> None:
         conn.execute("DELETE FROM local_sessions WHERE agent_id=?", (agent_id,))
     conn.commit()
     conn.close()
+
+
+def set_metric(name: str, value: float) -> None:
+    conn = _conn()
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS local_metrics (name TEXT PRIMARY KEY, value REAL, updated_at INTEGER)"
+    )
+    conn.execute(
+        "INSERT INTO local_metrics(name,value,updated_at) VALUES(?,?,?) "
+        "ON CONFLICT(name) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at",
+        (name, float(value), int(time.time())),
+    )
+    conn.commit()
+    conn.close()
+
+
+def metrics() -> dict:
+    conn = _conn()
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS local_metrics (name TEXT PRIMARY KEY, value REAL, updated_at INTEGER)"
+    )
+    rows = conn.execute("SELECT name,value FROM local_metrics").fetchall()
+    conn.close()
+    return {r[0]: r[1] for r in rows}

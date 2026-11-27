@@ -76,9 +76,15 @@ class LocalRuntime:
                 local_store.step(agent_id, current + index + 1)
 
             if self._is_browser(steps):
+                wait_started = time.perf_counter()
                 with self.browser_lock:
+                    waited_ms = (time.perf_counter() - wait_started) * 1000
+                    exec_started = time.perf_counter()
                     outcome = _execute(self.server, self.token, self.registry, agent_id, remaining,
                                        goal, on_step=on_step)
+                    local_store.set_metric("last_browser_wait_ms", waited_ms)
+                    local_store.set_metric("last_browser_exec_ms",
+                                           (time.perf_counter() - exec_started) * 1000)
             else:
                 outcome = _execute(self.server, self.token, self.registry, agent_id, remaining,
                                    goal, on_step=on_step)
@@ -169,6 +175,7 @@ class LocalRuntime:
             "owner": "local-runtime",
             "current_agent": (outcome or {}).get("started"),
             "claimed": bool((outcome or {}).get("started")),
+            "metrics": local_store.metrics(),
         })
 
 

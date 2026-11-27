@@ -10,3 +10,10 @@ def test_local_session_resume(tmp_path, monkeypatch):
     assert local_store.start("a1", "goal", steps) == 1
     local_store.finish("a1", "done")
     assert local_store.start("a1", "goal", steps) == 0
+
+
+def test_local_metrics(tmp_path, monkeypatch):
+    db = tmp_path / "local_runtime.db"
+    monkeypatch.setattr(local_store, "_path", lambda: db)
+    local_store.set_metric("browser_wait_ms", 12.5)
+    assert local_store.metrics()["browser_wait_ms"] == 12.5
