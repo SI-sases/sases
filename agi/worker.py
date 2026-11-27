@@ -217,7 +217,7 @@ def main() -> int:
         conn = sqlite3.connect(args.db)
         conn.row_factory = sqlite3.Row
         try:
-            print(json.dumps(run_once(conn, registry, args.owner), ensure_ascii=False), flush=True)
+            print(json.dumps(run_once(conn, registry, args.owner, exclude_local=True), ensure_ascii=False), flush=True)
         except Exception as exc:  # noqa: BLE001 - keep the worker alive
             print(json.dumps({"ok": False, "error": f"{type(exc).__name__}: {exc}"}, ensure_ascii=False),
                   flush=True)
