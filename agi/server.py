@@ -150,6 +150,20 @@ class Handler(BaseHTTPRequestHandler):
                 conn = sqlite3.connect(self.agi.db_path)
                 conn.row_factory = sqlite3.Row
                 try:
+                    if action == "execute":
+                        from .executor import execute
+                        from .package import TaskPackage
+                        package = TaskPackage(**body.get("package", {}))
+                        agent_id = str(body.get("agent_id") or "")
+                        if agent_id:
+                            agents.lease(conn, agent_id, str(body.get("owner") or "main"), int(body.get("ttl") or 60))
+                        result = execute(package, self.agi.registry, conn,
+                                         owner=str(body.get("owner") or "main"),
+                                         profile=str(body.get("profile") or "sub"))
+                        if agent_id:
+                            agents.finish(conn, agent_id, "done" if result.get("ok") else "failed")
+                        self._send(200, result)
+                        return
                     if action == "spawn":
                         agent_id = agents.spawn(
                             conn, str(body.get("node_id") or "local"),
