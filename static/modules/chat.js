@@ -3,9 +3,9 @@ import { initParamBar, getParamMaxSteps, getAgentMode } from './param_bar.js';
 import { t } from './i18n.js';
 import { api } from './api.js';
 
-import { closeGroupChat, sendGroupMessage } from './group_chat.js';
-import { appendMessage, createMessageElement, updateMessageStatus } from './chat_ui.js?v=20261132';
-import { renderMarkdown } from './markdown.js?v=20261132';
+import { closeGroupChat, sendGroupMessage } from './group_chat.js?v=20261133';
+import { appendMessage, createMessageElement, updateMessageStatus } from './chat_ui.js?v=20261133';
+import { renderMarkdown } from './markdown.js?v=20261133';
 import { showWorkWarning, sendWorkCommand, sendCommanderTask, showFreeModeGuide } from './chat_work.js';
 import { updateIdentityButton, openIdentitySwitch } from './chat_identity.js';
 import { createContextMenu, showQuoteBar, hideQuoteBar, openChatInfo, toggleChatPlusPanel, closeChatPlusPanel } from './chat_menu.js';
@@ -664,6 +664,8 @@ function updateInputPlaceholder() {
 }
 
 export function openChatWindow(conversationId, chatName, agentId = null, agentType = 'my', isFriendChat = 0, friendMode = 'normal', targetUserId = null) {
+  const _mainAgiBtn = document.getElementById('main-agi-btn');
+  if (_mainAgiBtn) _mainAgiBtn.style.display = '';
 
 
   chatState.conversationId = conversationId ? parseInt(conversationId) : null;
@@ -1057,6 +1059,9 @@ window.addEventListener('sases_new_message', (e) => {
 
 export function openMainAgiChat() {
   try { window.reportSasesEvent && window.reportSasesEvent('main_agi_open', ''); } catch (e) {}
+  if (window.currentGroupChat) {
+    try { closeGroupChat(); } catch (e) {}
+  }
   openChatWindow(null, '主 AGI', '__main_agi__', 'main_agi');
 }
 

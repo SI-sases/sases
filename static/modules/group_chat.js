@@ -73,6 +73,8 @@ export async function openGroupChat(groupId, groupName) {
   document.querySelector('.bottom-nav').style.display = 'none';
   document.querySelector('.top-bar').style.display = 'none';
 
+  const mainAgiBtn = document.getElementById('main-agi-btn');
+  if (mainAgiBtn) mainAgiBtn.style.display = 'none';
   const settingsBtn = document.getElementById('group-settings-btn');
   if (settingsBtn) {
     settingsBtn.style.display = 'block';
