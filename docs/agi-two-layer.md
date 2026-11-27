@@ -26,6 +26,7 @@ agi/lessons.py    operational lessons store/search
 agi/approvals.py  human approval queue for high-risk actions
 agi/skills.py     versioned skill catalog + static evaluation
 agi/mcp_bridge.py MCP bridge, disabled unless SASES_MCP_ALLOW=1
+agi/planner.py    optional LLM planner with deterministic fallback
 agi/platform_policy.py  manual-only platform guard
 agi/playbooks/    health_check, publish_platform, deploy_node
 ```
@@ -328,6 +329,16 @@ SASES_MCP_ALLOW=1
 
 When disabled, tools return an explicit error instead of silently doing
 nothing.
+
+## Planner
+
+```text
+planner.plan
+```
+
+Uses the configured DeepSeek model when available; otherwise returns a
+deterministic read-only fallback.  The planner only returns validated steps;
+it never executes them.
 
 ## Run
 

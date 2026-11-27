@@ -218,6 +218,13 @@ def _mcp(args: dict[str, Any], action: str) -> dict[str, Any]:
     raise ValueError(f"unknown mcp action: {action}")
 
 
+def _planner(args: dict[str, Any], registry: "ToolRegistry") -> dict[str, Any]:
+    from .planner import plan
+    return plan(str(args.get("goal") or ""), registry,
+                str(args.get("base_url") or "http://127.0.0.1:8001"),
+                int(args.get("max_steps") or 5))
+
+
 def _support(args: dict[str, Any], action: str) -> dict[str, Any]:
     from . import support
     import sqlite3
@@ -280,6 +287,8 @@ def build_default_registry() -> ToolRegistry:
                                frozenset({"main"}), "List MCP tools (disabled by default)"))
     registry.register(ToolSpec("mcp.call", lambda a: _mcp(a, "call"), "write",
                                frozenset({"main"}), "Call an MCP tool (disabled by default)"))
+    registry.register(ToolSpec("planner.plan", lambda a: _planner(a, registry), "read",
+                               frozenset({"main"}), "Plan a read-only tool sequence"))
     registry.register(ToolSpec("support.classify", lambda a: _support(a, "classify"), "read",
                                frozenset({"main", "sub"}), "Classify a support request"))
     registry.register(ToolSpec("support.kb_search", lambda a: _support(a, "search"), "read",
