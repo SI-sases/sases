@@ -1,10 +1,11 @@
 // static/modules/main.js
 // 会话胶囊：后台任务 / 子智能体 / 权限
 import './session_pills.js?v=20261131';
+import './frontend_errors.js?v=20261132';
 import { login, register, isLoggedIn } from './auth.js';
 import { api } from './api.js';
 import { initMessages } from './messages.js';
-import { initChat, openChatWindow, closeChatWindow } from './chat.js?v=20261130';
+import { initChat, openChatWindow, closeChatWindow } from './chat.js?v=20261132';
 import { initContacts } from './contacts.js';
 import { initDiscover } from './discover.js';
 import { initMe } from './me.js';
@@ -16,7 +17,7 @@ import './me_memory.js';
 import './pet.js';
 import './base.js';
 import './chat_trace.js?v=2';
-import './chat_history_rail.js';
+import './chat_history_rail.js?v=20261132';
 import './onboarding.js';
 import { openSubpage, closeSubpage } from './subpage.js';
 import { openGroupChat, closeGroupChat } from './group_chat.js';
@@ -323,33 +324,34 @@ function initTopActions() {
 }
 
 
-// ====== 智能节点测速分流 ======
+// ====== 节点选择：本地桌面与公网分开处理 ======
 async function checkNodeSpeedAndRedirect() {
-    // 1. 本地开发环境豁免
-    const currentHost = window.location.host;
-    if (currentHost.includes('127.0.0.1') || currentHost.includes('localhost')) {
-        console.log("[Node Selector] 本地开发环境，跳过测速跳转");
+    const hostname = window.location.hostname;
+    const isLocal = hostname === '127.0.0.1' || hostname === 'localhost';
+
+    // Desktop/local: stay on the local node.
+    if (isLocal) {
+        console.log("[Node Selector] 本地环境，使用本地节点");
         return;
     }
 
-    // 2. 如果存在 hash 路由（说明可能在做特定操作，比如登录中），不跳转
-    if (window.location.hash && window.location.hash.length > 2) return;
+    // Public web: never redirect to loopback.  Stay on the current origin
+    // unless a deployment explicitly provides public nodes.
+    const publicNodes = Array.isArray(window.SASES_PUBLIC_NODES) ? window.SASES_PUBLIC_NODES : [];
+    if (!publicNodes.length) {
+        console.log("[Node Selector] 公网模式，保持当前域名");
+        return;
+    }
 
-    const nodes = [
-        { host: '127.0.0.1:8001', protocol: 'http:', name: t('main.node_cn') }
-
-    ];
-    
-    let fastestNode = nodes.find(n => currentHost === n.host) || nodes[0];
+    const currentHost = window.location.host;
+    let fastestNode = publicNodes.find(n => n.host === currentHost) || publicNodes[0];
     let minTime = 9999;
-
-    for (const node of nodes) {
+    for (const node of publicNodes) {
         const start = performance.now();
         try {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 2000);
-            
-            await fetch(`${node.protocol}//${node.host}/static/favicon.svg?t=${Date.now()}`, { 
+            await fetch(`${node.protocol}//${node.host}/static/favicon.svg?t=${Date.now()}`, {
                 mode: 'no-cors',
                 signal: controller.signal
             });
@@ -361,12 +363,8 @@ async function checkNodeSpeedAndRedirect() {
             }
         } catch (e) {}
     }
-    
     if (fastestNode.host !== currentHost) {
-        console.log(`[Node Selector] 自动切换至最优节点: ${fastestNode.name} (${minTime.toFixed(0)}ms)`);
         window.location.href = `${fastestNode.protocol}//${fastestNode.host}/static/index.html${window.location.hash}`;
-    } else {
-        console.log(`[Node Selector] 当前已是最优节点: ${fastestNode.name} (${minTime.toFixed(0)}ms)`);
     }
 }
 setTimeout(checkNodeSpeedAndRedirect, 1500);

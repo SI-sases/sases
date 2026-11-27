@@ -142,7 +142,7 @@ class Handler(BaseHTTPRequestHandler):
                 self.agi.record_event(message)
                 import sqlite3
                 conn = sqlite3.connect(self.agi.db_path)
-                health = "error" if message.severity == "critical" else "ok"
+                health = "error" if message.severity in ("error", "critical") else "ok"
                 version = str(message.payload.get("version") or "")
                 conn.execute(
                     "INSERT INTO agi_nodes(node_id,scope,kind,role,version,health,last_seen) VALUES(?,?,?,?,?,?,?) "

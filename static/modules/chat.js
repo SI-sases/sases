@@ -4,8 +4,8 @@ import { t } from './i18n.js';
 import { api } from './api.js';
 
 import { closeGroupChat, sendGroupMessage } from './group_chat.js';
-import { appendMessage, createMessageElement, updateMessageStatus } from './chat_ui.js?v=20261130';
-import { renderMarkdown } from './markdown.js?v=20261130';
+import { appendMessage, createMessageElement, updateMessageStatus } from './chat_ui.js?v=20261132';
+import { renderMarkdown } from './markdown.js?v=20261132';
 import { showWorkWarning, sendWorkCommand, sendCommanderTask, showFreeModeGuide } from './chat_work.js';
 import { updateIdentityButton, openIdentitySwitch } from './chat_identity.js';
 import { createContextMenu, showQuoteBar, hideQuoteBar, openChatInfo, toggleChatPlusPanel, closeChatPlusPanel } from './chat_menu.js';
@@ -451,9 +451,11 @@ async function sendMessage() {
       });
       const data = await resp.json().catch(() => ({}));
       if (!resp.ok) throw new Error(data.detail || ('HTTP ' + resp.status));
+      try { window.reportSasesEvent && window.reportSasesEvent('main_agi_ask_ok', ''); } catch (e) {}
       updateMessageStatus(tempId, 'sent');
       appendMessage('assistant', data.markdown || data.detail || t('chat.empty_reply'), '主 AGI', null, new Date().toISOString(), false, chatState);
     } catch (e) {
+      try { window.reportSasesEvent && window.reportSasesEvent('main_agi_ask_failed', e.message || String(e)); } catch (err) {}
       updateMessageStatus(tempId, 'failed');
       appendMessage('assistant', '主 AGI 暂时不可用：' + (e.message || e), '主 AGI', null, new Date().toISOString(), false, chatState);
     }
@@ -1054,6 +1056,7 @@ window.addEventListener('sases_new_message', (e) => {
 });
 
 export function openMainAgiChat() {
+  try { window.reportSasesEvent && window.reportSasesEvent('main_agi_open', ''); } catch (e) {}
   openChatWindow(null, '主 AGI', '__main_agi__', 'main_agi');
 }
 

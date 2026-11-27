@@ -4,6 +4,7 @@
 // 依赖：api.listConversations / api.listMyGroups / chat.openChatWindow / group_chat.openGroupChat
 
 import { api } from './api.js';
+import { t } from './i18n.js';
 import { openChatWindow, chatState } from './chat.js';
 import { openGroupChat, closeGroupChat } from './group_chat.js';
 
@@ -120,8 +121,8 @@ function _applyCollapsed(v, persist) {
 
 function _relTime(iso) {
   if (!iso) return '';
-  let t = String(iso).replace(' ', 'T');
-  const d = new Date(t);
+  const isoText = String(iso).replace(' ', 'T');
+  const d = new Date(isoText);
   if (isNaN(d.getTime())) return '';
   const diff = Math.max(0, Date.now() - d.getTime());
   const m = Math.floor(diff / 60000);
