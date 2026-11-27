@@ -40,14 +40,26 @@ def create(conn: sqlite3.Connection, tool: str, args: dict | None = None,
 
 
 def list_pending(conn: sqlite3.Connection, limit: int = 50) -> list[dict]:
+    return list_by_status(conn, "pending", limit)
+
+
+def list_by_status(conn: sqlite3.Connection, status: str, limit: int = 50) -> list[dict]:
     ensure_schema(conn)
     rows = conn.execute(
         "SELECT id,tool,args_json,description,risk,trace_id,status,created_at "
-        "FROM agi_approvals WHERE status='pending' ORDER BY id DESC LIMIT ?",
-        (max(1, min(limit, 200)),),
+        "FROM agi_approvals WHERE status=? ORDER BY id ASC LIMIT ?",
+        (status, max(1, min(limit, 200))),
     ).fetchall()
     keys = ("id", "tool", "args_json", "description", "risk", "trace_id", "status", "created_at")
     return [dict(zip(keys, row)) for row in rows]
+
+
+def mark_executed(conn: sqlite3.Connection, approval_id: int) -> bool:
+    ensure_schema(conn)
+    cur = conn.execute("UPDATE agi_approvals SET status='executed' WHERE id=? AND status='allow'",
+                       (approval_id,))
+    conn.commit()
+    return cur.rowcount > 0
 
 
 def decide(conn: sqlite3.Connection, approval_id: int, decision: str,

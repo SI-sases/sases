@@ -24,12 +24,46 @@ def _read_only(registry, steps: list[dict]) -> tuple[bool, str]:
     return True, ""
 
 
+def _run_approved(conn: sqlite3.Connection, registry, owner: str) -> dict[str, Any]:
+    rows = approvals.list_by_status(conn, "allow", 20)
+    for row in rows:
+        if row.get("tool") != "agent.execute":
+            continue
+        try:
+            payload = json.loads(row.get("args_json") or "{}")
+        except json.JSONDecodeError:
+            continue
+        agent_id = str(payload.get("agent_id") or "")
+        steps = payload.get("steps") if isinstance(payload.get("steps"), list) else []
+        agent = agents.get_agent(conn, agent_id)
+        if not agent or not steps:
+            approvals.mark_executed(conn, int(row["id"]))
+            continue
+        agents.set_progress(conn, agent_id, "审批通过，执行中")
+        for step in steps:
+            args = step.get("args") if isinstance(step.get("args"), dict) else {}
+            args.setdefault("approved", True)
+            args.setdefault("_approved", True)
+            step["args"] = args
+        package = TaskPackage(goal=str(agent.get("goal") or "approved task"),
+                              node_id=str(agent.get("node_id") or "local"),
+                              acceptance=["approved execution"], steps=steps,
+                              tools_allowed=[s.get("tool") for s in steps])
+        result = execute(package, registry, conn, owner=owner, profile="main")
+        agents.finish(conn, agent_id, "done" if result.get("ok") else "failed", result)
+        approvals.mark_executed(conn, int(row["id"]))
+        return {"ok": bool(result.get("ok")), "claimed": True, "agent_id": agent_id,
+                "status": "done" if result.get("ok") else "failed", "approved": True,
+                "result": result}
+    return {"ok": True, "claimed": False}
+
+
 def run_once(conn: sqlite3.Connection, registry, owner: str = "worker",
              base_url: str = "") -> dict[str, Any]:
     base_url = base_url or os.environ.get("SASES_WORKER_BASE_URL", "http://127.0.0.1:8001")
     agent_id = agents.claim_next(conn, owner, 300)
     if not agent_id:
-        return {"ok": True, "claimed": False}
+        return _run_approved(conn, registry, owner)
     agent = agents.get_agent(conn, agent_id) or {}
     try:
         task = json.loads(agent.get("task_json") or "{}")
