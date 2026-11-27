@@ -262,6 +262,7 @@ class Handler(BaseHTTPRequestHandler):
                         "ok": True,
                         "current_agent": body.get("current_agent"),
                         "claimed": body.get("claimed"),
+                        "metrics": body.get("metrics") or {},
                     })
                     self._send(200, {"ok": True})
                 finally:
