@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="/static/css/layout.css?v=82">
 <link rel="stylesheet" href="/static/css/components.css?v=82">
 <link rel="stylesheet" href="/static/css/chat.css?v=84">
+<link rel="stylesheet" href="/static/css/child_window.css?v=1">
 <style>
   /* 会话胶囊顺序内联兜底，避免旧 chat.css 缓存导致顺序反转 */
   #api-pill { order: 1 !important; }
@@ -150,6 +151,7 @@
                 <span class="mode-arrow">▾</span>
               </button>
               <button id="main-agi-btn" class="chat-mode-btn" title="和主 AGI 对话">主 AGI</button>
+              <div id="subagent-capsules" class="subagent-capsules"></div>
             </div>
             <button id="chat-info-btn" class="chat-info-btn" style="display:none;" aria-label="聊天信息">⋯</button>
             <button id="group-settings-btn" class="group-settings-btn" style="display:none;" aria-label="群设置">⋯</button>
@@ -214,6 +216,28 @@
       </nav>
     </div>
 
+    <!-- 子窗口：子智能体 / 后台任务 / 审批 -->
+    <div id="child-window" class="child-window" style="display:none;" aria-hidden="true">
+      <div class="child-window-overlay" id="child-window-overlay"></div>
+      <aside class="child-window-panel" role="dialog" aria-label="子窗口">
+        <div class="child-window-header">
+          <div>
+            <div class="child-window-title">子窗口</div>
+            <div class="child-window-sub" id="child-window-sub">子智能体 · 后台任务</div>
+          </div>
+          <button class="child-window-close" id="child-window-close" aria-label="关闭">×</button>
+        </div>
+        <div class="child-window-tabs" role="tablist">
+          <button class="child-tab active" data-child-tab="agents" role="tab">子智能体 <span id="child-count-agents">0</span></button>
+          <button class="child-tab" data-child-tab="tasks" role="tab">后台任务 <span id="child-count-tasks">0</span></button>
+          <button class="child-tab" data-child-tab="approvals" role="tab">审批 <span id="child-count-approvals">0</span></button>
+        </div>
+        <div class="child-window-body" id="child-window-body">
+          <div class="child-empty">正在加载…</div>
+        </div>
+      </aside>
+    </div>
+
     <!-- 侧边栏抽屉 -->
     <div id="side-drawer" class="side-drawer" style="display:none;">
       <div class="side-drawer-overlay" id="side-drawer-overlay"></div>
@@ -222,6 +246,12 @@
           <span>菜单</span>
         </div>
         <div class="side-menu">
+          <div class="side-menu-item" id="menu-child-window">
+            <span class="menu-icon">▣</span>
+            <span>子窗口</span>
+            <span class="child-menu-badge" id="child-menu-badge" hidden>0</span>
+            <span class="menu-arrow">›</span>
+          </div>
           <div class="side-menu-item" id="menu-harness">
             <span class="menu-icon">🔧</span>
             <span>Harness 工具</span>
@@ -281,7 +311,7 @@
   </script>
 
   <!-- 版本号已提升至 20261031，强制清除 Edge 浏览器缓存 -->
-  <script type="module" src="/static/modules/main.js?v=20261133"></script>
+  <script type="module" src="/static/modules/main.js?v=20261136"></script>
 
   <script type="module" src="/static/modules/me_external_api.js"></script>
   <script src="/static/modules/api_pill.js?v=5"></script>

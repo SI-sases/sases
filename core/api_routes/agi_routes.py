@@ -75,6 +75,40 @@ async def list_approvals(user_id: int = Depends(get_current_user)):
     return _main_request("GET", "/approvals")
 
 
+@router.get("/agents")
+async def list_agents(user_id: int = Depends(get_current_user)):
+    return _main_request("GET", "/agents")
+
+
+@router.get("/background-tasks")
+async def background_tasks(user_id: int = Depends(get_current_user)):
+    data = _main_request("GET", "/agents")
+    agents = [a for a in data.get("agents", []) if a.get("kind") not in ("subagent", "")]
+    return {"tasks": agents, "active": sum(1 for a in agents if a.get("status") == "active")}
+
+
+@router.get("/agents/{agent_id}")
+async def get_agent(agent_id: str, user_id: int = Depends(get_current_user)):
+    return _main_request("GET", f"/agents/{agent_id}")
+
+
+@router.get("/agents/{agent_id}/messages")
+async def agent_messages(agent_id: str, user_id: int = Depends(get_current_user)):
+    return _main_request("GET", f"/agents/{agent_id}/messages")
+
+
+@router.post("/agents/{agent_id}/message")
+async def agent_message(agent_id: str, body: dict, user_id: int = Depends(get_current_user)):
+    return _main_request("POST", f"/agents/{agent_id}/message", {
+        "message": str(body.get("message") or ""),
+    })
+
+
+@router.post("/agents/{agent_id}/cancel")
+async def agent_cancel(agent_id: str, user_id: int = Depends(get_current_user)):
+    return _main_request("POST", f"/agents/{agent_id}/cancel", {})
+
+
 @router.post("/approvals/decide")
 async def decide_approval(body: dict, user_id: int = Depends(get_current_user)):
     return _main_request("POST", "/approvals/decide", {

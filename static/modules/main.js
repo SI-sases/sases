@@ -2,11 +2,12 @@
 // 会话胶囊：后台任务 / 子智能体 / 权限
 import './session_pills.js?v=20261131';
 import './frontend_errors.js?v=20261133';
-import './agi_approval.js?v=20261133';
+import './agi_approval.js?v=20261134';
+import { initChildWindow } from './child_window.js?v=20261135';
 import { login, register, isLoggedIn } from './auth.js';
 import { api } from './api.js';
 import { initMessages } from './messages.js';
-import { initChat, openChatWindow, closeChatWindow } from './chat.js?v=20261133';
+import { initChat, openChatWindow, closeChatWindow } from './chat.js?v=20261136';
 import { initContacts } from './contacts.js';
 import { initDiscover } from './discover.js';
 import { initMe } from './me.js';
@@ -66,6 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initTopActions();
   initChat();
   initSideDrawer();
+  initChildWindow();
   checkAuthState();
 });
 

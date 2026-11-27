@@ -73,7 +73,21 @@ class Handler(BaseHTTPRequestHandler):
             conn = sqlite3.connect(self.agi.db_path)
             conn.row_factory = sqlite3.Row
             try:
-                self._send(200, {"agents": agents.list_agents(conn)})
+                parts = [p for p in self.path.split("?")[0].split("/") if p]
+                if len(parts) >= 2 and not self.path.startswith("/agents?"):
+                    agent_id = parts[1]
+                    agent = agents.get_agent(conn, agent_id)
+                    if not agent:
+                        self._send(404, {"error": "agent not found"})
+                        return
+                    if len(parts) >= 3 and parts[2] == "messages":
+                        self._send(200, {"messages": agents.messages(conn, agent_id)})
+                    else:
+                        self._send(200, {"agent": agent})
+                    return
+                data = agents.list_agents(conn)
+                self._send(200, {"agents": data,
+                                 "active": sum(1 for a in data if a.get("status") == "active")})
             finally:
                 conn.close()
             return
@@ -181,6 +195,24 @@ class Handler(BaseHTTPRequestHandler):
                 conn = sqlite3.connect(self.agi.db_path)
                 conn.row_factory = sqlite3.Row
                 try:
+                    parts = [p for p in self.path.split("?")[0].split("/") if p]
+                    if len(parts) >= 3 and parts[2] in {"message", "cancel"}:
+                        agent_id = parts[1]
+                        if not agents.get_agent(conn, agent_id):
+                            self._send(404, {"error": "agent not found"})
+                            return
+                        if parts[2] == "cancel":
+                            ok = agents.cancel(conn, agent_id)
+                            self._send(200 if ok else 409, {"ok": ok})
+                            return
+                        text = str(body.get("message") or "").strip()
+                        if not text:
+                            self._send(400, {"error": "message is required"})
+                            return
+                        msg_id = agents.add_message(conn, agent_id, "parent_to_child", "steer",
+                                                   {"message": text})
+                        self._send(200, {"ok": True, "message_id": msg_id})
+                        return
                     if action == "execute":
                         from .executor import execute
                         from .package import TaskPackage
@@ -200,6 +232,8 @@ class Handler(BaseHTTPRequestHandler):
                             conn, str(body.get("node_id") or "local"),
                             body.get("task") or {}, str(body.get("role") or "sub"),
                             str(body.get("parent_run_id") or ""), int(body.get("ttl") or 300),
+                            str(body.get("name") or ""), str(body.get("goal") or ""),
+                            str(body.get("kind") or "subagent"), str(body.get("trace_id") or ""),
                         )
                         self._send(200, {"ok": True, "agent_id": agent_id})
                         return
