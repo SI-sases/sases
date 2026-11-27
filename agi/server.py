@@ -373,7 +373,11 @@ class Handler(BaseHTTPRequestHandler):
                 from .ask import answer
                 text = str(body.get("text") or "")
                 result = answer(text, self.agi.db_path)
-                if any(k in text for k in ("执行", "派给", "派活", "子智能体", "后台任务", "让子", "继续", "上次", "接着")):
+                platform_words = ("youtube", "抖音", "douyin", "bilibili", "b站", "reddit", "小红书")
+                action_words = ("发到", "发布", "上传", "帮我", "处理", "做一下")
+                dispatch = any(k in text for k in ("执行", "派给", "派活", "子智能体", "后台任务", "让子", "继续", "上次", "接着"))
+                dispatch = dispatch or (any(k in text.lower() for k in platform_words) and any(k in text for k in action_words))
+                if dispatch:
                     from . import agents
                     import sqlite3
                     conn = sqlite3.connect(self.agi.db_path)
