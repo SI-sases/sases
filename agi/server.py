@@ -58,6 +58,15 @@ class Handler(BaseHTTPRequestHandler):
         if not self._auth():
             self._send(401, {"error": "unauthorized"})
             return
+        if self.path.startswith("/approvals/approved"):
+            from . import approvals
+            import sqlite3
+            conn = sqlite3.connect(self.agi.db_path)
+            try:
+                self._send(200, {"approvals": approvals.list_by_status(conn, "allow")})
+            finally:
+                conn.close()
+            return
         if self.path.startswith("/approvals"):
             from . import approvals
             import sqlite3
@@ -261,6 +270,9 @@ class Handler(BaseHTTPRequestHandler):
                         ok = approvals.decide(conn, int(body.get("id") or 0),
                                               str(body.get("decision") or ""),
                                               str(body.get("decided_by") or "commander"))
+                        self._send(200 if ok else 409, {"ok": ok})
+                    elif self.path == "/approvals/executed":
+                        ok = approvals.mark_executed(conn, int(body.get("id") or 0))
                         self._send(200 if ok else 409, {"ok": ok})
                     else:
                         self._send(404, {"error": "not found"})
@@ -494,12 +506,32 @@ class Handler(BaseHTTPRequestHandler):
                             history_summary=summary or collected["history_summary"] or "Created from main AGI chat.",
                         )
                         context_id = built["context_id"]
+                        task_payload = {"goal": goal}
+                        platform = next((f.get("value") for f in extracted.get("facts", [])
+                                         if f.get("key") == "platform"), "")
+                        if platform:
+                            artifact = next((a for a in extracted.get("artifacts", [])
+                                             if a.get("uri")), {})
+                            adapter_args = {"dry_run": True}
+                            if artifact.get("uri"):
+                                if platform == "youtube" or platform == "bilibili":
+                                    adapter_args["video"] = artifact["uri"]
+                                else:
+                                    adapter_args["image"] = artifact["uri"]
+                            title = next((f.get("value") for f in extracted.get("facts", [])
+                                          if f.get("key") == "title"), "")
+                            if title:
+                                adapter_args["title"] = title
+                            task_payload["steps"] = [{
+                                "tool": "adapter.run",
+                                "args": {"adapter": platform, "args": adapter_args},
+                            }]
                         agent_id = agents.spawn(
-                            conn, "local", {"goal": goal}, "sub", "", 600,
+                            conn, "local", task_payload, "sub", "", 600,
                             name=name, goal=goal, kind="subagent", status="queued",
                             context={"context_id": context_id,
                                      "conversation_id": body.get("conversation_id"),
-                                     "source": "main-agi-chat"},
+                                     "source": "main-agi-chat", "execution": "local"},
                         )
                         agents.set_progress(conn, agent_id, "已派发，等待子智能体领取")
                         result["agent_id"] = agent_id

@@ -25,7 +25,7 @@ def test_worker_waits_for_approval_then_executes(tmp_path):
     reg = ToolRegistry()
     reg.register(ToolSpec("write.echo", lambda a: {"ok": True, "approved": bool(a.get("approved"))},
                           "write", frozenset({"main", "sub"})))
-    aid = agents.spawn(conn, "local", {"steps": [{"tool": "write.echo", "args": {}}]},
+    aid = agents.spawn(conn, "node-C", {"steps": [{"tool": "write.echo", "args": {}}]},
                        name="write", goal="write", status="queued")
     first = run_once(conn, reg, "test")
     assert first["status"] == "needs_approval"
