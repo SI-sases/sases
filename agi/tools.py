@@ -206,6 +206,18 @@ def _skill(args: dict[str, Any], action: str) -> dict[str, Any]:
     raise ValueError(f"unknown skill action: {action}")
 
 
+def _mcp(args: dict[str, Any], action: str) -> dict[str, Any]:
+    from . import mcp_bridge
+    if action == "servers":
+        return mcp_bridge.list_servers()
+    if action == "tools":
+        return mcp_bridge.list_tools(int(args.get("server_id") or 0))
+    if action == "call":
+        return mcp_bridge.call(int(args.get("server_id") or 0), str(args.get("tool") or ""),
+                               args.get("arguments") or {})
+    raise ValueError(f"unknown mcp action: {action}")
+
+
 def _support(args: dict[str, Any], action: str) -> dict[str, Any]:
     from . import support
     import sqlite3
@@ -262,6 +274,12 @@ def build_default_registry() -> ToolRegistry:
                                frozenset({"main", "sub"}), "Load a skill"))
     registry.register(ToolSpec("skill.evaluate", lambda a: _skill(a, "evaluate"), "read",
                                frozenset({"main"}), "Static skill evaluation"))
+    registry.register(ToolSpec("mcp.servers", lambda a: _mcp(a, "servers"), "read",
+                               frozenset({"main"}), "List MCP servers (disabled by default)"))
+    registry.register(ToolSpec("mcp.tools", lambda a: _mcp(a, "tools"), "read",
+                               frozenset({"main"}), "List MCP tools (disabled by default)"))
+    registry.register(ToolSpec("mcp.call", lambda a: _mcp(a, "call"), "write",
+                               frozenset({"main"}), "Call an MCP tool (disabled by default)"))
     registry.register(ToolSpec("support.classify", lambda a: _support(a, "classify"), "read",
                                frozenset({"main", "sub"}), "Classify a support request"))
     registry.register(ToolSpec("support.kb_search", lambda a: _support(a, "search"), "read",

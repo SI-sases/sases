@@ -25,6 +25,7 @@ agi/context.py    compact context for sub AGI
 agi/lessons.py    operational lessons store/search
 agi/approvals.py  human approval queue for high-risk actions
 agi/skills.py     versioned skill catalog + static evaluation
+agi/mcp_bridge.py MCP bridge, disabled unless SASES_MCP_ALLOW=1
 agi/platform_policy.py  manual-only platform guard
 agi/playbooks/    health_check, publish_platform, deploy_node
 ```
@@ -310,6 +311,23 @@ skill.evaluate
 
 `skill.evaluate` is a static check (body, description, version) plus a content
 hash. It is not an LLM quality evaluation yet.
+
+## MCP
+
+```text
+mcp.servers
+mcp.tools
+mcp.call
+```
+
+Disabled by default:
+
+```text
+SASES_MCP_ALLOW=1
+```
+
+When disabled, tools return an explicit error instead of silently doing
+nothing.
 
 ## Run
 
