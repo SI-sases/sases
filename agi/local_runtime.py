@@ -18,7 +18,7 @@ from .tools import build_default_registry
 
 
 class LocalRuntime:
-    def __init__(self, server: str, token: str, max_workers: int = 2) -> None:
+    def __init__(self, server: str, token: str, max_workers: int = 2, lock_port: int = 8765) -> None:
         self.server = server
         self.token = token
         self.registry = build_default_registry()
@@ -26,12 +26,14 @@ class LocalRuntime:
         self.active: set[str] = set()
         self.lock = threading.Lock()
         self.browser_lock = threading.Lock()
-        self._lock_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        try:
-            self._lock_socket.bind(("127.0.0.1", 8765))
-            self._lock_socket.listen(1)
-        except OSError as exc:
-            raise RuntimeError("another local runtime is already running") from exc
+        self._lock_socket = None
+        if lock_port:
+            self._lock_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            try:
+                self._lock_socket.bind(("127.0.0.1", lock_port))
+                self._lock_socket.listen(1)
+            except OSError as exc:
+                raise RuntimeError("another local runtime is already running") from exc
         self.running = True
 
     def _json(self, agent: dict) -> dict:

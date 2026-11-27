@@ -21,7 +21,7 @@ def test_runtime_starts_local_agent(monkeypatch):
     monkeypatch.setattr(local_runtime, "_call", fake)
     monkeypatch.setattr(local_runtime, "_read_only", lambda reg, steps: (True, ""))
     monkeypatch.setattr(local_runtime, "_execute", lambda *a, **k: {"ok": True})
-    rt = local_runtime.LocalRuntime("http://x", "t", 2)
+    rt = local_runtime.LocalRuntime("http://x", "t", 2, lock_port=0)
     result = rt.poll()
     assert result["started"] == "a1"
     for _ in range(30):
