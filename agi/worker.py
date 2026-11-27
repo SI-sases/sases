@@ -126,6 +126,9 @@ def run_once(conn: sqlite3.Connection, registry, owner: str = "worker",
         pack = context_pack.get(conn, ctx_id)
         if pack:
             goal = pack.get("goal") or goal
+            missing = context_pack.invalidate_missing(conn, ctx_id)
+            if missing:
+                agents.set_progress(conn, agent_id, "上下文文件缺失: " + ", ".join(missing)[:120])
             context_pack.patch(conn, ctx_id, {"state": {"status": "running"}}, agent_id=agent_id)
             agents.set_progress(conn, agent_id, "读取上下文")
     steps = task.get("steps") if isinstance(task.get("steps"), list) else []
@@ -157,6 +160,9 @@ def run_once(conn: sqlite3.Connection, registry, owner: str = "worker",
             context_pack.patch(conn, ctx_id, {
                 "state": {"status": "running", "current_step": index + 1},
                 "facts": [{"key": "last_tool", "value": str(step.get("tool") or "")}],
+                "attempts": [{"tool": str(step.get("tool") or ""),
+                              "ok": bool(step_result.get("ok")),
+                              "error": str(step_result.get("error") or "")}],
             }, agent_id=agent_id)
 
     result = execute(package, registry, conn, owner=owner, profile="main", on_step=_on_step)

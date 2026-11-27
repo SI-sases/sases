@@ -16,4 +16,6 @@ def test_context_build_patch_fork(tmp_path):
     child = context_pack.fork(conn, ctx)
     assert child != ctx
     assert context_pack.get(conn, child)["parent_context_id"] == ctx
+    assert context_pack.invalidate_missing(conn, ctx)
+    assert context_pack.get(conn, ctx)["artifacts"][0]["missing"] is True
     conn.close()
