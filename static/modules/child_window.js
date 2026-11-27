@@ -68,7 +68,18 @@ export function renderChildWindow() {
   if (sub) {
     const last = state.localWorker && state.localWorker.last_seen;
     const online = last && (Date.now() / 1000 - Number(last) < 15);
-    sub.textContent = '子智能体 · 后台任务 · 本地 worker ' + (online ? '在线' : '未上报');
+    let text = '子智能体 · 后台任务 · 本地 worker ' + (online ? '在线' : '未上报');
+    try {
+      const r = JSON.parse((state.localWorker && state.localWorker.last_result) || '{}');
+      const m = r.metrics || {};
+      if (m.last_browser_wait_ms != null) {
+        text += ' · 浏览器等待 ' + Math.round(Number(m.last_browser_wait_ms)) + 'ms';
+      }
+      if (m.last_browser_exec_ms != null) {
+        text += ' / 执行 ' + Math.round(Number(m.last_browser_exec_ms)) + 'ms';
+      }
+    } catch (e) {}
+    sub.textContent = text;
   }
   renderCapsules();
   renderPanel();
