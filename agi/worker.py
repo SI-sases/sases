@@ -164,9 +164,14 @@ def run_once(conn: sqlite3.Connection, registry, owner: str = "worker",
         facts = [{"key": "last_result", "value": "ok" if result.get("ok") else "failed"}]
         if not result.get("ok"):
             facts.append({"key": "last_error", "value": str(result.get("error") or "failed")[:300]})
+        urls = __import__("re").findall(r"https?://[^\s\"']+", json.dumps(result, ensure_ascii=False))
+        artifacts = [{"id": "art_url_" + str(i), "type": "url", "uri": u,
+                      "name": u.rsplit("/", 1)[-1] or "url", "access": "public"}
+                     for i, u in enumerate(dict.fromkeys(urls))]
         context_pack.patch(conn, ctx_id, {
             "state": {"status": "done" if result.get("ok") else "failed", "current_step": len(steps)},
             "facts": facts,
+            "artifacts": artifacts,
         }, agent_id=agent_id)
         result["context_id"] = ctx_id
     if steer_notes:

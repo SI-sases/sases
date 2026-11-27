@@ -440,9 +440,10 @@ class Handler(BaseHTTPRequestHandler):
                     try:
                         goal = text.strip()[:500]
                         name = goal[:32] or "子智能体任务"
-                        from . import context_builder, context_collector, conversation_extractor
+                        from . import context_builder, context_collector, conversation_extractor, summarizer
                         collected = context_collector.collect(
                             conn, goal, body.get("conversation_id"))
+                        summary = summarizer.summarize(history, goal).get("summary") or ""
                         built = context_builder.build(
                             conn, goal,
                             conversation_id=body.get("conversation_id"),
@@ -456,7 +457,7 @@ class Handler(BaseHTTPRequestHandler):
                                 for q in extracted.get("open_questions", [])
                             ],
                             artifacts=collected["artifacts"] + extracted["artifacts"],
-                            history_summary=collected["history_summary"] or "Created from main AGI chat.",
+                            history_summary=summary or collected["history_summary"] or "Created from main AGI chat.",
                         )
                         context_id = built["context_id"]
                         agent_id = agents.spawn(
