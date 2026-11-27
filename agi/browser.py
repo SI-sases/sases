@@ -21,9 +21,15 @@ def _python() -> str:
 
 
 def _run_cmd(cmd: list[str], timeout: int = 90) -> dict[str, Any]:
+    env = os.environ.copy()
+    agent_id = env.get("SASES_AGENT_ID", "").strip()
+    if agent_id:
+        ckpt_dir = _root() / "data" / "checkpoints"
+        ckpt_dir.mkdir(parents=True, exist_ok=True)
+        env["SASES_CHECKPOINT_FILE"] = str(ckpt_dir / f"{agent_id}.json")
     try:
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout,
-                              cwd=str(_root()), encoding="utf-8", errors="replace")
+                              cwd=str(_root()), encoding="utf-8", errors="replace", env=env)
     except subprocess.TimeoutExpired:
         return {"ok": False, "error": "browser action timed out"}
     try:

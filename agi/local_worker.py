@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sqlite3
 import time
 import urllib.request
@@ -38,7 +39,15 @@ def _execute(server: str, token: str, registry, agent_id: str, steps: list[dict]
     package = TaskPackage(goal=goal, node_id="local", acceptance=["local result reported"],
                           steps=steps, tools_allowed=[s.get("tool") for s in steps])
     conn = sqlite3.connect(":memory:")
-    result = execute(package, registry, conn, owner="local-worker", profile="main", on_step=on_step)
+    _old_agent = os.environ.get("SASES_AGENT_ID")
+    os.environ["SASES_AGENT_ID"] = agent_id
+    try:
+        result = execute(package, registry, conn, owner="local-worker", profile="main", on_step=on_step)
+    finally:
+        if _old_agent is None:
+            os.environ.pop("SASES_AGENT_ID", None)
+        else:
+            os.environ["SASES_AGENT_ID"] = _old_agent
     status = "done" if result.get("ok") else "failed"
     try:
         _call(server, token, "POST", f"/agents/{agent_id}/finish", {"status": status, "result": result})

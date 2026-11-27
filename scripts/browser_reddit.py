@@ -30,6 +30,23 @@ def main() -> int:
 
     from playwright.sync_api import sync_playwright
 
+    ckpt_path = os.environ.get("SASES_CHECKPOINT_FILE", "")
+    ckpt = {}
+    if ckpt_path and os.path.isfile(ckpt_path):
+        try:
+            ckpt = json.loads(open(ckpt_path, encoding="utf-8").read() or "{}")
+        except Exception:
+            ckpt = {}
+
+    def save_phase(phase: str) -> None:
+        if not ckpt_path:
+            return
+        try:
+            os.makedirs(os.path.dirname(os.path.abspath(ckpt_path)), exist_ok=True)
+            open(ckpt_path, "w", encoding="utf-8").write(json.dumps({"phase": phase}))
+        except Exception:
+            pass
+
     with sync_playwright() as p:
         browser = p.chromium.connect_over_cdp(args.cdp)
         context = browser.contexts[0] if browser.contexts else browser.new_context()
@@ -47,11 +64,13 @@ def main() -> int:
             body.click()
             body.fill(args.body)
             page.wait_for_timeout(800)
+            save_phase("filled")
             if not args.dry_run:
                 page.get_by_text("发帖", exact=True).last.click()
                 page.wait_for_timeout(6000)
                 result["submitted"] = True
                 result["url"] = page.url
+                save_phase("submitted")
                 if "/comments/" not in page.url:
                     result["ok"] = False
                     result["error"] = "submit did not reach a post URL"
@@ -80,6 +99,11 @@ def main() -> int:
             print(json.dumps(result, ensure_ascii=False))
             browser.close()
             return 0 if submitted else 1
+        if result.get("ok") and ckpt_path:
+            try:
+                os.remove(ckpt_path)
+            except Exception:
+                pass
         print(json.dumps(result, ensure_ascii=False))
         browser.close()
     return 0
