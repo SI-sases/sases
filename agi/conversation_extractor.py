@@ -49,7 +49,7 @@ def extract(text: str) -> dict:
                    if line.strip() and any(w in line for w in ("我喜欢", "我习惯", "以后都", "默认", "请用"))]
     questions = [line.strip() for line in re.split(r"[。；;，,\n]", text)
                  if line.strip() and any(w in line for w in ("是否", "要不要", "能不能"))]
-    if "自动公开" in text and "不要自动公开" in text:
+    if re.search(r"(?<!不要)自动公开", text) and "不要自动公开" in text:
         facts.append({"key": "constraint_conflict", "value": "keep stricter: no auto publish",
                       "source": "extractor"})
     acceptance = [w for w in _ACCEPT_WORDS if w in text]
