@@ -58,6 +58,14 @@ class Handler(BaseHTTPRequestHandler):
         if not self._auth():
             self._send(401, {"error": "unauthorized"})
             return
+        if self.path.startswith("/nodes"):
+            import sqlite3
+            conn = sqlite3.connect(self.agi.db_path)
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute("SELECT * FROM agi_nodes ORDER BY last_seen DESC").fetchall()
+            conn.close()
+            self._send(200, {"nodes": [dict(r) for r in rows]})
+            return
         if self.path.startswith("/events"):
             limit = int(parse_qs(urlparse(self.path).query).get("limit", ["50"])[0])
             import sqlite3
@@ -86,6 +94,19 @@ class Handler(BaseHTTPRequestHandler):
                 message = Message(**allowed)
                 message.validate()
                 self.agi.record_event(message)
+                import sqlite3
+                conn = sqlite3.connect(self.agi.db_path)
+                health = "error" if message.severity == "critical" else "ok"
+                version = str(message.payload.get("version") or "")
+                conn.execute(
+                    "INSERT INTO agi_nodes(node_id,scope,role,version,health,last_seen) VALUES(?,?,?,?,?,?) "
+                    "ON CONFLICT(node_id) DO UPDATE SET scope=excluded.scope,role=excluded.role,"
+                    "version=excluded.version,health=excluded.health,last_seen=excluded.last_seen",
+                    (message.node_id, message.scope, "sub" if message.scope == "fleet" else "main",
+                     version, health, message.created_at),
+                )
+                conn.commit()
+                conn.close()
                 self._send(200, {"ok": True, "msg_id": message.msg_id})
                 return
             if self.path == "/observe":
