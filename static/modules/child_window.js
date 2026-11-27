@@ -9,6 +9,7 @@ const state = {
   agents: [],
   tasks: [],
   approvals: [],
+  localWorker: null,
   timer: null,
   selected: null,
   messages: {},
@@ -63,6 +64,12 @@ export function renderChildWindow() {
   if (ca) ca.textContent = String(state.agents.filter((a) => a.status === 'active' || a.status === 'queued').length);
   if (ct) ct.textContent = String(state.tasks.filter((t) => t.status === 'active').length);
   if (cp) cp.textContent = String(state.approvals.length);
+  const sub = $('child-window-sub');
+  if (sub) {
+    const last = state.localWorker && state.localWorker.last_seen;
+    const online = last && (Date.now() / 1000 - Number(last) < 15);
+    sub.textContent = '子智能体 · 后台任务 · 本地 worker ' + (online ? '在线' : '未上报');
+  }
   renderCapsules();
   renderPanel();
 }
@@ -235,14 +242,16 @@ function renderPanel() {
 
 export async function refreshChildWindow() {
   try {
-    const [agents, tasks, approvals] = await Promise.all([
+    const [agents, tasks, approvals, local] = await Promise.all([
       getJSON('/agi/agents'),
       getJSON('/agi/background-tasks'),
-      getJSON('/agi/approvals')
+      getJSON('/agi/approvals'),
+      getJSON('/agi/local-worker/status').catch(() => ({ workers: [] }))
     ]);
     state.agents = agents.agents || [];
     state.tasks = tasks.tasks || [];
     state.approvals = approvals.approvals || [];
+    state.localWorker = (local.workers || [])[0] || null;
     renderChildWindow();
   } catch (e) {
     const body = $('child-window-body');

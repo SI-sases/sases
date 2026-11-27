@@ -38,6 +38,10 @@ def status(conn: sqlite3.Connection) -> list[dict]:
     return [{"owner": r[0], "last_seen": r[1], "last_result": r[2]} for r in rows]
 
 
+def record_status(conn: sqlite3.Connection, owner: str, result: dict[str, Any]) -> None:
+    _touch(conn, owner, result)
+
+
 def _touch(conn: sqlite3.Connection, owner: str, result: dict[str, Any]) -> None:
     ensure_status(conn)
     conn.execute(

@@ -76,6 +76,16 @@ class Handler(BaseHTTPRequestHandler):
             finally:
                 conn.close()
             return
+        if self.path.startswith("/local-worker/status"):
+            from . import worker
+            import sqlite3
+            conn = sqlite3.connect(self.agi.db_path)
+            try:
+                rows = [w for w in worker.status(conn) if str(w.get("owner") or "").startswith("local")]
+                self._send(200, {"workers": rows})
+            finally:
+                conn.close()
+            return
         if self.path.startswith("/worker/status"):
             from . import worker
             import sqlite3
@@ -240,6 +250,20 @@ class Handler(BaseHTTPRequestHandler):
                         budget=int(body.get("budget") or 4000),
                     )
                     self._send(200, built)
+                finally:
+                    conn.close()
+                return
+            if self.path == "/local-worker/status":
+                from . import worker
+                import sqlite3
+                conn = sqlite3.connect(self.agi.db_path)
+                try:
+                    worker.record_status(conn, str(body.get("owner") or "local-worker"), {
+                        "ok": True,
+                        "current_agent": body.get("current_agent"),
+                        "claimed": body.get("claimed"),
+                    })
+                    self._send(200, {"ok": True})
                 finally:
                     conn.close()
                 return

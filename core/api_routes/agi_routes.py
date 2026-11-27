@@ -162,6 +162,11 @@ async def worker_status(user_id: int = Depends(get_current_user)):
     return _main_request("GET", "/worker/status")
 
 
+@router.get("/local-worker/status")
+async def local_worker_status(user_id: int = Depends(get_current_user)):
+    return _main_request("GET", "/local-worker/status")
+
+
 @router.post("/approvals/decide")
 async def decide_approval(body: dict, user_id: int = Depends(get_current_user)):
     return _main_request("POST", "/approvals/decide", {

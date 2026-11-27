@@ -116,7 +116,12 @@ def main() -> int:
     token = Path(args.token_file).read_text(encoding="utf-8").strip()
     while True:
         try:
-            print(json.dumps(run_once(args.server, token), ensure_ascii=False), flush=True)
+            outcome = run_once(args.server, token)
+            _call(args.server, token, "POST", "/local-worker/status", {
+                "owner": "local-worker", "current_agent": outcome.get("agent_id"),
+                "claimed": outcome.get("claimed"),
+            })
+            print(json.dumps(outcome, ensure_ascii=False), flush=True)
         except Exception as exc:  # noqa: BLE001
             print(json.dumps({"ok": False, "error": f"{type(exc).__name__}: {exc}"}, ensure_ascii=False), flush=True)
         if not args.loop:
