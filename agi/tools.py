@@ -225,6 +225,16 @@ def _planner(args: dict[str, Any], registry: "ToolRegistry") -> dict[str, Any]:
                 int(args.get("max_steps") or 5))
 
 
+def _plugin(args: dict[str, Any], action: str) -> dict[str, Any]:
+    from . import plugin_bridge
+    if action == "list":
+        return plugin_bridge.list_plugins()
+    if action == "run":
+        return plugin_bridge.run_tool(str(args.get("plugin_id") or ""),
+                                      args.get("params") or {})
+    raise ValueError(f"unknown plugin action: {action}")
+
+
 def _support(args: dict[str, Any], action: str) -> dict[str, Any]:
     from . import support
     import sqlite3
@@ -289,6 +299,10 @@ def build_default_registry() -> ToolRegistry:
                                frozenset({"main"}), "Call an MCP tool (disabled by default)"))
     registry.register(ToolSpec("planner.plan", lambda a: _planner(a, registry), "read",
                                frozenset({"main"}), "Plan a read-only tool sequence"))
+    registry.register(ToolSpec("plugin.list", lambda a: _plugin(a, "list"), "read",
+                               frozenset({"main"}), "List plugins (disabled by default)"))
+    registry.register(ToolSpec("plugin.run", lambda a: _plugin(a, "run"), "write",
+                               frozenset({"main"}), "Run a tool plugin (disabled by default)"))
     registry.register(ToolSpec("support.classify", lambda a: _support(a, "classify"), "read",
                                frozenset({"main", "sub"}), "Classify a support request"))
     registry.register(ToolSpec("support.kb_search", lambda a: _support(a, "search"), "read",
