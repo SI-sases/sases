@@ -48,7 +48,7 @@ def main() -> int:
                 result["url"] = page.url
                 result["published"] = False
             else:
-                page.locator("input[name=PUBLIC]").evaluate("e => e.click()")
+                page.locator('tp-yt-paper-radio-button[name="PUBLIC"]').click()
                 page.wait_for_timeout(800)
                 page.get_by_role("button", name="发布").click()
                 page.wait_for_timeout(12000)
