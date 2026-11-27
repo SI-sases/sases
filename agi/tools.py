@@ -156,6 +156,28 @@ def _recovery_plan(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _support(args: dict[str, Any], action: str) -> dict[str, Any]:
+    from . import support
+    import sqlite3
+    if action == "classify":
+        return support.classify(str(args.get("query") or ""))
+    if action == "search":
+        return {"results": support.search(str(args.get("query") or ""), int(args.get("limit") or 3))}
+    if action == "draft":
+        return support.draft_reply(str(args.get("query") or ""))
+    if action == "ticket":
+        conn = sqlite3.connect(str(args.get("db") or "data/agi.db"))
+        try:
+            return support.create_ticket(conn, str(args.get("need") or ""),
+                                         str(args.get("customer") or ""),
+                                         str(args.get("source") or "chat"),
+                                         str(args.get("platform") or ""),
+                                         str(args.get("evidence") or ""))
+        finally:
+            conn.close()
+    raise ValueError(f"unknown support action: {action}")
+
+
 def build_default_registry() -> ToolRegistry:
     from .deploy import plan_promote, plan_rollback, plan_stage
 
@@ -182,6 +204,14 @@ def build_default_registry() -> ToolRegistry:
                                frozenset({"main"}), "Fill and optionally submit a Reddit post"))
     registry.register(ToolSpec("recovery.plan", lambda a: _recovery_plan(a), "read",
                                frozenset({"main"}), "Plan retry or reroute after a failure"))
+    registry.register(ToolSpec("support.classify", lambda a: _support(a, "classify"), "read",
+                               frozenset({"main", "sub"}), "Classify a support request"))
+    registry.register(ToolSpec("support.kb_search", lambda a: _support(a, "search"), "read",
+                               frozenset({"main", "sub"}), "Search the support knowledge base"))
+    registry.register(ToolSpec("support.draft", lambda a: _support(a, "draft"), "read",
+                               frozenset({"main", "sub"}), "Draft an answer from the knowledge base"))
+    registry.register(ToolSpec("support.ticket", lambda a: _support(a, "ticket"), "write",
+                               frozenset({"main", "sub"}), "Create a support ticket"))
     registry.register(ToolSpec("deploy.stage", lambda a: plan_stage(
         str(a.get("node_id") or "local"), str(a.get("version") or "next"), int(a.get("port") or 8002)),
         "deploy", frozenset({"main"}), "Plan a staging deploy (dry run)"))

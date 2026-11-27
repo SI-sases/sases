@@ -87,6 +87,10 @@ browser.fill  main only, write
 browser.click main only, write
 browser.reddit_post main only, write (dry-run by default)
 recovery.plan main only, read
+support.classify main/sub, read
+support.kb_search main/sub, read
+support.draft main/sub, read
+support.ticket main/sub, write
 ```
 
 Browser worker:
@@ -107,6 +111,27 @@ scripts/browser_reddit.py
 
 `browser.reddit_post` defaults to `dry_run=true`; it fills title/body and
 screenshots without submitting.  A separate real-submit step is required.
+
+## Support
+
+Knowledge base:
+
+```text
+agi/support_kb/*.md
+```
+
+Flow:
+
+```text
+classify
+-> search KB
+-> draft answer
+-> ticket if unresolved
+-> human for money/legal/security
+```
+
+L1/L2/L3 tickets are stored in `support_tickets`; refunds, invoices, account
+deletion, security, and legal requests are routed to the human.
 
 ## Staging verifier
 
