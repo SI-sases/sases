@@ -522,6 +522,7 @@ class Handler(BaseHTTPRequestHandler):
                                           if f.get("key") == "title"), "")
                             if title:
                                 adapter_args["title"] = title
+                            adapter_args.setdefault("body", goal)
                             task_payload["steps"] = [{
                                 "tool": "adapter.run",
                                 "args": {"adapter": platform, "args": adapter_args},
