@@ -20,3 +20,11 @@ def test_ask_refund_routes_human(tmp_path):
     out = answer("我要退款", str(tmp_path / "agi.db"))
     assert out["intent"] == "support"
     assert "人工" in out["markdown"]
+
+
+def test_ask_plan_does_not_execute(tmp_path, monkeypatch):
+    monkeypatch.delenv("DEEPSEEK_API_KEY", raising=False)
+    out = answer("给我一个检查节点的计划", str(tmp_path / "agi.db"))
+    assert out["intent"] == "plan"
+    assert "未执行" in out["markdown"]
+    assert out["plan"]["steps"]

@@ -22,6 +22,19 @@ def answer(text: str, db_path: str = "data/agi.db", observe=None) -> dict:
     if not text:
         return {"markdown": "## 需要指令\n\n请告诉我要检查什么。", "intent": "empty"}
 
+    if _has(text, "规划", "计划", "步骤", "怎么部署", "怎么做"):
+        from .planner import plan
+        from .tools import build_default_registry
+        planned = plan(text, build_default_registry(), "http://127.0.0.1:8001", 5)
+        lines = ["## 执行计划", "", f"模式：**{planned.get('mode', 'unknown')}**", ""]
+        for i, step in enumerate(planned.get("steps") or [], 1):
+            lines.append(f"{i}. `{step.get('tool')}`")
+        if planned.get("error"):
+            lines += ["", "> 模型不可用，已使用只读回退计划。"]
+        lines += ["", "**只生成计划，未执行任何工具。**"]
+        return {"intent": "plan", "markdown": "\n".join(lines),
+                "plan": {"mode": planned.get("mode"), "steps": planned.get("steps") or []}}
+
     if _has(text, "发布", "发帖", "提交", "上传"):
         return {
             "intent": "publish",
