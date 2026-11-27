@@ -121,6 +121,7 @@ def run_once(conn: sqlite3.Connection, registry, owner: str = "worker",
         pack = context_pack.get(conn, ctx_id)
         if pack:
             goal = pack.get("goal") or goal
+            context_pack.patch(conn, ctx_id, {"state": {"status": "running"}}, agent_id=agent_id)
             agents.set_progress(conn, agent_id, "读取上下文")
     steps = task.get("steps") if isinstance(task.get("steps"), list) else []
     agents.set_progress(conn, agent_id, "规划中")
@@ -132,6 +133,8 @@ def run_once(conn: sqlite3.Connection, registry, owner: str = "worker",
         approval_id = approvals.create(conn, "agent.execute", {"agent_id": agent_id, "steps": steps},
                                        f"{agent.get('name') or goal}: {reason}", "high")
         agents.set_progress(conn, agent_id, "等待审批")
+        if ctx_id:
+            context_pack.patch(conn, ctx_id, {"state": {"status": "needs_approval"}}, agent_id=agent_id)
         agents.finish(conn, agent_id, "needs_approval", {
             "ok": False, "approval_id": approval_id, "reason": reason, "steps": steps,
         })

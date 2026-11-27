@@ -78,7 +78,12 @@ def build(conn, goal: str, *, conversation_id: int | None = None,
             safe["value"] = "[redacted]"
         facts.append(safe)
     facts = _dedupe_facts(facts)
+    facts.sort(key=lambda f: 0 if str(f.get("source")) == "user" else 1)
     artifacts = _dedupe_artifacts([_redact(a) for a in (artifacts or [])])
+    goal_tokens = {w.lower() for w in __import__("re").findall(r"[\w\u4e00-\u9fff]{2,}", goal)}
+    artifacts.sort(key=lambda a: len(goal_tokens & {w.lower() for w in __import__("re").findall(
+        r"[\w\u4e00-\u9fff]{2,}", " ".join(str(a.get(k) or "") for k in ("name", "uri", "type")))}),
+        reverse=True)
     constraints = list(dict.fromkeys(c for c in (constraints or []) if c))
     acceptance = list(dict.fromkeys(a for a in (acceptance or []) if a))
     context_id = context_pack.create(

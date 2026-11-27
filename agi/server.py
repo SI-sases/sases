@@ -381,16 +381,17 @@ class Handler(BaseHTTPRequestHandler):
                     try:
                         goal = text.strip()[:500]
                         name = goal[:32] or "子智能体任务"
-                        from . import context_builder, context_collector
+                        from . import context_builder, context_collector, conversation_extractor
                         collected = context_collector.collect(
                             conn, goal, body.get("conversation_id"))
+                        extracted = conversation_extractor.extract(goal)
                         built = context_builder.build(
                             conn, goal,
                             conversation_id=body.get("conversation_id"),
-                            acceptance=["task result reported"],
-                            constraints=["high-risk actions require approval"] + collected["constraints"],
-                            facts=collected["facts"],
-                            artifacts=collected["artifacts"],
+                            acceptance=["task result reported"] + extracted["acceptance"],
+                            constraints=["high-risk actions require approval"] + collected["constraints"] + extracted["constraints"],
+                            facts=collected["facts"] + extracted["facts"],
+                            artifacts=collected["artifacts"] + extracted["artifacts"],
                             history_summary=collected["history_summary"] or "Created from main AGI chat.",
                         )
                         context_id = built["context_id"]
