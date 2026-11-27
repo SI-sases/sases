@@ -58,6 +58,15 @@ class Handler(BaseHTTPRequestHandler):
         if not self._auth():
             self._send(401, {"error": "unauthorized"})
             return
+        if self.path.startswith("/approvals"):
+            from . import approvals
+            import sqlite3
+            conn = sqlite3.connect(self.agi.db_path)
+            try:
+                self._send(200, {"approvals": approvals.list_pending(conn)})
+            finally:
+                conn.close()
+            return
         if self.path.startswith("/agents"):
             from . import agents
             import sqlite3
@@ -142,6 +151,28 @@ class Handler(BaseHTTPRequestHandler):
                 finally:
                     conn.close()
                 self._send(200 if ok else 409, {"ok": ok, "leader": current})
+                return
+            if self.path.startswith("/approvals"):
+                from . import approvals
+                import sqlite3
+                conn = sqlite3.connect(self.agi.db_path)
+                try:
+                    if self.path == "/approvals":
+                        approval_id = approvals.create(
+                            conn, str(body.get("tool") or ""), body.get("args") or {},
+                            str(body.get("description") or ""), str(body.get("risk") or "high"),
+                            str(body.get("trace_id") or ""),
+                        )
+                        self._send(200, {"ok": True, "approval_id": approval_id})
+                    elif self.path == "/approvals/decide":
+                        ok = approvals.decide(conn, int(body.get("id") or 0),
+                                              str(body.get("decision") or ""),
+                                              str(body.get("decided_by") or "commander"))
+                        self._send(200 if ok else 409, {"ok": ok})
+                    else:
+                        self._send(404, {"error": "not found"})
+                finally:
+                    conn.close()
                 return
             if self.path.startswith("/agents/"):
                 from . import agents

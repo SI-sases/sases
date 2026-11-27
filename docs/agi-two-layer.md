@@ -23,6 +23,7 @@ agi/package.py    task package sent to a sub AGI
 agi/executor.py   bounded package executor
 agi/context.py    compact context for sub AGI
 agi/lessons.py    operational lessons store/search
+agi/approvals.py  human approval queue for high-risk actions
 agi/platform_policy.py  manual-only platform guard
 agi/playbooks/    health_check, publish_platform, deploy_node
 ```
@@ -279,6 +280,24 @@ The browser tools enforce this; it is not just a note.
 
 `agi/executor.py` runs only the steps listed in a `TaskPackage`, enforces
 `tools_allowed`, stops on `approval_required`, and returns a traceable result.
+
+## Approvals
+
+High-risk actions can be queued:
+
+```text
+GET  /approvals
+POST /approvals
+POST /approvals/decide
+```
+
+Decision:
+
+```text
+allow | deny
+```
+
+Approval does not execute the action; it only records the commander's decision.
 
 ## Run
 
