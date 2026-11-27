@@ -20,6 +20,10 @@ agi/policy.py     main-auto vs human-required routing
 agi/escalation.py open items for the commander
 agi/agents.py     agent tree + leases
 agi/package.py    task package sent to a sub AGI
+agi/executor.py   bounded package executor
+agi/context.py    compact context for sub AGI
+agi/lessons.py    operational lessons store/search
+agi/platform_policy.py  manual-only platform guard
 agi/playbooks/    health_check, publish_platform, deploy_node
 ```
 
@@ -259,6 +263,22 @@ input_schema
 approval_required
 idempotent
 ```
+
+## Platform policy
+
+Xiaohongshu is **manual-only** after a platform risk warning:
+
+```text
+browser.open(xiaohongshu) -> platform_manual_only
+manual_approved=true only for a human-opening action
+```
+
+The browser tools enforce this; it is not just a note.
+
+## Executor
+
+`agi/executor.py` runs only the steps listed in a `TaskPackage`, enforces
+`tools_allowed`, stops on `approval_required`, and returns a traceable result.
 
 ## Run
 

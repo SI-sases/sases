@@ -39,10 +39,23 @@ def _run(args: list[str], timeout: int = 90) -> dict[str, Any]:
     return _run_cmd([_python(), str(script), *args], timeout)
 
 
+from .platform_policy import check as policy_check
+
+
+def _policy(url: str, action: str, approved: bool) -> dict | None:
+    decision = policy_check(url, action, approved)
+    if decision.get("allowed"):
+        return None
+    return {"ok": False, "error": "platform_manual_only", **decision}
+
+
 def open_page(args: dict[str, Any]) -> dict[str, Any]:
     url = str(args.get("url") or "")
     if not url:
         return {"ok": False, "error": "url is required"}
+    denied = _policy(url, "open_for_human", bool(args.get("manual_approved")))
+    if denied:
+        return denied
     cmd = ["--url", url, "--wait-ms", str(int(args.get("wait_ms") or 1500))]
     if args.get("screenshot"):
         cmd += ["--screenshot", str(args["screenshot"])]
@@ -54,6 +67,10 @@ def fill_page(args: dict[str, Any]) -> dict[str, Any]:
     fields = args.get("fields") or {}
     if not isinstance(fields, dict) or not fields:
         return {"ok": False, "error": "fields must be a non-empty object"}
+    if url:
+        denied = _policy(url, "fill", bool(args.get("manual_approved")))
+        if denied:
+            return denied
     cmd = ["--url", url, "--wait-ms", str(int(args.get("wait_ms") or 1500))]
     for selector, value in fields.items():
         cmd += ["--fill", f"{selector}={value}"]
@@ -69,6 +86,10 @@ def click_page(args: dict[str, Any]) -> dict[str, Any]:
     selector = str(args.get("selector") or "")
     if not selector:
         return {"ok": False, "error": "selector is required"}
+    if url:
+        denied = _policy(url, "click", bool(args.get("manual_approved")))
+        if denied:
+            return denied
     cmd = ["--url", url, "--click", selector, "--wait-ms", str(int(args.get("wait_ms") or 1500))]
     if args.get("screenshot"):
         cmd += ["--screenshot", str(args["screenshot"])]

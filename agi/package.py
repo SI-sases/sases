@@ -10,6 +10,7 @@ from typing import Any
 class TaskPackage:
     goal: str
     node_id: str
+    steps: list[dict[str, Any]] = field(default_factory=list)
     trace_id: str = field(default_factory=lambda: "trace_" + uuid.uuid4().hex[:16])
     run_id: str = field(default_factory=lambda: "run_" + uuid.uuid4().hex[:16])
     parent_run_id: str = ""

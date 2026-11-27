@@ -189,6 +189,12 @@ def _recovery_plan(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _platform_check(args: dict[str, Any]) -> dict[str, Any]:
+    from .platform_policy import check
+    return check(str(args.get("url") or ""), str(args.get("action") or "open_for_human"),
+                 bool(args.get("manual_approved")))
+
+
 def _support(args: dict[str, Any], action: str) -> dict[str, Any]:
     from . import support
     import sqlite3
@@ -237,6 +243,8 @@ def build_default_registry() -> ToolRegistry:
                                frozenset({"main"}), "Fill and optionally submit a Reddit post"))
     registry.register(ToolSpec("recovery.plan", lambda a: _recovery_plan(a), "read",
                                frozenset({"main"}), "Plan retry or reroute after a failure"))
+    registry.register(ToolSpec("platform.policy", lambda a: _platform_check(a), "read",
+                               frozenset({"main", "sub"}), "Check platform automation policy"))
     registry.register(ToolSpec("support.classify", lambda a: _support(a, "classify"), "read",
                                frozenset({"main", "sub"}), "Classify a support request"))
     registry.register(ToolSpec("support.kb_search", lambda a: _support(a, "search"), "read",

@@ -3,6 +3,7 @@ import sqlite3
 import pytest
 
 from agi import agents
+from agi.executor import execute
 from agi.package import TaskPackage
 from agi.tools import ToolRegistry, ToolSpec
 
@@ -34,3 +35,17 @@ def test_tool_schema_rejects_missing_argument():
     with pytest.raises(ValueError):
         reg.invoke("main", "x", {})
     assert reg.invoke("main", "x", {"url": "http://x"})["ok"] is True
+
+
+def test_executor_runs_package_steps(tmp_path):
+    reg = ToolRegistry()
+    reg.register(ToolSpec("echo", lambda a: {"ok": True, "value": a.get("v")}, "read",
+                          frozenset({"main", "sub"})))
+    conn = sqlite3.connect(str(tmp_path / "agi.db"))
+    package = TaskPackage(goal="echo", node_id="local", acceptance=["echo ok"],
+                          steps=[{"tool": "echo", "args": {"v": 1}}],
+                          tools_allowed=["echo"])
+    result = execute(package, reg, conn, profile="sub")
+    assert result["ok"] is True
+    assert result["results"][0]["result"]["value"] == 1
+    conn.close()
