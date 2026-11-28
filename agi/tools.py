@@ -269,7 +269,7 @@ def _support(args: dict[str, Any], action: str) -> dict[str, Any]:
 
 def build_default_registry() -> ToolRegistry:
     from .deploy import plan_promote, plan_rollback, plan_stage
-    from . import fs_tools, web_tools
+    from . import fs_tools, local_bridge, web_tools
 
     registry = ToolRegistry()
     for tool_id, handler, description in (
@@ -281,6 +281,15 @@ def build_default_registry() -> ToolRegistry:
         ("web.search", web_tools.search, "Search the public web"),
     ):
         registry.register(ToolSpec(tool_id, handler, "read", frozenset({"main", "sub"}), description))
+    for tool_id, local_tool in (
+        ("local.fs.list", "fs.list"),
+        ("local.fs.read", "fs.read"),
+        ("local.fs.grep", "fs.grep"),
+        ("local.fs.glob", "fs.glob"),
+    ):
+        registry.register(ToolSpec(tool_id, lambda a, t=local_tool: local_bridge.run_readonly(t, a),
+                                   "read", frozenset({"main"}),
+                                   "Read-only local runtime " + local_tool))
     registry.register(ToolSpec("node.health", health, "read", frozenset({"main", "sub"}),
                                "Read /health from a SASES node"))
     registry.register(ToolSpec("agent.trace", lambda a: _api(
