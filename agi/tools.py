@@ -288,6 +288,7 @@ def build_default_registry() -> ToolRegistry:
         ("fs.copy", fs_tools.copy_path, "Copy a workspace path (approval required)"),
         ("fs.move", fs_tools.move_path, "Move a workspace path (approval required)"),
         ("fs.delete", fs_tools.delete_path, "Delete a workspace path (approval required)"),
+        ("shell.write", shell_tools.run_write, "Allowlisted mkdir/copy/move (approval required)"),
     ):
         registry.register(ToolSpec(tool_id, handler, "write", frozenset({"main", "sub"}), description))
     registry.register(ToolSpec("shell.run", shell_tools.run, "read", frozenset({"main", "sub"}),

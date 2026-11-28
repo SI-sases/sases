@@ -360,7 +360,7 @@ class Handler(BaseHTTPRequestHandler):
                         ok = approvals.decide(conn, approval_id, decision,
                                               str(body.get("decided_by") or "commander"))
                         write_result = None
-                        if ok and decision == "allow" and row and str(row[0]).startswith("fs."):
+                        if ok and decision == "allow" and row and (str(row[0]).startswith("fs.") or str(row[0]) == "shell.write"):
                             try:
                                 args = json.loads(row[1] or "{}")
                                 args["_approved"] = True
