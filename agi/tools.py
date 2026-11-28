@@ -269,7 +269,7 @@ def _support(args: dict[str, Any], action: str) -> dict[str, Any]:
 
 def build_default_registry() -> ToolRegistry:
     from .deploy import plan_promote, plan_rollback, plan_stage
-    from . import fs_tools, local_bridge, web_tools
+    from . import fs_tools, local_bridge, shell_tools, web_tools
 
     registry = ToolRegistry()
     for tool_id, handler, description in (
@@ -281,11 +281,14 @@ def build_default_registry() -> ToolRegistry:
         ("web.search", web_tools.search, "Search the public web"),
     ):
         registry.register(ToolSpec(tool_id, handler, "read", frozenset({"main", "sub"}), description))
+    registry.register(ToolSpec("shell.run", shell_tools.run, "read", frozenset({"main", "sub"}),
+                               "Run a read-only allowlisted shell command"))
     for tool_id, local_tool in (
         ("local.fs.list", "fs.list"),
         ("local.fs.read", "fs.read"),
         ("local.fs.grep", "fs.grep"),
         ("local.fs.glob", "fs.glob"),
+        ("local.shell.run", "shell.run"),
     ):
         registry.register(ToolSpec(tool_id, lambda a, t=local_tool: local_bridge.run_readonly(t, a),
                                    "read", frozenset({"main"}),
