@@ -41,8 +41,11 @@ def answer(text: str, db_path: str = "data/agi.db", observe=None) -> dict:
         from .tools import build_default_registry
         decide = _llm_decide if os.environ.get("SASES_MAIN_STEP_LOOP") == "1" else None
         result = investigate(text, build_default_registry(), decide=decide)
-        return {"intent": "investigate", "markdown": investigate_markdown(result),
-                "trace": result.get("steps") or []}
+        md = investigate_markdown(result)
+        if result.get("error"):
+            md += "\n\n> step fallback: " + str(result.get("error"))[:300]
+        return {"intent": "investigate", "markdown": md,
+                "trace": result.get("steps") or [], "error": result.get("error")}
 
     if _has(text, "发布", "发帖", "提交", "上传"):
         return {
