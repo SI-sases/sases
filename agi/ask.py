@@ -36,9 +36,11 @@ def answer(text: str, db_path: str = "data/agi.db", observe=None) -> dict:
                 "plan": {"mode": planned.get("mode"), "steps": planned.get("steps") or []}}
 
     if _has(text, "调查", "查看文件", "读一下", "搜索", "grep", "目录"):
-        from .main_loop import run as investigate, markdown as investigate_markdown
+        import os
+        from .main_loop import run as investigate, markdown as investigate_markdown, _llm_decide
         from .tools import build_default_registry
-        result = investigate(text, build_default_registry())
+        decide = _llm_decide if os.environ.get("SASES_MAIN_STEP_LOOP") == "1" else None
+        result = investigate(text, build_default_registry(), decide=decide)
         return {"intent": "investigate", "markdown": investigate_markdown(result),
                 "trace": result.get("steps") or []}
 
