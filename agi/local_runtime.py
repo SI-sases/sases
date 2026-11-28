@@ -298,6 +298,8 @@ class LocalRuntime:
             attempts = local_store.note_attempt(agent_id) if retryable else 0
             if retryable and attempts <= 1:
                 try:
+                    if self._is_browser(steps):
+                        local_store.rewind(agent_id)
                     _call(self.server, self.token, "POST", f"/agents/{agent_id}/requeue")
                     _call(self.server, self.token, "POST", f"/agents/{agent_id}/progress",
                           {"progress": f"重试 {attempts + 1}/2"})
