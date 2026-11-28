@@ -124,7 +124,7 @@ class LocalRuntime:
                     snap = browser_snapshot.capture(snap_path)
                     if snap.get("ok"):
                         ps = page_state.classify(snap.get("text", ""), snap.get("url", ""), snap.get("title", ""))
-                        outcome.setdefault("result", {})["snapshot"] = {
+                        snap_data = {
                             "state": ps["state"],
                             "reason": ps["reason"],
                             "url": snap.get("url", ""),
@@ -134,8 +134,22 @@ class LocalRuntime:
                             "elements": (snap.get("elements") or [])[:20],
                             "dialogs": (snap.get("dialogs") or [])[:5],
                         }
+                        outcome["snapshot"] = snap_data
+                        if outcome.get("results"):
+                            outcome["results"][-1]["snapshot"] = snap_data
                         if ps["state"] == "upload_limit":
-                            outcome["result"]["error"] = "platform_limit: " + (ps["reason"] or "upload limit")
+                            outcome["error"] = "platform_limit: " + (ps["reason"] or "upload limit")
+                            if outcome.get("results"):
+                                outcome["results"][-1]["result"]["error"] = outcome["error"]
+                        try:
+                            finish_result = dict(outcome.get("result") or {})
+                            finish_result["ok"] = False
+                            finish_result["error"] = outcome.get("error") or finish_result.get("error") or "browser failed"
+                            finish_result["snapshot"] = snap_data
+                            _call(self.server, self.token, "POST", f"/agents/{agent_id}/finish",
+                                  {"status": "failed", "result": finish_result})
+                        except Exception:
+                            pass
                 except Exception:
                     pass
             local_store.finish(agent_id, "done" if outcome.get("ok") else "failed")

@@ -26,8 +26,9 @@ def main() -> int:
         page = context.pages[0] if context.pages else context.new_page()
         try:
             page.wait_for_timeout(300)
-            info = page.evaluate(
-                """
+            try:
+                info = page.evaluate(
+                    """
                 (limit) => {
                   const q = 'button,a,input,textarea,select,[role=button],[role=textbox],[contenteditable=true]';
                   const visible = (el) => {
@@ -60,8 +61,11 @@ def main() -> int:
                   };
                 }
                 """,
-                max(1, min(args.max_elements, 500)),
-            )
+                    max(1, min(args.max_elements, 500)),
+                )
+            except Exception as exc:  # noqa: BLE001
+                info = {"url": page.url, "title": page.title(), "text": "", "elements": [],
+                        "dialogs": [], "snapshot_error": f"{type(exc).__name__}: {str(exc)[:200]}"}
             result = {"ok": True, **info, "captured_at": int(time.time())}
             if args.screenshot:
                 os.makedirs(os.path.dirname(os.path.abspath(args.screenshot)), exist_ok=True)
