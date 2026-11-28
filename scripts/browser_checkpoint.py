@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import os
+import time
 
 
 def _path() -> str:
@@ -26,6 +27,11 @@ def save(phase: str) -> None:
     try:
         os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
         open(path, "w", encoding="utf-8").write(json.dumps({"phase": phase}))
+        pause_file = os.environ.get("SASES_BROWSER_PAUSE_FILE", "")
+        if os.path.isfile(pause_file):
+            wanted = open(pause_file, encoding="utf-8").read().strip()
+            if wanted == phase:
+                time.sleep(float(os.environ.get("SASES_BROWSER_PAUSE_SECONDS", "20")))
     except Exception:
         pass
 
