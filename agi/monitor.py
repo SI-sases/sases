@@ -107,7 +107,7 @@ def scan(conn: sqlite3.Connection, stale_seconds: int = 600,
     for row in agents:
         agent = dict(zip(cols, row))
         agent_id = str(agent.get("agent_id") or "")
-        if not agent_id or _already_open(conn, agent_id):
+        if not agent_id:
             continue
         status = str(agent.get("status") or "")
         reason = ""
@@ -139,6 +139,8 @@ def scan(conn: sqlite3.Connection, stale_seconds: int = 600,
             if last and time.time() - last > stale_seconds:
                 reason = f"子智能体可能卡死 `{agent.get('name') or agent_id}` ({agent_id})"
                 severity = "high"
+        if reason and _already_open(conn, agent_id):
+            continue
         if reason:
             eid = escalation.create(conn, str(agent.get("node_id") or "local"), reason,
                                     severity, json.dumps({"agent_id": agent_id}, ensure_ascii=False))
