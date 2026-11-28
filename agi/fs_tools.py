@@ -91,9 +91,28 @@ def grep(args: dict) -> dict:
         return {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
 
 
+def _create_write_approval(tool: str, args: dict) -> dict:
+    try:
+        import sqlite3
+        from . import approvals
+        path = os.environ.get("SASES_AGI_DB", str(Path("data") / "agi.db"))
+        conn = sqlite3.connect(path)
+        try:
+            approval_id = approvals.create(
+                conn, tool, {k: v for k, v in args.items() if not k.startswith("_")},
+                f"{tool}: {args.get('path') or ''}", risk="write",
+            )
+        finally:
+            conn.close()
+        return {"ok": False, "error": "approval_required", "tool": tool,
+                "approval_id": approval_id}
+    except Exception as exc:  # noqa: BLE001
+        return {"ok": False, "error": f"approval failed: {exc}", "tool": tool}
+
+
 def write_file(args: dict) -> dict:
     if not args.get("_approved"):
-        return {"ok": False, "error": "approval_required", "tool": "fs.write"}
+        return _create_write_approval("fs.write", args)
     try:
         target = _safe(args.get("path") or "")
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -108,7 +127,7 @@ def write_file(args: dict) -> dict:
 
 def edit_file(args: dict) -> dict:
     if not args.get("_approved"):
-        return {"ok": False, "error": "approval_required", "tool": "fs.edit"}
+        return _create_write_approval("fs.edit", args)
     try:
         target = _safe(args.get("path") or "")
         old = str(args.get("old") or "")

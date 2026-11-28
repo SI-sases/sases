@@ -353,10 +353,23 @@ class Handler(BaseHTTPRequestHandler):
                         )
                         self._send(200, {"ok": True, "approval_id": approval_id})
                     elif self.path == "/approvals/decide":
-                        ok = approvals.decide(conn, int(body.get("id") or 0),
-                                              str(body.get("decision") or ""),
+                        approval_id = int(body.get("id") or 0)
+                        decision = str(body.get("decision") or "")
+                        row = conn.execute("SELECT tool,args_json FROM agi_approvals WHERE id=?",
+                                           (approval_id,)).fetchone()
+                        ok = approvals.decide(conn, approval_id, decision,
                                               str(body.get("decided_by") or "commander"))
-                        self._send(200 if ok else 409, {"ok": ok})
+                        write_result = None
+                        if ok and decision == "allow" and row and str(row[0]).startswith("fs."):
+                            try:
+                                args = json.loads(row[1] or "{}")
+                                args["_approved"] = True
+                                write_result = self.agi.registry.invoke("main", str(row[0]), args)
+                                if write_result.get("ok"):
+                                    approvals.mark_executed(conn, approval_id)
+                            except Exception as exc:  # noqa: BLE001
+                                write_result = {"ok": False, "error": str(exc)}
+                        self._send(200 if ok else 409, {"ok": ok, "write_result": write_result})
                     elif self.path == "/approvals/executed":
                         ok = approvals.mark_executed(conn, int(body.get("id") or 0))
                         self._send(200 if ok else 409, {"ok": ok})
