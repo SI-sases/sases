@@ -96,6 +96,33 @@ def fill_page(args: dict[str, Any]) -> dict[str, Any]:
     return _run(cmd)
 
 
+def click_target(args: dict[str, Any]) -> dict[str, Any]:
+    target = args.get("target") or {}
+    if not isinstance(target, dict) or not any(target.values()):
+        return {"ok": False, "error": "target must include selector/role/name/text/label/placeholder"}
+    if args.get("url"):
+        denied = _policy(str(args["url"]), "click", bool(args.get("manual_approved")))
+        if denied:
+            return denied
+    cmd = ["--click-target", json.dumps(target, ensure_ascii=False),
+           "--wait-ms", str(int(args.get("wait_ms") or 1500))]
+    if args.get("screenshot"):
+        cmd += ["--screenshot", str(args["screenshot"])]
+    return _run(cmd)
+
+
+def fill_targets(args: dict[str, Any]) -> dict[str, Any]:
+    targets = args.get("targets") or []
+    if not isinstance(targets, list) or not targets:
+        return {"ok": False, "error": "targets must be a non-empty list"}
+    cmd = ["--wait-ms", str(int(args.get("wait_ms") or 1500))]
+    for item in targets:
+        cmd += ["--fill-target", json.dumps(item, ensure_ascii=False)]
+    if args.get("screenshot"):
+        cmd += ["--screenshot", str(args["screenshot"])]
+    return _run(cmd)
+
+
 def click_page(args: dict[str, Any]) -> dict[str, Any]:
     url = str(args.get("url") or "")
     selector = str(args.get("selector") or "")

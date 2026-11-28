@@ -26,6 +26,8 @@ def main() -> int:
     parser.add_argument("--cdp", default=os.environ.get("SASES_CDP_URL", "http://127.0.0.1:9222"))
     parser.add_argument("--fill", action="append", default=[], metavar="SELECTOR=VALUE")
     parser.add_argument("--click", default="")
+    parser.add_argument("--click-target", default="", help="JSON target: selector/role/name/text/label/placeholder")
+    parser.add_argument("--fill-target", action="append", default=[], help="JSON {target,value}")
     parser.add_argument("--wait-ms", type=int, default=1500)
     parser.add_argument("--timeout", type=int, default=30000)
     parser.add_argument("--screenshot", default="")
@@ -39,6 +41,31 @@ def main() -> int:
         context = browser.contexts[0] if browser.contexts else browser.new_context()
         page = context.pages[0] if context.pages else context.new_page()
         result = {"ok": True, "actions": [], "url": page.url}
+        def resolve(target):
+            if isinstance(target, str):
+                target = {"selector": target}
+            timeout = args.timeout
+            attempts = []
+            if target.get("selector"):
+                attempts.append(("selector", lambda: page.locator(target["selector"])))
+            if target.get("role"):
+                attempts.append(("role", lambda: page.get_by_role(target["role"], name=target.get("name") or None)))
+            if target.get("label"):
+                attempts.append(("label", lambda: page.get_by_label(target["label"])))
+            if target.get("placeholder"):
+                attempts.append(("placeholder", lambda: page.get_by_placeholder(target["placeholder"])))
+            if target.get("text"):
+                attempts.append(("text", lambda: page.get_by_text(target["text"], exact=bool(target.get("exact")))))
+            errors = []
+            for kind, make in attempts:
+                try:
+                    loc = make().first
+                    loc.wait_for(state="visible", timeout=timeout)
+                    return loc, kind
+                except Exception as exc:  # noqa: BLE001
+                    errors.append(f"{kind}: {type(exc).__name__}")
+            raise TimeoutError("; ".join(errors) or "empty target")
+
         try:
             if args.url:
                 target = args.url.rstrip("/")
@@ -56,14 +83,27 @@ def main() -> int:
                 selector, value = item.split("=", 1)
                 page.locator(selector).fill(value)
                 result["actions"].append({"fill": selector})
+            for item in args.fill_target:
+                spec = json.loads(item)
+                loc, kind = resolve(spec.get("target") or {})
+                loc.fill(str(spec.get("value") or ""))
+                result["actions"].append({"fill": spec.get("target"), "resolved_by": kind})
             if args.click:
                 page.locator(args.click).click()
                 page.wait_for_timeout(args.wait_ms)
                 result["actions"].append({"click": args.click})
+            if args.click_target:
+                loc, kind = resolve(json.loads(args.click_target))
+                loc.click()
+                page.wait_for_timeout(args.wait_ms)
+                result["actions"].append({"click": json.loads(args.click_target), "resolved_by": kind})
             if args.screenshot:
-                os.makedirs(os.path.dirname(os.path.abspath(args.screenshot)), exist_ok=True)
-                page.screenshot(path=args.screenshot, full_page=True)
-                result["screenshot"] = args.screenshot
+                try:
+                    os.makedirs(os.path.dirname(os.path.abspath(args.screenshot)), exist_ok=True)
+                    page.screenshot(path=args.screenshot, full_page=False, timeout=10000)
+                    result["screenshot"] = args.screenshot
+                except Exception as exc:  # noqa: BLE001
+                    result["screenshot_error"] = f"{type(exc).__name__}: {str(exc)[:200]}"
             result["url"] = page.url
             result["title"] = page.title()
         except Exception as exc:  # noqa: BLE001
