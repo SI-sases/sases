@@ -8,6 +8,6 @@ def test_workflow_read_only_and_limits(monkeypatch, tmp_path):
         {"tool": "fs.read", "args": {"path": "a.txt"}},
     ]})
     assert out["ok"] is True
-    assert "hello" in str(out["results"][1]["result"])
+    assert "hello" in str(out["results"]["1"]["result"])
     bad = reg.invoke("main", "workflow.run", {"steps": [{"tool": "fs.write", "args": {}}]})
     assert bad["ok"] is False

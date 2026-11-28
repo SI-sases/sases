@@ -332,26 +332,49 @@ def build_default_registry() -> ToolRegistry:
         steps = args.get("steps")
         if not isinstance(steps, list) or not steps:
             return {"ok": False, "error": "steps is required"}
-        results = []
-        for step in steps[:10]:
-            tool = str((step or {}).get("tool") or "")
-            if tool == "workflow.run":
-                return {"ok": False, "error": "recursive workflow is not allowed"}
-            try:
-                spec = registry.get(tool) if tool else None
-            except KeyError:
-                spec = None
-            if not spec or spec.risk != "read":
-                return {"ok": False, "error": f"workflow only allows read tools: {tool}"}
-            cargs = step.get("args") if isinstance(step.get("args"), dict) else {}
-            try:
-                result = registry.invoke("main", tool, cargs)
-            except Exception as exc:  # noqa: BLE001
-                result = {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
-            results.append({"tool": tool, "result": result})
-            if not result.get("ok"):
-                break
-        return {"ok": all(r["result"].get("ok") for r in results), "results": results}
+        if len(steps) > 20:
+            return {"ok": False, "error": "workflow supports at most 20 nodes"}
+        nodes = {}
+        for index, step in enumerate(steps):
+            node_id = str((step or {}).get("id") or index)
+            if node_id in nodes:
+                return {"ok": False, "error": f"duplicate workflow node: {node_id}"}
+            nodes[node_id] = step
+        pending = {node_id: set(str(x) for x in (step.get("depends_on") or []))
+                   for node_id, step in nodes.items()}
+        for node_id, deps in pending.items():
+            missing = deps - set(nodes)
+            if missing:
+                return {"ok": False, "error": f"unknown dependency for {node_id}: {sorted(missing)}"}
+        results = {}
+        while pending:
+            ready = [n for n, deps in pending.items() if not deps]
+            if not ready:
+                return {"ok": False, "error": "workflow cycle detected"}
+            for node_id in ready:
+                step = nodes[node_id]
+                tool = str(step.get("tool") or "")
+                if tool == "workflow.run":
+                    return {"ok": False, "error": "recursive workflow is not allowed"}
+                try:
+                    spec = registry.get(tool) if tool else None
+                except KeyError:
+                    spec = None
+                if not spec or spec.risk != "read":
+                    return {"ok": False, "error": f"workflow only allows read tools: {tool}"}
+                cargs = step.get("args") if isinstance(step.get("args"), dict) else {}
+                try:
+                    result = registry.invoke("main", tool, cargs)
+                except Exception as exc:  # noqa: BLE001
+                    result = {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
+                results[node_id] = {"tool": tool, "result": result}
+                if not result.get("ok"):
+                    return {"ok": False, "results": results,
+                            "error": f"workflow stopped at {node_id}"}
+                pending.pop(node_id)
+                for deps in pending.values():
+                    deps.discard(node_id)
+        return {"ok": True, "results": results}
 
     registry.register(ToolSpec("workflow.run", workflow_run, "read", frozenset({"main"}),
                                "Run a bounded read-only tool workflow"))
