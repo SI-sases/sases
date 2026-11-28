@@ -70,6 +70,7 @@ def run(goal: str, registry, base_url: str = "http://127.0.0.1:8001",
                 "steps": trace, "summary": f"executed {len(trace)} read-only steps"}
 
     mode = "step"
+    seen_actions: set[str] = set()
     for _ in range(max_steps):
         decision = decide(goal, trace, registry)
         if not decision.get("ok"):
@@ -105,6 +106,10 @@ def run(goal: str, registry, base_url: str = "http://127.0.0.1:8001",
         if tool not in allowed:
             return {"ok": False, "mode": mode, "steps": trace,
                     "error": f"tool not allowed in read-only loop: {tool}"}
+        action_key = tool + ":" + json.dumps(args, ensure_ascii=False, sort_keys=True)
+        if action_key in seen_actions:
+            break
+        seen_actions.add(action_key)
         try:
             result = registry.invoke("main", tool, args)
         except Exception as exc:  # noqa: BLE001
