@@ -52,6 +52,14 @@ def step(agent_id: str, current_step: int) -> None:
     conn.close()
 
 
+def rewind(agent_id: str) -> None:
+    conn = _conn()
+    conn.execute("UPDATE local_sessions SET current_step=0,status='running',updated_at=? WHERE agent_id=?",
+                 (int(time.time()), agent_id))
+    conn.commit()
+    conn.close()
+
+
 def finish(agent_id: str, status: str = "done") -> None:
     conn = _conn()
     conn.execute("UPDATE local_sessions SET status=?,updated_at=? WHERE agent_id=?",
