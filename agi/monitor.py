@@ -26,6 +26,28 @@ def classify(error: str) -> str:
     return "execution"
 
 
+def recommendation(kind: str) -> str:
+    return {
+        "platform_limit": "等待平台配额恢复，不要重试；可切换其他平台。",
+        "login": "需要重新登录平台账号。",
+        "permission": "检查账号权限或平台限制。",
+        "timeout": "检查网络/浏览器状态，必要时重试一次。",
+        "execution": "查看失败截图和页面文本，修正步骤后重试。",
+    }.get(kind, "查看子智能体结果并决定是否重试。")
+
+
+def _conversation_id(agent: dict) -> int | None:
+    try:
+        ctx = json.loads(agent.get("context_json") or "{}")
+    except json.JSONDecodeError:
+        return None
+    cid = ctx.get("conversation_id")
+    try:
+        return int(cid) if cid is not None else None
+    except (TypeError, ValueError):
+        return None
+
+
 def _already_open(conn: sqlite3.Connection, agent_id: str) -> bool:
     row = conn.execute(
         "SELECT 1 FROM agi_escalations WHERE status='open' AND reason LIKE ? LIMIT 1",
@@ -99,5 +121,10 @@ def scan(conn: sqlite3.Connection, stale_seconds: int = 600,
         if reason:
             eid = escalation.create(conn, str(agent.get("node_id") or "local"), reason,
                                     severity, json.dumps({"agent_id": agent_id}, ensure_ascii=False))
+            kind = "platform_limit" if "platform_limit" in reason else (
+                "login" if "login" in reason else ("permission" if "permission" in reason else (
+                    "timeout" if "timeout" in reason else "execution")))
+            notifications.create(conn, "⚠️ " + reason + "\n建议：" + recommendation(kind),
+                                 _conversation_id(agent), severity)
             created.append({"id": eid, "agent_id": agent_id, "reason": reason, "severity": severity})
     return created

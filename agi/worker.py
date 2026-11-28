@@ -7,7 +7,7 @@ import sqlite3
 import sys
 from typing import Any
 
-from . import agents, approvals, context_pack, escalation
+from . import agents, approvals, context_pack, escalation, notifications
 from .executor import execute
 from .package import TaskPackage
 from .planner import plan
@@ -219,6 +219,8 @@ def main() -> int:
         conn.row_factory = sqlite3.Row
         try:
             outcome = run_once(conn, registry, args.owner, exclude_local=True)
+            from . import monitor
+            monitor.scan(conn)
             if outcome.get("claimed"):
                 idle = 0
                 print(json.dumps(outcome, ensure_ascii=False), flush=True)

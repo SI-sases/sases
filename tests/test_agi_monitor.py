@@ -14,6 +14,8 @@ def test_monitor_classifies_platform_limit(tmp_path):
     assert "platform_limit" in created[0]["reason"]
     assert monitor.scan(conn) == []
     assert len(escalation.list_open(conn)) == 1
+    from agi import notifications
+    assert notifications.list_after(conn, 0)[0]["message"].startswith("⚠️")
     conn.close()
 
 
