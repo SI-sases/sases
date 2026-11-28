@@ -192,6 +192,15 @@ def visual_click(args: dict[str, Any]) -> dict[str, Any]:
         return {"ok": False, "error": found.get("error") or "vision_failed"}
     clicked = click_at({"x": found["x"], "y": found["y"], "wait_ms": args.get("wait_ms")})
     clicked["vision"] = {"x": found["x"], "y": found["y"]}
+    verify_target = args.get("verify_target")
+    if verify_target:
+        verified = extract({"target": verify_target})
+        value = (verified.get("extracted") or {}).get("value")
+        clicked["verification"] = {"value": value}
+        expected = str(args.get("verify_text") or "")
+        if expected and expected not in str(value or ""):
+            clicked["ok"] = False
+            clicked["error"] = "visual verification failed"
     return clicked
 
 
