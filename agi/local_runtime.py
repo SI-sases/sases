@@ -146,6 +146,23 @@ class LocalRuntime:
             def on_step(index: int, step: dict, result: dict) -> None:
                 local_store.step(agent_id, current + index + 1)
 
+            deadline = time.monotonic() + float(os.environ.get("SASES_TASK_TIMEOUT", "900"))
+            cancel_state = {"timed_out": False, "cancelled": False}
+
+            def should_continue() -> bool:
+                if time.monotonic() > deadline:
+                    cancel_state["timed_out"] = True
+                    return False
+                try:
+                    status = _call(self.server, self.token, "GET",
+                                   f"/agents/{agent_id}").get("agent", {}).get("status", "")
+                    if status == "cancelled":
+                        cancel_state["cancelled"] = True
+                        return False
+                except Exception:
+                    pass
+                return True
+
             def capture_failure(outcome: dict) -> dict:
                 inner = dict(outcome.get("result") or {})
                 try:
@@ -195,7 +212,8 @@ class LocalRuntime:
                     waited_ms = (time.perf_counter() - wait_started) * 1000
                     exec_started = time.perf_counter()
                     outcome = _execute(self.server, self.token, self.registry, agent_id, remaining,
-                                       goal, on_step=on_step, defer_finish=True)
+                                       goal, on_step=on_step, defer_finish=True,
+                                       should_continue=should_continue)
                     local_store.set_metric("last_browser_wait_ms", waited_ms)
                     local_store.set_metric("last_browser_exec_ms",
                                            (time.perf_counter() - exec_started) * 1000)
@@ -213,9 +231,18 @@ class LocalRuntime:
                     browser.set_cdp("")
             else:
                 outcome = _execute(self.server, self.token, self.registry, agent_id, remaining,
-                                   goal, on_step=on_step, defer_finish=True)
+                                   goal, on_step=on_step, defer_finish=True,
+                                   should_continue=should_continue)
                 inner = dict(outcome.get("result") or {})
 
+            if outcome.get("cancelled"):
+                if cancel_state["cancelled"]:
+                    local_store.finish(agent_id, "cancelled")
+                else:
+                    local_store.finish(agent_id, "failed")
+                    _call(self.server, self.token, "POST", f"/agents/{agent_id}/finish",
+                          {"status": "failed", "result": {"ok": False, "error": "task_timeout"}})
+                return
             if outcome.get("ok"):
                 local_store.clear_attempts(agent_id)
                 local_store.finish(agent_id, "done")

@@ -9,13 +9,17 @@ from .package import TaskPackage
 
 def execute(package: TaskPackage, registry, conn: sqlite3.Connection,
             owner: str = "main", profile: str = "sub",
-            on_step: Callable[[int, dict, dict], None] | None = None) -> dict[str, Any]:
+            on_step: Callable[[int, dict, dict], None] | None = None,
+            should_continue: Callable[[], bool] | None = None) -> dict[str, Any]:
     package.validate()
     if not package.steps:
         return {"ok": False, "error": "package has no steps", "trace_id": package.trace_id}
     results: list[dict[str, Any]] = []
     allowed = set(package.tools_allowed or [])
     for index, step in enumerate(package.steps):
+        if should_continue and not should_continue():
+            return {"ok": False, "cancelled": True, "error": "task cancelled or timed out",
+                    "step": index, "trace_id": package.trace_id, "results": results}
         tool_id = str(step.get("tool") or "")
         if not tool_id:
             return {"ok": False, "error": "step missing tool", "step": index,

@@ -34,7 +34,8 @@ def _call(server: str, token: str, method: str, path: str, body: dict | None = N
 
 
 def _execute(server: str, token: str, registry, agent_id: str, steps: list[dict],
-             goal: str, on_step=None, defer_finish: bool = False) -> dict:
+             goal: str, on_step=None, defer_finish: bool = False,
+             should_continue=None) -> dict:
     _call(server, token, "POST", f"/agents/{agent_id}/progress", {"progress": "本地执行中"})
     package = TaskPackage(goal=goal, node_id="local", acceptance=["local result reported"],
                           steps=steps, tools_allowed=[s.get("tool") for s in steps])
@@ -42,7 +43,8 @@ def _execute(server: str, token: str, registry, agent_id: str, steps: list[dict]
     _old_agent = os.environ.get("SASES_AGENT_ID")
     os.environ["SASES_AGENT_ID"] = agent_id
     try:
-        result = execute(package, registry, conn, owner="local-worker", profile="main", on_step=on_step)
+        result = execute(package, registry, conn, owner="local-worker", profile="main",
+                         on_step=on_step, should_continue=should_continue)
     finally:
         if _old_agent is None:
             os.environ.pop("SASES_AGENT_ID", None)
