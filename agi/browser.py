@@ -199,14 +199,31 @@ def visual_click(args: dict[str, Any]) -> dict[str, Any]:
         clicked = click_at({"x": found["x"], "y": found["y"], "wait_ms": args.get("wait_ms")})
         clicked["vision"] = {"x": found["x"], "y": found["y"]}
     verify_target = args.get("verify_target")
-    if verify_target:
+    expected = str(args.get("verify_text") or "")
+
+    def verify(result: dict) -> bool:
+        if not verify_target:
+            return True
         verified = extract({"target": verify_target})
         value = (verified.get("extracted") or {}).get("value")
-        clicked["verification"] = {"value": value}
-        expected = str(args.get("verify_text") or "")
+        result["verification"] = {"value": value}
         if expected and expected not in str(value or ""):
-            clicked["ok"] = False
-            clicked["error"] = "visual verification failed"
+            result["ok"] = False
+            result["error"] = "visual verification failed"
+            return False
+        return True
+
+    if verify(clicked):
+        return clicked
+    if chosen.get("ok"):
+        found = vision.locate(snap["screenshot"], instruction)
+        if found.get("ok"):
+            retry = click_at({"x": found["x"], "y": found["y"], "wait_ms": args.get("wait_ms")})
+            retry["vision"] = {"x": found["x"], "y": found["y"]}
+            retry["retry"] = "coordinate_fallback"
+            if verify(retry):
+                return retry
+            return retry
     return clicked
 
 
