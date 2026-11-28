@@ -76,6 +76,22 @@ class Handler(BaseHTTPRequestHandler):
             finally:
                 conn.close()
             return
+        if self.path.startswith("/notifications"):
+            from . import notifications
+            from urllib.parse import parse_qs, urlparse
+            import sqlite3
+            q = parse_qs(urlparse(self.path).query)
+            conn = sqlite3.connect(self.agi.db_path)
+            try:
+                cid = q.get("conversation_id", [None])[0]
+                rows = notifications.list_after(
+                    conn, int(q.get("after", ["0"])[0]),
+                    int(cid) if cid not in (None, "") else None,
+                )
+                self._send(200, {"notifications": rows})
+            finally:
+                conn.close()
+            return
         if self.path.startswith("/local-worker/status"):
             from . import worker
             import sqlite3
@@ -234,15 +250,29 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200 if ok else 409, {"ok": ok, "leader": current})
                 return
             if self.path == "/escalations":
-                from . import escalation
+                from . import escalation, notifications
                 import sqlite3
                 conn = sqlite3.connect(self.agi.db_path)
                 try:
+                    reason = str(body.get("reason") or "agent failure")
                     eid = escalation.create(conn, str(body.get("node_id") or "local"),
-                                            str(body.get("reason") or "agent failure"),
+                                            reason,
                                             str(body.get("severity") or "high"),
                                             json.dumps(body.get("evidence") or {}, ensure_ascii=False))
+                    notifications.create(conn, "⚠️ " + reason,
+                                         body.get("conversation_id"),
+                                         str(body.get("severity") or "high"))
                     self._send(200, {"ok": True, "escalation_id": eid})
+                finally:
+                    conn.close()
+                return
+            if self.path == "/notifications/read":
+                from . import notifications
+                import sqlite3
+                conn = sqlite3.connect(self.agi.db_path)
+                try:
+                    notifications.mark_read(conn, [int(i) for i in (body.get("ids") or [])])
+                    self._send(200, {"ok": True})
                 finally:
                     conn.close()
                 return

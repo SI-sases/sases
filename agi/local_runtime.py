@@ -95,6 +95,8 @@ class LocalRuntime:
                         "node_id": str(agent.get("node_id") or "local"),
                         "reason": "子智能体执行失败: " + str((outcome.get("result") or {}).get("error") or "unknown"),
                         "severity": "high",
+                        "conversation_id": (json.loads(agent.get("context_json") or "{}").get("conversation_id")
+                                            if agent.get("context_json") else None),
                         "evidence": {"agent_id": agent_id, "result": outcome.get("result")},
                     })
                 except Exception:

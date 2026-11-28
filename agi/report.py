@@ -31,6 +31,11 @@ def generate(db_path: str) -> str:
     except sqlite3.OperationalError:
         escalations = []
     try:
+        from . import platform_quota
+        quotas = platform_quota.list_active(conn)
+    except Exception:
+        quotas = []
+    try:
         tickets = conn.execute(
             "SELECT id,customer,need,level,owner,status,created_at FROM support_tickets "
             "WHERE status='open' ORDER BY id DESC LIMIT 20"
@@ -64,6 +69,10 @@ def generate(db_path: str) -> str:
         lines.append(
             f"- #{item['id']} `{item['node_id']}` {item['severity']} {item['reason']}"
         )
+    if quotas:
+        lines += ["", "## 平台配额"]
+        for q in quotas:
+            lines.append(f"- {q['platform']} exhausted_until={q['exhausted_until']} {q['reason']}")
     lines += ["", "## 客服工单"]
     if not tickets:
         lines.append("- 无")

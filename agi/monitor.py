@@ -5,7 +5,7 @@ import json
 import sqlite3
 import time
 
-from . import escalation
+from . import escalation, platform_quota
 
 PLATFORM_LIMIT = ("upload limit", "quota", "daily limit", "上传上限", "次数限制", "limit reached")
 LOGIN = ("login", "logged out", "unauthorized", "登录", "掉线")
@@ -58,6 +58,10 @@ def scan(conn: sqlite3.Connection, stale_seconds: int = 600,
             err = str(agent.get("result_json") or "")[:500]
             kind = classify(err)
             reason = f"子智能体失败 [{kind}] `{agent.get('name') or agent_id}` ({agent_id}): {err}"
+            if kind == "platform_limit":
+                platform = next((p for p in ("youtube", "douyin", "bilibili", "reddit")
+                                 if p in str(agent.get("name") or "").lower() or p in err.lower()), "unknown")
+                platform_quota.record(conn, platform, err[:300])
             severity = "critical" if kind in ("platform_limit", "login", "permission") else "high"
         elif status == "needs_approval":
             reason = f"子智能体等待审批 `{agent.get('name') or agent_id}` ({agent_id})"

@@ -122,6 +122,20 @@ async def context_by_conversation(conversation_id: int,
     return _main_request("GET", f"/context/by-conversation?conversation_id={conversation_id}")
 
 
+@router.get("/notifications")
+async def notifications(after: int = 0, conversation_id: int | None = None,
+                        user_id: int = Depends(get_current_user)):
+    q = f"/notifications?after={max(0, after)}"
+    if conversation_id is not None:
+        q += f"&conversation_id={conversation_id}"
+    return _main_request("GET", q)
+
+
+@router.post("/notifications/read")
+async def notifications_read(body: dict, user_id: int = Depends(get_current_user)):
+    return _main_request("POST", "/notifications/read", {"ids": body.get("ids") or []})
+
+
 @router.get("/context/{context_id}")
 async def get_context(context_id: str, user_id: int = Depends(get_current_user)):
     return _main_request("GET", f"/context/{context_id}")

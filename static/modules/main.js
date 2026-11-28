@@ -4,6 +4,7 @@ import './session_pills.js?v=20261131';
 import './frontend_errors.js?v=20261133';
 import './agi_approval.js?v=20261134';
 import { initChildWindow } from './child_window.js?v=20261135';
+import { initAgiNotifications } from './agi_notifications.js?v=20261136';
 import { login, register, isLoggedIn } from './auth.js';
 import { api } from './api.js';
 import { initMessages } from './messages.js';
@@ -68,6 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initChat();
   initSideDrawer();
   initChildWindow();
+  initAgiNotifications();
   checkAuthState();
 });
 

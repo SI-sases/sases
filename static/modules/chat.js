@@ -1060,12 +1060,31 @@ window.addEventListener('sases_new_message', (e) => {
   }
 });
 
+function flushPendingAgiNotifications() {
+  const rows = window.__pendingAgiNotifications || [];
+  window.__pendingAgiNotifications = [];
+  rows.forEach((row) => {
+    try { appendMessage('assistant', row.message, '主 AGI', null, new Date().toISOString(), false, chatState); } catch (e) {}
+  });
+}
+
+window.addEventListener('sases_agi_notification', (e) => {
+  const row = e.detail || {};
+  if (!row.message) return;
+  if (chatState.agentId === '__main_agi__') {
+    try { appendMessage('assistant', row.message, '主 AGI', null, new Date().toISOString(), false, chatState); } catch (err) {}
+  } else {
+    (window.__pendingAgiNotifications = window.__pendingAgiNotifications || []).push(row);
+  }
+});
+
 export function openMainAgiChat() {
   try { window.reportSasesEvent && window.reportSasesEvent('main_agi_open', ''); } catch (e) {}
   if (window.currentGroupChat) {
     try { closeGroupChat(); } catch (e) {}
   }
   openChatWindow(null, '主 AGI', '__main_agi__', 'main_agi');
+  setTimeout(flushPendingAgiNotifications, 300);
 }
 
 export function initChat() {
