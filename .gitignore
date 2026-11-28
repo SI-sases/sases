@@ -90,3 +90,13 @@ users.db.pre-taskstate
 _tmp_db*.py
 launcher/ui/diag.txt
 restart_cooling.lock
+data/*.token
+data/agi.fleet.token
+data/agi.token
+data/audit_*.png
+data/audit_*.txt
+data/*_probe*.txt
+data/*_test.*
+data/*.png
+data/*.jpg
+data/*.txt

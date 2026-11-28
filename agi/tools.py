@@ -269,7 +269,7 @@ def _support(args: dict[str, Any], action: str) -> dict[str, Any]:
 
 def build_default_registry() -> ToolRegistry:
     from .deploy import plan_promote, plan_rollback, plan_stage
-    from . import fs_tools, image_tools, local_bridge, office_tools, pdf_tools, shell_tools, web_tools
+    from . import capabilities, fs_tools, image_tools, local_bridge, office_tools, pdf_tools, shell_tools, web_tools
 
     registry = ToolRegistry()
     for tool_id, handler, description in (
@@ -351,6 +351,9 @@ def build_default_registry() -> ToolRegistry:
 
     registry.register(ToolSpec("workflow.run", workflow_run, "read", frozenset({"main"}),
                                "Run a bounded read-only tool workflow"))
+    registry.register(ToolSpec("capability.list", lambda a: capabilities.list_manifest(registry),
+                               "read", frozenset({"main", "sub"}),
+                               "List tool profiles and role-policy audit"))
     registry.register(ToolSpec("agent.trace", lambda a: _api(
         "GET", a, "/agents/" + str(a.get("agent_id") or "") + "/trace"), "read",
         frozenset({"main", "sub"}), "Read a child agent tool trace"))
