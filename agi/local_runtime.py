@@ -73,7 +73,7 @@ class LocalRuntime:
                 result = {"ok": False, "error": blocked, "quota_blocked": True}
                 _call(self.server, self.token, "POST", f"/agents/{agent_id}/progress", {"progress": "平台配额耗尽"})
                 _call(self.server, self.token, "POST", f"/agents/{agent_id}/finish",
-                      {"status": "failed", "result": result})
+                      {"status": "quota_blocked", "result": result})
                 _call(self.server, self.token, "POST", "/escalations", {
                     "node_id": str(agent.get("node_id") or "local"),
                     "reason": "平台配额已耗尽: " + blocked,

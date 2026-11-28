@@ -39,7 +39,7 @@ async function postJSON(path, body) {
 
 function statusText(s) {
   return ({ active: '运行中', running: '运行中', done: '已完成', failed: '失败',
-    cancelled: '已取消', queued: '排队中', needs_approval: '待审批' })[s] || s || '未知';
+    cancelled: '已取消', queued: '排队中', needs_approval: '待审批', quota_blocked: '配额等待' })[s] || s || '未知';
 }
 
 function activeCount() {

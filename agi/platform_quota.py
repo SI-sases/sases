@@ -32,6 +32,23 @@ def record(conn: sqlite3.Connection, platform: str, reason: str = "",
     conn.commit()
 
 
+def list_expired(conn: sqlite3.Connection) -> list[dict]:
+    ensure_schema(conn)
+    now = int(time.time())
+    rows = conn.execute(
+        "SELECT platform,exhausted_until,reason FROM agi_platform_quota "
+        "WHERE exhausted_until<=? ORDER BY exhausted_until ASC",
+        (now,),
+    ).fetchall()
+    return [{"platform": r[0], "exhausted_until": r[1], "reason": r[2]} for r in rows]
+
+
+def remove(conn: sqlite3.Connection, platform: str) -> None:
+    ensure_schema(conn)
+    conn.execute("DELETE FROM agi_platform_quota WHERE platform=?", (platform,))
+    conn.commit()
+
+
 def list_active(conn: sqlite3.Connection) -> list[dict]:
     ensure_schema(conn)
     now = int(time.time())

@@ -111,7 +111,7 @@ def heartbeat(conn: sqlite3.Connection, agent_id: str, owner: str, ttl: int = 60
 def finish(conn: sqlite3.Connection, agent_id: str, status: str = "done",
            result: dict | None = None) -> bool:
     ensure_schema(conn)
-    if status not in {"done", "failed", "cancelled", "needs_approval"}:
+    if status not in {"done", "failed", "cancelled", "needs_approval", "quota_blocked"}:
         raise ValueError("invalid final status")
     cur = conn.execute(
         "UPDATE agi_agents SET status=?,result_json=COALESCE(?,result_json),lease_until=NULL,"
@@ -228,7 +228,7 @@ def requeue(conn: sqlite3.Connection, agent_id: str) -> bool:
     ensure_schema(conn)
     cur = conn.execute(
         "UPDATE agi_agents SET status='queued',lease_owner=NULL,lease_until=NULL,updated_at=? "
-        "WHERE agent_id=? AND status IN ('active','needs_approval')",
+        "WHERE agent_id=? AND status IN ('active','needs_approval','quota_blocked')",
         (int(time.time()), agent_id),
     )
     conn.commit()
