@@ -76,6 +76,21 @@ class Handler(BaseHTTPRequestHandler):
             finally:
                 conn.close()
             return
+        if self.path.startswith("/platform/quota"):
+            from . import platform_quota
+            from urllib.parse import parse_qs, urlparse
+            import sqlite3
+            q = parse_qs(urlparse(self.path).query)
+            platform = (q.get("platform", [None])[0] or "").lower()
+            conn = sqlite3.connect(self.agi.db_path)
+            try:
+                rows = platform_quota.list_active(conn)
+                if platform:
+                    rows = [r for r in rows if r["platform"] == platform]
+                self._send(200, {"quota": rows})
+            finally:
+                conn.close()
+            return
         if self.path.startswith("/notifications"):
             from . import notifications
             from urllib.parse import parse_qs, urlparse

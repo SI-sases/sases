@@ -43,6 +43,22 @@ class LocalRuntime:
         except json.JSONDecodeError:
             return {}
 
+    def _quota_block(self, steps: list[dict]) -> str:
+        for step in steps:
+            if step.get("tool") != "adapter.run":
+                continue
+            adapter = str((step.get("args") or {}).get("adapter") or "").lower()
+            if not adapter:
+                continue
+            try:
+                rows = _call(self.server, self.token, "GET",
+                             f"/platform/quota?platform={adapter}").get("quota", [])
+            except Exception:
+                return ""
+            if rows:
+                return f"{adapter} quota exhausted until {rows[0].get('exhausted_until')}: {rows[0].get('reason')}"
+        return ""
+
     def _is_browser(self, steps: list[dict]) -> bool:
         return any(str(s.get("tool") or "").startswith(("browser.", "adapter.")) for s in steps)
 
@@ -52,6 +68,20 @@ class LocalRuntime:
         goal = str(agent.get("goal") or task.get("goal") or "local task")
         steps = task.get("steps") if isinstance(task.get("steps"), list) else []
         try:
+            blocked = self._quota_block(steps)
+            if blocked:
+                result = {"ok": False, "error": blocked, "quota_blocked": True}
+                _call(self.server, self.token, "POST", f"/agents/{agent_id}/progress", {"progress": "平台配额耗尽"})
+                _call(self.server, self.token, "POST", f"/agents/{agent_id}/finish",
+                      {"status": "failed", "result": result})
+                _call(self.server, self.token, "POST", "/escalations", {
+                    "node_id": str(agent.get("node_id") or "local"),
+                    "reason": "平台配额已耗尽: " + blocked,
+                    "severity": "critical",
+                    "evidence": {"agent_id": agent_id, "result": result},
+                })
+                local_store.finish(agent_id, "failed")
+                return
             safe, reason = (True, "") if approved else _read_only(self.registry, steps)
             if not safe:
                 approval = _call(self.server, self.token, "POST", "/approvals", {

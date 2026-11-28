@@ -45,3 +45,10 @@ def test_checkpoint_cleanup(tmp_path, monkeypatch):
     removed = rt.cleanup_checkpoints({"keep"}, max_age=3600)
     assert "stale.json" in removed
     assert (ck / "keep.json").exists()
+
+
+def test_quota_preflight(monkeypatch):
+    monkeypatch.setattr(local_runtime, "_call", lambda *a, **k: {"quota": [{"platform": "youtube", "exhausted_until": 1, "reason": "limit"}]})
+    rt = local_runtime.LocalRuntime("http://x", "t", 1, lock_port=0)
+    blocked = rt._quota_block([{"tool": "adapter.run", "args": {"adapter": "youtube"}}])
+    assert "youtube" in blocked

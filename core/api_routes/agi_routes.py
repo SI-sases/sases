@@ -122,6 +122,12 @@ async def context_by_conversation(conversation_id: int,
     return _main_request("GET", f"/context/by-conversation?conversation_id={conversation_id}")
 
 
+@router.get("/platform/quota")
+async def platform_quota(platform: str = "", user_id: int = Depends(get_current_user)):
+    q = f"?platform={platform}" if platform else ""
+    return _main_request("GET", "/platform/quota" + q)
+
+
 @router.get("/notifications")
 async def notifications(after: int = 0, conversation_id: int | None = None,
                         user_id: int = Depends(get_current_user)):
