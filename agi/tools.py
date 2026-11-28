@@ -299,6 +299,8 @@ def build_default_registry() -> ToolRegistry:
                                frozenset({"main", "sub"}), "Click by selector/role/name/text with fallback"))
     registry.register(ToolSpec("browser.fill_targets", lambda a: _browser(a, "fill_targets"), "write",
                                frozenset({"main", "sub"}), "Fill fields by selector/role/label/text with fallback"))
+    registry.register(ToolSpec("browser.click_at", lambda a: _browser(a, "click_at"), "write",
+                               frozenset({"main"}), "Click viewport coordinates from a screenshot"))
     registry.register(ToolSpec("browser.click", lambda a: _browser(a, "click_page"), "write",
                                frozenset({"main"}), "Click a selector and screenshot"))
     registry.register(ToolSpec("browser.reddit_post", lambda a: _browser(a, "reddit_post"), "write",

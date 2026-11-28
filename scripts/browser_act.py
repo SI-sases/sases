@@ -34,6 +34,8 @@ def main() -> int:
     parser.add_argument("--wait-target", default="", help="JSON target to wait for")
     parser.add_argument("--extract-target", default="", help="JSON target to extract")
     parser.add_argument("--upload-target", default="", help="JSON {target,path}")
+    parser.add_argument("--click-x", type=int, default=-1)
+    parser.add_argument("--click-y", type=int, default=-1)
     parser.add_argument("--wait-ms", type=int, default=1500)
     parser.add_argument("--timeout", type=int, default=30000)
     parser.add_argument("--screenshot", default="")
@@ -122,6 +124,10 @@ def main() -> int:
                 loc, kind = resolve(spec.get("target") or {}, require_visible=False)
                 loc.set_input_files(str(spec.get("path") or ""))
                 result["actions"].append({"upload": spec, "resolved_by": kind})
+            if args.click_x >= 0 and args.click_y >= 0:
+                page.mouse.click(args.click_x, args.click_y)
+                page.wait_for_timeout(args.wait_ms)
+                result["actions"].append({"click_at": [args.click_x, args.click_y]})
             if args.screenshot:
                 try:
                     os.makedirs(os.path.dirname(os.path.abspath(args.screenshot)), exist_ok=True)

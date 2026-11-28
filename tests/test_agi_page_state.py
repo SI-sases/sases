@@ -62,3 +62,9 @@ def test_fallback_suggests_alternate_profile():
                               profiles=["default", "account_a"])
     assert plan["fallback"]["type"] == "switch_profile"
     assert plan["fallback"]["profiles"] == ["account_a"]
+
+
+def test_visual_click_tool_registered():
+    from agi.tools import build_default_registry
+    reg = build_default_registry()
+    assert reg.get("browser.click_at").risk == "write"

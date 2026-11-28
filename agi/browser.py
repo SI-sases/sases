@@ -174,6 +174,18 @@ def upload(args: dict[str, Any]) -> dict[str, Any]:
     return _run(["--upload-target", json.dumps({"target": target, "path": path}, ensure_ascii=False)])
 
 
+def click_at(args: dict[str, Any]) -> dict[str, Any]:
+    x = int(args.get("x", -1))
+    y = int(args.get("y", -1))
+    if x < 0 or y < 0:
+        return {"ok": False, "error": "x and y are required"}
+    cmd = ["--click-x", str(x), "--click-y", str(y),
+           "--wait-ms", str(int(args.get("wait_ms") or 1500))]
+    if args.get("screenshot"):
+        cmd += ["--screenshot", str(args["screenshot"])]
+    return _run(cmd)
+
+
 def click_page(args: dict[str, Any]) -> dict[str, Any]:
     url = str(args.get("url") or "")
     selector = str(args.get("selector") or "")
