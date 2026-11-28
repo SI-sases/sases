@@ -141,6 +141,64 @@ def edit_file(args: dict) -> dict:
         return {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
 
 
+def mkdir(args: dict) -> dict:
+    if not args.get("_approved"):
+        return _create_write_approval("fs.mkdir", args)
+    try:
+        target = _safe(args.get("path") or "")
+        target.mkdir(parents=True, exist_ok=True)
+        return {"ok": True, "path": str(target)}
+    except Exception as exc:  # noqa: BLE001
+        return {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
+
+
+def copy_path(args: dict) -> dict:
+    if not args.get("_approved"):
+        return _create_write_approval("fs.copy", args)
+    try:
+        import shutil
+        src = _safe(args.get("src") or "")
+        dst = _safe(args.get("dst") or "")
+        if src.is_dir():
+            shutil.copytree(src, dst, dirs_exist_ok=True)
+        else:
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(src, dst)
+        return {"ok": True, "src": str(src), "dst": str(dst)}
+    except Exception as exc:  # noqa: BLE001
+        return {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
+
+
+def move_path(args: dict) -> dict:
+    if not args.get("_approved"):
+        return _create_write_approval("fs.move", args)
+    try:
+        import shutil
+        src = _safe(args.get("src") or "")
+        dst = _safe(args.get("dst") or "")
+        shutil.move(str(src), str(dst))
+        return {"ok": True, "src": str(src), "dst": str(dst)}
+    except Exception as exc:  # noqa: BLE001
+        return {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
+
+
+def delete_path(args: dict) -> dict:
+    if not args.get("_approved"):
+        return _create_write_approval("fs.delete", args)
+    try:
+        import shutil
+        target = _safe(args.get("path") or "")
+        if target == _root():
+            return {"ok": False, "error": "cannot delete workspace root"}
+        if target.is_dir():
+            shutil.rmtree(target)
+        elif target.exists():
+            target.unlink()
+        return {"ok": True, "path": str(target)}
+    except Exception as exc:  # noqa: BLE001
+        return {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
+
+
 def glob_files(args: dict) -> dict:
     try:
         target = _safe(args.get("path") or ".")

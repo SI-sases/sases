@@ -284,6 +284,10 @@ def build_default_registry() -> ToolRegistry:
     for tool_id, handler, description in (
         ("fs.write", fs_tools.write_file, "Write a workspace file (approval required)"),
         ("fs.edit", fs_tools.edit_file, "Edit a workspace file (approval required)"),
+        ("fs.mkdir", fs_tools.mkdir, "Create a workspace directory (approval required)"),
+        ("fs.copy", fs_tools.copy_path, "Copy a workspace path (approval required)"),
+        ("fs.move", fs_tools.move_path, "Move a workspace path (approval required)"),
+        ("fs.delete", fs_tools.delete_path, "Delete a workspace path (approval required)"),
     ):
         registry.register(ToolSpec(tool_id, handler, "write", frozenset({"main", "sub"}), description))
     registry.register(ToolSpec("shell.run", shell_tools.run, "read", frozenset({"main", "sub"}),
