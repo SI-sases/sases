@@ -23,7 +23,7 @@ def main() -> int:
     with sync_playwright() as p:
         browser = p.chromium.connect_over_cdp(args.cdp)
         context = browser.contexts[0] if browser.contexts else browser.new_context()
-        page = context.pages[0] if context.pages else context.new_page()
+        page = context.pages[-1] if context.pages else context.new_page()
         try:
             page.wait_for_timeout(300)
             try:

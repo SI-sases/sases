@@ -13,7 +13,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from . import browser_agent, browser_snapshot, disk_guard, local_outbox, local_store, page_state
+from . import browser_agent, browser_snapshot, browser_tab, disk_guard, local_outbox, local_store, page_state
 from .local_worker import _call, _execute, _read_only
 from .tools import build_default_registry
 
@@ -149,6 +149,10 @@ class LocalRuntime:
                 with self.browser_lock:
                     waited_ms = (time.perf_counter() - wait_started) * 1000
                     exec_started = time.perf_counter()
+                    try:
+                        browser_tab.new_tab()
+                    except Exception:
+                        pass
                     outcome = _execute(self.server, self.token, self.registry, agent_id, remaining,
                                        goal, on_step=on_step, defer_finish=True)
                     local_store.set_metric("last_browser_wait_ms", waited_ms)
@@ -157,6 +161,10 @@ class LocalRuntime:
                     inner = dict(outcome.get("result") or {})
                     if not outcome.get("ok"):
                         inner = capture_failure(outcome)
+                    try:
+                        browser_tab.close_tab()
+                    except Exception:
+                        pass
             else:
                 outcome = _execute(self.server, self.token, self.registry, agent_id, remaining,
                                    goal, on_step=on_step, defer_finish=True)
