@@ -33,6 +33,7 @@ def _python() -> str:
 
 
 def _run_cmd(cmd: list[str], timeout: int = 90) -> dict[str, Any]:
+    from . import browser_process
     env = os.environ.copy()
     env["PYTHONIOENCODING"] = "utf-8"
     if get_cdp():
@@ -42,15 +43,27 @@ def _run_cmd(cmd: list[str], timeout: int = 90) -> dict[str, Any]:
         ckpt_dir = _root() / "data" / "checkpoints"
         ckpt_dir.mkdir(parents=True, exist_ok=True)
         env["SASES_CHECKPOINT_FILE"] = str(ckpt_dir / f"{agent_id}.json")
+    proc = None
     try:
-        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout,
-                              cwd=str(_root()), encoding="utf-8", errors="replace", env=env)
-    except subprocess.TimeoutExpired:
-        return {"ok": False, "error": "browser action timed out"}
+        proc = subprocess.Popen(cmd, cwd=str(_root()), env=env,
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                text=True, encoding="utf-8", errors="replace")
+        browser_process.register(agent_id, proc)
+        try:
+            stdout, stderr = proc.communicate(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            stdout, stderr = proc.communicate()
+            return {"ok": False, "error": "browser action timed out"}
+    except Exception as exc:  # noqa: BLE001
+        return {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
+    finally:
+        if proc is not None:
+            browser_process.unregister(agent_id, proc)
     try:
-        return json.loads(proc.stdout.strip().splitlines()[-1] or "{}")
+        return json.loads((stdout or "").strip().splitlines()[-1] or "{}")
     except Exception:
-        return {"ok": False, "error": (proc.stderr or proc.stdout or "browser worker failed")[-800:]}
+        return {"ok": False, "error": (stderr or stdout or "browser worker failed")[-800:]}
 
 
 def _run(args: list[str], timeout: int = 90) -> dict[str, Any]:

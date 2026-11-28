@@ -78,6 +78,16 @@ def note_attempt(agent_id: str) -> int:
     return int(row[0]) if row else 0
 
 
+def attempts(agent_id: str) -> int:
+    conn = _conn()
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS local_attempts (agent_id TEXT PRIMARY KEY, attempts INTEGER, updated_at INTEGER)"
+    )
+    row = conn.execute("SELECT attempts FROM local_attempts WHERE agent_id=?", (agent_id,)).fetchone()
+    conn.close()
+    return int(row[0]) if row else 0
+
+
 def clear_attempts(agent_id: str) -> None:
     conn = _conn()
     conn.execute("CREATE TABLE IF NOT EXISTS local_attempts (agent_id TEXT PRIMARY KEY, attempts INTEGER, updated_at INTEGER)")

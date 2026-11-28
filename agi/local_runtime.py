@@ -15,7 +15,7 @@ from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack
 from pathlib import Path
 
-from . import browser, browser_agent, browser_lease, browser_profiles, browser_snapshot, browser_tab, capacity, disk_guard, local_outbox, local_store, page_state
+from . import browser, browser_agent, browser_lease, browser_process, browser_profiles, browser_snapshot, browser_tab, capacity, disk_guard, local_outbox, local_store, page_state
 from .local_worker import _call, _execute, _read_only
 from .tools import build_default_registry
 
@@ -129,7 +129,8 @@ class LocalRuntime:
             if not safe:
                 approval = _call(self.server, self.token, "POST", "/approvals", {
                     "tool": "agent.execute",
-                    "args": {"agent_id": agent_id, "steps": steps},
+                    "args": {"agent_id": agent_id, "steps": steps,
+                             "attempt": local_store.attempts(agent_id)},
                     "description": f"{goal}: {reason}",
                     "risk": "high",
                 })
@@ -215,9 +216,33 @@ class LocalRuntime:
                     os.environ["SASES_BROWSER_PAGE_NAME"] = page_name
                     waited_ms = (time.perf_counter() - wait_started) * 1000
                     exec_started = time.perf_counter()
-                    outcome = _execute(self.server, self.token, self.registry, agent_id, remaining,
-                                       goal, on_step=on_step, defer_finish=True,
-                                       should_continue=should_continue)
+                    stop_watch = threading.Event()
+
+                    def watch_task() -> None:
+                        while not stop_watch.wait(1):
+                            if time.monotonic() > deadline:
+                                cancel_state["timed_out"] = True
+                                browser_process.kill(agent_id)
+                                return
+                            try:
+                                status = _call(self.server, self.token, "GET",
+                                               f"/agents/{agent_id}").get("agent", {}).get("status", "")
+                                if status == "cancelled":
+                                    cancel_state["cancelled"] = True
+                                    browser_process.kill(agent_id)
+                                    return
+                            except Exception:
+                                pass
+
+                    watcher = threading.Thread(target=watch_task, daemon=True)
+                    watcher.start()
+                    try:
+                        outcome = _execute(self.server, self.token, self.registry, agent_id, remaining,
+                                           goal, on_step=on_step, defer_finish=True,
+                                           should_continue=should_continue)
+                    finally:
+                        stop_watch.set()
+                        watcher.join(timeout=1)
                     local_store.set_metric("last_browser_wait_ms", waited_ms)
                     local_store.set_metric("last_browser_exec_ms",
                                            (time.perf_counter() - exec_started) * 1000)
@@ -239,6 +264,14 @@ class LocalRuntime:
                                    should_continue=should_continue)
                 inner = dict(outcome.get("result") or {})
 
+            if cancel_state["timed_out"] or cancel_state["cancelled"]:
+                if cancel_state["cancelled"]:
+                    local_store.finish(agent_id, "cancelled")
+                else:
+                    local_store.finish(agent_id, "failed")
+                    _call(self.server, self.token, "POST", f"/agents/{agent_id}/finish",
+                          {"status": "failed", "result": {"ok": False, "error": "task_timeout"}})
+                return
             if outcome.get("cancelled"):
                 if cancel_state["cancelled"]:
                     local_store.finish(agent_id, "cancelled")
