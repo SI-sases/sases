@@ -313,7 +313,9 @@ def cleanup_all() -> dict:
         print(f"[cleanup] 蜂群任务清理失败: {e}")
 
     try:
-        _up = cleanup_orphan_uploads(days=30, dry_run=True)
+        import os as _os
+        _delete = _os.environ.get("SASES_DELETE_ORPHAN_UPLOADS", "0").lower() in ("1", "true", "yes", "on")
+        _up = cleanup_orphan_uploads(days=30, dry_run=not _delete)
         result['orphan_uploads'] = _up['orphans']
         print('[cleanup] uploads 扫描: ' + str(_up))
     except Exception as e:
