@@ -13,7 +13,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from . import local_outbox, local_store
+from . import browser_snapshot, local_outbox, local_store, page_state
 from .local_worker import _call, _execute, _read_only
 from .tools import build_default_registry
 
@@ -118,6 +118,26 @@ class LocalRuntime:
             else:
                 outcome = _execute(self.server, self.token, self.registry, agent_id, remaining,
                                    goal, on_step=on_step)
+            if not outcome.get("ok") and self._is_browser(steps):
+                try:
+                    snap_path = f"data/browser_snapshots/{agent_id}.png"
+                    snap = browser_snapshot.capture(snap_path)
+                    if snap.get("ok"):
+                        ps = page_state.classify(snap.get("text", ""), snap.get("url", ""), snap.get("title", ""))
+                        outcome.setdefault("result", {})["snapshot"] = {
+                            "state": ps["state"],
+                            "reason": ps["reason"],
+                            "url": snap.get("url", ""),
+                            "title": snap.get("title", ""),
+                            "text": str(snap.get("text", ""))[-2000:],
+                            "screenshot": snap.get("screenshot", ""),
+                            "elements": (snap.get("elements") or [])[:20],
+                            "dialogs": (snap.get("dialogs") or [])[:5],
+                        }
+                        if ps["state"] == "upload_limit":
+                            outcome["result"]["error"] = "platform_limit: " + (ps["reason"] or "upload limit")
+                except Exception:
+                    pass
             local_store.finish(agent_id, "done" if outcome.get("ok") else "failed")
             if not outcome.get("ok"):
                 try:
