@@ -68,6 +68,10 @@ def write(args: dict) -> dict:
                 for ri, row in enumerate(rows):
                     for ci, cell in enumerate(row):
                         table_obj.cell(ri, ci).text = str(cell)
+            for image in args.get("images") or []:
+                image_path = _safe(image)
+                if image_path.is_file():
+                    doc.add_picture(str(image_path))
             doc.save(str(path))
         elif suffix == ".xlsx":
             from openpyxl import Workbook

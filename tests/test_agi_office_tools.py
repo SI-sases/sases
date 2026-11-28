@@ -68,3 +68,17 @@ def test_office_write_table(tmp_path, monkeypatch):
     assert out["ok"] is True
     text = reg.invoke("main", "office.read", {"path": "t.docx"})["text"]
     assert "a | b" in text and "1 | 2" in text
+
+
+def test_office_write_image(tmp_path, monkeypatch):
+    from PIL import Image
+    from docx import Document
+    from agi.tools import build_default_registry
+    monkeypatch.setenv("SASES_FS_ROOT", str(tmp_path))
+    monkeypatch.setenv("SASES_AGI_DB", str(tmp_path / "agi.db"))
+    Image.new("RGB", (40, 40), "blue").save(str(tmp_path / "i.png"))
+    reg = build_default_registry()
+    out = reg.invoke("main", "office.write", {"path": "i.docx", "lines": ["x"],
+        "images": ["i.png"], "_approved": True})
+    assert out["ok"] is True
+    assert len(Document(str(tmp_path / "i.docx")).inline_shapes) == 1
