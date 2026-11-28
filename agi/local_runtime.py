@@ -13,7 +13,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from . import browser_snapshot, local_outbox, local_store, page_state
+from . import browser_agent, browser_snapshot, local_outbox, local_store, page_state
 from .local_worker import _call, _execute, _read_only
 from .tools import build_default_registry
 
@@ -135,6 +135,10 @@ class LocalRuntime:
                             "dialogs": (snap.get("dialogs") or [])[:5],
                         }
                         outcome["snapshot"] = snap_data
+                        try:
+                            outcome["recovery"] = browser_agent.plan(snap_data, goal)
+                        except Exception:
+                            outcome["recovery"] = {"mode": "observe", "actions": [], "automatic": False}
                         if outcome.get("results"):
                             outcome["results"][-1]["snapshot"] = snap_data
                         if ps["state"] == "upload_limit":
@@ -146,6 +150,7 @@ class LocalRuntime:
                             finish_result["ok"] = False
                             finish_result["error"] = outcome.get("error") or finish_result.get("error") or "browser failed"
                             finish_result["snapshot"] = snap_data
+                            finish_result["recovery"] = outcome.get("recovery") or {}
                             _call(self.server, self.token, "POST", f"/agents/{agent_id}/finish",
                                   {"status": "failed", "result": finish_result})
                         except Exception:

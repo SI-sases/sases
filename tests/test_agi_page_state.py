@@ -42,3 +42,15 @@ def test_wait_extract_upload_registered():
     assert reg.get("browser.wait_for").risk == "read"
     assert reg.get("browser.extract").risk == "read"
     assert reg.get("browser.upload").risk == "write"
+
+
+def test_recovery_observe_plan():
+    from agi import browser_agent
+    snap = {"state": "normal", "elements": [
+        {"tag": "button", "text": "发布", "visible": True},
+        {"tag": "input", "placeholder": "标题", "visible": True},
+    ]}
+    plan = browser_agent.plan(snap)
+    assert plan["mode"] == "observe"
+    assert plan["automatic"] is False
+    assert plan["actions"]
