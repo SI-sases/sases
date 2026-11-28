@@ -67,6 +67,26 @@ def _quota_platform(agent: dict) -> str:
     return ""
 
 
+def _ensure_failure_notification(conn: sqlite3.Connection, reason: str, severity: str) -> None:
+    if "子智能体" not in reason:
+        return
+    msg = "⚠️ " + reason
+    row = conn.execute("SELECT 1 FROM agi_notifications WHERE message=? LIMIT 1", (msg,)).fetchone()
+    if not row:
+        notifications.create(conn, msg, None, severity)
+
+
+def _notify_open_escalations(conn: sqlite3.Connection) -> None:
+    try:
+        rows = conn.execute(
+            "SELECT reason,severity FROM agi_escalations WHERE status='open' ORDER BY id DESC LIMIT 50"
+        ).fetchall()
+    except sqlite3.OperationalError:
+        return
+    for reason, severity in rows:
+        _ensure_failure_notification(conn, str(reason), str(severity))
+
+
 def _check_quota_recovery(conn: sqlite3.Connection) -> None:
     for row in platform_quota.list_expired(conn):
         notifications.create(conn, f"平台配额已恢复：{row['platform']}", None, "info")
@@ -76,6 +96,7 @@ def _check_quota_recovery(conn: sqlite3.Connection) -> None:
 def scan(conn: sqlite3.Connection, stale_seconds: int = 600,
          recent_seconds: int = 3600) -> list[dict]:
     escalation.ensure_schema(conn)
+    _notify_open_escalations(conn)
     _check_quota_recovery(conn)
     created = []
     try:
