@@ -167,6 +167,22 @@ class LocalRuntime:
                             pass
                 except Exception:
                     pass
+            if outcome.get("ok"):
+                local_store.clear_attempts(agent_id)
+            else:
+                err = str((outcome.get("result") or {}).get("error") or outcome.get("error") or "")
+                retryable = not any(k in err.lower() for k in (
+                    "platform_limit", "login", "captcha", "disk_full", "quota", "approval"))
+                attempts = local_store.note_attempt(agent_id) if retryable else 0
+                if retryable and attempts <= 1:
+                    try:
+                        _call(self.server, self.token, "POST", f"/agents/{agent_id}/requeue")
+                        _call(self.server, self.token, "POST", f"/agents/{agent_id}/progress",
+                              {"progress": f"重试 {attempts + 1}/2"})
+                        time.sleep(2)
+                        return
+                    except Exception:
+                        pass
             local_store.finish(agent_id, "done" if outcome.get("ok") else "failed")
             if not outcome.get("ok"):
                 try:

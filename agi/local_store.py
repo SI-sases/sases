@@ -58,6 +58,30 @@ def finish(agent_id: str, status: str = "done") -> None:
     conn.close()
 
 
+def note_attempt(agent_id: str) -> int:
+    conn = _conn()
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS local_attempts (agent_id TEXT PRIMARY KEY, attempts INTEGER, updated_at INTEGER)"
+    )
+    conn.execute(
+        "INSERT INTO local_attempts(agent_id,attempts,updated_at) VALUES(?,1,?) "
+        "ON CONFLICT(agent_id) DO UPDATE SET attempts=attempts+1,updated_at=excluded.updated_at",
+        (agent_id, int(time.time())),
+    )
+    conn.commit()
+    row = conn.execute("SELECT attempts FROM local_attempts WHERE agent_id=?", (agent_id,)).fetchone()
+    conn.close()
+    return int(row[0]) if row else 0
+
+
+def clear_attempts(agent_id: str) -> None:
+    conn = _conn()
+    conn.execute("CREATE TABLE IF NOT EXISTS local_attempts (agent_id TEXT PRIMARY KEY, attempts INTEGER, updated_at INTEGER)")
+    conn.execute("DELETE FROM local_attempts WHERE agent_id=?", (agent_id,))
+    conn.commit()
+    conn.close()
+
+
 def set_metric(name: str, value: float) -> None:
     conn = _conn()
     conn.execute(
