@@ -240,19 +240,39 @@ def cleanup_stale_task_state(keep_per_task: int = 1, days: int = 0) -> int:
 
 
 def cleanup_disk_space() -> dict:
-    """Disposable disk cleanup: old browser snapshots and stale temp files."""
+    """Disposable disk cleanup inside the app container: temp + snapshots."""
+    import os
+    import shutil
+    import tempfile
+    import time
+
     result = {"snapshots": 0, "temp_files": 0, "free_gb": 0.0}
+    root = os.environ.get("SASES_SNAPSHOT_DIR", "/data/browser_snapshots")
+    cutoff = time.time() - 7 * 86400
+    if os.path.isdir(root):
+        for name in os.listdir(root):
+            path = os.path.join(root, name)
+            try:
+                if os.path.isfile(path) and os.path.getmtime(path) < cutoff:
+                    os.remove(path)
+                    result["snapshots"] += 1
+            except OSError:
+                pass
+    temp_root = tempfile.gettempdir()
+    cutoff = time.time() - 24 * 3600
+    for base, _, files in os.walk(temp_root):
+        for name in files:
+            path = os.path.join(base, name)
+            try:
+                if os.path.getmtime(path) < cutoff:
+                    os.remove(path)
+                    result["temp_files"] += 1
+            except OSError:
+                pass
     try:
-        from agi.browser_snapshot import cleanup as cleanup_snapshots
-        result["snapshots"] = len(cleanup_snapshots())
-    except Exception as e:
-        print('[cleanup] snapshot 清理失败: ' + str(e))
-    try:
-        from agi.disk_guard import cleanup_temp, free_gb
-        result["temp_files"] = cleanup_temp(24)
-        result["free_gb"] = round(free_gb(), 2)
-    except Exception as e:
-        print('[cleanup] temp 清理失败: ' + str(e))
+        result["free_gb"] = round(shutil.disk_usage("/").free / (1024 ** 3), 2)
+    except OSError:
+        pass
     return result
 
 
