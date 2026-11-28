@@ -66,7 +66,7 @@ def main() -> int:
             if phase in ("filled", "submitted") and on_target and page_ready:
                 result["resumed"] = phase
             else:
-                page.locator("textarea").first.fill(args.title)
+                page.locator("textarea[placeholder='标题']").fill(args.title)
                 body = page.locator("[contenteditable=true]").last
                 body.click()
                 body.fill(args.body)
