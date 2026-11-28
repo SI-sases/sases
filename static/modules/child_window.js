@@ -146,12 +146,20 @@ function renderPanel() {
     b.classList.toggle('active', b.dataset.childTab === state.tab);
   });
   if (state.tab === 'approvals') {
-    body.innerHTML = state.approvals.length ? state.approvals.map((a) =>
-      `<div class="child-approval-card"><div class="child-agent-name">⚠️ ${esc(a.description || a.tool)}</div>
-      <pre style="white-space:pre-wrap;background:#f8fafc;border-radius:6px;padding:6px;font-size:10px;color:#475569;max-height:120px;overflow:auto;">${esc((a.args_json || '').slice(0, 600))}</pre>
+    body.innerHTML = state.approvals.length ? state.approvals.map((a) => {
+      let preview = (a.args_json || '').slice(0, 600);
+      try {
+        const args = JSON.parse(a.args_json || '{}');
+        if (a.tool === 'fs.edit') preview = `- ${args.old || ''}\n+ ${args.new || ''}`;
+        else if (a.tool === 'fs.write') preview = args.content || '';
+        else if (a.tool === 'office.write') preview = (args.lines || []).join('\n');
+        else if (a.tool === 'shell.write') preview = args.command || '';
+      } catch (e) {}
+      return `<div class="child-approval-card"><div class="child-agent-name">⚠️ ${esc(a.description || a.tool)}</div>
+      <pre style="white-space:pre-wrap;background:#f8fafc;border-radius:6px;padding:6px;font-size:10px;color:#475569;max-height:120px;overflow:auto;">${esc(preview)}</pre>
        <div class="child-approval-desc">风险：${esc(a.risk || 'high')} · ${esc(a.tool || '')}</div>
        <button class="primary" data-approve="${a.id}" data-decision="allow">允许</button>
-       <button data-approve="${a.id}" data-decision="deny">拒绝</button></div>`).join('') :
+       <button data-approve="${a.id}" data-decision="deny">拒绝</button></div>`; }).join('') :
       '<div class="child-empty">没有待审批项</div>';
     body.querySelectorAll('[data-approve]').forEach((btn) => {
       btn.onclick = async () => {
