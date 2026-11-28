@@ -100,3 +100,6 @@ data/*_test.*
 data/*.png
 data/*.jpg
 data/*.txt
+data/browser_snapshots/
+data/*.mp4
+data/write_probe_result.json
