@@ -8,6 +8,19 @@ import os
 from browser_checkpoint import load as load_checkpoint, save as save_phase, clear as clear_checkpoint
 
 UPLOAD = "https://studio.youtube.com/channel/UCBpL3hK22rzoNP70J8evpHQ/videos/upload"
+LIMIT_WORDS = ("上传上限", "达到上限", "上传次数", "每日上传", "quota", "upload limit", "limit reached")
+
+
+def _limit_text(page) -> str:
+    try:
+        text = page.locator("body").inner_text()
+    except Exception:
+        return ""
+    low = text.lower()
+    for word in LIMIT_WORDS:
+        if word.lower() in low:
+            return word
+    return ""
 
 
 def main() -> int:
@@ -43,6 +56,23 @@ def main() -> int:
                 page.wait_for_timeout(1200)
                 page.locator("input[type=file]").set_input_files(args.video)
                 page.wait_for_timeout(10000)
+                hit = _limit_text(page)
+                if hit:
+                    result["ok"] = False
+                    result["error"] = "platform_limit: " + hit
+                    print(json.dumps(result, ensure_ascii=False))
+                    browser.close()
+                    return 1
+                for _ in range(30):
+                    if page.locator("[contenteditable=true]").count() >= 2:
+                        break
+                    page.wait_for_timeout(1000)
+                if page.locator("[contenteditable=true]").count() < 2:
+                    result["ok"] = False
+                    result["error"] = "details form not ready | page: " + _limit_text(page)
+                    print(json.dumps(result, ensure_ascii=False))
+                    browser.close()
+                    return 1
                 save_phase("uploaded")
             if phase not in ("details", "visibility", "published"):
                 editors = page.locator("[contenteditable=true]")

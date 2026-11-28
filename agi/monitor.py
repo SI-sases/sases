@@ -7,7 +7,7 @@ import time
 
 from . import escalation, platform_quota, notifications, agents as agents_store
 
-PLATFORM_LIMIT = ("upload limit", "quota", "daily limit", "上传上限", "次数限制", "limit reached")
+PLATFORM_LIMIT = ("upload limit", "quota", "daily limit", "上传上限", "每日上传", "上传次数", "达到上限", "次数限制", "limit reached", "platform_limit")
 LOGIN = ("login", "logged out", "unauthorized", "登录", "掉线")
 PERMISSION = ("permission", "forbidden", "403", "权限", "禁止")
 TIMEOUT = ("timeout", "timed out", "超时")
