@@ -124,7 +124,7 @@ class LocalRuntime:
                     _call(self.server, self.token, "POST", "/escalations", {
                         "node_id": str(agent.get("node_id") or "local"),
                         "reason": "子智能体执行失败: " + str((outcome.get("result") or {}).get("error") or "unknown"),
-                        "severity": "high",
+                        "severity": "critical" if "platform_limit" in str((outcome.get("result") or {}).get("error") or "") else "high",
                         "conversation_id": (json.loads(agent.get("context_json") or "{}").get("conversation_id")
                                             if agent.get("context_json") else None),
                         "evidence": {"agent_id": agent_id, "result": outcome.get("result")},
