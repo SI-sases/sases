@@ -15,7 +15,7 @@ from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack
 from pathlib import Path
 
-from . import browser, browser_agent, browser_lease, browser_process, browser_profiles, browser_snapshot, browser_tab, capacity, disk_guard, local_outbox, local_store, page_state
+from . import browser, browser_agent, browser_lease, browser_process, browser_profiles, browser_snapshot, browser_tab, capacity, disk_guard, fallback_policy, local_outbox, local_store, page_state
 from .local_worker import _call, _execute, _read_only
 from .tools import build_default_registry
 
@@ -301,6 +301,32 @@ class LocalRuntime:
                     return
                 except Exception:
                     pass
+            if (self._is_browser(steps) and "login_required" in err.lower()
+                    and fallback_policy.enabled() and int(task.get("fallback_depth") or 0) < 1):
+                current_profile = str(task.get("browser_profile") or "default")
+                alt = fallback_policy.choose_profile(current_profile, list(browser_profiles.mapping()))
+                if alt:
+                    next_task = dict(task)
+                    next_task["browser_profile"] = alt
+                    next_task["fallback_depth"] = 1
+                    try:
+                        spawned = _call(self.server, self.token, "POST", "/agents/spawn", {
+                            "node_id": "local",
+                            "name": (str(agent.get("name") or "browser task") + " (fallback)")[:80],
+                            "goal": goal,
+                            "status": "queued",
+                            "ttl": 300,
+                            "parent_agent_id": agent_id,
+                            "task": next_task,
+                            "context": {"conversation_id": (
+                                json.loads(agent.get("context_json") or "{}").get("conversation_id")
+                                if agent.get("context_json") else None)},
+                        })
+                        if spawned.get("agent_id"):
+                            inner["fallback_agent_id"] = spawned["agent_id"]
+                            inner["fallback_profile"] = alt
+                    except Exception:
+                        pass
             local_store.finish(agent_id, "failed")
             _call(self.server, self.token, "POST", f"/agents/{agent_id}/finish",
                   {"status": "failed", "result": inner or {"ok": False, "error": err}})

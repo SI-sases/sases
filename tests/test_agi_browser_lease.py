@@ -28,3 +28,10 @@ def test_browser_profiles_mapping(monkeypatch):
     monkeypatch.setenv("SASES_BROWSER_PROFILES", '{"default":"http://a","account_a":"http://b"}')
     assert browser_profiles.cdp_for("default") == "http://a"
     assert browser_profiles.cdp_for("account_a") == "http://b"
+
+
+def test_fallback_policy_opt_in(monkeypatch):
+    from agi import fallback_policy
+    monkeypatch.delenv("SASES_AUTO_PROFILE_FALLBACK", raising=False)
+    assert fallback_policy.enabled() is False
+    assert fallback_policy.choose_profile("default", ["default", "account_a"]) == "account_a"
