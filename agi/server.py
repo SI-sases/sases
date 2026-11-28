@@ -274,9 +274,9 @@ class Handler(BaseHTTPRequestHandler):
                                             reason,
                                             str(body.get("severity") or "high"),
                                             json.dumps(body.get("evidence") or {}, ensure_ascii=False))
-                    notifications.create(conn, "⚠️ " + reason,
-                                         body.get("conversation_id"),
-                                         str(body.get("severity") or "high"))
+                    notifications.create_dedup(conn, "⚠️ " + reason,
+                                               body.get("conversation_id"),
+                                               str(body.get("severity") or "high"))
                     self._send(200, {"ok": True, "escalation_id": eid})
                 finally:
                     conn.close()

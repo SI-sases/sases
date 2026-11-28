@@ -33,6 +33,18 @@ def create(conn: sqlite3.Connection, message: str, conversation_id: int | None =
     return int(cur.lastrowid)
 
 
+def create_dedup(conn: sqlite3.Connection, message: str, conversation_id: int | None = None,
+                 severity: str = "info", cooldown: int = 300) -> int:
+    ensure_schema(conn)
+    row = conn.execute(
+        "SELECT id FROM agi_notifications WHERE message=? AND created_at>? ORDER BY id DESC LIMIT 1",
+        (message, int(time.time()) - max(0, cooldown)),
+    ).fetchone()
+    if row:
+        return int(row[0])
+    return create(conn, message, conversation_id, severity)
+
+
 def list_after(conn: sqlite3.Connection, after_id: int = 0,
                conversation_id: int | None = None, limit: int = 20) -> list[dict]:
     ensure_schema(conn)

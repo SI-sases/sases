@@ -73,7 +73,7 @@ def _ensure_failure_notification(conn: sqlite3.Connection, reason: str, severity
     msg = "⚠️ " + reason
     row = conn.execute("SELECT 1 FROM agi_notifications WHERE message=? LIMIT 1", (msg,)).fetchone()
     if not row:
-        notifications.create(conn, msg, None, severity)
+        notifications.create_dedup(conn, msg, None, severity, cooldown=3600)
 
 
 def _notify_open_escalations(conn: sqlite3.Connection) -> None:

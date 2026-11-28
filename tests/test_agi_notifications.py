@@ -18,3 +18,11 @@ def test_platform_quota(tmp_path):
     platform_quota.record(conn, "youtube", "upload limit")
     assert platform_quota.list_active(conn)[0]["platform"] == "youtube"
     conn.close()
+
+
+def test_notification_dedupe(tmp_path):
+    conn = sqlite3.connect(str(tmp_path / "agi.db"))
+    a = notifications.create_dedup(conn, "same", 1, "high")
+    b = notifications.create_dedup(conn, "same", 1, "high")
+    assert a == b
+    conn.close()
