@@ -26,10 +26,10 @@ def locate(screenshot: str, instruction: str) -> dict:
         with Image.open(screenshot) as raw:
             image_obj = raw.convert("RGB")
             original_size = image_obj.size
-            image_obj.thumbnail((768, 768))
+            image_obj.thumbnail((1280, 1280))
             sent_size = image_obj.size
             buffer = io.BytesIO()
-            image_obj.save(buffer, format="JPEG", quality=75)
+            image_obj.save(buffer, format="JPEG", quality=82)
         image = base64.b64encode(buffer.getvalue()).decode("ascii")
     except Exception as exc:  # noqa: BLE001
         return {"ok": False, "error": f"screenshot_error: {exc}"}
@@ -38,8 +38,8 @@ def locate(screenshot: str, instruction: str) -> dict:
         "messages": [{
             "role": "user",
             "content": [
-                {"type": "text", "text": instruction + ' Return only JSON {"x": int, "y": int}.'},
-                {"type": "image_url", "image_url": {"url": "data:image/png;base64," + image}},
+                {"type": "text", "text": instruction + f" Image size is {sent_size[0]}x{sent_size[1]}. Return only JSON {{\"x\": int, \"y\": int}} in those pixel coordinates."},
+                {"type": "image_url", "image_url": {"url": "data:image/jpeg;base64," + image}},
             ],
         }],
         "temperature": 1,
