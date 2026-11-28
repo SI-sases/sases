@@ -33,6 +33,10 @@ class LocalRuntime:
         self.browser_pool = ThreadPoolExecutor(max_workers=self.browser_workers)
         self.browser_active = 0
         self.general_active = 0
+        try:
+            local_store.set_metric("capacity_browser_workers", float(self.browser_workers))
+        except Exception:
+            pass
         for key in ("workers", "cpu", "memory_gb"):
             try:
                 local_store.set_metric("capacity_" + key, float(self.capacity.get(key, self.workers)))
