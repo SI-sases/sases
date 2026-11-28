@@ -283,6 +283,7 @@ def build_default_registry() -> ToolRegistry:
         ("pdf.read", pdf_tools.read, "Extract text from PDF"),
         ("image.read", image_tools.read, "Read image metadata"),
         ("ocr.image", ocr_tools.image, "Extract text from an image via vision model"),
+        ("ocr.pdf", ocr_tools.pdf, "OCR rendered PDF pages via vision model"),
     ):
         registry.register(ToolSpec(tool_id, handler, "read", frozenset({"main", "sub"}), description))
     for tool_id, handler, description in (
@@ -308,6 +309,7 @@ def build_default_registry() -> ToolRegistry:
         ("local.pdf.read", "pdf.read"),
         ("local.image.read", "image.read"),
         ("local.ocr.image", "ocr.image"),
+        ("local.ocr.pdf", "ocr.pdf"),
     ):
         registry.register(ToolSpec(tool_id, lambda a, t=local_tool: local_bridge.run_readonly(t, a),
                                    "read", frozenset({"main"}),
