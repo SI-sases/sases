@@ -327,6 +327,48 @@ class LocalRuntime:
                             inner["fallback_profile"] = alt
                     except Exception:
                         pass
+            if (not inner.get("fallback_agent_id") and self._is_browser(steps)
+                    and "platform_limit" in err.lower()
+                    and fallback_policy.platform_enabled()
+                    and int(task.get("fallback_depth") or 0) < 1):
+                adapter_step = next((s for s in steps if s.get("tool") == "adapter.run"), None)
+                if adapter_step:
+                    old_args = dict(adapter_step.get("args") or {})
+                    current_platform = str(old_args.get("adapter") or "").lower()
+                    media = "video" if old_args.get("video") else ("image" if old_args.get("image") else "")
+                    alt_platform = fallback_policy.choose_platform(current_platform, media)
+                    if alt_platform:
+                        next_task = dict(task)
+                        next_task["fallback_depth"] = 1
+                        new_steps = []
+                        for step in steps:
+                            if step is adapter_step:
+                                copied = dict(step)
+                                copied_args = dict(old_args)
+                                copied_args["adapter"] = alt_platform
+                                copied["args"] = copied_args
+                                new_steps.append(copied)
+                            else:
+                                new_steps.append(step)
+                        next_task["steps"] = new_steps
+                        try:
+                            spawned = _call(self.server, self.token, "POST", "/agents/spawn", {
+                                "node_id": "local",
+                                "name": (str(agent.get("name") or "browser task") + " (" + alt_platform + " fallback)")[:80],
+                                "goal": goal,
+                                "status": "queued",
+                                "ttl": 300,
+                                "parent_agent_id": agent_id,
+                                "task": next_task,
+                                "context": {"conversation_id": (
+                                    json.loads(agent.get("context_json") or "{}").get("conversation_id")
+                                    if agent.get("context_json") else None)},
+                            })
+                            if spawned.get("agent_id"):
+                                inner["fallback_agent_id"] = spawned["agent_id"]
+                                inner["fallback_platform"] = alt_platform
+                        except Exception:
+                            pass
             local_store.finish(agent_id, "failed")
             _call(self.server, self.token, "POST", f"/agents/{agent_id}/finish",
                   {"status": "failed", "result": inner or {"ok": False, "error": err}})

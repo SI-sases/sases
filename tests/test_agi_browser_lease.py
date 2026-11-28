@@ -35,3 +35,11 @@ def test_fallback_policy_opt_in(monkeypatch):
     monkeypatch.delenv("SASES_AUTO_PROFILE_FALLBACK", raising=False)
     assert fallback_policy.enabled() is False
     assert fallback_policy.choose_profile("default", ["default", "account_a"]) == "account_a"
+
+
+def test_platform_fallback_policy(monkeypatch):
+    from agi import fallback_policy
+    monkeypatch.delenv("SASES_AUTO_PLATFORM_FALLBACK", raising=False)
+    assert fallback_policy.platform_enabled() is False
+    assert fallback_policy.choose_platform("youtube", "video") == "bilibili"
+    assert fallback_policy.choose_platform("douyin", "image") == ""
