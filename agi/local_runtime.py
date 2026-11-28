@@ -29,6 +29,10 @@ class LocalRuntime:
         override = max_workers or int(os.environ.get("SASES_LOCAL_WORKERS", "0") or 0)
         self.workers = max(2, override or int(self.capacity["workers"]))
         self.pool = ThreadPoolExecutor(max_workers=self.workers)
+        self.browser_workers = max(1, len(browser_profiles.mapping()))
+        self.browser_pool = ThreadPoolExecutor(max_workers=self.browser_workers)
+        self.browser_active = 0
+        self.general_active = 0
         for key in ("workers", "cpu", "memory_gb"):
             try:
                 local_store.set_metric("capacity_" + key, float(self.capacity.get(key, self.workers)))
@@ -71,6 +75,21 @@ class LocalRuntime:
 
     def _is_browser(self, steps: list[dict]) -> bool:
         return any(str(s.get("tool") or "").startswith(("browser.", "adapter.")) for s in steps)
+
+    def _agent_is_browser(self, agent: dict, steps: list[dict] | None = None) -> bool:
+        if steps is None:
+            try:
+                steps = (json.loads(agent.get("task_json") or "{}").get("steps") or [])
+            except json.JSONDecodeError:
+                steps = []
+        return self._is_browser(steps)
+
+    def _submit(self, agent: dict, approved: bool = False, approval_id: int = 0,
+                steps: list[dict] | None = None) -> None:
+        if self._agent_is_browser(agent, steps):
+            self.browser_pool.submit(self._run, agent, approved, approval_id)
+        else:
+            self.pool.submit(self._run, agent, approved, approval_id)
 
     def _run(self, agent: dict, approved: bool = False, approval_id: int = 0) -> None:
         agent_id = str(agent.get("agent_id") or "")
@@ -244,6 +263,10 @@ class LocalRuntime:
         finally:
             with self.lock:
                 self.active.discard(agent_id)
+                if self._agent_is_browser(agent, steps):
+                    self.browser_active = max(0, self.browser_active - 1)
+                else:
+                    self.general_active = max(0, self.general_active - 1)
 
     def cleanup_checkpoints(self, keep: set[str] | None = None, max_age: int = 86400) -> list[str]:
         keep = keep or set()
@@ -309,9 +332,18 @@ class LocalRuntime:
             if str(agent.get("node_id") or "") not in ("local", "desktop"):
                 continue
             agent["task_json"] = json.dumps({"steps": steps})
+            browser = self._agent_is_browser(agent, steps)
             with self.lock:
+                if browser:
+                    if self.browser_active >= self.browser_workers:
+                        continue
+                    self.browser_active += 1
+                else:
+                    if self.general_active >= self.workers:
+                        continue
+                    self.general_active += 1
                 self.active.add(agent_id)
-            self.pool.submit(self._run, agent, True, int(row["id"]))
+            self._submit(agent, True, int(row["id"]), steps)
             return {"ok": True, "started": agent_id, "approved": True}
 
         listing = _call(self.server, self.token, "GET", "/agents")
@@ -319,16 +351,29 @@ class LocalRuntime:
             agent_id = str(agent.get("agent_id") or "")
             if agent.get("status") != "queued" or str(agent.get("node_id") or "") not in ("local", "desktop"):
                 continue
+            browser = self._agent_is_browser(agent)
             with self.lock:
-                if agent_id in self.active or len(self.active) >= self.pool._max_workers:
+                if agent_id in self.active:
                     continue
+                if browser:
+                    if self.browser_active >= self.browser_workers:
+                        continue
+                    self.browser_active += 1
+                else:
+                    if self.general_active >= self.workers:
+                        continue
+                    self.general_active += 1
                 self.active.add(agent_id)
             if not _call(self.server, self.token, "POST", f"/agents/{agent_id}/claim",
                          {"owner": "local-runtime", "ttl": 300}).get("ok"):
                 with self.lock:
                     self.active.discard(agent_id)
+                    if browser:
+                        self.browser_active = max(0, self.browser_active - 1)
+                    else:
+                        self.general_active = max(0, self.general_active - 1)
                 continue
-            self.pool.submit(self._run, agent)
+            self._submit(agent)
             return {"ok": True, "started": agent_id, "approved": False}
         return {"ok": True, "started": None}
 
