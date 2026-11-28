@@ -10,6 +10,9 @@ import time
 DEFAULT_CDP = os.environ.get("SASES_CDP_URL", "http://127.0.0.1:9222")
 
 
+from browser_page import select as select_page
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--cdp", default=DEFAULT_CDP)
@@ -23,7 +26,7 @@ def main() -> int:
     with sync_playwright() as p:
         browser = p.chromium.connect_over_cdp(args.cdp)
         context = browser.contexts[0] if browser.contexts else browser.new_context()
-        page = context.pages[-1] if context.pages else context.new_page()
+        page = select_page(context)
         try:
             page.wait_for_timeout(300)
             try:

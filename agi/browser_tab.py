@@ -4,16 +4,19 @@ from __future__ import annotations
 from .browser import _python, _root, _run_cmd
 
 
-def _tab(action: str) -> dict:
+def _tab(action: str, name: str = "") -> dict:
     script = _root() / "scripts" / "browser_tab.py"
     if not script.exists():
         return {"ok": False, "error": "scripts/browser_tab.py missing"}
-    return _run_cmd([_python(), str(script), action], timeout=20)
+    cmd = [_python(), str(script), action]
+    if name:
+        cmd += ["--name", name]
+    return _run_cmd(cmd, timeout=20)
 
 
-def new_tab() -> dict:
-    return _tab("new")
+def new_tab(name: str = "") -> dict:
+    return _tab("new", name)
 
 
-def close_tab() -> dict:
-    return _tab("close")
+def close_tab(name: str = "") -> dict:
+    return _tab("close", name)

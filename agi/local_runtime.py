@@ -14,7 +14,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from . import browser_agent, browser_snapshot, browser_tab, capacity, disk_guard, local_outbox, local_store, page_state
+from . import browser_agent, browser_lease, browser_snapshot, browser_tab, capacity, disk_guard, local_outbox, local_store, page_state
 from .local_worker import _call, _execute, _read_only
 from .tools import build_default_registry
 
@@ -35,7 +35,7 @@ class LocalRuntime:
                 pass
         self.active: set[str] = set()
         self.lock = threading.Lock()
-        self.browser_lock = threading.Lock()
+        self.browser_leases = browser_lease.BrowserLeases()
         self._lock_socket = None
         if lock_port:
             self._lock_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -155,13 +155,17 @@ class LocalRuntime:
 
             if self._is_browser(steps):
                 wait_started = time.perf_counter()
-                with self.browser_lock:
-                    waited_ms = (time.perf_counter() - wait_started) * 1000
-                    exec_started = time.perf_counter()
+                profile = browser_lease.BrowserLeases.profile_for(task)
+                with self.browser_leases.acquire(profile):
+                    page_name = agent_id
                     try:
-                        browser_tab.new_tab()
+                        browser_tab.new_tab(page_name)
                     except Exception:
                         pass
+                    _old_page_name = os.environ.get("SASES_BROWSER_PAGE_NAME")
+                    os.environ["SASES_BROWSER_PAGE_NAME"] = page_name
+                    waited_ms = (time.perf_counter() - wait_started) * 1000
+                    exec_started = time.perf_counter()
                     outcome = _execute(self.server, self.token, self.registry, agent_id, remaining,
                                        goal, on_step=on_step, defer_finish=True)
                     local_store.set_metric("last_browser_wait_ms", waited_ms)
@@ -171,9 +175,13 @@ class LocalRuntime:
                     if not outcome.get("ok"):
                         inner = capture_failure(outcome)
                     try:
-                        browser_tab.close_tab()
+                        browser_tab.close_tab(page_name)
                     except Exception:
                         pass
+                    if _old_page_name is None:
+                        os.environ.pop("SASES_BROWSER_PAGE_NAME", None)
+                    else:
+                        os.environ["SASES_BROWSER_PAGE_NAME"] = _old_page_name
             else:
                 outcome = _execute(self.server, self.token, self.registry, agent_id, remaining,
                                    goal, on_step=on_step, defer_finish=True)

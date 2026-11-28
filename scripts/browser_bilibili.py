@@ -10,6 +10,9 @@ from browser_checkpoint import load as load_checkpoint, save as save_phase, clea
 URL = "https://member.bilibili.com/platform/upload/video/frame"
 
 
+from browser_page import select as select_page
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--video", required=True)
@@ -27,7 +30,7 @@ def main() -> int:
     with sync_playwright() as p:
         browser = p.chromium.connect_over_cdp(args.cdp)
         context = browser.contexts[0] if browser.contexts else browser.new_context()
-        page = context.pages[-1] if context.pages else context.new_page()
+        page = select_page(context)
         result = {"ok": True, "dry_run": args.dry_run, "platform": "bilibili"}
         try:
             phase = load_checkpoint().get("phase", "")

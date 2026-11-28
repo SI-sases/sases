@@ -16,6 +16,9 @@ DEFAULT_CHROME = os.path.join(
 )
 
 
+from browser_page import select as select_page
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--subreddit", default="selfhostedstack")
@@ -50,7 +53,7 @@ def main() -> int:
     with sync_playwright() as p:
         browser = p.chromium.connect_over_cdp(args.cdp)
         context = browser.contexts[0] if browser.contexts else browser.new_context()
-        page = context.pages[-1] if context.pages else context.new_page()
+        page = select_page(context)
         result = {"ok": True, "dry_run": args.dry_run, "subreddit": args.subreddit}
         try:
             target = f"https://www.reddit.com/r/{args.subreddit}/submit"

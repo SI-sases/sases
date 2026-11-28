@@ -13,6 +13,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("action", choices=["new", "close"])
     parser.add_argument("--cdp", default=DEFAULT_CDP)
+    parser.add_argument("--name", default="")
     args = parser.parse_args()
 
     from playwright.sync_api import sync_playwright
@@ -21,15 +22,32 @@ def main() -> int:
         browser = p.chromium.connect_over_cdp(args.cdp)
         context = browser.contexts[0] if browser.contexts else browser.new_context()
         try:
+            name = args.name.strip()
             if args.action == "new":
                 page = context.new_page()
-                result = {"ok": True, "action": "new", "pages": len(context.pages), "url": page.url}
+                if name:
+                    page.evaluate("(name) => { window.name = name; }", name)
+                result = {"ok": True, "action": "new", "pages": len(context.pages),
+                          "name": name, "url": page.url}
             else:
                 closed = False
-                if len(context.pages) > 1:
+                target = None
+                if name:
+                    for candidate in context.pages:
+                        try:
+                            if candidate.evaluate("() => window.name") == name:
+                                target = candidate
+                                break
+                        except Exception:
+                            continue
+                if target is not None and len(context.pages) > 1:
+                    target.close()
+                    closed = True
+                elif len(context.pages) > 1:
                     context.pages[-1].close()
                     closed = True
-                result = {"ok": True, "action": "close", "closed": closed, "pages": len(context.pages)}
+                result = {"ok": True, "action": "close", "closed": closed,
+                          "name": name, "pages": len(context.pages)}
             print(json.dumps(result, ensure_ascii=False))
             browser.close()
             return 0
