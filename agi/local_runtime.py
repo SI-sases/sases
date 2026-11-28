@@ -286,7 +286,10 @@ class LocalRuntime:
                 _call(self.server, self.token, "POST", f"/agents/{agent_id}/finish",
                       {"status": "done", "result": inner or {"ok": True}})
                 if approval_id:
-                    _call(self.server, self.token, "POST", "/approvals/executed", {"id": approval_id})
+                    try:
+                        _call(self.server, self.token, "POST", "/approvals/executed", {"id": approval_id})
+                    except Exception:
+                        pass
                 return
 
             err = str(inner.get("error") or outcome.get("error") or "")
@@ -384,7 +387,10 @@ class LocalRuntime:
             except Exception:
                 pass
             if approval_id:
-                _call(self.server, self.token, "POST", "/approvals/executed", {"id": approval_id})
+                try:
+                    _call(self.server, self.token, "POST", "/approvals/executed", {"id": approval_id})
+                except Exception:
+                    pass
         except Exception as exc:  # noqa: BLE001
             try:
                 _call(self.server, self.token, "POST", f"/agents/{agent_id}/finish", {
