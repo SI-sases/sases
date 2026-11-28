@@ -16,6 +16,7 @@ FALLBACK = {
     "status": [{"tool": "node.health", "args": {}}, {"tool": "node.version", "args": {}}],
     "support": [{"tool": "support.draft", "args": {}}],
     "policy": [{"tool": "platform.policy", "args": {}}],
+    "readme": [{"tool": "fs.read", "args": {"path": "README.md"}}],
 }
 
 
@@ -25,9 +26,10 @@ def _registry_tools(registry) -> list[dict]:
 
 def _fallback(goal: str) -> dict:
     low = (goal or "").lower()
-    key = "status" if any(w in low for w in ("状态", "status", "检查", "health")) else (
+    key = "readme" if any(w in low for w in ("readme", "文件", "调查")) else (
+        "status" if any(w in low for w in ("状态", "status", "检查", "health")) else (
         "support" if any(w in low for w in ("客服", "support", "工单")) else (
-            "policy" if any(w in low for w in ("平台", "policy", "小红书")) else "status"))
+            "policy" if any(w in low for w in ("平台", "policy", "小红书")) else "status")))
     return {"ok": True, "mode": "fallback", "steps": FALLBACK[key]}
 
 
