@@ -269,7 +269,7 @@ def _support(args: dict[str, Any], action: str) -> dict[str, Any]:
 
 def build_default_registry() -> ToolRegistry:
     from .deploy import plan_promote, plan_rollback, plan_stage
-    from . import fs_tools, local_bridge, office_tools, shell_tools, web_tools
+    from . import fs_tools, local_bridge, office_tools, pdf_tools, shell_tools, web_tools
 
     registry = ToolRegistry()
     for tool_id, handler, description in (
@@ -280,6 +280,7 @@ def build_default_registry() -> ToolRegistry:
         ("web.fetch", web_tools.fetch, "Fetch a public HTTP(S) page"),
         ("web.search", web_tools.search, "Search the public web"),
         ("office.read", office_tools.read, "Extract text from docx/xlsx/pptx"),
+        ("pdf.read", pdf_tools.read, "Extract text from PDF"),
     ):
         registry.register(ToolSpec(tool_id, handler, "read", frozenset({"main", "sub"}), description))
     for tool_id, handler, description in (
@@ -302,6 +303,7 @@ def build_default_registry() -> ToolRegistry:
         ("local.fs.glob", "fs.glob"),
         ("local.shell.run", "shell.run"),
         ("local.office.read", "office.read"),
+        ("local.pdf.read", "pdf.read"),
     ):
         registry.register(ToolSpec(tool_id, lambda a, t=local_tool: local_bridge.run_readonly(t, a),
                                    "read", frozenset({"main"}),
@@ -320,6 +322,33 @@ def build_default_registry() -> ToolRegistry:
                                    "Queue a local write; local runtime requires approval"))
     registry.register(ToolSpec("node.health", health, "read", frozenset({"main", "sub"}),
                                "Read /health from a SASES node"))
+    def workflow_run(args: dict) -> dict:
+        steps = args.get("steps")
+        if not isinstance(steps, list) or not steps:
+            return {"ok": False, "error": "steps is required"}
+        results = []
+        for step in steps[:10]:
+            tool = str((step or {}).get("tool") or "")
+            if tool == "workflow.run":
+                return {"ok": False, "error": "recursive workflow is not allowed"}
+            try:
+                spec = registry.get(tool) if tool else None
+            except KeyError:
+                spec = None
+            if not spec or spec.risk != "read":
+                return {"ok": False, "error": f"workflow only allows read tools: {tool}"}
+            cargs = step.get("args") if isinstance(step.get("args"), dict) else {}
+            try:
+                result = registry.invoke("main", tool, cargs)
+            except Exception as exc:  # noqa: BLE001
+                result = {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
+            results.append({"tool": tool, "result": result})
+            if not result.get("ok"):
+                break
+        return {"ok": all(r["result"].get("ok") for r in results), "results": results}
+
+    registry.register(ToolSpec("workflow.run", workflow_run, "read", frozenset({"main"}),
+                               "Run a bounded read-only tool workflow"))
     registry.register(ToolSpec("agent.trace", lambda a: _api(
         "GET", a, "/agents/" + str(a.get("agent_id") or "") + "/trace"), "read",
         frozenset({"main", "sub"}), "Read a child agent tool trace"))

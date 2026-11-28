@@ -20,3 +20,12 @@ def test_office_write_requires_approval(tmp_path, monkeypatch):
     assert reg.invoke("main", "office.write", {"path": "a.docx", "lines": ["hi"], "_approved": True})["ok"]
     from agi.office_tools import read
     assert "hi" in read({"path": "a.docx"})["text"]
+
+
+def test_pdf_read_blank(tmp_path, monkeypatch):
+    from pypdf import PdfWriter
+    from agi.tools import build_default_registry
+    monkeypatch.setenv("SASES_FS_ROOT", str(tmp_path))
+    w = PdfWriter(); w.add_blank_page(width=72, height=72); w.write(str(tmp_path / "a.pdf"))
+    out = build_default_registry().invoke("main", "pdf.read", {"path": "a.pdf"})
+    assert out["ok"] is True and out["pages"] == 1
