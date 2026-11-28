@@ -106,6 +106,11 @@ async def agent_wait(agent_id: str, timeout: int = 20, user_id: int = Depends(ge
                                    f"/agents/{agent_id}/wait?timeout={max(0, min(timeout, 60))}")
 
 
+@router.get("/agents/{agent_id}/trace")
+async def agent_trace(agent_id: str, user_id: int = Depends(get_current_user)):
+    return _main_request("GET", f"/agents/{agent_id}/trace")
+
+
 @router.get("/agents/{agent_id}/result")
 async def agent_result(agent_id: str, user_id: int = Depends(get_current_user)):
     return _main_request("GET", f"/agents/{agent_id}/result")

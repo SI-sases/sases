@@ -127,6 +127,7 @@ function agentCard(a, kind) {
       <button data-act="messages" data-id="${esc(id)}">消息</button>
       ${ctxId ? `<button data-act="context" data-id="${esc(id)}" data-context-id="${esc(ctxId)}">上下文</button>` : ''}
       ${ctxId ? `<button data-act="fork" data-context-id="${esc(ctxId)}" data-parent-id="${esc(id)}">派生</button>` : ''}
+      <button data-act="trace" data-id="${esc(id)}">轨迹</button>
       ${a.status === 'done' ? `<button data-act="result" data-id="${esc(id)}">结果</button>` : ''}
       ${a.status === 'queued' ? `<button data-act="run" data-id="${esc(id)}">执行</button>` : ''}
       ${canCancel ? `<button class="danger" data-act="cancel" data-id="${esc(id)}">取消</button>` : ''}
@@ -203,6 +204,18 @@ function renderPanel() {
         pre.textContent = JSON.stringify({ goal: c.goal, acceptance: c.acceptance, constraints: c.constraints,
           facts: c.facts, artifacts: c.artifacts, history: c.history_summary }, null, 2).slice(0, 4000);
         pre.style.cssText = 'white-space:pre-wrap;background:#f0f9ff;border-radius:8px;padding:8px;font-size:10px;color:#075985;max-height:220px;overflow:auto;';
+      } catch (e) { btn.disabled = true; }
+    };
+  });
+  body.querySelectorAll('[data-act="trace"]').forEach((btn) => {
+    btn.onclick = async () => {
+      try {
+        const data = await getJSON(`/agi/agents/${encodeURIComponent(btn.dataset.id)}/trace`);
+        const card = btn.closest('[data-agent-card]');
+        let pre = card.querySelector('.child-trace');
+        if (!pre) { pre = document.createElement('pre'); pre.className = 'child-trace'; card.appendChild(pre); }
+        pre.textContent = JSON.stringify(data.trace || [], null, 2).slice(0, 4000);
+        pre.style.cssText = 'white-space:pre-wrap;background:#f8fafc;border-radius:8px;padding:8px;font-size:10px;color:#475569;max-height:220px;overflow:auto;';
       } catch (e) { btn.disabled = true; }
     };
   });
