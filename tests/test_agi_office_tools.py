@@ -48,3 +48,11 @@ def test_pdf_ocr_renders_pages(tmp_path, monkeypatch):
     monkeypatch.setattr(ocr_tools, "_vision_text", lambda img: {"ok": True, "text": "PAGE"})
     out = ocr_tools.pdf({"path": "a.pdf", "max_pages": 1})
     assert out["ok"] is True and out["text"] == "PAGE"
+
+
+def test_artifact_present(tmp_path, monkeypatch):
+    from agi.tools import build_default_registry
+    monkeypatch.setenv("SASES_FS_ROOT", str(tmp_path))
+    (tmp_path / "a.txt").write_text("hello", encoding="utf-8")
+    out = build_default_registry().invoke("main", "artifact.present", {"path": "a.txt"})
+    assert out["ok"] is True and out["data_url"].startswith("data:text/plain")

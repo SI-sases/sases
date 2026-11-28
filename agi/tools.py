@@ -269,7 +269,7 @@ def _support(args: dict[str, Any], action: str) -> dict[str, Any]:
 
 def build_default_registry() -> ToolRegistry:
     from .deploy import plan_promote, plan_rollback, plan_stage
-    from . import capabilities, context_compaction, fs_tools, image_tools, local_bridge, ocr_tools, office_tools, pdf_tools, shell_tools, subagent_tools, web_tools
+    from . import artifact_tools, capabilities, context_compaction, fs_tools, image_tools, local_bridge, ocr_tools, office_tools, pdf_tools, shell_tools, subagent_tools, web_tools
 
     registry = ToolRegistry()
     for tool_id, handler, description in (
@@ -282,6 +282,7 @@ def build_default_registry() -> ToolRegistry:
         ("office.read", office_tools.read, "Extract text from docx/xlsx/pptx"),
         ("pdf.read", pdf_tools.read, "Extract text from PDF"),
         ("image.read", image_tools.read, "Read image metadata"),
+        ("artifact.present", artifact_tools.present, "Present a small file inline"),
         ("ocr.image", ocr_tools.image, "Extract text from an image via vision model"),
         ("ocr.pdf", ocr_tools.pdf, "OCR rendered PDF pages via vision model"),
     ):
@@ -308,6 +309,7 @@ def build_default_registry() -> ToolRegistry:
         ("local.office.read", "office.read"),
         ("local.pdf.read", "pdf.read"),
         ("local.image.read", "image.read"),
+        ("local.artifact.present", "artifact.present"),
         ("local.ocr.image", "ocr.image"),
         ("local.ocr.pdf", "ocr.pdf"),
     ):
