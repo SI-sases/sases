@@ -269,7 +269,7 @@ def _support(args: dict[str, Any], action: str) -> dict[str, Any]:
 
 def build_default_registry() -> ToolRegistry:
     from .deploy import plan_promote, plan_rollback, plan_stage
-    from . import fs_tools, local_bridge, shell_tools, web_tools
+    from . import fs_tools, local_bridge, office_tools, shell_tools, web_tools
 
     registry = ToolRegistry()
     for tool_id, handler, description in (
@@ -279,6 +279,7 @@ def build_default_registry() -> ToolRegistry:
         ("fs.glob", fs_tools.glob_files, "Find files under the configured workspace"),
         ("web.fetch", web_tools.fetch, "Fetch a public HTTP(S) page"),
         ("web.search", web_tools.search, "Search the public web"),
+        ("office.read", office_tools.read, "Extract text from docx/xlsx/pptx"),
     ):
         registry.register(ToolSpec(tool_id, handler, "read", frozenset({"main", "sub"}), description))
     for tool_id, handler, description in (
