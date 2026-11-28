@@ -208,7 +208,8 @@ def _notify_chat(row, status, result, error):
 
 
 async def poller_loop(interval: int = 3):
-    print("[async] poller started, interval=" + str(interval) + "s")
+    from core.quiet import boot
+    boot("[async] poller started, interval=" + str(interval) + "s")
     while True:
         try:
             n = await asyncio.to_thread(poll_pending)

@@ -335,12 +335,15 @@ def ensure_schema():
         row = cur.execute("SELECT MAX(version) FROM schema_version").fetchone()
         current = row[0] if row and row[0] is not None else 0
     for v in range(current + 1, SCHEMA_VERSION + 1):
-        print(f"[migrate] applying v{v}")
+        from .quiet import boot
+        boot(f"[migrate] applying v{v}")
         with db_cursor(commit=True) as cur:
             MIGRATIONS[v](cur)
             cur.execute("INSERT INTO schema_version (version, applied_at) VALUES (?, ?)", (v, _now_iso()))
-        print(f"[migrate] v{v} ok")
-    print(f"[migrate] schema at v{SCHEMA_VERSION}")
+        from .quiet import boot
+        boot(f"[migrate] v{v} ok")
+    from .quiet import boot
+    boot(f"[migrate] schema at v{SCHEMA_VERSION}")
 
 
 def current_version(conn):

@@ -1587,7 +1587,8 @@ def init_db():
         cur.execute("CREATE INDEX IF NOT EXISTS idx_feedback_user ON task_feedback(user_id, created_at)")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_feedback_rating ON task_feedback(rating, created_at)")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_feedback_reason ON task_feedback(reason_tag)")
-        print("[db] task_feedback 表就绪")
+        from core.quiet import boot
+        boot("[db] task_feedback 表就绪")
 
         # ========== P0-B: 商业化卡密与付费墙（v0.50.0） ==========
         cur.execute("""
@@ -1648,7 +1649,8 @@ def init_db():
                 updated_at TEXT
             )
         """)
-        print("[db] 商业化卡密 + 执行审计 + 系统配置表就绪")
+        from core.quiet import boot
+        boot("[db] 商业化卡密 + 执行审计 + 系统配置表就绪")
 
     _INIT_DONE = True
 

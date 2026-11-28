@@ -61,7 +61,8 @@ async def _send_one(row):
 
 
 async def outbox_worker():
-    print("[outbox] worker started")
+    from core.quiet import boot
+    boot("[outbox] worker started")
     idle_ticks = 0
     while True:
         try:
@@ -74,7 +75,8 @@ async def outbox_worker():
             else:
                 idle_ticks += 1
                 if idle_ticks % 30 == 0:
-                    print("[outbox] idle, pending=0")
+                    from core.quiet import boot
+                    boot("[outbox] idle, pending=0")
         except Exception as e:
             print(f"[outbox] worker error: {e}")
         await asyncio.sleep(WORKER_INTERVAL)

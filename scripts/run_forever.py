@@ -8,19 +8,27 @@ import subprocess
 import time
 import urllib.request
 
+BOOT_VERBOSE = os.environ.get("SASES_BOOT_VERBOSE", "").lower() in ("1", "true", "yes", "on")
+
+
+def boot(message: str) -> None:
+    if BOOT_VERBOSE:
+        print(message, flush=True)
+
+
 if os.environ.get("SASES_ENABLE_LOCAL_EMBEDDING") != "1":
     os.environ["SASES_DISABLE_LOCAL_EMBEDDING"] = "1"
     os.environ.setdefault("EMBEDDING_MODE", "api")
-    print("[wrapper] 本地 embedding 已禁用，走 API 模式", flush=True)
+    boot("[wrapper] 本地 embedding 已禁用，走 API 模式")
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 os.chdir(ROOT)
 
-print("[wrapper] root=" + ROOT, flush=True)
-print("[wrapper] python=" + sys.executable, flush=True)
-print("[wrapper] cwd=" + os.getcwd(), flush=True)
+boot("[wrapper] root=" + ROOT)
+boot("[wrapper] python=" + sys.executable)
+boot("[wrapper] cwd=" + os.getcwd())
 
 business_logger = logging.getLogger("business")
 business_logger.setLevel(logging.INFO)
@@ -68,16 +76,16 @@ def _write_runtime_port(port: int, requested: int) -> None:
 requested_port = PORT
 if not _port_free(PORT):
     if _is_sases(PORT):
-        print("[wrapper] SASES already running on %d, reuse it" % PORT, flush=True)
+        boot("[wrapper] SASES already running on %d, reuse it" % PORT)
         _write_runtime_port(PORT, requested_port)
         sys.exit(0)
     for candidate in range(PORT + 1, PORT + 11):
         if _port_free(candidate):
             PORT = candidate
-            print("[wrapper] port %d busy, fallback to %d" % (requested_port, PORT), flush=True)
+            boot("[wrapper] port %d busy, fallback to %d" % (requested_port, PORT))
             break
     else:
-        print("[wrapper] no free port in fallback range", flush=True)
+        boot("[wrapper] no free port in fallback range")
         sys.exit(1)
 
 _write_runtime_port(PORT, requested_port)
@@ -85,16 +93,16 @@ _write_runtime_port(PORT, requested_port)
 if __name__ == "__main__":
     restart_count = 0
     while True:
-        print("[wrapper] starting uvicorn on " + HOST + ":" + str(PORT) + " (restart#" + str(restart_count) + ")", flush=True)
+        boot("[wrapper] starting uvicorn on " + HOST + ":" + str(PORT) + " (restart#" + str(restart_count) + ")")
         try:
             proc = subprocess.Popen(
-                [sys.executable, "-m", "uvicorn", "app_full:app", "--host", HOST, "--port", str(PORT), "--log-level", "info", "--no-access-log"],
+                [sys.executable, "-m", "uvicorn", "app_full:app", "--host", HOST, "--port", str(PORT), "--log-level", "warning", "--no-access-log"],
                 cwd=ROOT,
                 env=os.environ.copy()
             )
             returncode = proc.wait()
         except KeyboardInterrupt:
-            print("[wrapper] KeyboardInterrupt, terminating uvicorn", flush=True)
+            boot("[wrapper] KeyboardInterrupt, terminating uvicorn")
             try:
                 proc.terminate()
                 proc.wait(timeout=5)
@@ -108,19 +116,19 @@ if __name__ == "__main__":
         if os.path.exists(RESTART_SIGNAL):
             try:
                 os.remove(RESTART_SIGNAL)
-                print("[wrapper] restart_signal detected and cleared, restarting", flush=True)
+                boot("[wrapper] restart_signal detected and cleared, restarting")
             except Exception as e:
-                print("[wrapper] failed to clear restart_signal: " + str(e), flush=True)
+                boot("[wrapper] failed to clear restart_signal: " + str(e))
         else:
-            print("[wrapper] uvicorn exited with code " + str(returncode) + " (no restart_signal)", flush=True)
+            boot("[wrapper] uvicorn exited with code " + str(returncode) + " (no restart_signal)")
 
         if returncode == 0:
             restart_count += 1
             if restart_count > 50:
-                print("[wrapper] too many restarts (50), giving up", flush=True)
+                boot("[wrapper] too many restarts (50), giving up")
                 break
             time.sleep(1)
             continue
         else:
-            print("[wrapper] nonzero exit code, stopping", flush=True)
+            boot("[wrapper] nonzero exit code, stopping")
             break

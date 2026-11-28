@@ -101,7 +101,8 @@ async def start():
     n = max(1, int(profile().get("background_parallel") or 1))
     _workers = [asyncio.create_task(_worker()) for _ in range(n)]
     _workers.append(asyncio.create_task(_sweeper()))
-    print("[queue] workers=" + str(n))
+    from core.quiet import boot
+    boot("[queue] workers=" + str(n))
     try:
         with db_cursor() as cur:
             cur.execute("SELECT id FROM supervisor_runs WHERE status='queued' ORDER BY id")

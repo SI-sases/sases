@@ -76,7 +76,8 @@ async def run_goal_round(g):
 
 
 async def goal_runner_loop(interval=10):
-    print("[goal] runner started")
+    from core.quiet import boot
+    boot("[goal] runner started")
     while True:
         if os.getenv("SASES_GOAL_RUNNER", "1") != "0":
             try:

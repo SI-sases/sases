@@ -423,7 +423,8 @@ async def periodic_airdrop():
             if next_run <= dt:
                 next_run += timedelta(days=1)
             wait_sec = (next_run - dt).total_seconds()
-            print(f'[airdrop] next run in {int(wait_sec)}s')
+            from .quiet import boot
+            boot(f'[airdrop] next run in {int(wait_sec)}s')
             await asyncio.sleep(wait_sec)
             result = await asyncio.to_thread(airdrop_service.run_daily_airdrop)
             print(f'[airdrop] {result}')
@@ -575,7 +576,8 @@ async def lifespan(app: FastAPI):
     try:
         from .services.fts_service import ensure as _fts_ensure
         _fts_ensure()
-        print("[fts] memory/project FTS ready")
+        from .quiet import boot
+        boot("[fts] memory/project FTS ready")
     except Exception as _e_fts:
         print("[fts] 初始化失败: " + str(_e_fts))
 
@@ -602,7 +604,8 @@ async def lifespan(app: FastAPI):
     try:
         backup_result = backup_service.create_backup()
         if backup_result["success"]:
-            print(f"[备份] 启动备份成功: {backup_result['filename']}")
+            from .quiet import boot
+            boot(f"[备份] 启动备份成功: {backup_result['filename']}")
     except Exception as e:
         print(f"[备份] 启动备份异常: {e}")
 
@@ -681,7 +684,7 @@ async def lifespan(app: FastAPI):
     except Exception as _hive_e:
         print(f'[hive] tasks failed: {_hive_e}')
 
-    print(f"[bootstrap] 已启动 {len(_background_tasks)} 个后台任务")
+    print(f"[bootstrap] ready: {len(_background_tasks)} background tasks (queue=4, goal, async, outbox, airdrop)")
 
 
     async def _periodic_restart_watch():
