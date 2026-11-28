@@ -57,6 +57,13 @@ def _policy(url: str, action: str, approved: bool) -> dict | None:
     return {"ok": False, "error": "platform_manual_only", **decision}
 
 
+def snapshot(args: dict[str, Any]) -> dict[str, Any]:
+    from .browser_snapshot import capture
+    return capture(str(args.get("screenshot") or ""),
+                   int(args.get("max_elements") or 200),
+                   int(args.get("timeout") or 30))
+
+
 def open_page(args: dict[str, Any]) -> dict[str, Any]:
     url = str(args.get("url") or "")
     if not url:

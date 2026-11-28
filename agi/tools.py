@@ -285,6 +285,8 @@ def build_default_registry() -> ToolRegistry:
                                "Submit a task receipt"))
     registry.register(ToolSpec("browser.open", lambda a: _browser(a, "open_page"), "read",
                                frozenset({"main"}), "Open a URL in the CDP browser"))
+    registry.register(ToolSpec("browser.snapshot", lambda a: _browser(a, "snapshot"), "read",
+                               frozenset({"main", "sub"}), "Read the current browser page snapshot"))
     registry.register(ToolSpec("browser.fill", lambda a: _browser(a, "fill_page"), "write",
                                frozenset({"main"}), "Fill selectors and optionally click"))
     registry.register(ToolSpec("browser.click", lambda a: _browser(a, "click_page"), "write",

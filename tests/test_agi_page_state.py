@@ -21,3 +21,9 @@ def test_snapshot_cleanup(tmp_path):
     removed = browser_snapshot.cleanup(base, max_age_days=1)
     assert "old.png" in removed
     assert new.exists()
+
+
+def test_snapshot_tool_registered():
+    from agi.tools import build_default_registry
+    reg = build_default_registry()
+    assert reg.get("browser.snapshot").risk == "read"
