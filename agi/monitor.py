@@ -76,7 +76,7 @@ def scan(conn: sqlite3.Connection, stale_seconds: int = 600,
             err = str(agent.get("result_json") or "")[:500]
             kind = classify(err)
             reason = f"子智能体失败 [{kind}] `{agent.get('name') or agent_id}` ({agent_id}): {err}"
-            if kind == "platform_limit":
+            if kind == "platform_limit" and "quota exhausted" not in err.lower():
                 platform = next((p for p in ("youtube", "douyin", "bilibili", "reddit")
                                  if p in str(agent.get("name") or "").lower() or p in err.lower()), "unknown")
                 platform_quota.record(conn, platform, err[:300])
