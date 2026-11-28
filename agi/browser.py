@@ -204,6 +204,26 @@ def visual_click(args: dict[str, Any]) -> dict[str, Any]:
     return clicked
 
 
+def click_element(args: dict[str, Any]) -> dict[str, Any]:
+    try:
+        index = int(args.get("index", -1))
+    except (TypeError, ValueError):
+        return {"ok": False, "error": "index must be an integer"}
+    from .browser_snapshot import capture
+    snap = capture("")
+    elements = snap.get("elements") or []
+    if index < 0 or index >= len(elements):
+        return {"ok": False, "error": "element index out of range", "count": len(elements)}
+    element = elements[index]
+    bbox = element.get("bbox") or []
+    if len(bbox) != 4:
+        return {"ok": False, "error": "element has no bbox", "element": element}
+    x, y, w, h = [int(v) for v in bbox]
+    clicked = click_at({"x": x + w // 2, "y": y + h // 2, "wait_ms": args.get("wait_ms")})
+    clicked["element"] = element
+    return clicked
+
+
 def click_at(args: dict[str, Any]) -> dict[str, Any]:
     x = int(args.get("x", -1))
     y = int(args.get("y", -1))

@@ -41,7 +41,9 @@ def main() -> int:
                   };
                   const rows = [];
                   for (const el of Array.from(document.querySelectorAll(q)).slice(0, limit)) {
+                    const rect = el.getBoundingClientRect();
                     rows.push({
+                      bbox: [Math.round(rect.x), Math.round(rect.y), Math.round(rect.width), Math.round(rect.height)],
                       tag: el.tagName.toLowerCase(),
                       role: el.getAttribute('role') || '',
                       type: el.getAttribute('type') || '',
