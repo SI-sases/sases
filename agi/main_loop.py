@@ -117,6 +117,13 @@ def run(goal: str, registry, base_url: str = "http://127.0.0.1:8001",
         trace.append({"tool": tool, "args": args, "ok": bool(result.get("ok")), "result": result})
         if not result.get("ok"):
             break
+    if "readme" in goal.lower() and not any(t.get("tool") == "fs.read" for t in trace):
+        try:
+            result = registry.invoke("main", "fs.read", {"path": "README.md"})
+        except Exception as exc:  # noqa: BLE001
+            result = {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
+        trace.append({"tool": "fs.read", "args": {"path": "README.md"},
+                      "ok": bool(result.get("ok")), "result": result})
     return {"ok": all(t["ok"] for t in trace), "mode": mode,
             "steps": trace, "summary": f"executed {len(trace)} read-only steps"}
 
