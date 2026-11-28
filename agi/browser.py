@@ -5,8 +5,20 @@ import json
 import os
 import subprocess
 import sys
+import threading
 from pathlib import Path
 from typing import Any
+
+
+_cdp_local = threading.local()
+
+
+def set_cdp(url: str = "") -> None:
+    _cdp_local.url = url or ""
+
+
+def get_cdp() -> str:
+    return getattr(_cdp_local, "url", "") or ""
 
 
 def _root() -> Path:
@@ -23,6 +35,8 @@ def _python() -> str:
 def _run_cmd(cmd: list[str], timeout: int = 90) -> dict[str, Any]:
     env = os.environ.copy()
     env["PYTHONIOENCODING"] = "utf-8"
+    if get_cdp():
+        env["SASES_CDP_URL"] = get_cdp()
     agent_id = env.get("SASES_AGENT_ID", "").strip()
     if agent_id:
         ckpt_dir = _root() / "data" / "checkpoints"

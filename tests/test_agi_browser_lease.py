@@ -21,3 +21,10 @@ def test_profile_leases_are_scoped():
     assert entered == ["blocked"]
     with leases.acquire("other"):
         assert True
+
+
+def test_browser_profiles_mapping(monkeypatch):
+    from agi import browser_profiles
+    monkeypatch.setenv("SASES_BROWSER_PROFILES", '{"default":"http://a","account_a":"http://b"}')
+    assert browser_profiles.cdp_for("default") == "http://a"
+    assert browser_profiles.cdp_for("account_a") == "http://b"

@@ -12,9 +12,10 @@ import socket
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import ExitStack
 from pathlib import Path
 
-from . import browser_agent, browser_lease, browser_snapshot, browser_tab, capacity, disk_guard, local_outbox, local_store, page_state
+from . import browser, browser_agent, browser_lease, browser_profiles, browser_snapshot, browser_tab, capacity, disk_guard, local_outbox, local_store, page_state
 from .local_worker import _call, _execute, _read_only
 from .tools import build_default_registry
 
@@ -156,7 +157,15 @@ class LocalRuntime:
             if self._is_browser(steps):
                 wait_started = time.perf_counter()
                 profile = browser_lease.BrowserLeases.profile_for(task)
-                with self.browser_leases.acquire(profile):
+                platforms = sorted({
+                    str((s.get("args") or {}).get("adapter") or "").lower()
+                    for s in steps if s.get("tool") == "adapter.run"
+                } - {""})
+                with ExitStack() as stack:
+                    for platform in platforms:
+                        stack.enter_context(self.browser_leases.acquire("platform:" + platform))
+                    stack.enter_context(self.browser_leases.acquire(profile))
+                    browser.set_cdp(browser_profiles.cdp_for(profile))
                     page_name = agent_id
                     try:
                         browser_tab.new_tab(page_name)
@@ -182,6 +191,7 @@ class LocalRuntime:
                         os.environ.pop("SASES_BROWSER_PAGE_NAME", None)
                     else:
                         os.environ["SASES_BROWSER_PAGE_NAME"] = _old_page_name
+                    browser.set_cdp("")
             else:
                 outcome = _execute(self.server, self.token, self.registry, agent_id, remaining,
                                    goal, on_step=on_step, defer_finish=True)
