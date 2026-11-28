@@ -407,6 +407,7 @@ class LocalRuntime:
                         continue
                     self.general_active += 1
                 self.active.add(agent_id)
+            _call(self.server, self.token, "POST", "/approvals/executed", {"id": int(row["id"])})
             self._submit(agent, True, int(row["id"]), steps)
             return {"ok": True, "started": agent_id, "approved": True}
 
