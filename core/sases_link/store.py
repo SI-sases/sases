@@ -1,4 +1,4 @@
-﻿"""Durable peer-to-peer message store for SASES Link."""
+"""Durable peer-to-peer message store for SASES Link."""
 from __future__ import annotations
 
 import json

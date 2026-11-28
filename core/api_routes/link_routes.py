@@ -1,4 +1,4 @@
-﻿"""Peer-to-peer SASES Link API."""
+"""Peer-to-peer SASES Link API."""
 from __future__ import annotations
 
 import hmac
