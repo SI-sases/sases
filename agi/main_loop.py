@@ -83,7 +83,8 @@ def run(goal: str, registry, base_url: str = "http://127.0.0.1:8001",
                         result = {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
                     trace.append({"tool": tool, "args": args, "ok": bool(result.get("ok")), "result": result})
                 return {"ok": all(t["ok"] for t in trace), "mode": "step+fallback",
-                        "steps": trace, "summary": f"executed {len(trace)} read-only steps"}
+                        "steps": trace, "error": decision.get("error") or "",
+                        "summary": f"executed {len(trace)} read-only steps"}
             return {"ok": False, "mode": mode, "steps": trace,
                     "error": decision.get("error") or "decision failed"}
         if decision.get("done"):
