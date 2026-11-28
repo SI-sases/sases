@@ -13,7 +13,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from . import browser_agent, browser_snapshot, local_outbox, local_store, page_state
+from . import browser_agent, browser_snapshot, disk_guard, local_outbox, local_store, page_state
 from .local_worker import _call, _execute, _read_only
 from .tools import build_default_registry
 
@@ -68,6 +68,16 @@ class LocalRuntime:
         goal = str(agent.get("goal") or task.get("goal") or "local task")
         steps = task.get("steps") if isinstance(task.get("steps"), list) else []
         try:
+            if self._is_browser(steps):
+                try:
+                    disk_guard.ensure_free(1.0)
+                except disk_guard.DiskFullError as exc:
+                    result = {"ok": False, "error": f"disk_full: {exc}", "disk_full": True}
+                    _call(self.server, self.token, "POST", f"/agents/{agent_id}/progress", {"progress": "磁盘空间不足"})
+                    _call(self.server, self.token, "POST", f"/agents/{agent_id}/finish",
+                          {"status": "failed", "result": result})
+                    local_store.finish(agent_id, "failed")
+                    return
             blocked = self._quota_block(steps)
             if blocked:
                 result = {"ok": False, "error": blocked, "quota_blocked": True}
@@ -294,6 +304,7 @@ def main() -> int:
         return 1
     try:
         browser_snapshot.cleanup()
+        disk_guard.ensure_free(1.0)
     except Exception:
         pass
     recovered = rt.recover()
