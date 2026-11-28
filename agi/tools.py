@@ -269,7 +269,7 @@ def _support(args: dict[str, Any], action: str) -> dict[str, Any]:
 
 def build_default_registry() -> ToolRegistry:
     from .deploy import plan_promote, plan_rollback, plan_stage
-    from . import capabilities, fs_tools, image_tools, local_bridge, ocr_tools, office_tools, pdf_tools, shell_tools, subagent_tools, web_tools
+    from . import capabilities, context_compaction, fs_tools, image_tools, local_bridge, ocr_tools, office_tools, pdf_tools, shell_tools, subagent_tools, web_tools
 
     registry = ToolRegistry()
     for tool_id, handler, description in (
@@ -386,6 +386,9 @@ def build_default_registry() -> ToolRegistry:
         ("subagent.trace", subagent_tools.trace, "read", "Read a child agent trace"),
     ):
         registry.register(ToolSpec(tool_id, handler, risk, frozenset({"main"}), desc))
+    registry.register(ToolSpec("context.compact", lambda a: context_compaction.compact_text(
+        str(a.get("text") or ""), int(a.get("max_head") or 4000), int(a.get("max_tail") or 1000)),
+        "read", frozenset({"main", "sub"}), "Compact long text into head/tail plus artifact"))
     registry.register(ToolSpec("capability.list", lambda a: capabilities.list_manifest(registry),
                                "read", frozenset({"main", "sub"}),
                                "List tool profiles and role-policy audit"))

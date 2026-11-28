@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 import os
 
+from .context_compaction import compact_result
 from .planner import plan
 
 
@@ -65,7 +66,8 @@ def run(goal: str, registry, base_url: str = "http://127.0.0.1:8001",
                 result = registry.invoke("main", tool, args)
             except Exception as exc:  # noqa: BLE001
                 result = {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
-            trace.append({"tool": tool, "args": args, "ok": bool(result.get("ok")), "result": result})
+            trace.append({"tool": tool, "args": args, "ok": bool(result.get("ok")),
+                          "result": compact_result(result)})
         return {"ok": all(t["ok"] for t in trace), "mode": planned.get("mode"),
                 "steps": trace, "summary": f"executed {len(trace)} read-only steps"}
 
@@ -83,7 +85,8 @@ def run(goal: str, registry, base_url: str = "http://127.0.0.1:8001",
                         result = registry.invoke("main", tool, args)
                     except Exception as exc:  # noqa: BLE001
                         result = {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
-                    trace.append({"tool": tool, "args": args, "ok": bool(result.get("ok")), "result": result})
+                    trace.append({"tool": tool, "args": args, "ok": bool(result.get("ok")),
+                          "result": compact_result(result)})
                 return {"ok": all(t["ok"] for t in trace), "mode": "step+fallback",
                         "steps": trace, "error": decision.get("error") or "",
                         "summary": f"executed {len(trace)} read-only steps"}
@@ -99,7 +102,8 @@ def run(goal: str, registry, base_url: str = "http://127.0.0.1:8001",
                         result = registry.invoke("main", tool, args)
                     except Exception as exc:  # noqa: BLE001
                         result = {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
-                    trace.append({"tool": tool, "args": args, "ok": bool(result.get("ok")), "result": result})
+                    trace.append({"tool": tool, "args": args, "ok": bool(result.get("ok")),
+                          "result": compact_result(result)})
             break
         tool = str(decision.get("tool") or "")
         args = decision.get("args") if isinstance(decision.get("args"), dict) else {}
@@ -114,7 +118,8 @@ def run(goal: str, registry, base_url: str = "http://127.0.0.1:8001",
             result = registry.invoke("main", tool, args)
         except Exception as exc:  # noqa: BLE001
             result = {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
-        trace.append({"tool": tool, "args": args, "ok": bool(result.get("ok")), "result": result})
+        trace.append({"tool": tool, "args": args, "ok": bool(result.get("ok")),
+                      "result": compact_result(result)})
         if not result.get("ok"):
             break
     if "readme" in goal.lower() and not any(t.get("tool") == "fs.read" for t in trace):
@@ -123,7 +128,7 @@ def run(goal: str, registry, base_url: str = "http://127.0.0.1:8001",
         except Exception as exc:  # noqa: BLE001
             result = {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
         trace.append({"tool": "fs.read", "args": {"path": "README.md"},
-                      "ok": bool(result.get("ok")), "result": result})
+                      "ok": bool(result.get("ok")), "result": compact_result(result)})
     return {"ok": all(t["ok"] for t in trace), "mode": mode,
             "steps": trace, "summary": f"executed {len(trace)} read-only steps"}
 
