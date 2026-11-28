@@ -68,9 +68,12 @@ def main() -> int:
                         "dialogs": [], "snapshot_error": f"{type(exc).__name__}: {str(exc)[:200]}"}
             result = {"ok": True, **info, "captured_at": int(time.time())}
             if args.screenshot:
-                os.makedirs(os.path.dirname(os.path.abspath(args.screenshot)), exist_ok=True)
-                page.screenshot(path=args.screenshot, full_page=False, timeout=args.timeout)
-                result["screenshot"] = args.screenshot
+                try:
+                    os.makedirs(os.path.dirname(os.path.abspath(args.screenshot)), exist_ok=True)
+                    page.screenshot(path=args.screenshot, full_page=False, timeout=min(args.timeout, 10000))
+                    result["screenshot"] = args.screenshot
+                except Exception as exc:  # noqa: BLE001
+                    result["screenshot_error"] = f"{type(exc).__name__}: {str(exc)[:200]}"
             print(json.dumps(result, ensure_ascii=False))
             browser.close()
             return 0
