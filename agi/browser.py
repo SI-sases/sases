@@ -187,11 +187,17 @@ def visual_click(args: dict[str, Any]) -> dict[str, Any]:
     snap = capture(shot)
     if not snap.get("ok") or not snap.get("screenshot"):
         return {"ok": False, "error": "screenshot_failed", "snapshot": snap}
-    found = vision.locate(snap["screenshot"], instruction)
-    if not found.get("ok"):
-        return {"ok": False, "error": found.get("error") or "vision_failed"}
-    clicked = click_at({"x": found["x"], "y": found["y"], "wait_ms": args.get("wait_ms")})
-    clicked["vision"] = {"x": found["x"], "y": found["y"]}
+    elements = snap.get("elements") or []
+    chosen = vision.choose_element(snap["screenshot"], instruction, elements) if elements else {"ok": False}
+    if chosen.get("ok"):
+        clicked = click_element({"index": chosen["index"], "wait_ms": args.get("wait_ms")})
+        clicked["vision"] = {"element_index": chosen["index"]}
+    else:
+        found = vision.locate(snap["screenshot"], instruction)
+        if not found.get("ok"):
+            return {"ok": False, "error": found.get("error") or "vision_failed"}
+        clicked = click_at({"x": found["x"], "y": found["y"], "wait_ms": args.get("wait_ms")})
+        clicked["vision"] = {"x": found["x"], "y": found["y"]}
     verify_target = args.get("verify_target")
     if verify_target:
         verified = extract({"target": verify_target})
