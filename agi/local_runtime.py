@@ -287,6 +287,10 @@ def main() -> int:
     except RuntimeError as exc:
         print(json.dumps({"ok": False, "error": str(exc)}, ensure_ascii=False), flush=True)
         return 1
+    try:
+        browser_snapshot.cleanup()
+    except Exception:
+        pass
     recovered = rt.recover()
     try:
         active = _call(rt.server, rt.token, "GET", "/agents").get("agents", [])

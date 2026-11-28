@@ -9,3 +9,15 @@ def test_classify_upload_limit():
 def test_classify_login_and_normal():
     assert classify("扫码登录") ["state"] == "login_required"
     assert classify("视频投稿\n标题\n简介") ["state"] == "normal"
+
+
+def test_snapshot_cleanup(tmp_path):
+    from agi import browser_snapshot
+    base = tmp_path / "snapshots"; base.mkdir()
+    old = base / "old.png"; old.write_bytes(b"x")
+    new = base / "new.png"; new.write_bytes(b"y")
+    import os
+    os.utime(old, (1, 1))
+    removed = browser_snapshot.cleanup(base, max_age_days=1)
+    assert "old.png" in removed
+    assert new.exists()
