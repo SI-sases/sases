@@ -44,3 +44,38 @@ def read(args: dict) -> dict:
         return {"ok": False, "error": "unsupported office format"}
     except Exception as exc:  # noqa: BLE001
         return {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
+
+
+def write(args: dict) -> dict:
+    if not args.get("_approved"):
+        from .fs_tools import _create_write_approval
+        return _create_write_approval("office.write", args)
+    try:
+        path = _safe(args.get("path") or "")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        suffix = path.suffix.lower()
+        if suffix == ".docx":
+            from docx import Document
+            doc = Document()
+            for line in (args.get("lines") or str(args.get("text") or "").splitlines()):
+                doc.add_paragraph(str(line))
+            doc.save(str(path))
+        elif suffix == ".xlsx":
+            from openpyxl import Workbook
+            wb = Workbook()
+            ws = wb.active
+            for row in args.get("rows") or []:
+                ws.append(list(row))
+            wb.save(str(path))
+        elif suffix == ".pptx":
+            from pptx import Presentation
+            prs = Presentation()
+            for line in args.get("slides") or []:
+                slide = prs.slides.add_slide(prs.slide_layouts[1])
+                slide.shapes.title.text = str(line)
+            prs.save(str(path))
+        else:
+            return {"ok": False, "error": "unsupported office format"}
+        return {"ok": True, "path": str(path)}
+    except Exception as exc:  # noqa: BLE001
+        return {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
