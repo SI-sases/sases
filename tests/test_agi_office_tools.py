@@ -82,3 +82,22 @@ def test_office_write_image(tmp_path, monkeypatch):
         "images": ["i.png"], "_approved": True})
     assert out["ok"] is True
     assert len(Document(str(tmp_path / "i.docx")).inline_shapes) == 1
+
+
+def test_office_header_footer_and_xlsx_style(tmp_path, monkeypatch):
+    from docx import Document
+    from openpyxl import load_workbook
+    from agi.tools import build_default_registry
+    monkeypatch.setenv("SASES_FS_ROOT", str(tmp_path))
+    monkeypatch.setenv("SASES_AGI_DB", str(tmp_path / "agi.db"))
+    reg = build_default_registry()
+    reg.invoke("main", "office.write", {"path": "a.docx", "lines": ["x"],
+        "header": "HDR", "footer": "FTR", "_approved": True})
+    doc = Document(str(tmp_path / "a.docx"))
+    assert doc.sections[0].header.paragraphs[0].text == "HDR"
+    assert doc.sections[0].footer.paragraphs[0].text == "FTR"
+    reg.invoke("main", "office.write", {"path": "a.xlsx", "rows": [["a", "b"]],
+        "bold_header": True, "widths": {"A": 20}, "_approved": True})
+    wb = load_workbook(str(tmp_path / "a.xlsx"))
+    assert wb.active["A1"].font.bold is True
+    assert wb.active.column_dimensions["A"].width == 20

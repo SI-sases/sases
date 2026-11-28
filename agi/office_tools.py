@@ -72,6 +72,14 @@ def write(args: dict) -> dict:
                 image_path = _safe(image)
                 if image_path.is_file():
                     doc.add_picture(str(image_path))
+            header = str(args.get("header") or "").strip()
+            footer = str(args.get("footer") or "").strip()
+            if header:
+                section = doc.sections[0]
+                section.header.paragraphs[0].text = header
+            if footer:
+                section = doc.sections[0]
+                section.footer.paragraphs[0].text = footer
             doc.save(str(path))
         elif suffix == ".xlsx":
             from openpyxl import Workbook
@@ -79,6 +87,12 @@ def write(args: dict) -> dict:
             ws = wb.active
             for row in args.get("rows") or []:
                 ws.append(list(row))
+            if args.get("bold_header") and ws.max_row >= 1:
+                from openpyxl.styles import Font
+                for cell in ws[1]:
+                    cell.font = Font(bold=True)
+            for column, width in (args.get("widths") or {}).items():
+                ws.column_dimensions[str(column)].width = float(width)
             wb.save(str(path))
         elif suffix == ".pptx":
             from pptx import Presentation
