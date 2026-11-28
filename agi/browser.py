@@ -46,6 +46,7 @@ def _run(args: list[str], timeout: int = 90) -> dict[str, Any]:
 
 
 from .platform_policy import check as policy_check
+from .content_policy import sanitize as sanitize_content
 
 
 def _policy(url: str, action: str, approved: bool) -> dict | None:
@@ -103,8 +104,8 @@ def click_page(args: dict[str, Any]) -> dict[str, Any]:
 
 
 def reddit_post(args: dict[str, Any]) -> dict[str, Any]:
-    title = str(args.get("title") or "")
-    body = str(args.get("body") or "")
+    title = sanitize_content(str(args.get("title") or ""))
+    body = sanitize_content(str(args.get("body") or ""))
     dry_run = bool(args.get("dry_run", True))
     if not title or not body:
         return {"ok": False, "error": "title and body are required"}
@@ -129,7 +130,7 @@ def reddit_post(args: dict[str, Any]) -> dict[str, Any]:
 
 def douyin_post(args: dict[str, Any]) -> dict[str, Any]:
     image = str(args.get("image") or "")
-    description = str(args.get("description") or "")
+    description = sanitize_content(str(args.get("description") or ""))
     dry_run = bool(args.get("dry_run", True))
     if not image or not os.path.isfile(image):
         return {"ok": False, "error": "image file is required"}
@@ -151,7 +152,7 @@ def douyin_post(args: dict[str, Any]) -> dict[str, Any]:
 
 def bilibili_post(args: dict[str, Any]) -> dict[str, Any]:
     video = str(args.get("video") or "")
-    title = str(args.get("title") or "")
+    title = sanitize_content(str(args.get("title") or ""))
     dry_run = bool(args.get("dry_run", True))
     if not video or not os.path.isfile(video):
         return {"ok": False, "error": "video file is required"}
@@ -164,7 +165,7 @@ def bilibili_post(args: dict[str, Any]) -> dict[str, Any]:
     if not script.exists():
         return {"ok": False, "error": "scripts/browser_bilibili.py missing"}
     cmd = [_python(), str(script), "--video", video, "--title", title,
-           "--description", str(args.get("description") or ""),
+           "--description", sanitize_content(str(args.get("description") or "")),
            "--tags", str(args.get("tags") or "AI,自托管,开源")]
     if dry_run:
         cmd.append("--dry-run")
@@ -175,7 +176,7 @@ def bilibili_post(args: dict[str, Any]) -> dict[str, Any]:
 
 def youtube_post(args: dict[str, Any]) -> dict[str, Any]:
     video = str(args.get("video") or "")
-    title = str(args.get("title") or "")
+    title = sanitize_content(str(args.get("title") or ""))
     dry_run = bool(args.get("dry_run", True))
     if not video or not os.path.isfile(video):
         return {"ok": False, "error": "video file is required"}
@@ -188,7 +189,7 @@ def youtube_post(args: dict[str, Any]) -> dict[str, Any]:
     if not script.exists():
         return {"ok": False, "error": "scripts/browser_youtube.py missing"}
     cmd = [_python(), str(script), "--video", video, "--title", title,
-           "--description", str(args.get("description") or "")]
+           "--description", sanitize_content(str(args.get("description") or ""))]
     if dry_run:
         cmd.append("--dry-run")
     if args.get("screenshot"):
