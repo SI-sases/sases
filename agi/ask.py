@@ -35,6 +35,13 @@ def answer(text: str, db_path: str = "data/agi.db", observe=None) -> dict:
         return {"intent": "plan", "markdown": "\n".join(lines),
                 "plan": {"mode": planned.get("mode"), "steps": planned.get("steps") or []}}
 
+    if _has(text, "调查", "查看文件", "读一下", "搜索", "grep", "目录"):
+        from .main_loop import run as investigate, markdown as investigate_markdown
+        from .tools import build_default_registry
+        result = investigate(text, build_default_registry())
+        return {"intent": "investigate", "markdown": investigate_markdown(result),
+                "trace": result.get("steps") or []}
+
     if _has(text, "发布", "发帖", "提交", "上传"):
         return {
             "intent": "publish",
