@@ -84,8 +84,12 @@ def main() -> int:
                 clear_checkpoint()
             print(json.dumps(result, ensure_ascii=False))
         except Exception as exc:  # noqa: BLE001
+            try:
+                page_text = page.locator("body").inner_text()[-800:]
+            except Exception:
+                page_text = ""
             print(json.dumps({"ok": False, "dry_run": args.dry_run,
-                              "error": f"{type(exc).__name__}: {str(exc)[:300]}",
+                              "error": f"{type(exc).__name__}: {str(exc)[:300]} | page: {page_text}",
                               "url": page.url}, ensure_ascii=False))
             browser.close()
             return 1
