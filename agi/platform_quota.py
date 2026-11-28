@@ -23,6 +23,9 @@ def record(conn: sqlite3.Connection, platform: str, reason: str = "",
            hours: int = 24) -> None:
     ensure_schema(conn)
     now = int(time.time())
+    row = conn.execute("SELECT exhausted_until FROM agi_platform_quota WHERE platform=?", (platform,)).fetchone()
+    if row and int(row[0] or 0) > now:
+        return
     conn.execute(
         "INSERT INTO agi_platform_quota(platform,exhausted_until,reason,updated_at) "
         "VALUES(?,?,?,?) ON CONFLICT(platform) DO UPDATE SET "
