@@ -35,6 +35,30 @@ def create(conn: sqlite3.Connection, node_id: str, reason: str, severity: str = 
     return int(cur.lastrowid)
 
 
+def create_dedup(conn: sqlite3.Connection, node_id: str, reason: str,
+                 severity: str = "high", evidence: str = "{}") -> int:
+    ensure_schema(conn)
+    row = conn.execute(
+        "SELECT id FROM agi_escalations WHERE status='open' AND node_id=? AND reason=? "
+        "ORDER BY id DESC LIMIT 1",
+        (node_id, reason),
+    ).fetchone()
+    if row:
+        return int(row[0])
+    return create(conn, node_id, reason, severity, evidence)
+
+
+def resolve_node_reason(conn: sqlite3.Connection, node_id: str, reason: str) -> int:
+    ensure_schema(conn)
+    cur = conn.execute(
+        "UPDATE agi_escalations SET status='resolved',resolved_at=? "
+        "WHERE status='open' AND node_id=? AND reason=?",
+        (int(time.time()), node_id, reason),
+    )
+    conn.commit()
+    return int(cur.rowcount)
+
+
 def list_open(conn: sqlite3.Connection, limit: int = 20) -> list[dict]:
     ensure_schema(conn)
     rows = conn.execute(

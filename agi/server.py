@@ -489,13 +489,15 @@ class Handler(BaseHTTPRequestHandler):
                      version, health, message.created_at),
                 )
                 conn.commit()
+                from . import escalation
+                reason = str(message.payload.get("message") or "critical event")
                 if message.severity == "critical":
-                    from . import escalation
-                    escalation.create(
-                        conn, message.node_id,
-                        str(message.payload.get("message") or "critical event"),
+                    escalation.create_dedup(
+                        conn, message.node_id, reason,
                         evidence=json.dumps(message.evidence, ensure_ascii=False),
                     )
+                elif message.severity not in ("error",):
+                    escalation.resolve_node_reason(conn, message.node_id, reason)
                 conn.close()
                 self._send(200, {"ok": True, "msg_id": message.msg_id})
                 return

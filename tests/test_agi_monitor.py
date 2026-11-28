@@ -30,3 +30,13 @@ def test_quota_recovery_requeues_agent(tmp_path):
     monitor.scan(conn)
     assert agents.get_agent(conn, aid)["status"] == "queued"
     conn.close()
+
+
+def test_escalation_dedup_and_resolve(tmp_path):
+    conn = sqlite3.connect(str(tmp_path / "agi.db"))
+    e1 = escalation.create_dedup(conn, "node-B", "critical event")
+    e2 = escalation.create_dedup(conn, "node-B", "critical event")
+    assert e1 == e2
+    assert escalation.resolve_node_reason(conn, "node-B", "critical event") == 1
+    assert escalation.list_open(conn) == []
+    conn.close()
