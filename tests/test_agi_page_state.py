@@ -68,3 +68,11 @@ def test_visual_click_tool_registered():
     from agi.tools import build_default_registry
     reg = build_default_registry()
     assert reg.get("browser.click_at").risk == "write"
+
+
+def test_visual_click_tool_and_config(monkeypatch):
+    from agi.tools import build_default_registry
+    from agi import vision
+    monkeypatch.delenv("SASES_VISION_URL", raising=False)
+    assert vision.configured() is False
+    assert build_default_registry().get("browser.visual_click").risk == "write"

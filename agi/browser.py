@@ -174,6 +174,27 @@ def upload(args: dict[str, Any]) -> dict[str, Any]:
     return _run(["--upload-target", json.dumps({"target": target, "path": path}, ensure_ascii=False)])
 
 
+def visual_click(args: dict[str, Any]) -> dict[str, Any]:
+    from . import vision
+    instruction = str(args.get("instruction") or "").strip()
+    if not instruction:
+        return {"ok": False, "error": "instruction is required"}
+    if not vision.configured():
+        return {"ok": False, "error": "vision_not_configured"}
+    from .browser_snapshot import capture
+    import time as _time
+    shot = f"data/browser_snapshots/visual-{int(_time.time())}.png"
+    snap = capture(shot)
+    if not snap.get("ok") or not snap.get("screenshot"):
+        return {"ok": False, "error": "screenshot_failed", "snapshot": snap}
+    found = vision.locate(snap["screenshot"], instruction)
+    if not found.get("ok"):
+        return {"ok": False, "error": found.get("error") or "vision_failed"}
+    clicked = click_at({"x": found["x"], "y": found["y"], "wait_ms": args.get("wait_ms")})
+    clicked["vision"] = {"x": found["x"], "y": found["y"]}
+    return clicked
+
+
 def click_at(args: dict[str, Any]) -> dict[str, Any]:
     x = int(args.get("x", -1))
     y = int(args.get("y", -1))
