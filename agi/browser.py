@@ -22,6 +22,7 @@ def _python() -> str:
 
 def _run_cmd(cmd: list[str], timeout: int = 90) -> dict[str, Any]:
     env = os.environ.copy()
+    env["PYTHONIOENCODING"] = "utf-8"
     agent_id = env.get("SASES_AGENT_ID", "").strip()
     if agent_id:
         ckpt_dir = _root() / "data" / "checkpoints"
