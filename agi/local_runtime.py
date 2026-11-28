@@ -100,6 +100,24 @@ class LocalRuntime:
             with self.lock:
                 self.active.discard(agent_id)
 
+    def cleanup_checkpoints(self, keep: set[str] | None = None, max_age: int = 86400) -> list[str]:
+        keep = keep or set()
+        removed = []
+        root = Path("data") / "checkpoints"
+        if not root.is_dir():
+            return removed
+        now = time.time()
+        for path in root.glob("*.json"):
+            agent_id = path.stem
+            stale = now - path.stat().st_mtime > max_age
+            if stale or agent_id not in keep:
+                try:
+                    path.unlink()
+                    removed.append(path.name)
+                except Exception:
+                    pass
+        return removed
+
     def recover(self) -> list[str]:
         recovered = []
         try:
@@ -192,7 +210,13 @@ def main() -> int:
     except RuntimeError as exc:
         print(json.dumps({"ok": False, "error": str(exc)}, ensure_ascii=False), flush=True)
         return 1
-    rt.recover()
+    recovered = rt.recover()
+    try:
+        active = _call(rt.server, rt.token, "GET", "/agents").get("agents", [])
+        keep = {a.get("agent_id") for a in active if a.get("status") in ("queued", "active", "needs_approval")}
+        rt.cleanup_checkpoints(keep)
+    except Exception:
+        pass
     idle = 0
     while True:
         try:

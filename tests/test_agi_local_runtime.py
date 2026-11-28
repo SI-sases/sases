@@ -1,4 +1,5 @@
 import time
+from pathlib import Path
 
 from agi import local_runtime
 
@@ -30,3 +31,17 @@ def test_runtime_starts_local_agent(monkeypatch):
         time.sleep(0.05)
     assert "a1" not in rt.active
     assert rt._is_browser([{"tool": "adapter.run"}]) is True
+
+
+def test_checkpoint_cleanup(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    ck = Path("data/checkpoints"); ck.mkdir(parents=True)
+    (ck / "keep.json").write_text("{}", encoding="utf-8")
+    (ck / "stale.json").write_text("{}", encoding="utf-8")
+    import os
+    old = 1
+    os.utime(ck / "stale.json", (old, old))
+    rt = local_runtime.LocalRuntime("http://x", "t", 1, lock_port=0)
+    removed = rt.cleanup_checkpoints({"keep"}, max_age=3600)
+    assert "stale.json" in removed
+    assert (ck / "keep.json").exists()
