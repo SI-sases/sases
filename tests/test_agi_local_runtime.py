@@ -52,3 +52,12 @@ def test_quota_preflight(monkeypatch):
     rt = local_runtime.LocalRuntime("http://x", "t", 1, lock_port=0)
     blocked = rt._quota_block([{"tool": "adapter.run", "args": {"adapter": "youtube"}}])
     assert "youtube" in blocked
+
+
+def test_capacity_detection(monkeypatch):
+    from agi import capacity
+    monkeypatch.setattr(capacity.os, "cpu_count", lambda: 8)
+    monkeypatch.setattr(capacity, "total_memory_gb", lambda: 16.0)
+    out = capacity.detect()
+    assert out["workers"] >= 2
+    assert out["cpu"] == 8

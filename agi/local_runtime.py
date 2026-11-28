@@ -7,23 +7,32 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import socket
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from . import browser_agent, browser_snapshot, browser_tab, disk_guard, local_outbox, local_store, page_state
+from . import browser_agent, browser_snapshot, browser_tab, capacity, disk_guard, local_outbox, local_store, page_state
 from .local_worker import _call, _execute, _read_only
 from .tools import build_default_registry
 
 
 class LocalRuntime:
-    def __init__(self, server: str, token: str, max_workers: int = 2, lock_port: int = 8765) -> None:
+    def __init__(self, server: str, token: str, max_workers: int = 0, lock_port: int = 8765) -> None:
         self.server = server
         self.token = token
         self.registry = build_default_registry()
-        self.pool = ThreadPoolExecutor(max_workers=max(1, max_workers))
+        self.capacity = capacity.detect()
+        override = max_workers or int(os.environ.get("SASES_LOCAL_WORKERS", "0") or 0)
+        self.workers = max(2, override or int(self.capacity["workers"]))
+        self.pool = ThreadPoolExecutor(max_workers=self.workers)
+        for key in ("workers", "cpu", "memory_gb"):
+            try:
+                local_store.set_metric("capacity_" + key, float(self.capacity.get(key, self.workers)))
+            except Exception:
+                pass
         self.active: set[str] = set()
         self.lock = threading.Lock()
         self.browser_lock = threading.Lock()
@@ -318,7 +327,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--server", default="http://10.0.0.3:8099")
     parser.add_argument("--token-file", default="data/agi.fleet.token")
-    parser.add_argument("--max-workers", type=int, default=2)
+    parser.add_argument("--max-workers", type=int, default=0)
     parser.add_argument("--interval", type=float, default=1.5)
     args = parser.parse_args()
     token = Path(args.token_file).read_text(encoding="utf-8").strip()
