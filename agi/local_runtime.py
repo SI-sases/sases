@@ -100,6 +100,7 @@ class LocalRuntime:
         task = self._json(agent)
         goal = str(agent.get("goal") or task.get("goal") or "local task")
         steps = task.get("steps") if isinstance(task.get("steps"), list) else []
+        page_name = ""
         try:
             if self._is_browser(steps):
                 try:
@@ -401,6 +402,11 @@ class LocalRuntime:
             except Exception:
                 pass
         finally:
+            if page_name:
+                try:
+                    browser_tab.close_tab(page_name)
+                except Exception:
+                    pass
             with self.lock:
                 self.active.discard(agent_id)
                 if self._agent_is_browser(agent, steps):

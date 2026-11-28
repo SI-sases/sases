@@ -24,11 +24,22 @@ def main() -> int:
         try:
             name = args.name.strip()
             if args.action == "new":
-                page = context.new_page()
+                page = None
                 if name:
-                    page.evaluate("(name) => { window.name = name; }", name)
-                result = {"ok": True, "action": "new", "pages": len(context.pages),
-                          "name": name, "url": page.url}
+                    for candidate in context.pages:
+                        try:
+                            if candidate.evaluate("() => window.name") == name:
+                                page = candidate
+                                break
+                        except Exception:
+                            continue
+                reused = page is not None
+                if page is None:
+                    page = context.new_page()
+                    if name:
+                        page.evaluate("(name) => { window.name = name; }", name)
+                result = {"ok": True, "action": "new", "reused": reused,
+                          "pages": len(context.pages), "name": name, "url": page.url}
             else:
                 closed = False
                 target = None
@@ -43,7 +54,7 @@ def main() -> int:
                 if target is not None and len(context.pages) > 1:
                     target.close()
                     closed = True
-                elif len(context.pages) > 1:
+                elif not name and len(context.pages) > 1:
                     context.pages[-1].close()
                     closed = True
                 result = {"ok": True, "action": "close", "closed": closed,
