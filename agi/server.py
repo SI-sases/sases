@@ -233,6 +233,19 @@ class Handler(BaseHTTPRequestHandler):
                     conn.close()
                 self._send(200 if ok else 409, {"ok": ok, "leader": current})
                 return
+            if self.path == "/escalations":
+                from . import escalation
+                import sqlite3
+                conn = sqlite3.connect(self.agi.db_path)
+                try:
+                    eid = escalation.create(conn, str(body.get("node_id") or "local"),
+                                            str(body.get("reason") or "agent failure"),
+                                            str(body.get("severity") or "high"),
+                                            json.dumps(body.get("evidence") or {}, ensure_ascii=False))
+                    self._send(200, {"ok": True, "escalation_id": eid})
+                finally:
+                    conn.close()
+                return
             if self.path == "/context/build":
                 from . import context_builder
                 import sqlite3

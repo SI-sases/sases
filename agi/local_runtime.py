@@ -46,7 +46,7 @@ class LocalRuntime:
     def _is_browser(self, steps: list[dict]) -> bool:
         return any(str(s.get("tool") or "").startswith(("browser.", "adapter.")) for s in steps)
 
-    def _run(self, agent: dict, approved: bool = False) -> None:
+    def _run(self, agent: dict, approved: bool = False, approval_id: int = 0) -> None:
         agent_id = str(agent.get("agent_id") or "")
         task = self._json(agent)
         goal = str(agent.get("goal") or task.get("goal") or "local task")
@@ -89,6 +89,18 @@ class LocalRuntime:
                 outcome = _execute(self.server, self.token, self.registry, agent_id, remaining,
                                    goal, on_step=on_step)
             local_store.finish(agent_id, "done" if outcome.get("ok") else "failed")
+            if not outcome.get("ok"):
+                try:
+                    _call(self.server, self.token, "POST", "/escalations", {
+                        "node_id": str(agent.get("node_id") or "local"),
+                        "reason": "子智能体执行失败: " + str((outcome.get("result") or {}).get("error") or "unknown"),
+                        "severity": "high",
+                        "evidence": {"agent_id": agent_id, "result": outcome.get("result")},
+                    })
+                except Exception:
+                    pass
+            if approval_id:
+                _call(self.server, self.token, "POST", "/approvals/executed", {"id": approval_id})
         except Exception as exc:  # noqa: BLE001
             try:
                 _call(self.server, self.token, "POST", f"/agents/{agent_id}/finish", {
@@ -166,8 +178,7 @@ class LocalRuntime:
             agent["task_json"] = json.dumps({"steps": steps})
             with self.lock:
                 self.active.add(agent_id)
-            self.pool.submit(self._run, agent, True)
-            _call(self.server, self.token, "POST", "/approvals/executed", {"id": int(row["id"])})
+            self.pool.submit(self._run, agent, True, int(row["id"]))
             return {"ok": True, "started": agent_id, "approved": True}
 
         listing = _call(self.server, self.token, "GET", "/agents")

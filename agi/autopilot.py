@@ -11,7 +11,7 @@ from pathlib import Path
 
 from .report import generate
 from .runtime import MainAGI
-from . import escalation
+from . import escalation, monitor
 import sqlite3
 
 
@@ -24,6 +24,11 @@ def run_once(base_url: str, db_path: str, report_out: str = "") -> dict:
                               "autopilot health check failed", evidence=str(result.get("health"))[:2000])
         finally:
             conn.close()
+    conn = sqlite3.connect(db_path)
+    try:
+        monitor.scan(conn)
+    finally:
+        conn.close()
     report = generate(db_path)
     if report_out:
         Path(report_out).parent.mkdir(parents=True, exist_ok=True)

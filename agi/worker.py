@@ -7,7 +7,7 @@ import sqlite3
 import sys
 from typing import Any
 
-from . import agents, approvals, context_pack
+from . import agents, approvals, context_pack, escalation
 from .executor import execute
 from .package import TaskPackage
 from .planner import plan

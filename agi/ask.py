@@ -63,6 +63,16 @@ def answer(text: str, db_path: str = "data/agi.db", observe=None) -> dict:
                 observe()
             except Exception:
                 pass
+        try:
+            import sqlite3
+            from . import monitor
+            mconn = sqlite3.connect(db_path)
+            try:
+                monitor.scan(mconn)
+            finally:
+                mconn.close()
+        except Exception:
+            pass
         report = generate(db_path)
         return {"intent": "status", "markdown": report}
 
