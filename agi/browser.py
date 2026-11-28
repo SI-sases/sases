@@ -200,6 +200,8 @@ def visual_click(args: dict[str, Any]) -> dict[str, Any]:
         clicked["vision"] = {"x": found["x"], "y": found["y"]}
     verify_target = args.get("verify_target")
     expected = str(args.get("verify_text") or "")
+    verify_url = str(args.get("verify_url") or "")
+    verify_page_text = str(args.get("verify_page_text") or "")
 
     def verify(result: dict) -> bool:
         if not verify_target:
@@ -214,6 +216,18 @@ def visual_click(args: dict[str, Any]) -> dict[str, Any]:
         return True
 
     if verify(clicked):
+        if verify_url or verify_page_text:
+            from .browser_snapshot import capture as _capture
+            post = _capture("")
+            if verify_url and verify_url not in str(post.get("url") or ""):
+                clicked["ok"] = False
+                clicked["error"] = "visual url verification failed"
+                clicked["verification_url"] = post.get("url")
+                return clicked
+            if verify_page_text and verify_page_text not in str(post.get("text") or ""):
+                clicked["ok"] = False
+                clicked["error"] = "visual page verification failed"
+                return clicked
         return clicked
     if chosen.get("ok"):
         found = vision.locate(snap["screenshot"], instruction)
