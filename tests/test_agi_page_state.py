@@ -27,3 +27,10 @@ def test_snapshot_tool_registered():
     from agi.tools import build_default_registry
     reg = build_default_registry()
     assert reg.get("browser.snapshot").risk == "read"
+
+
+def test_target_tools_registered():
+    from agi.tools import build_default_registry
+    reg = build_default_registry()
+    assert reg.get("browser.click_target").risk == "write"
+    assert reg.get("browser.fill_targets").risk == "write"
