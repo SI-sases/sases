@@ -34,3 +34,11 @@ def test_target_tools_registered():
     reg = build_default_registry()
     assert reg.get("browser.click_target").risk == "write"
     assert reg.get("browser.fill_targets").risk == "write"
+
+
+def test_wait_extract_upload_registered():
+    from agi.tools import build_default_registry
+    reg = build_default_registry()
+    assert reg.get("browser.wait_for").risk == "read"
+    assert reg.get("browser.extract").risk == "read"
+    assert reg.get("browser.upload").risk == "write"

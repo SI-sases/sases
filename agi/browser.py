@@ -123,6 +123,30 @@ def fill_targets(args: dict[str, Any]) -> dict[str, Any]:
     return _run(cmd)
 
 
+def wait_for(args: dict[str, Any]) -> dict[str, Any]:
+    target = args.get("target") or {}
+    if not isinstance(target, dict) or not any(target.values()):
+        return {"ok": False, "error": "target must include selector/role/name/text/label/placeholder"}
+    return _run(["--wait-target", json.dumps(target, ensure_ascii=False)])
+
+
+def extract(args: dict[str, Any]) -> dict[str, Any]:
+    target = args.get("target") or {}
+    if not isinstance(target, dict) or not any(target.values()):
+        return {"ok": False, "error": "target must include selector/role/name/text/label/placeholder"}
+    return _run(["--extract-target", json.dumps(target, ensure_ascii=False)])
+
+
+def upload(args: dict[str, Any]) -> dict[str, Any]:
+    target = args.get("target") or {}
+    path = str(args.get("path") or "")
+    if not isinstance(target, dict) or not any(target.values()) or not path:
+        return {"ok": False, "error": "target and path are required"}
+    if not Path(path).exists():
+        return {"ok": False, "error": f"upload file not found: {path}"}
+    return _run(["--upload-target", json.dumps({"target": target, "path": path}, ensure_ascii=False)])
+
+
 def click_page(args: dict[str, Any]) -> dict[str, Any]:
     url = str(args.get("url") or "")
     selector = str(args.get("selector") or "")

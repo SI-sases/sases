@@ -289,6 +289,12 @@ def build_default_registry() -> ToolRegistry:
                                frozenset({"main", "sub"}), "Read the current browser page snapshot"))
     registry.register(ToolSpec("browser.fill", lambda a: _browser(a, "fill_page"), "write",
                                frozenset({"main"}), "Fill selectors and optionally click"))
+    registry.register(ToolSpec("browser.wait_for", lambda a: _browser(a, "wait_for"), "read",
+                               frozenset({"main", "sub"}), "Wait for a selector/role/text target"))
+    registry.register(ToolSpec("browser.extract", lambda a: _browser(a, "extract"), "read",
+                               frozenset({"main", "sub"}), "Extract text or value from a target"))
+    registry.register(ToolSpec("browser.upload", lambda a: _browser(a, "upload"), "write",
+                               frozenset({"main"}), "Set a file on an upload input"))
     registry.register(ToolSpec("browser.click_target", lambda a: _browser(a, "click_target"), "write",
                                frozenset({"main", "sub"}), "Click by selector/role/name/text with fallback"))
     registry.register(ToolSpec("browser.fill_targets", lambda a: _browser(a, "fill_targets"), "write",

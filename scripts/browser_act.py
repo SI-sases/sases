@@ -28,6 +28,9 @@ def main() -> int:
     parser.add_argument("--click", default="")
     parser.add_argument("--click-target", default="", help="JSON target: selector/role/name/text/label/placeholder")
     parser.add_argument("--fill-target", action="append", default=[], help="JSON {target,value}")
+    parser.add_argument("--wait-target", default="", help="JSON target to wait for")
+    parser.add_argument("--extract-target", default="", help="JSON target to extract")
+    parser.add_argument("--upload-target", default="", help="JSON {target,path}")
     parser.add_argument("--wait-ms", type=int, default=1500)
     parser.add_argument("--timeout", type=int, default=30000)
     parser.add_argument("--screenshot", default="")
@@ -41,7 +44,7 @@ def main() -> int:
         context = browser.contexts[0] if browser.contexts else browser.new_context()
         page = context.pages[0] if context.pages else context.new_page()
         result = {"ok": True, "actions": [], "url": page.url}
-        def resolve(target):
+        def resolve(target, require_visible=True):
             if isinstance(target, str):
                 target = {"selector": target}
             timeout = args.timeout
@@ -60,7 +63,10 @@ def main() -> int:
             for kind, make in attempts:
                 try:
                     loc = make().first
-                    loc.wait_for(state="visible", timeout=timeout)
+                    if require_visible:
+                        loc.wait_for(state="visible", timeout=timeout)
+                    else:
+                        loc.wait_for(state="attached", timeout=timeout)
                     return loc, kind
                 except Exception as exc:  # noqa: BLE001
                     errors.append(f"{kind}: {type(exc).__name__}")
@@ -97,6 +103,22 @@ def main() -> int:
                 loc.click()
                 page.wait_for_timeout(args.wait_ms)
                 result["actions"].append({"click": json.loads(args.click_target), "resolved_by": kind})
+            if args.wait_target:
+                loc, kind = resolve(json.loads(args.wait_target))
+                result["waited"] = {"target": json.loads(args.wait_target), "resolved_by": kind}
+            if args.extract_target:
+                target = json.loads(args.extract_target)
+                loc, kind = resolve(target)
+                try:
+                    value = loc.input_value(timeout=5000)
+                except Exception:
+                    value = loc.inner_text(timeout=5000)
+                result["extracted"] = {"target": target, "resolved_by": kind, "value": value}
+            if args.upload_target:
+                spec = json.loads(args.upload_target)
+                loc, kind = resolve(spec.get("target") or {}, require_visible=False)
+                loc.set_input_files(str(spec.get("path") or ""))
+                result["actions"].append({"upload": spec, "resolved_by": kind})
             if args.screenshot:
                 try:
                     os.makedirs(os.path.dirname(os.path.abspath(args.screenshot)), exist_ok=True)
