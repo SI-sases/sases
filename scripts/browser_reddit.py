@@ -54,17 +54,24 @@ def main() -> int:
         result = {"ok": True, "dry_run": args.dry_run, "subreddit": args.subreddit}
         try:
             target = f"https://www.reddit.com/r/{args.subreddit}/submit"
-            if not args.no_reuse and page.url.rstrip("/").startswith(target.rstrip("/")):
+            on_target = page.url.rstrip("/").startswith(target.rstrip("/"))
+            if not args.no_reuse and on_target:
                 result["reused"] = True
             else:
                 page.goto(target, wait_until="commit", timeout=args.timeout)
                 page.wait_for_timeout(6000)
-            page.locator("textarea[placeholder='标题']").fill(args.title)
-            body = page.locator("[contenteditable=true]").last
-            body.click()
-            body.fill(args.body)
-            page.wait_for_timeout(800)
-            save_phase("filled")
+            phase = ckpt.get("phase", "")
+            page_ready = (page.locator("textarea").count() > 0
+                          and page.locator("[contenteditable=true]").count() > 0)
+            if phase in ("filled", "submitted") and on_target and page_ready:
+                result["resumed"] = phase
+            else:
+                page.locator("textarea").first.fill(args.title)
+                body = page.locator("[contenteditable=true]").last
+                body.click()
+                body.fill(args.body)
+                page.wait_for_timeout(800)
+                save_phase("filled")
             if not args.dry_run:
                 page.get_by_text("发帖", exact=True).last.click()
                 page.wait_for_timeout(6000)
