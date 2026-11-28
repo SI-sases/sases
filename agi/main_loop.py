@@ -75,6 +75,16 @@ def run(goal: str, registry, base_url: str = "http://127.0.0.1:8001",
             return {"ok": False, "mode": mode, "steps": trace,
                     "error": decision.get("error") or "decision failed"}
         if decision.get("done"):
+            if not trace:
+                planned = plan(goal, registry, base_url, max_steps)
+                for step in list(planned.get("steps") or [])[:max_steps]:
+                    tool = str(step.get("tool") or "")
+                    args = step.get("args") if isinstance(step.get("args"), dict) else {}
+                    try:
+                        result = registry.invoke("main", tool, args)
+                    except Exception as exc:  # noqa: BLE001
+                        result = {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
+                    trace.append({"tool": tool, "args": args, "ok": bool(result.get("ok")), "result": result})
             break
         tool = str(decision.get("tool") or "")
         args = decision.get("args") if isinstance(decision.get("args"), dict) else {}
