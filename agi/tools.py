@@ -277,12 +277,15 @@ def build_default_registry() -> ToolRegistry:
         ("fs.read", fs_tools.read_file, "Read a text file under the configured workspace"),
         ("fs.grep", fs_tools.grep, "Search text under the configured workspace"),
         ("fs.glob", fs_tools.glob_files, "Find files under the configured workspace"),
-        ("fs.write", fs_tools.write_file, "Write a workspace file (requires explicit approval flag)"),
-        ("fs.edit", fs_tools.edit_file, "Edit a workspace file (requires explicit approval flag)"),
         ("web.fetch", web_tools.fetch, "Fetch a public HTTP(S) page"),
         ("web.search", web_tools.search, "Search the public web"),
     ):
         registry.register(ToolSpec(tool_id, handler, "read", frozenset({"main", "sub"}), description))
+    for tool_id, handler, description in (
+        ("fs.write", fs_tools.write_file, "Write a workspace file (approval required)"),
+        ("fs.edit", fs_tools.edit_file, "Edit a workspace file (approval required)"),
+    ):
+        registry.register(ToolSpec(tool_id, handler, "write", frozenset({"main", "sub"}), description))
     registry.register(ToolSpec("shell.run", shell_tools.run, "read", frozenset({"main", "sub"}),
                                "Run a read-only allowlisted shell command"))
     for tool_id, local_tool in (
