@@ -8,19 +8,23 @@ from __future__ import annotations
 import os
 
 
-def plan(snapshot: dict, goal: str = "") -> dict:
+def plan(snapshot: dict, goal: str = "", profile: str = "default",
+         profiles: list[str] | None = None) -> dict:
     state = str(snapshot.get("state") or "unknown")
     if state == "upload_limit":
         return {"mode": "observe", "state": state,
-                "summary": "平台上传额度已耗尽，等待恢复或切换平台。",
+                "summary": "platform upload limit reached; wait or switch platform",
+                "fallback": {"type": "switch_platform", "platforms": ["bilibili", "douyin"]},
                 "actions": [], "automatic": False}
     if state == "login_required":
+        alternatives = [p for p in (profiles or []) if p != profile]
         return {"mode": "observe", "state": state,
-                "summary": "平台登录态失效，需要人工登录。",
+                "summary": "login required; manual login or another profile",
+                "fallback": {"type": "switch_profile", "profiles": alternatives},
                 "actions": [], "automatic": False}
     if state == "captcha_or_challenge":
         return {"mode": "observe", "state": state,
-                "summary": "页面出现验证，需要人工处理。",
+                "summary": "captcha or challenge requires a human",
                 "actions": [], "automatic": False}
 
     elements = snapshot.get("elements") or []
@@ -43,7 +47,7 @@ def plan(snapshot: dict, goal: str = "") -> dict:
     return {
         "mode": os.environ.get("SASES_BROWSER_AGENT", "observe"),
         "state": state,
-        "summary": f"页面可继续操作；找到 {len(buttons)} 个按钮、{len(inputs)} 个输入框。",
+        "summary": f"page can continue; {len(buttons)} buttons, {len(inputs)} inputs",
         "actions": (buttons + inputs)[:8],
         "automatic": False,
     }

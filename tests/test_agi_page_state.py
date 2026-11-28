@@ -54,3 +54,11 @@ def test_recovery_observe_plan():
     assert plan["mode"] == "observe"
     assert plan["automatic"] is False
     assert plan["actions"]
+
+
+def test_fallback_suggests_alternate_profile():
+    from agi import browser_agent
+    plan = browser_agent.plan({"state": "login_required"}, profile="default",
+                              profiles=["default", "account_a"])
+    assert plan["fallback"]["type"] == "switch_profile"
+    assert plan["fallback"]["profiles"] == ["account_a"]

@@ -186,7 +186,7 @@ class LocalRuntime:
                             "dialogs": (snap.get("dialogs") or [])[:5],
                         }
                         inner["snapshot"] = snap_data
-                        inner["recovery"] = browser_agent.plan(snap_data, goal)
+                        inner["recovery"] = browser_agent.plan(snap_data, goal, profile, list(browser_profiles.mapping()))
                         if ps["state"] == "upload_limit":
                             inner["error"] = "platform_limit: " + (ps["reason"] or "upload limit")
                         outcome["snapshot"] = snap_data
