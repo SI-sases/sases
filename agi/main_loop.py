@@ -25,8 +25,9 @@ def _llm_decide(goal: str, trace: list[dict], registry) -> dict:
         return {"ok": False, "error": "model unavailable"}
     try:
         from openai import OpenAI
-        from core.config import DEEPSEEK_BASE_URL, MODEL_NAME
-        client = OpenAI(api_key=api_key, base_url=DEEPSEEK_BASE_URL)
+        base_url = os.environ.get("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
+        model_name = os.environ.get("MODEL_NAME", "deepseek-chat")
+        client = OpenAI(api_key=api_key, base_url=base_url)
         prompt = (
             "You are the SASES main AGI investigator. Choose exactly one next read-only tool "
             'or finish. Return JSON only: {"done":true} or '
@@ -36,7 +37,7 @@ def _llm_decide(goal: str, trace: list[dict], registry) -> dict:
                json.dumps([{"tool": t["tool"], "ok": t["ok"]} for t in trace], ensure_ascii=False))
         )
         resp = client.chat.completions.create(
-            model=MODEL_NAME,
+            model=model_name,
             messages=[{"role": "system", "content": "Return JSON only."},
                       {"role": "user", "content": prompt}],
             temperature=0, max_tokens=300, timeout=20,

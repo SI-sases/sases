@@ -46,8 +46,9 @@ def plan(goal: str, registry, base_url: str = "http://127.0.0.1:8001",
 
     try:
         from openai import OpenAI
-        from core.config import DEEPSEEK_BASE_URL, MODEL_NAME
-        client = OpenAI(api_key=api_key, base_url=DEEPSEEK_BASE_URL)
+        base_url = os.environ.get("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
+        model_name = os.environ.get("MODEL_NAME", "deepseek-chat")
+        client = OpenAI(api_key=api_key, base_url=base_url)
         prompt = (
             "You are the SASES main AGI planner. Return JSON only: "
             '{"steps":[{"tool":"tool.id","args":{}}]}. '
@@ -55,7 +56,7 @@ def plan(goal: str, registry, base_url: str = "http://127.0.0.1:8001",
             "Goal: %s\nTools: %s" % (max_steps, goal, json.dumps(_registry_tools(registry), ensure_ascii=False))
         )
         resp = client.chat.completions.create(
-            model=MODEL_NAME,
+            model=model_name,
             messages=[{"role": "system", "content": "Return JSON only."},
                       {"role": "user", "content": prompt}],
             temperature=0,
