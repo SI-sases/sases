@@ -31,6 +31,10 @@ def start(agent_id: str, goal: str, steps: list[dict]) -> int:
         return int(row[0])
     now = int(time.time())
     conn.execute(
+        "CREATE TABLE IF NOT EXISTS local_attempts (agent_id TEXT PRIMARY KEY, attempts INTEGER, updated_at INTEGER)"
+    )
+    conn.execute("DELETE FROM local_attempts WHERE agent_id=?", (agent_id,))
+    conn.execute(
         "INSERT INTO local_sessions(agent_id,goal,steps_json,current_step,status,started_at,updated_at) "
         "VALUES(?,?,?,0,'running',?,?)",
         (agent_id, goal, json.dumps(steps, ensure_ascii=False), now, now),

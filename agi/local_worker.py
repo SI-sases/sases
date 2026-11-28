@@ -34,7 +34,7 @@ def _call(server: str, token: str, method: str, path: str, body: dict | None = N
 
 
 def _execute(server: str, token: str, registry, agent_id: str, steps: list[dict],
-             goal: str, on_step=None) -> dict:
+             goal: str, on_step=None, defer_finish: bool = False) -> dict:
     _call(server, token, "POST", f"/agents/{agent_id}/progress", {"progress": "本地执行中"})
     package = TaskPackage(goal=goal, node_id="local", acceptance=["local result reported"],
                           steps=steps, tools_allowed=[s.get("tool") for s in steps])
@@ -50,10 +50,12 @@ def _execute(server: str, token: str, registry, agent_id: str, steps: list[dict]
             os.environ["SASES_AGENT_ID"] = _old_agent
     status = "done" if result.get("ok") else "failed"
     try:
-        _call(server, token, "POST", f"/agents/{agent_id}/finish", {"status": status, "result": result})
+        if not defer_finish:
+            _call(server, token, "POST", f"/agents/{agent_id}/finish", {"status": status, "result": result})
     except Exception:
-        local_outbox.add(agent_id, status, result)
-        result["outboxed"] = True
+        if not defer_finish:
+            local_outbox.add(agent_id, status, result)
+            result["outboxed"] = True
     return {"ok": bool(result.get("ok")), "claimed": True, "agent_id": agent_id, "status": status, "result": result}
 
 

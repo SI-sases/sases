@@ -90,7 +90,7 @@ class LocalRuntime:
                     "severity": "critical",
                     "evidence": {"agent_id": agent_id, "result": result},
                 })
-                local_store.finish(agent_id, "failed")
+                local_store.finish(agent_id, "quota_blocked")
                 return
             safe, reason = (True, "") if approved else _read_only(self.registry, steps)
             if not safe:
@@ -110,25 +110,15 @@ class LocalRuntime:
             remaining = steps[current:]
             if not remaining:
                 local_store.finish(agent_id, "done")
+                _call(self.server, self.token, "POST", f"/agents/{agent_id}/finish",
+                      {"status": "done", "result": {"ok": True, "skipped": True}})
                 return
 
             def on_step(index: int, step: dict, result: dict) -> None:
                 local_store.step(agent_id, current + index + 1)
 
-            if self._is_browser(steps):
-                wait_started = time.perf_counter()
-                with self.browser_lock:
-                    waited_ms = (time.perf_counter() - wait_started) * 1000
-                    exec_started = time.perf_counter()
-                    outcome = _execute(self.server, self.token, self.registry, agent_id, remaining,
-                                       goal, on_step=on_step)
-                    local_store.set_metric("last_browser_wait_ms", waited_ms)
-                    local_store.set_metric("last_browser_exec_ms",
-                                           (time.perf_counter() - exec_started) * 1000)
-            else:
-                outcome = _execute(self.server, self.token, self.registry, agent_id, remaining,
-                                   goal, on_step=on_step)
-            if not outcome.get("ok") and self._is_browser(steps):
+            def capture_failure(outcome: dict) -> dict:
+                inner = dict(outcome.get("result") or {})
                 try:
                     snap_path = f"data/browser_snapshots/{agent_id}.png"
                     snap = browser_snapshot.capture(snap_path)
@@ -144,58 +134,69 @@ class LocalRuntime:
                             "elements": (snap.get("elements") or [])[:20],
                             "dialogs": (snap.get("dialogs") or [])[:5],
                         }
-                        outcome["snapshot"] = snap_data
-                        try:
-                            outcome["recovery"] = browser_agent.plan(snap_data, goal)
-                        except Exception:
-                            outcome["recovery"] = {"mode": "observe", "actions": [], "automatic": False}
-                        if outcome.get("results"):
-                            outcome["results"][-1]["snapshot"] = snap_data
+                        inner["snapshot"] = snap_data
+                        inner["recovery"] = browser_agent.plan(snap_data, goal)
                         if ps["state"] == "upload_limit":
-                            outcome["error"] = "platform_limit: " + (ps["reason"] or "upload limit")
-                            if outcome.get("results"):
-                                outcome["results"][-1]["result"]["error"] = outcome["error"]
-                        try:
-                            finish_result = dict(outcome.get("result") or {})
-                            finish_result["ok"] = False
-                            finish_result["error"] = outcome.get("error") or finish_result.get("error") or "browser failed"
-                            finish_result["snapshot"] = snap_data
-                            finish_result["recovery"] = outcome.get("recovery") or {}
-                            _call(self.server, self.token, "POST", f"/agents/{agent_id}/finish",
-                                  {"status": "failed", "result": finish_result})
-                        except Exception:
-                            pass
+                            inner["error"] = "platform_limit: " + (ps["reason"] or "upload limit")
+                        outcome["snapshot"] = snap_data
+                        outcome["recovery"] = inner["recovery"]
                 except Exception:
                     pass
+                return inner
+
+            if self._is_browser(steps):
+                wait_started = time.perf_counter()
+                with self.browser_lock:
+                    waited_ms = (time.perf_counter() - wait_started) * 1000
+                    exec_started = time.perf_counter()
+                    outcome = _execute(self.server, self.token, self.registry, agent_id, remaining,
+                                       goal, on_step=on_step, defer_finish=True)
+                    local_store.set_metric("last_browser_wait_ms", waited_ms)
+                    local_store.set_metric("last_browser_exec_ms",
+                                           (time.perf_counter() - exec_started) * 1000)
+                    inner = dict(outcome.get("result") or {})
+                    if not outcome.get("ok"):
+                        inner = capture_failure(outcome)
+            else:
+                outcome = _execute(self.server, self.token, self.registry, agent_id, remaining,
+                                   goal, on_step=on_step, defer_finish=True)
+                inner = dict(outcome.get("result") or {})
+
             if outcome.get("ok"):
                 local_store.clear_attempts(agent_id)
-            else:
-                err = str((outcome.get("result") or {}).get("error") or outcome.get("error") or "")
-                retryable = not any(k in err.lower() for k in (
-                    "platform_limit", "login", "captcha", "disk_full", "quota", "approval"))
-                attempts = local_store.note_attempt(agent_id) if retryable else 0
-                if retryable and attempts <= 1:
-                    try:
-                        _call(self.server, self.token, "POST", f"/agents/{agent_id}/requeue")
-                        _call(self.server, self.token, "POST", f"/agents/{agent_id}/progress",
-                              {"progress": f"重试 {attempts + 1}/2"})
-                        time.sleep(2)
-                        return
-                    except Exception:
-                        pass
-            local_store.finish(agent_id, "done" if outcome.get("ok") else "failed")
-            if not outcome.get("ok"):
+                local_store.finish(agent_id, "done")
+                _call(self.server, self.token, "POST", f"/agents/{agent_id}/finish",
+                      {"status": "done", "result": inner or {"ok": True}})
+                if approval_id:
+                    _call(self.server, self.token, "POST", "/approvals/executed", {"id": approval_id})
+                return
+
+            err = str(inner.get("error") or outcome.get("error") or "")
+            retryable = not any(k in err.lower() for k in (
+                "platform_limit", "login", "captcha", "disk_full", "quota", "approval"))
+            attempts = local_store.note_attempt(agent_id) if retryable else 0
+            if retryable and attempts <= 1:
                 try:
-                    _call(self.server, self.token, "POST", "/escalations", {
-                        "node_id": str(agent.get("node_id") or "local"),
-                        "reason": "子智能体执行失败: " + str((outcome.get("result") or {}).get("error") or "unknown"),
-                        "severity": "critical" if "platform_limit" in str((outcome.get("result") or {}).get("error") or "") else "high",
-                        "conversation_id": (json.loads(agent.get("context_json") or "{}").get("conversation_id")
-                                            if agent.get("context_json") else None),
-                        "evidence": {"agent_id": agent_id, "result": outcome.get("result")},
-                    })
+                    _call(self.server, self.token, "POST", f"/agents/{agent_id}/requeue")
+                    _call(self.server, self.token, "POST", f"/agents/{agent_id}/progress",
+                          {"progress": f"重试 {attempts + 1}/2"})
+                    return
                 except Exception:
                     pass
+            local_store.finish(agent_id, "failed")
+            _call(self.server, self.token, "POST", f"/agents/{agent_id}/finish",
+                  {"status": "failed", "result": inner or {"ok": False, "error": err}})
+            try:
+                _call(self.server, self.token, "POST", "/escalations", {
+                    "node_id": str(agent.get("node_id") or "local"),
+                    "reason": "子智能体执行失败: " + (err or "unknown"),
+                    "severity": "critical" if "platform_limit" in err else "high",
+                    "conversation_id": (json.loads(agent.get("context_json") or "{}").get("conversation_id")
+                                        if agent.get("context_json") else None),
+                    "evidence": {"agent_id": agent_id, "result": inner},
+                })
+            except Exception:
+                pass
             if approval_id:
                 _call(self.server, self.token, "POST", "/approvals/executed", {"id": approval_id})
         except Exception as exc:  # noqa: BLE001

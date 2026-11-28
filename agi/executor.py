@@ -30,7 +30,7 @@ def execute(package: TaskPackage, registry, conn: sqlite3.Connection,
             return {"ok": False, "error": f"{type(exc).__name__}: {exc}", "step": index,
                     "trace_id": package.trace_id, "results": results}
         results.append({"tool": tool_id, "result": result})
-        if on_step:
+        if on_step and result.get("ok") is not False:
             try:
                 on_step(index, step, result)
             except Exception:
