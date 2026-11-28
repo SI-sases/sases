@@ -269,7 +269,7 @@ def _support(args: dict[str, Any], action: str) -> dict[str, Any]:
 
 def build_default_registry() -> ToolRegistry:
     from .deploy import plan_promote, plan_rollback, plan_stage
-    from . import fs_tools, local_bridge, office_tools, pdf_tools, shell_tools, web_tools
+    from . import fs_tools, image_tools, local_bridge, office_tools, pdf_tools, shell_tools, web_tools
 
     registry = ToolRegistry()
     for tool_id, handler, description in (
@@ -281,6 +281,7 @@ def build_default_registry() -> ToolRegistry:
         ("web.search", web_tools.search, "Search the public web"),
         ("office.read", office_tools.read, "Extract text from docx/xlsx/pptx"),
         ("pdf.read", pdf_tools.read, "Extract text from PDF"),
+        ("image.read", image_tools.read, "Read image metadata"),
     ):
         registry.register(ToolSpec(tool_id, handler, "read", frozenset({"main", "sub"}), description))
     for tool_id, handler, description in (
@@ -304,6 +305,7 @@ def build_default_registry() -> ToolRegistry:
         ("local.shell.run", "shell.run"),
         ("local.office.read", "office.read"),
         ("local.pdf.read", "pdf.read"),
+        ("local.image.read", "image.read"),
     ):
         registry.register(ToolSpec(tool_id, lambda a, t=local_tool: local_bridge.run_readonly(t, a),
                                    "read", frozenset({"main"}),

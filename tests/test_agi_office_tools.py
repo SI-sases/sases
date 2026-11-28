@@ -29,3 +29,12 @@ def test_pdf_read_blank(tmp_path, monkeypatch):
     w = PdfWriter(); w.add_blank_page(width=72, height=72); w.write(str(tmp_path / "a.pdf"))
     out = build_default_registry().invoke("main", "pdf.read", {"path": "a.pdf"})
     assert out["ok"] is True and out["pages"] == 1
+
+
+def test_image_metadata(tmp_path, monkeypatch):
+    from PIL import Image
+    from agi.tools import build_default_registry
+    monkeypatch.setenv("SASES_FS_ROOT", str(tmp_path))
+    Image.new("RGB", (12, 8), "red").save(str(tmp_path / "a.png"))
+    out = build_default_registry().invoke("main", "image.read", {"path": "a.png"})
+    assert out["ok"] is True and out["width"] == 12 and out["height"] == 8
