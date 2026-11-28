@@ -56,3 +56,15 @@ def test_artifact_present(tmp_path, monkeypatch):
     (tmp_path / "a.txt").write_text("hello", encoding="utf-8")
     out = build_default_registry().invoke("main", "artifact.present", {"path": "a.txt"})
     assert out["ok"] is True and out["data_url"].startswith("data:text/plain")
+
+
+def test_office_write_table(tmp_path, monkeypatch):
+    from agi.tools import build_default_registry
+    monkeypatch.setenv("SASES_FS_ROOT", str(tmp_path))
+    monkeypatch.setenv("SASES_AGI_DB", str(tmp_path / "agi.db"))
+    reg = build_default_registry()
+    out = reg.invoke("main", "office.write", {"path": "t.docx", "lines": ["head"],
+        "tables": [[["a", "b"], ["1", "2"]]], "_approved": True})
+    assert out["ok"] is True
+    text = reg.invoke("main", "office.read", {"path": "t.docx"})["text"]
+    assert "a | b" in text and "1 | 2" in text

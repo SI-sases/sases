@@ -59,6 +59,15 @@ def write(args: dict) -> dict:
             doc = Document()
             for line in (args.get("lines") or str(args.get("text") or "").splitlines()):
                 doc.add_paragraph(str(line))
+            for table in args.get("tables") or []:
+                rows = [list(r) for r in table if isinstance(r, list)]
+                if not rows:
+                    continue
+                width = max(len(r) for r in rows)
+                table_obj = doc.add_table(rows=len(rows), cols=width)
+                for ri, row in enumerate(rows):
+                    for ci, cell in enumerate(row):
+                        table_obj.cell(ri, ci).text = str(cell)
             doc.save(str(path))
         elif suffix == ".xlsx":
             from openpyxl import Workbook
