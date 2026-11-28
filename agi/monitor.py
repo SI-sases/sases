@@ -34,7 +34,8 @@ def _already_open(conn: sqlite3.Connection, agent_id: str) -> bool:
     return bool(row)
 
 
-def scan(conn: sqlite3.Connection, stale_seconds: int = 600) -> list[dict]:
+def scan(conn: sqlite3.Connection, stale_seconds: int = 600,
+         recent_seconds: int = 3600) -> list[dict]:
     escalation.ensure_schema(conn)
     created = []
     try:
@@ -51,6 +52,9 @@ def scan(conn: sqlite3.Connection, stale_seconds: int = 600) -> list[dict]:
         reason = ""
         severity = "high"
         if status == "failed":
+            updated = int(agent.get("updated_at") or 0)
+            if updated and time.time() - updated > recent_seconds:
+                continue
             err = str(agent.get("result_json") or "")[:500]
             kind = classify(err)
             reason = f"子智能体失败 [{kind}] `{agent.get('name') or agent_id}` ({agent_id}): {err}"
