@@ -1,12 +1,12 @@
 # Start Microsoft Edge with a local CDP endpoint for SASES browser tasks.
 # Uses a dedicated profile so the user's normal Edge tabs are never closed.
 # Usage: powershell -ExecutionPolicy Bypass -File scripts\start_edge_cdp.ps1 [-Force]
-param([switch]$Force)
+param([switch]$Force, [int]$Port = 9222, [string]$Profile = "C:\edge_sases_profile")
 $ErrorActionPreference = "Stop"
 
-$port = 9222
+$port = $Port
 $edge = "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
-$profile = "C:\edge_sases_profile"
+$profile = $Profile
 
 if (-not (Test-Path $edge)) {
     throw "Microsoft Edge not found: $edge"
