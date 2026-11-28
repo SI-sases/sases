@@ -269,8 +269,18 @@ def _support(args: dict[str, Any], action: str) -> dict[str, Any]:
 
 def build_default_registry() -> ToolRegistry:
     from .deploy import plan_promote, plan_rollback, plan_stage
+    from . import fs_tools, web_tools
 
     registry = ToolRegistry()
+    for tool_id, handler, description in (
+        ("fs.list", fs_tools.list_dir, "List files under the configured workspace"),
+        ("fs.read", fs_tools.read_file, "Read a text file under the configured workspace"),
+        ("fs.grep", fs_tools.grep, "Search text under the configured workspace"),
+        ("fs.glob", fs_tools.glob_files, "Find files under the configured workspace"),
+        ("web.fetch", web_tools.fetch, "Fetch a public HTTP(S) page"),
+        ("web.search", web_tools.search, "Search the public web"),
+    ):
+        registry.register(ToolSpec(tool_id, handler, "read", frozenset({"main", "sub"}), description))
     registry.register(ToolSpec("node.health", health, "read", frozenset({"main", "sub"}),
                                "Read /health from a SASES node"))
     registry.register(ToolSpec("node.version", version, "read", frozenset({"main", "sub"}),
