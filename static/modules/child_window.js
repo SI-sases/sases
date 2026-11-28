@@ -164,7 +164,16 @@ function renderPanel() {
     body.querySelectorAll('[data-approve]').forEach((btn) => {
       btn.onclick = async () => {
         try {
-          await postJSON('/agi/approvals/decide', { id: Number(btn.dataset.approve), decision: btn.dataset.decision });
+          const res = await postJSON('/agi/approvals/decide', { id: Number(btn.dataset.approve), decision: btn.dataset.decision });
+          if (res && res.write_result) {
+            const card = btn.closest('.child-approval-card');
+            if (card) {
+              const note = document.createElement('div');
+              note.style.cssText = 'font-size:10px;color:' + (res.write_result.ok ? '#15803d' : '#b91c1c') + ';margin-top:4px;';
+              note.textContent = res.write_result.ok ? '已执行' : ('执行失败: ' + (res.write_result.error || ''));
+              card.appendChild(note);
+            }
+          }
           await refreshChildWindow();
         } catch (e) { btn.disabled = true; }
       };
