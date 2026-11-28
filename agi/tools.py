@@ -204,6 +204,8 @@ def _skill(args: dict[str, Any], action: str) -> dict[str, Any]:
         return skills.load_skill(str(args.get("name") or ""))
     if action == "evaluate":
         return skills.evaluate_skill(str(args.get("name") or ""))
+    if action == "run":
+        return skills.run_skill(str(args.get("name") or ""))
     raise ValueError(f"unknown skill action: {action}")
 
 
@@ -447,6 +449,8 @@ def build_default_registry() -> ToolRegistry:
                                frozenset({"main", "sub"}), "List versioned skills"))
     registry.register(ToolSpec("skill.load", lambda a: _skill(a, "load"), "read",
                                frozenset({"main", "sub"}), "Load a skill"))
+    registry.register(ToolSpec("skill.run", lambda a: _skill(a, "run"), "read",
+                               frozenset({"main", "sub"}), "Activate a skill's instructions"))
     registry.register(ToolSpec("skill.evaluate", lambda a: _skill(a, "evaluate"), "read",
                                frozenset({"main"}), "Static skill evaluation"))
     registry.register(ToolSpec("mcp.servers", lambda a: _mcp(a, "servers"), "read",

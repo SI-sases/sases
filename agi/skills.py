@@ -63,3 +63,11 @@ def evaluate_skill(name: str) -> dict:
         "hash": skill["hash"],
     }
     return {"name": name, "ok": all(v for k, v in checks.items() if k != "hash"), "checks": checks}
+
+
+def run_skill(name: str) -> dict:
+    """Activate a skill: return its validated instructions for the caller."""
+    skill = load_skill(name)
+    return {"ok": True, "name": skill["name"], "description": skill["description"],
+            "version": skill["version"], "hash": skill["hash"],
+            "mode": "instructions", "body": skill["body"]}
