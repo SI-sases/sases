@@ -1,6 +1,7 @@
 """Execute a TaskPackage through the shared tool registry."""
 from __future__ import annotations
 
+import json
 import sqlite3
 from typing import Any, Callable
 
@@ -16,6 +17,7 @@ def execute(package: TaskPackage, registry, conn: sqlite3.Connection,
         return {"ok": False, "error": "package has no steps", "trace_id": package.trace_id}
     results: list[dict[str, Any]] = []
     allowed = set(package.tools_allowed or [])
+    repeats: dict[str, int] = {}
     for index, step in enumerate(package.steps):
         if should_continue and not should_continue():
             return {"ok": False, "cancelled": True, "error": "task cancelled or timed out",
@@ -28,6 +30,12 @@ def execute(package: TaskPackage, registry, conn: sqlite3.Connection,
             return {"ok": False, "error": f"tool not allowed: {tool_id}", "step": index,
                     "trace_id": package.trace_id, "results": results}
         args = dict(step.get("args") or {})
+        if tool_id.startswith("browser."):
+            action_key = tool_id + ":" + json.dumps(args, ensure_ascii=False, sort_keys=True)
+            repeats[action_key] = repeats.get(action_key, 0) + 1
+            if repeats[action_key] > 2:
+                return {"ok": False, "error": "duplicate_action_suppressed", "step": index,
+                        "trace_id": package.trace_id, "results": results}
         try:
             result = registry.invoke(profile, tool_id, args)
         except Exception as exc:  # noqa: BLE001
