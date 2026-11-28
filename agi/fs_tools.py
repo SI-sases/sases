@@ -91,6 +91,37 @@ def grep(args: dict) -> dict:
         return {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
 
 
+def write_file(args: dict) -> dict:
+    if not args.get("_approved"):
+        return {"ok": False, "error": "approval_required", "tool": "fs.write"}
+    try:
+        target = _safe(args.get("path") or "")
+        target.parent.mkdir(parents=True, exist_ok=True)
+        content = str(args.get("content") or "")
+        if target.exists() and not args.get("overwrite"):
+            return {"ok": False, "error": "file exists; overwrite=true required"}
+        target.write_text(content, encoding="utf-8")
+        return {"ok": True, "path": str(target), "bytes": len(content.encode("utf-8"))}
+    except Exception as exc:  # noqa: BLE001
+        return {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
+
+
+def edit_file(args: dict) -> dict:
+    if not args.get("_approved"):
+        return {"ok": False, "error": "approval_required", "tool": "fs.edit"}
+    try:
+        target = _safe(args.get("path") or "")
+        old = str(args.get("old") or "")
+        new = str(args.get("new") or "")
+        text = target.read_text(encoding="utf-8")
+        if old not in text:
+            return {"ok": False, "error": "old text not found"}
+        target.write_text(text.replace(old, new, 1), encoding="utf-8")
+        return {"ok": True, "path": str(target)}
+    except Exception as exc:  # noqa: BLE001
+        return {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
+
+
 def glob_files(args: dict) -> dict:
     try:
         target = _safe(args.get("path") or ".")

@@ -277,6 +277,8 @@ def build_default_registry() -> ToolRegistry:
         ("fs.read", fs_tools.read_file, "Read a text file under the configured workspace"),
         ("fs.grep", fs_tools.grep, "Search text under the configured workspace"),
         ("fs.glob", fs_tools.glob_files, "Find files under the configured workspace"),
+        ("fs.write", fs_tools.write_file, "Write a workspace file (requires explicit approval flag)"),
+        ("fs.edit", fs_tools.edit_file, "Edit a workspace file (requires explicit approval flag)"),
         ("web.fetch", web_tools.fetch, "Fetch a public HTTP(S) page"),
         ("web.search", web_tools.search, "Search the public web"),
     ):
