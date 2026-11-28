@@ -30,10 +30,13 @@ def main() -> int:
         result = {"ok": True, "dry_run": args.dry_run, "platform": "youtube"}
         try:
             phase = load_checkpoint().get("phase", "")
-            resumed = phase in ("uploaded", "details", "visibility", "published") and page.url.startswith("https://studio.youtube.com")
+            resumed = (phase in ("uploaded", "details", "visibility", "published")
+                       and page.url.startswith("https://studio.youtube.com")
+                       and page.locator("[contenteditable=true]").count() >= 2)
             if resumed:
                 result["resumed"] = phase
             else:
+                phase = ""
                 page.goto(UPLOAD, wait_until="commit", timeout=args.timeout)
                 page.wait_for_timeout(6000)
                 page.get_by_role("button", name="上传视频").click()

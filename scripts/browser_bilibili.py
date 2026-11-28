@@ -31,10 +31,12 @@ def main() -> int:
         result = {"ok": True, "dry_run": args.dry_run, "platform": "bilibili"}
         try:
             phase = load_checkpoint().get("phase", "")
-            resumed = phase in ("uploaded", "filled", "submitted") and page.url.startswith(URL)
+            resumed = (phase in ("uploaded", "filled", "submitted") and page.url.startswith(URL)
+                       and page.locator('input[placeholder="请输入稿件标题"]').count() > 0)
             if resumed:
                 result["resumed"] = phase
             else:
+                phase = ""
                 page.goto(URL, wait_until="commit", timeout=args.timeout)
                 page.wait_for_timeout(5000)
                 with page.expect_file_chooser(timeout=10000) as chooser:

@@ -36,11 +36,13 @@ def main() -> int:
         result = {"ok": True, "dry_run": args.dry_run, "platform": "douyin"}
         try:
             phase = load_checkpoint().get("phase", "")
-            resumed = phase in ("uploaded", "filled") and page.url.startswith(
-                "https://creator.douyin.com/creator-micro/content/post/image")
+            resumed = (phase in ("uploaded", "filled")
+                       and page.url.startswith("https://creator.douyin.com/creator-micro/content/post/image")
+                       and page.locator("[contenteditable=true]").count() > 0)
             if resumed:
                 result["resumed"] = phase
             else:
+                phase = ""
                 page.goto("https://creator.douyin.com/creator-micro/content/upload",
                           wait_until="commit", timeout=args.timeout)
                 page.wait_for_timeout(5000)
