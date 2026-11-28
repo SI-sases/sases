@@ -53,7 +53,7 @@ def choose_element(screenshot: str, instruction: str, elements: list[dict]) -> d
                                  headers={"Content-Type": "application/json",
                                           "Authorization": "Bearer " + os.environ.get("SASES_VISION_KEY", "")})
     try:
-        with urllib.request.urlopen(req, timeout=180) as resp:
+        with urllib.request.urlopen(req, timeout=int(os.environ.get("SASES_VISION_TIMEOUT", "60"))) as resp:
             data = json.loads(resp.read().decode("utf-8"))
         content = data["choices"][0]["message"]["content"]
         start, end = content.find("{"), content.rfind("}")
@@ -97,7 +97,7 @@ def locate(screenshot: str, instruction: str) -> dict:
                  "Authorization": "Bearer " + os.environ.get("SASES_VISION_KEY", "")},
     )
     try:
-        with urllib.request.urlopen(req, timeout=180) as resp:
+        with urllib.request.urlopen(req, timeout=int(os.environ.get("SASES_VISION_TIMEOUT", "60"))) as resp:
             payload = json.loads(resp.read().decode("utf-8") or "{}")
         content = payload["choices"][0]["message"]["content"]
         if isinstance(content, list):
