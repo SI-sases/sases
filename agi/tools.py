@@ -300,6 +300,7 @@ def build_default_registry() -> ToolRegistry:
         ("local.fs.grep", "fs.grep"),
         ("local.fs.glob", "fs.glob"),
         ("local.shell.run", "shell.run"),
+        ("local.office.read", "office.read"),
     ):
         registry.register(ToolSpec(tool_id, lambda a, t=local_tool: local_bridge.run_readonly(t, a),
                                    "read", frozenset({"main"}),
@@ -307,6 +308,11 @@ def build_default_registry() -> ToolRegistry:
     for tool_id, local_tool in (
         ("local.fs.write", "fs.write"),
         ("local.fs.edit", "fs.edit"),
+        ("local.fs.mkdir", "fs.mkdir"),
+        ("local.fs.copy", "fs.copy"),
+        ("local.fs.move", "fs.move"),
+        ("local.fs.delete", "fs.delete"),
+        ("local.shell.write", "shell.write"),
     ):
         registry.register(ToolSpec(tool_id, lambda a, t=local_tool: local_bridge.start(t, a),
                                    "write", frozenset({"main"}),

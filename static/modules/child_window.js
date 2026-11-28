@@ -148,6 +148,7 @@ function renderPanel() {
   if (state.tab === 'approvals') {
     body.innerHTML = state.approvals.length ? state.approvals.map((a) =>
       `<div class="child-approval-card"><div class="child-agent-name">⚠️ ${esc(a.description || a.tool)}</div>
+      <pre style="white-space:pre-wrap;background:#f8fafc;border-radius:6px;padding:6px;font-size:10px;color:#475569;max-height:120px;overflow:auto;">${esc((a.args_json || '').slice(0, 600))}</pre>
        <div class="child-approval-desc">风险：${esc(a.risk || 'high')} · ${esc(a.tool || '')}</div>
        <button class="primary" data-approve="${a.id}" data-decision="allow">允许</button>
        <button data-approve="${a.id}" data-decision="deny">拒绝</button></div>`).join('') :
