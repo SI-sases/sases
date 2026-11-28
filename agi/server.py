@@ -166,7 +166,10 @@ class Handler(BaseHTTPRequestHandler):
                     if not agent:
                         self._send(404, {"error": "agent not found"})
                         return
-                    if len(parts) >= 3 and parts[2] == "messages":
+                    if len(parts) >= 3 and parts[2] == "trace":
+                        from . import agent_trace
+                        self._send(200, {"trace": agent_trace.list_for(conn, agent_id)})
+                    elif len(parts) >= 3 and parts[2] == "messages":
                         self._send(200, {"messages": agents.messages(conn, agent_id)})
                     elif len(parts) >= 3 and parts[2] == "wait":
                         from urllib.parse import parse_qs, urlparse
@@ -370,6 +373,14 @@ class Handler(BaseHTTPRequestHandler):
                 conn.row_factory = sqlite3.Row
                 try:
                     parts = [p for p in self.path.split("?")[0].split("/") if p]
+                    if len(parts) >= 3 and parts[2] == "trace":
+                        from . import agent_trace
+                        agent_trace.add(conn, parts[1], int(body.get("seq") or 0),
+                                        str(body.get("event_type") or "tool"),
+                                        str(body.get("tool") or ""),
+                                        body.get("args") or {}, body.get("result") or {})
+                        self._send(200, {"ok": True})
+                        return
                     if len(parts) >= 3 and parts[2] in {"message", "cancel", "claim", "progress", "finish", "requeue"}:
                         agent_id = parts[1]
                         if not agents.get_agent(conn, agent_id):

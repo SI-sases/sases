@@ -198,6 +198,16 @@ class LocalRuntime:
 
             def on_step(index: int, step: dict, result: dict) -> None:
                 local_store.step(agent_id, current + index + 1)
+                try:
+                    _call(self.server, self.token, "POST", f"/agents/{agent_id}/trace", {
+                        "seq": current + index + 1,
+                        "event_type": "step",
+                        "tool": str(step.get("tool") or ""),
+                        "args": step.get("args") or {},
+                        "result": result,
+                    })
+                except Exception:
+                    pass
 
             deadline = time.monotonic() + float(os.environ.get("SASES_TASK_TIMEOUT", "900"))
             cancel_state = {"timed_out": False, "cancelled": False}

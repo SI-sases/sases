@@ -283,6 +283,9 @@ def build_default_registry() -> ToolRegistry:
         registry.register(ToolSpec(tool_id, handler, "read", frozenset({"main", "sub"}), description))
     registry.register(ToolSpec("node.health", health, "read", frozenset({"main", "sub"}),
                                "Read /health from a SASES node"))
+    registry.register(ToolSpec("agent.trace", lambda a: _api(
+        "GET", a, "/agents/" + str(a.get("agent_id") or "") + "/trace"), "read",
+        frozenset({"main", "sub"}), "Read a child agent tool trace"))
     registry.register(ToolSpec("node.version", version, "read", frozenset({"main", "sub"}),
                                "Read /version from a SASES node"))
     registry.register(ToolSpec("task.list", task_list, "read", frozenset({"main", "sub"}),
