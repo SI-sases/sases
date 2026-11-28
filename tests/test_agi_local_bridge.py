@@ -15,3 +15,10 @@ def test_local_bridge_polls_agent(monkeypatch):
     assert out["ok"] is True
     assert out["text"] == "local"
     assert out["local_agent_id"] == "local-a"
+
+
+def test_local_write_start(monkeypatch):
+    monkeypatch.setattr(local_bridge, "_call", lambda *a, **k: {"ok": True, "agent_id": "w1"})
+    out = local_bridge.start("fs.write", {"path": "x", "content": "y"})
+    assert out["ok"] is True and out["agent_id"] == "w1"
+    assert out["requires_local_approval"] is True

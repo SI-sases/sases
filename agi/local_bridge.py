@@ -34,6 +34,23 @@ def _call(method: str, path: str, body: dict | None = None) -> dict:
         return json.loads(resp.read().decode("utf-8") or "{}")
 
 
+def start(tool: str, args: dict) -> dict:
+    try:
+        spawned = _call("POST", "/agents/spawn", {
+            "node_id": "local",
+            "name": "local bridge: " + tool,
+            "goal": "local write bridge",
+            "status": "queued",
+            "ttl": 600,
+            "task": {"steps": [{"tool": tool, "args": args}]},
+            "context": {"source": "main_bridge"},
+        })
+        return {"ok": True, "agent_id": spawned.get("agent_id"),
+                "status": "queued", "requires_local_approval": True}
+    except Exception as exc:  # noqa: BLE001
+        return {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
+
+
 def run_readonly(tool: str, args: dict, timeout: int = 30) -> dict:
     try:
         spawned = _call("POST", "/agents/spawn", {

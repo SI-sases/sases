@@ -295,6 +295,13 @@ def build_default_registry() -> ToolRegistry:
         registry.register(ToolSpec(tool_id, lambda a, t=local_tool: local_bridge.run_readonly(t, a),
                                    "read", frozenset({"main"}),
                                    "Read-only local runtime " + local_tool))
+    for tool_id, local_tool in (
+        ("local.fs.write", "fs.write"),
+        ("local.fs.edit", "fs.edit"),
+    ):
+        registry.register(ToolSpec(tool_id, lambda a, t=local_tool: local_bridge.start(t, a),
+                                   "write", frozenset({"main"}),
+                                   "Queue a local write; local runtime requires approval"))
     registry.register(ToolSpec("node.health", health, "read", frozenset({"main", "sub"}),
                                "Read /health from a SASES node"))
     registry.register(ToolSpec("agent.trace", lambda a: _api(
