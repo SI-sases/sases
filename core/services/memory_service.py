@@ -88,6 +88,34 @@ def delete_memory(user_id: int, memory_id: int) -> bool:
         return cur.rowcount > 0
 
 
+def summarize_work_logs(user_id: int, hours: int = 6) -> int:
+    """Store a bounded summary of recent work logs as global memory."""
+    from datetime import datetime, timedelta
+    cutoff = (datetime.now() - timedelta(hours=max(1, hours))).isoformat()
+    with db_cursor() as cur:
+        cur.execute(
+            "SELECT id,agent_id,command,output,status,created_at FROM work_logs "
+            "WHERE user_id=? AND created_at>=? ORDER BY id DESC LIMIT 50",
+            (user_id, cutoff),
+        )
+        rows = cur.fetchall()
+    if not rows:
+        return 0
+    lines = []
+    for r in rows[:20]:
+        task = str(r["command"] or r["agent_id"] or "")[:120]
+        status = str(r["status"] or "")
+        summary = str(r["output"] or "")[:160]
+        lines.append(f"- {task} [{status}] {summary}".strip())
+    value = "Recent work logs:\n" + "\n".join(lines)
+    return int(set_memory(user_id, "work_summary", value)["id"])
+
+
+def backfill_embeddings(limit: int = 200) -> int:
+    """Embedding backfill is optional; FTS/keyword search is the active path."""
+    return 0
+
+
 def prompt_for(user_id: int, session_id: int | None = None, max_chars: int = 2000) -> str:
     """Bounded prompt block for global and current-session memory."""
     items = list_memory(user_id, "global")

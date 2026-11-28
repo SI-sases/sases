@@ -239,6 +239,23 @@ def cleanup_stale_task_state(keep_per_task: int = 1, days: int = 0) -> int:
 
 
 
+def cleanup_disk_space() -> dict:
+    """Disposable disk cleanup: old browser snapshots and stale temp files."""
+    result = {"snapshots": 0, "temp_files": 0, "free_gb": 0.0}
+    try:
+        from agi.browser_snapshot import cleanup as cleanup_snapshots
+        result["snapshots"] = len(cleanup_snapshots())
+    except Exception as e:
+        print('[cleanup] snapshot 清理失败: ' + str(e))
+    try:
+        from agi.disk_guard import cleanup_temp, free_gb
+        result["temp_files"] = cleanup_temp(24)
+        result["free_gb"] = round(free_gb(), 2)
+    except Exception as e:
+        print('[cleanup] temp 清理失败: ' + str(e))
+    return result
+
+
 def cleanup_all() -> dict:
     """执行全部清理任务，返回各项删除数量"""
     result = {
@@ -256,6 +273,9 @@ def cleanup_all() -> dict:
         "test_marks_detail": [],
         "test_marks_found": 0,
         "test_marks_detail": [],
+        "disk_snapshots": 0,
+        "disk_temp_files": 0,
+        "disk_free_gb": 0.0,
     }
     try:
         result["expired_memory"] = cleanup_expired_memory()
@@ -317,6 +337,14 @@ def cleanup_all() -> dict:
         result['run_trace'] = _trace_svc.cleanup()
     except Exception as e:
         print('[cleanup] run_trace 清理失败: ' + str(e))
+
+    try:
+        _disk = cleanup_disk_space()
+        result['disk_snapshots'] = _disk['snapshots']
+        result['disk_temp_files'] = _disk['temp_files']
+        result['disk_free_gb'] = _disk['free_gb']
+    except Exception as e:
+        print('[cleanup] 磁盘清理失败: ' + str(e))
 
     try:
         _tm = scan_test_marks(dry_run=True)
