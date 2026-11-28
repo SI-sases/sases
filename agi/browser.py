@@ -188,10 +188,14 @@ def visual_click(args: dict[str, Any]) -> dict[str, Any]:
     if not snap.get("ok") or not snap.get("screenshot"):
         return {"ok": False, "error": "screenshot_failed", "snapshot": snap}
     elements = snap.get("elements") or []
-    chosen = vision.choose_element(snap["screenshot"], instruction, elements) if elements else {"ok": False}
-    if chosen.get("ok"):
-        clicked = click_element({"index": chosen["index"], "wait_ms": args.get("wait_ms")})
-        clicked["vision"] = {"element_index": chosen["index"]}
+    indexed = [(i, e) for i, e in enumerate(elements)
+               if e.get("visible") and (e.get("text") or e.get("name") or e.get("placeholder"))][:20]
+    candidates = [e for _, e in indexed]
+    chosen = vision.choose_element(snap["screenshot"], instruction, candidates) if candidates else {"ok": False}
+    if chosen.get("ok") and 0 <= chosen["index"] < len(indexed):
+        original_index = indexed[chosen["index"]][0]
+        clicked = click_element({"index": original_index, "wait_ms": args.get("wait_ms")})
+        clicked["vision"] = {"element_index": chosen["index"], "snapshot_index": original_index}
     else:
         found = vision.locate(snap["screenshot"], instruction)
         if not found.get("ok"):
