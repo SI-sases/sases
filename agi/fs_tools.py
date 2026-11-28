@@ -208,3 +208,4 @@ def glob_files(args: dict) -> dict:
         return {"ok": True, "files": rows, "truncated": len(rows) >= limit}
     except Exception as exc:  # noqa: BLE001
         return {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
+

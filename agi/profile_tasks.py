@@ -13,7 +13,7 @@ def bilibili_signature_steps(text: str) -> list[dict]:
             "wait_ms": 6000,
         }},
         {"tool": "browser.click_target", "args": {
-            "target": {"selector": "#ser-ul span", "text": "我的信息"},
+            "target": {"selector": "#ser-ul span:has-text(\"我的信息\")"},
             "wait_ms": 1500,
         }},
         {"tool": "browser.fill_targets", "args": {
